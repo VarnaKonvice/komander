@@ -1,13 +1,13 @@
 {
   "stay": {
     "appName": "Lázeňský Komandér",
-    "spaName": "Lázně Třeboň",
-    "mealShift": "Jídlo: bazalková",
+    "spaName": "Slatinné lázně Třeboň",
+    "mealShift": "1. směna",
     "leaveBufferMinutes": 15,
-    "room": "doplnit pokoj",
-    "doctor": "doplnit lékaře",
-    "diagnosis": "doplnit diagnózu",
-    "doctorOffice": "doplnit ordinaci",
+    "room": "1LDB-A / 133",
+    "doctor": "MUDr. Čech",
+    "diagnosis": "G112 Mozečková ataxie",
+    "doctorOffice": "Ordinace 214 · 2. patro · LDB",
     "stayFrom": "2026-05-22",
     "stayTo": "2026-06-18"
   },
