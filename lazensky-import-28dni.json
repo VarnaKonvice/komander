@@ -1,0 +1,1348 @@
+{
+  "stay": {
+    "appName": "Lázeňský Komandér",
+    "spaName": "Lázně Třeboň",
+    "mealShift": "Jídlo: bazalková",
+    "leaveBufferMinutes": 15,
+    "room": "doplnit pokoj",
+    "doctor": "doplnit lékaře",
+    "diagnosis": "doplnit diagnózu",
+    "doctorOffice": "doplnit ordinaci",
+    "stayFrom": "2026-05-22",
+    "stayTo": "2026-06-18"
+  },
+  "items": [
+    {
+      "id": "meal-2026-05-22-dinner",
+      "type": "meal",
+      "date": "2026-05-22",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-23-breakfast",
+      "type": "meal",
+      "date": "2026-05-23",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-05-23-1",
+      "type": "procedure",
+      "date": "2026-05-23",
+      "start": "08:15",
+      "end": "08:35",
+      "title": "Vysokoindukční magnet",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "proc-2026-05-23-2",
+      "type": "procedure",
+      "date": "2026-05-23",
+      "start": "08:45",
+      "end": "09:05",
+      "title": "Parafínový zábal",
+      "place": "LDB-Parafín"
+    },
+    {
+      "id": "proc-2026-05-23-3",
+      "type": "procedure",
+      "date": "2026-05-23",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "IMOOVE",
+      "place": "LDB-Fyzioterapie 4"
+    },
+    {
+      "id": "meal-2026-05-23-lunch",
+      "type": "meal",
+      "date": "2026-05-23",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-23-dinner",
+      "type": "meal",
+      "date": "2026-05-23",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-24-breakfast",
+      "type": "meal",
+      "date": "2026-05-24",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-24-lunch",
+      "type": "meal",
+      "date": "2026-05-24",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-24-dinner",
+      "type": "meal",
+      "date": "2026-05-24",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-25-breakfast",
+      "type": "meal",
+      "date": "2026-05-25",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-05-25-1",
+      "type": "procedure",
+      "date": "2026-05-25",
+      "start": "08:05",
+      "end": "08:25",
+      "title": "Ultrazvuk",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "proc-2026-05-25-2",
+      "type": "procedure",
+      "date": "2026-05-25",
+      "start": "08:40",
+      "end": "09:10",
+      "title": "Fyzioterapie individuální",
+      "place": "LDB-Fyzioterapie 3"
+    },
+    {
+      "id": "proc-2026-05-25-3",
+      "type": "procedure",
+      "date": "2026-05-25",
+      "start": "10:30",
+      "end": "11:00",
+      "title": "Skupinové cvičení",
+      "place": "Tělocvična"
+    },
+    {
+      "id": "meal-2026-05-25-lunch",
+      "type": "meal",
+      "date": "2026-05-25",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-25-dinner",
+      "type": "meal",
+      "date": "2026-05-25",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-26-breakfast",
+      "type": "meal",
+      "date": "2026-05-26",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-05-26-1",
+      "type": "procedure",
+      "date": "2026-05-26",
+      "start": "08:30",
+      "end": "09:00",
+      "title": "Skupinové cvičení",
+      "place": "Tělocvična"
+    },
+    {
+      "id": "proc-2026-05-26-2",
+      "type": "procedure",
+      "date": "2026-05-26",
+      "start": "10:00",
+      "end": "10:30",
+      "title": "Bazén",
+      "place": "LDB-Bazén"
+    },
+    {
+      "id": "proc-2026-05-26-3",
+      "type": "procedure",
+      "date": "2026-05-26",
+      "start": "12:10",
+      "end": "12:30",
+      "title": "Slatinná koupel",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "meal-2026-05-26-lunch",
+      "type": "meal",
+      "date": "2026-05-26",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-26-dinner",
+      "type": "meal",
+      "date": "2026-05-26",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-27-breakfast",
+      "type": "meal",
+      "date": "2026-05-27",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-05-27-1",
+      "type": "procedure",
+      "date": "2026-05-27",
+      "start": "09:15",
+      "end": "09:35",
+      "title": "Slatinná koupel",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "proc-2026-05-27-2",
+      "type": "procedure",
+      "date": "2026-05-27",
+      "start": "11:50",
+      "end": "12:10",
+      "title": "Klasická masáž částečná",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "meal-2026-05-27-lunch",
+      "type": "meal",
+      "date": "2026-05-27",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-27-dinner",
+      "type": "meal",
+      "date": "2026-05-27",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-28-breakfast",
+      "type": "meal",
+      "date": "2026-05-28",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-05-28-1",
+      "type": "procedure",
+      "date": "2026-05-28",
+      "start": "08:15",
+      "end": "08:35",
+      "title": "Vysokoindukční magnet",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "proc-2026-05-28-2",
+      "type": "procedure",
+      "date": "2026-05-28",
+      "start": "08:45",
+      "end": "09:05",
+      "title": "Parafínový zábal",
+      "place": "LDB-Parafín"
+    },
+    {
+      "id": "proc-2026-05-28-3",
+      "type": "procedure",
+      "date": "2026-05-28",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "IMOOVE",
+      "place": "LDB-Fyzioterapie 4"
+    },
+    {
+      "id": "meal-2026-05-28-lunch",
+      "type": "meal",
+      "date": "2026-05-28",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-28-dinner",
+      "type": "meal",
+      "date": "2026-05-28",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-29-breakfast",
+      "type": "meal",
+      "date": "2026-05-29",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-05-29-1",
+      "type": "procedure",
+      "date": "2026-05-29",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "IMOOVE",
+      "place": "LDB-Fyzioterapie 4"
+    },
+    {
+      "id": "proc-2026-05-29-2",
+      "type": "procedure",
+      "date": "2026-05-29",
+      "start": "09:30",
+      "end": "09:50",
+      "title": "Vířivka dolní končetiny",
+      "place": "LDB-Vodoléčba"
+    },
+    {
+      "id": "proc-2026-05-29-3",
+      "type": "procedure",
+      "date": "2026-05-29",
+      "start": "12:00",
+      "end": "12:20",
+      "title": "Ultrazvuk",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "meal-2026-05-29-lunch",
+      "type": "meal",
+      "date": "2026-05-29",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-29-dinner",
+      "type": "meal",
+      "date": "2026-05-29",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-30-breakfast",
+      "type": "meal",
+      "date": "2026-05-30",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-05-30-1",
+      "type": "procedure",
+      "date": "2026-05-30",
+      "start": "09:00",
+      "end": "09:20",
+      "title": "Ultrazvuk",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "proc-2026-05-30-2",
+      "type": "procedure",
+      "date": "2026-05-30",
+      "start": "10:30",
+      "end": "11:00",
+      "title": "Fyzioterapie individuální",
+      "place": "LDB-Fyzioterapie 3"
+    },
+    {
+      "id": "proc-2026-05-30-3",
+      "type": "procedure",
+      "date": "2026-05-30",
+      "start": "12:15",
+      "end": "12:45",
+      "title": "Skupinové cvičení",
+      "place": "Tělocvična"
+    },
+    {
+      "id": "meal-2026-05-30-lunch",
+      "type": "meal",
+      "date": "2026-05-30",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-30-dinner",
+      "type": "meal",
+      "date": "2026-05-30",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-31-breakfast",
+      "type": "meal",
+      "date": "2026-05-31",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-31-lunch",
+      "type": "meal",
+      "date": "2026-05-31",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-05-31-dinner",
+      "type": "meal",
+      "date": "2026-05-31",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-01-breakfast",
+      "type": "meal",
+      "date": "2026-06-01",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-01-1",
+      "type": "procedure",
+      "date": "2026-06-01",
+      "start": "08:30",
+      "end": "08:50",
+      "title": "Slatinná koupel",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "proc-2026-06-01-2",
+      "type": "procedure",
+      "date": "2026-06-01",
+      "start": "10:00",
+      "end": "10:20",
+      "title": "Klasická masáž částečná",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "proc-2026-06-01-3",
+      "type": "procedure",
+      "date": "2026-06-01",
+      "start": "12:10",
+      "end": "12:30",
+      "title": "Vysokoindukční magnet",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "meal-2026-06-01-lunch",
+      "type": "meal",
+      "date": "2026-06-01",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-01-dinner",
+      "type": "meal",
+      "date": "2026-06-01",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-02-breakfast",
+      "type": "meal",
+      "date": "2026-06-02",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-02-1",
+      "type": "procedure",
+      "date": "2026-06-02",
+      "start": "09:15",
+      "end": "09:35",
+      "title": "Vysokoindukční magnet",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "proc-2026-06-02-2",
+      "type": "procedure",
+      "date": "2026-06-02",
+      "start": "11:50",
+      "end": "12:10",
+      "title": "Parafínový zábal",
+      "place": "LDB-Parafín"
+    },
+    {
+      "id": "meal-2026-06-02-lunch",
+      "type": "meal",
+      "date": "2026-06-02",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-02-dinner",
+      "type": "meal",
+      "date": "2026-06-02",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-03-breakfast",
+      "type": "meal",
+      "date": "2026-06-03",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-03-1",
+      "type": "procedure",
+      "date": "2026-06-03",
+      "start": "08:15",
+      "end": "08:35",
+      "title": "IMOOVE",
+      "place": "LDB-Fyzioterapie 4"
+    },
+    {
+      "id": "proc-2026-06-03-2",
+      "type": "procedure",
+      "date": "2026-06-03",
+      "start": "08:45",
+      "end": "09:05",
+      "title": "Vířivka dolní končetiny",
+      "place": "LDB-Vodoléčba"
+    },
+    {
+      "id": "proc-2026-06-03-3",
+      "type": "procedure",
+      "date": "2026-06-03",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "Ultrazvuk",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "meal-2026-06-03-lunch",
+      "type": "meal",
+      "date": "2026-06-03",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-03-dinner",
+      "type": "meal",
+      "date": "2026-06-03",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-04-breakfast",
+      "type": "meal",
+      "date": "2026-06-04",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-04-1",
+      "type": "procedure",
+      "date": "2026-06-04",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "Ultrazvuk",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "proc-2026-06-04-2",
+      "type": "procedure",
+      "date": "2026-06-04",
+      "start": "09:30",
+      "end": "10:00",
+      "title": "Fyzioterapie individuální",
+      "place": "LDB-Fyzioterapie 3"
+    },
+    {
+      "id": "proc-2026-06-04-3",
+      "type": "procedure",
+      "date": "2026-06-04",
+      "start": "12:00",
+      "end": "12:30",
+      "title": "Skupinové cvičení",
+      "place": "Tělocvična"
+    },
+    {
+      "id": "meal-2026-06-04-lunch",
+      "type": "meal",
+      "date": "2026-06-04",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-04-dinner",
+      "type": "meal",
+      "date": "2026-06-04",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-05-breakfast",
+      "type": "meal",
+      "date": "2026-06-05",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-05-1",
+      "type": "procedure",
+      "date": "2026-06-05",
+      "start": "09:00",
+      "end": "09:30",
+      "title": "Skupinové cvičení",
+      "place": "Tělocvična"
+    },
+    {
+      "id": "proc-2026-06-05-2",
+      "type": "procedure",
+      "date": "2026-06-05",
+      "start": "10:30",
+      "end": "11:00",
+      "title": "Bazén",
+      "place": "LDB-Bazén"
+    },
+    {
+      "id": "proc-2026-06-05-3",
+      "type": "procedure",
+      "date": "2026-06-05",
+      "start": "12:15",
+      "end": "12:35",
+      "title": "Slatinná koupel",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "meal-2026-06-05-lunch",
+      "type": "meal",
+      "date": "2026-06-05",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-05-dinner",
+      "type": "meal",
+      "date": "2026-06-05",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-06-breakfast",
+      "type": "meal",
+      "date": "2026-06-06",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-06-1",
+      "type": "procedure",
+      "date": "2026-06-06",
+      "start": "08:05",
+      "end": "08:25",
+      "title": "Slatinná koupel",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "proc-2026-06-06-2",
+      "type": "procedure",
+      "date": "2026-06-06",
+      "start": "08:40",
+      "end": "09:00",
+      "title": "Klasická masáž částečná",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "proc-2026-06-06-3",
+      "type": "procedure",
+      "date": "2026-06-06",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "Vysokoindukční magnet",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "meal-2026-06-06-lunch",
+      "type": "meal",
+      "date": "2026-06-06",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-06-dinner",
+      "type": "meal",
+      "date": "2026-06-06",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-07-breakfast",
+      "type": "meal",
+      "date": "2026-06-07",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-07-lunch",
+      "type": "meal",
+      "date": "2026-06-07",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-07-dinner",
+      "type": "meal",
+      "date": "2026-06-07",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-08-breakfast",
+      "type": "meal",
+      "date": "2026-06-08",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-08-1",
+      "type": "procedure",
+      "date": "2026-06-08",
+      "start": "09:15",
+      "end": "09:35",
+      "title": "IMOOVE",
+      "place": "LDB-Fyzioterapie 4"
+    },
+    {
+      "id": "proc-2026-06-08-2",
+      "type": "procedure",
+      "date": "2026-06-08",
+      "start": "11:50",
+      "end": "12:10",
+      "title": "Vířivka dolní končetiny",
+      "place": "LDB-Vodoléčba"
+    },
+    {
+      "id": "meal-2026-06-08-lunch",
+      "type": "meal",
+      "date": "2026-06-08",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-08-dinner",
+      "type": "meal",
+      "date": "2026-06-08",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-09-breakfast",
+      "type": "meal",
+      "date": "2026-06-09",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-09-1",
+      "type": "procedure",
+      "date": "2026-06-09",
+      "start": "08:15",
+      "end": "08:35",
+      "title": "Ultrazvuk",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "proc-2026-06-09-2",
+      "type": "procedure",
+      "date": "2026-06-09",
+      "start": "08:45",
+      "end": "09:15",
+      "title": "Fyzioterapie individuální",
+      "place": "LDB-Fyzioterapie 3"
+    },
+    {
+      "id": "proc-2026-06-09-3",
+      "type": "procedure",
+      "date": "2026-06-09",
+      "start": "10:30",
+      "end": "11:00",
+      "title": "Skupinové cvičení",
+      "place": "Tělocvična"
+    },
+    {
+      "id": "meal-2026-06-09-lunch",
+      "type": "meal",
+      "date": "2026-06-09",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-09-dinner",
+      "type": "meal",
+      "date": "2026-06-09",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-10-breakfast",
+      "type": "meal",
+      "date": "2026-06-10",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-10-1",
+      "type": "procedure",
+      "date": "2026-06-10",
+      "start": "08:00",
+      "end": "08:30",
+      "title": "Skupinové cvičení",
+      "place": "Tělocvična"
+    },
+    {
+      "id": "proc-2026-06-10-2",
+      "type": "procedure",
+      "date": "2026-06-10",
+      "start": "09:30",
+      "end": "10:00",
+      "title": "Bazén",
+      "place": "LDB-Bazén"
+    },
+    {
+      "id": "proc-2026-06-10-3",
+      "type": "procedure",
+      "date": "2026-06-10",
+      "start": "12:00",
+      "end": "12:20",
+      "title": "Slatinná koupel",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "meal-2026-06-10-lunch",
+      "type": "meal",
+      "date": "2026-06-10",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-10-dinner",
+      "type": "meal",
+      "date": "2026-06-10",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-11-breakfast",
+      "type": "meal",
+      "date": "2026-06-11",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-11-1",
+      "type": "procedure",
+      "date": "2026-06-11",
+      "start": "09:00",
+      "end": "09:20",
+      "title": "Slatinná koupel",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "proc-2026-06-11-2",
+      "type": "procedure",
+      "date": "2026-06-11",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "Klasická masáž částečná",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "proc-2026-06-11-3",
+      "type": "procedure",
+      "date": "2026-06-11",
+      "start": "12:15",
+      "end": "12:35",
+      "title": "Vysokoindukční magnet",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "meal-2026-06-11-lunch",
+      "type": "meal",
+      "date": "2026-06-11",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-11-dinner",
+      "type": "meal",
+      "date": "2026-06-11",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-12-breakfast",
+      "type": "meal",
+      "date": "2026-06-12",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-12-1",
+      "type": "procedure",
+      "date": "2026-06-12",
+      "start": "08:05",
+      "end": "08:25",
+      "title": "Vysokoindukční magnet",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "proc-2026-06-12-2",
+      "type": "procedure",
+      "date": "2026-06-12",
+      "start": "08:40",
+      "end": "09:00",
+      "title": "Parafínový zábal",
+      "place": "LDB-Parafín"
+    },
+    {
+      "id": "proc-2026-06-12-3",
+      "type": "procedure",
+      "date": "2026-06-12",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "IMOOVE",
+      "place": "LDB-Fyzioterapie 4"
+    },
+    {
+      "id": "meal-2026-06-12-lunch",
+      "type": "meal",
+      "date": "2026-06-12",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-12-dinner",
+      "type": "meal",
+      "date": "2026-06-12",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-13-breakfast",
+      "type": "meal",
+      "date": "2026-06-13",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-13-1",
+      "type": "procedure",
+      "date": "2026-06-13",
+      "start": "08:30",
+      "end": "08:50",
+      "title": "IMOOVE",
+      "place": "LDB-Fyzioterapie 4"
+    },
+    {
+      "id": "proc-2026-06-13-2",
+      "type": "procedure",
+      "date": "2026-06-13",
+      "start": "10:00",
+      "end": "10:20",
+      "title": "Vířivka dolní končetiny",
+      "place": "LDB-Vodoléčba"
+    },
+    {
+      "id": "proc-2026-06-13-3",
+      "type": "procedure",
+      "date": "2026-06-13",
+      "start": "12:10",
+      "end": "12:30",
+      "title": "Ultrazvuk",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "meal-2026-06-13-lunch",
+      "type": "meal",
+      "date": "2026-06-13",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-13-dinner",
+      "type": "meal",
+      "date": "2026-06-13",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-14-breakfast",
+      "type": "meal",
+      "date": "2026-06-14",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-14-lunch",
+      "type": "meal",
+      "date": "2026-06-14",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-14-dinner",
+      "type": "meal",
+      "date": "2026-06-14",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-15-breakfast",
+      "type": "meal",
+      "date": "2026-06-15",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-15-1",
+      "type": "procedure",
+      "date": "2026-06-15",
+      "start": "08:15",
+      "end": "08:45",
+      "title": "Skupinové cvičení",
+      "place": "Tělocvična"
+    },
+    {
+      "id": "proc-2026-06-15-2",
+      "type": "procedure",
+      "date": "2026-06-15",
+      "start": "08:45",
+      "end": "09:15",
+      "title": "Bazén",
+      "place": "LDB-Bazén"
+    },
+    {
+      "id": "proc-2026-06-15-3",
+      "type": "procedure",
+      "date": "2026-06-15",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "Slatinná koupel",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "meal-2026-06-15-lunch",
+      "type": "meal",
+      "date": "2026-06-15",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-15-dinner",
+      "type": "meal",
+      "date": "2026-06-15",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-16-breakfast",
+      "type": "meal",
+      "date": "2026-06-16",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-16-1",
+      "type": "procedure",
+      "date": "2026-06-16",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "Slatinná koupel",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "proc-2026-06-16-2",
+      "type": "procedure",
+      "date": "2026-06-16",
+      "start": "09:30",
+      "end": "09:50",
+      "title": "Klasická masáž částečná",
+      "place": "LDB-Slatina 1"
+    },
+    {
+      "id": "proc-2026-06-16-3",
+      "type": "procedure",
+      "date": "2026-06-16",
+      "start": "12:00",
+      "end": "12:20",
+      "title": "Vysokoindukční magnet",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "meal-2026-06-16-lunch",
+      "type": "meal",
+      "date": "2026-06-16",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-16-dinner",
+      "type": "meal",
+      "date": "2026-06-16",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-17-breakfast",
+      "type": "meal",
+      "date": "2026-06-17",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-17-1",
+      "type": "procedure",
+      "date": "2026-06-17",
+      "start": "09:00",
+      "end": "09:20",
+      "title": "Vysokoindukční magnet",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "proc-2026-06-17-2",
+      "type": "procedure",
+      "date": "2026-06-17",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "Parafínový zábal",
+      "place": "LDB-Parafín"
+    },
+    {
+      "id": "proc-2026-06-17-3",
+      "type": "procedure",
+      "date": "2026-06-17",
+      "start": "12:15",
+      "end": "12:35",
+      "title": "IMOOVE",
+      "place": "LDB-Fyzioterapie 4"
+    },
+    {
+      "id": "meal-2026-06-17-lunch",
+      "type": "meal",
+      "date": "2026-06-17",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-17-dinner",
+      "type": "meal",
+      "date": "2026-06-17",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-18-breakfast",
+      "type": "meal",
+      "date": "2026-06-18",
+      "start": "07:00",
+      "end": "07:45",
+      "title": "Snídaně",
+      "place": "Jídelna"
+    },
+    {
+      "id": "proc-2026-06-18-1",
+      "type": "procedure",
+      "date": "2026-06-18",
+      "start": "08:05",
+      "end": "08:25",
+      "title": "IMOOVE",
+      "place": "LDB-Fyzioterapie 4"
+    },
+    {
+      "id": "proc-2026-06-18-2",
+      "type": "procedure",
+      "date": "2026-06-18",
+      "start": "08:40",
+      "end": "09:00",
+      "title": "Vířivka dolní končetiny",
+      "place": "LDB-Vodoléčba"
+    },
+    {
+      "id": "proc-2026-06-18-3",
+      "type": "procedure",
+      "date": "2026-06-18",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "Ultrazvuk",
+      "place": "LDB-Elektroléčba"
+    },
+    {
+      "id": "meal-2026-06-18-lunch",
+      "type": "meal",
+      "date": "2026-06-18",
+      "start": "11:00",
+      "end": "11:45",
+      "title": "Oběd",
+      "place": "Jídelna"
+    },
+    {
+      "id": "meal-2026-06-18-dinner",
+      "type": "meal",
+      "date": "2026-06-18",
+      "start": "17:00",
+      "end": "17:45",
+      "title": "Večeře",
+      "place": "Jídelna"
+    }
+  ]
+}
