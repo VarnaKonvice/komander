@@ -1,0 +1,23 @@
+/* v31: keep nav hidden on open and restore white meal/place symbols in current card */
+.now2 .detail .mealIcon,
+.now2 .detail .placeIcon{
+  display:inline!important;
+  color:#fff!important;
+  font-size:24px!important;
+  line-height:1!important;
+  margin-right:7px;
+  vertical-align:-1px;
+}
+.now2 .detail small{
+  color:#fff;
+}
+.freeNow .detail small,
+.mealNow .detail small,
+.procNow .detail small{
+  color:#fff;
+}
+body.nav-hidden nav{
+  transform:translateY(112%);
+  opacity:.02;
+  pointer-events:none;
+}
