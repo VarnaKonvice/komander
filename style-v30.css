@@ -1,0 +1,78 @@
+/* v30 readability layer: bigger, cleaner Právě teď cards for small iPhone screen */
+.now2{
+  min-height:280px;
+  grid-template-columns:minmax(0,1fr) 90px;
+  gap:14px 16px;
+}
+.now2 .k{
+  font-size:17px;
+  letter-spacing:.12em;
+}
+.now2 .pill{
+  font-size:13px;
+  padding:7px 12px;
+}
+.cmd{
+  font-size:34px;
+  line-height:1.04;
+  margin-top:10px;
+}
+.big{
+  font-size:88px;
+  line-height:.86;
+}
+.big small{
+  font-size:28px;
+  line-height:1.05;
+  margin-top:10px;
+}
+.now2 .ring{
+  width:86px;
+  height:86px;
+  font-size:25px;
+}
+.now2 .ring:before{
+  inset:11px;
+}
+.now2 .rlabel{
+  font-size:12px;
+}
+.detail{
+  margin-top:12px;
+  padding:15px;
+  border-radius:22px;
+}
+.detail span{
+  font-size:17px;
+  line-height:1.2;
+  letter-spacing:.06em;
+}
+.detail b{
+  font-size:31px;
+  line-height:1.04;
+  margin-top:7px;
+}
+.detail small{
+  font-size:23px;
+  line-height:1.15;
+  margin-top:9px;
+  font-weight:950;
+}
+.now2 .detail .mealIcon,
+.now2 .detail .placeIcon{
+  display:none;
+}
+.freeNow .detail,
+.mealNow .detail,
+.procNow .detail{
+  background:#ffffff18;
+}
+@media (max-width:380px){
+  .now2{grid-template-columns:minmax(0,1fr) 82px;min-height:270px}
+  .cmd{font-size:31px}
+  .big{font-size:78px}
+  .big small{font-size:25px}
+  .detail b{font-size:28px}
+  .detail small{font-size:21px}
+  .now2 .ring{width:80px;height:80px;font-size:23px}
+}
