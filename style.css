@@ -1,0 +1,20 @@
+@import url('./style-v29.css');
+@import url('./style-v30.css');
+@import url('./style-v31.css');
+
+/* Finální pravidlo: spodní navigace zůstává viditelná a klikatelná. */
+body.nav-hidden nav,
+nav{
+  transform:none!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+.now2 .detail .mealIcon,
+.now2 .detail .placeIcon{
+  display:inline!important;
+  color:#fff!important;
+  font-size:24px!important;
+  line-height:1!important;
+  margin-right:7px;
+  vertical-align:-1px;
+}
