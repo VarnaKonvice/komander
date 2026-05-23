@@ -1,0 +1,38 @@
+name: Patch current card larger spacing v19
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch current card height and lower content
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('.now{min-height:208px}', '.now{min-height:260px}')
+          s = s.replace('.place{font-size:23px;color:#e2e8f0;margin-top:12px}', '.place{font-size:23px;color:#e2e8f0;margin-top:24px}')
+          s = s.replace("var VERSION='v18-current-card-spacing'", "var VERSION='v19-current-card-taller'")
+          s = s.replace("var VERSION='v17-ring-polish'", "var VERSION='v19-current-card-taller'")
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit patch
+        run: |
+          if git diff --quiet index.html; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "make current card taller"
+          git push
