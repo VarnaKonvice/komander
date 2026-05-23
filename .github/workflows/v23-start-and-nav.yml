@@ -1,0 +1,23 @@
+name: v23 start and nav autohide
+on:
+  push:
+    branches: [ main ]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          perl -0pi -e "s/nav\{position:fixed;left:0;right:0;bottom:0;background:#020617f7;border-top:1px solid #1e293b;padding:9px 8px calc\(9px \+ env\(safe-area-inset-bottom\)\);z-index:5\}/nav{position:fixed;left:0;right:0;bottom:0;background:#020617f7;border-top:1px solid #1e293b;padding:9px 8px calc(9px + env(safe-area-inset-bottom));z-index:5;transition:transform .22s ease,opacity .22s ease}body.nav-hidden nav{transform:translateY(105%);opacity:.02}/g" index.html
+          perl -0pi -e "s/var VERSION='v[0-9][^']*'/var VERSION='v23-start-summary-nav-hide'/g" index.html
+          perl -0pi -e "s/function render\(\)\{try\{/function jumpToTodaySummary(){try{if(sessionStorage.getItem('lc_started_at_summary'))return;sessionStorage.setItem('lc_started_at_summary','1');setTimeout(function(){var c=document.querySelector('.content .card');if(c)c.scrollIntoView({block:'start'});document.body.classList.add('nav-hidden')},350)}catch(e){}}function setupAutoNav(){try{if(window.__lcAutoNav)return;window.__lcAutoNav=1;var timer=null;function show(){document.body.classList.remove('nav-hidden');clearTimeout(timer);timer=setTimeout(function(){if(window.scrollY>40)document.body.classList.add('nav-hidden')},1800)}window.addEventListener('scroll',show,{passive:true});window.addEventListener('touchmove',show,{passive:true});window.addEventListener('click',function(){document.body.classList.remove('nav-hidden')},{passive:true})}catch(e){}}function render(){try{/g" index.html
+          perl -0pi -e "s/raw=JSON.stringify\(data,null,2\);render\(\);setInterval\(render,30000\);/raw=JSON.stringify(data,null,2);render();setupAutoNav();jumpToTodaySummary();setInterval(render,30000);/g" index.html
+      - run: |
+          if git diff --quiet index.html; then exit 0; fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add index.html
+          git commit -m "start at today summary and autohide nav"
+          git push
