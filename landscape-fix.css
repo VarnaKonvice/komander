@@ -1,4 +1,4 @@
-/* v41 final compact overrides */
+/* v42 final compact overrides */
 
 .item .mini{
   background:rgba(255,255,255,.42)!important;
@@ -10,10 +10,11 @@
 .item .mini span{display:flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;white-space:nowrap!important;line-height:1!important}
 
 @media (orientation:portrait){
-  .item{grid-template-columns:minmax(0,1fr) 82px!important}
-  .itPlace{font-size:20px!important;gap:6px!important;white-space:nowrap!important;overflow-wrap:normal!important}
-  .mini{padding:7px!important}
-  .mini b{font-size:24px!important}
+  .item{grid-template-columns:minmax(0,1fr) 94px!important}
+  .itPlace{font-size:19px!important;gap:6px!important;white-space:nowrap!important;overflow-wrap:normal!important}
+  .mini{padding:8px 7px!important}
+  .mini span{font-size:14px!important}
+  .mini b{font-size:23px!important}
   .tag{font-size:10px!important;padding:4px 8px!important}
 }
 
