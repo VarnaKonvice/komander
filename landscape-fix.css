@@ -1,0 +1,13 @@
+@media (orientation:landscape) and (max-height:520px){
+  .app{max-width:none!important;width:100%!important;padding-bottom:88px!important}
+  .head{padding:calc(4px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 8px calc(16px + env(safe-area-inset-left))!important}
+  .content{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:10px!important;padding:10px calc(16px + env(safe-area-inset-right)) 10px calc(16px + env(safe-area-inset-left))!important}
+  .content>section,.content>.list{width:100%!important;min-width:0!important}
+  .card{border-radius:22px!important;padding:12px!important}
+  .nowGrid{grid-template-columns:minmax(0,1fr) 70px!important;gap:10px!important;margin-top:12px!important}
+  .nowBig.long{font-size:34px!important;letter-spacing:-.02em!important}
+  .nowDetail{margin-top:10px!important;padding:10px!important}
+  .next{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(190px,260px)!important;grid-template-areas:'k pill' 'time leave' 'title leave' 'place leave'!important;column-gap:12px!important;align-items:center!important}
+  .next .k{grid-area:k!important;padding-right:0!important;font-size:14px!important}.next .pill{grid-area:pill!important;position:static!important;justify-self:end!important}.nextTime{grid-area:time!important;font-size:46px!important;margin-top:6px!important}.nextTitle{grid-area:title!important;font-size:28px!important;margin-top:3px!important}.nextPlace{grid-area:place!important;font-size:18px!important;margin-top:6px!important}.leaveGrid{grid-area:leave!important;grid-template-columns:minmax(0,1fr) 58px!important;gap:8px!important;margin-top:0!important}
+  .list{display:flex!important;flex-direction:column!important;grid-column:auto!important;gap:10px!important}.item{grid-template-columns:minmax(0,1fr) 82px!important}.itPlace{font-size:18px!important;white-space:normal!important;overflow-wrap:anywhere!important}
+}
