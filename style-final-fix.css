@@ -1,0 +1,12 @@
+/* Final stabilizer: navigace musí být při testování vždy viditelná a klikatelná. */
+body.nav-hidden nav,
+body.lk-nav-closed nav,
+nav{
+  transform:none!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  visibility:visible!important;
+}
+.app{
+  padding-bottom:132px!important;
+}
