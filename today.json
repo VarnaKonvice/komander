@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
   "source": "lazensky-commander-generated-from-28dni",
-  "generatedAt": "2026-05-30T06:40:03+02:00",
-  "date": "2026-05-30",
+  "generatedAt": "2026-05-31T07:09:45+02:00",
+  "date": "2026-05-31",
   "timezone": "Europe/Prague",
   "prefix": "LKA:",
   "items": [
     {
-      "id": "lk-2026-05-30-00",
-      "date": "2026-05-30",
+      "id": "lk-2026-05-31-00",
+      "date": "2026-05-31",
       "type": "meal",
       "title": "Snídaně",
       "place": "Jídelna",
@@ -16,38 +16,12 @@
       "end": "07:45",
       "leaveTime": "06:45",
       "alarmTime": "06:40",
-      "alarmDateTime": "2026-05-30T06:40:00",
+      "alarmDateTime": "2026-05-31T06:40:00",
       "label": "LKA: Snídaně – Jídelna"
     },
     {
-      "id": "lk-2026-05-30-01",
-      "date": "2026-05-30",
-      "type": "procedure",
-      "title": "Ultrazvuk",
-      "place": "LDB-Elektroléčba",
-      "start": "09:00",
-      "end": "09:20",
-      "leaveTime": "08:45",
-      "alarmTime": "08:40",
-      "alarmDateTime": "2026-05-30T08:40:00",
-      "label": "LKA: Ultrazvuk – LDB-Elektroléčba"
-    },
-    {
-      "id": "lk-2026-05-30-02",
-      "date": "2026-05-30",
-      "type": "procedure",
-      "title": "Fyzioterapie individuální",
-      "place": "LDB-Fyzioterapie 3",
-      "start": "10:30",
-      "end": "11:00",
-      "leaveTime": "10:15",
-      "alarmTime": "10:10",
-      "alarmDateTime": "2026-05-30T10:10:00",
-      "label": "LKA: Fyzioterapie individuální – LDB-Fyzioterapie 3"
-    },
-    {
-      "id": "lk-2026-05-30-03",
-      "date": "2026-05-30",
+      "id": "lk-2026-05-31-01",
+      "date": "2026-05-31",
       "type": "meal",
       "title": "Oběd",
       "place": "Jídelna",
@@ -55,25 +29,12 @@
       "end": "11:45",
       "leaveTime": "10:45",
       "alarmTime": "10:40",
-      "alarmDateTime": "2026-05-30T10:40:00",
+      "alarmDateTime": "2026-05-31T10:40:00",
       "label": "LKA: Oběd – Jídelna"
     },
     {
-      "id": "lk-2026-05-30-04",
-      "date": "2026-05-30",
-      "type": "procedure",
-      "title": "Skupinové cvičení",
-      "place": "Tělocvična",
-      "start": "12:15",
-      "end": "12:45",
-      "leaveTime": "12:00",
-      "alarmTime": "11:55",
-      "alarmDateTime": "2026-05-30T11:55:00",
-      "label": "LKA: Skupinové cvičení – Tělocvična"
-    },
-    {
-      "id": "lk-2026-05-30-05",
-      "date": "2026-05-30",
+      "id": "lk-2026-05-31-02",
+      "date": "2026-05-31",
       "type": "meal",
       "title": "Večeře",
       "place": "Jídelna",
@@ -81,7 +42,7 @@
       "end": "17:45",
       "leaveTime": "16:45",
       "alarmTime": "16:40",
-      "alarmDateTime": "2026-05-30T16:40:00",
+      "alarmDateTime": "2026-05-31T16:40:00",
       "label": "LKA: Večeře – Jídelna"
     }
   ],
