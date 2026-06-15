@@ -1,14 +1,14 @@
 {
   "schemaVersion": 3,
   "source": "lazensky-commander-generated-from-28dni",
-  "generatedAt": "2026-06-14T07:20:47+02:00",
-  "date": "2026-06-14",
+  "generatedAt": "2026-06-15T08:09:47+02:00",
+  "date": "2026-06-15",
   "timezone": "Europe/Prague",
   "prefix": "LKA:",
   "items": [
     {
-      "id": "lk-2026-06-14-00",
-      "date": "2026-06-14",
+      "id": "lk-2026-06-15-00",
+      "date": "2026-06-15",
       "type": "meal",
       "title": "Snídaně",
       "place": "Jídelna",
@@ -16,12 +16,51 @@
       "end": "07:45",
       "leaveTime": "06:45",
       "alarmTime": "06:40",
-      "alarmDateTime": "2026-06-14T06:40:00",
+      "alarmDateTime": "2026-06-15T06:40:00",
       "label": "LKA: Snídaně – Jídelna"
     },
     {
-      "id": "lk-2026-06-14-01",
-      "date": "2026-06-14",
+      "id": "lk-2026-06-15-01",
+      "date": "2026-06-15",
+      "type": "procedure",
+      "title": "Skupinové cvičení",
+      "place": "Tělocvična",
+      "start": "08:15",
+      "end": "08:45",
+      "leaveTime": "08:00",
+      "alarmTime": "07:55",
+      "alarmDateTime": "2026-06-15T07:55:00",
+      "label": "LKA: Skupinové cvičení – Tělocvična"
+    },
+    {
+      "id": "lk-2026-06-15-02",
+      "date": "2026-06-15",
+      "type": "procedure",
+      "title": "Bazén",
+      "place": "LDB-Bazén",
+      "start": "08:45",
+      "end": "09:15",
+      "leaveTime": "08:30",
+      "alarmTime": "08:25",
+      "alarmDateTime": "2026-06-15T08:25:00",
+      "label": "LKA: Bazén – LDB-Bazén"
+    },
+    {
+      "id": "lk-2026-06-15-03",
+      "date": "2026-06-15",
+      "type": "procedure",
+      "title": "Slatinná koupel",
+      "place": "LDB-Slatina 1",
+      "start": "10:30",
+      "end": "10:50",
+      "leaveTime": "10:15",
+      "alarmTime": "10:10",
+      "alarmDateTime": "2026-06-15T10:10:00",
+      "label": "LKA: Slatinná koupel – LDB-Slatina 1"
+    },
+    {
+      "id": "lk-2026-06-15-04",
+      "date": "2026-06-15",
       "type": "meal",
       "title": "Oběd",
       "place": "Jídelna",
@@ -29,12 +68,12 @@
       "end": "11:45",
       "leaveTime": "10:45",
       "alarmTime": "10:40",
-      "alarmDateTime": "2026-06-14T10:40:00",
+      "alarmDateTime": "2026-06-15T10:40:00",
       "label": "LKA: Oběd – Jídelna"
     },
     {
-      "id": "lk-2026-06-14-02",
-      "date": "2026-06-14",
+      "id": "lk-2026-06-15-05",
+      "date": "2026-06-15",
       "type": "meal",
       "title": "Večeře",
       "place": "Jídelna",
@@ -42,7 +81,7 @@
       "end": "17:45",
       "leaveTime": "16:45",
       "alarmTime": "16:40",
-      "alarmDateTime": "2026-06-14T16:40:00",
+      "alarmDateTime": "2026-06-15T16:40:00",
       "label": "LKA: Večeře – Jídelna"
     }
   ],
