@@ -1,10 +1,10 @@
 {
   "schemaVersion": 3,
-  "source": "lazensky-commander-generated-from-28dni",
-  "generatedAt": "2026-08-14T05:13:10+02:00",
-  "date": "2026-08-14",
+  "source": "lazensky-commander-empty-schedule",
+  "generatedAt": null,
+  "date": null,
   "timezone": "Europe/Prague",
   "prefix": "LKA:",
   "items": [],
-  "note": "Generated from lazensky-import-28dni.json for iPhone Shortcuts alarms."
+  "note": "No public schedule data is included."
 }
