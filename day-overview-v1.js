@@ -359,44 +359,45 @@
     var main = document.querySelector('main.content');
     if(!main || main.querySelector('[data-lk-stay-view="1"]')) return;
     var topStats = main.querySelector('.topstats');
-    if(!topStats) return;
-    var sections = Array.prototype.slice.call(main.children);
+    var cards = main.querySelectorAll('.card');
+    if(!topStats || cards.length < 2) return;
+    var infoGrid = cards[0].querySelector('.infoGrid');
+    var procedureList = cards[1].querySelector('.list');
+    if(!infoGrid || !procedureList) return;
+    var metrics = Array.prototype.map.call(topStats.children, function(tile){
+      return {
+        value: (tile.querySelector('b') || {}).textContent || '—',
+        detail: (tile.querySelector('p') || {}).textContent || ''
+      };
+    });
     var shell = document.createElement('section');
     var header = document.createElement('header');
     var status = document.createElement('section');
-    var statusHeader = document.createElement('div');
-    shell.className = 'lkStayHero';
+    var info = document.createElement('section');
+    var procedures = document.createElement('section');
+    shell.className = 'lkStayHero lkParentCard';
     shell.dataset.lkStayView = '1';
     header.className = 'lkStayHeader';
     header.innerHTML = '<div class="lkDayK">Souhrn pobytu</div><h1>Pobyt</h1>';
-    status.className = 'lkStaySection lkSectionCard';
-    statusHeader.className = 'lkSectionHeader';
-    statusHeader.innerHTML = '<h2>Stav pobytu</h2>';
-    main.insertBefore(shell, sections[0]);
+    status.className = 'lkStaySection lkSectionCard lkStayStatus';
+    status.innerHTML = '<div class="lkSectionHeader"><h2>Stav pobytu</h2></div><div class="lkStayMetrics">' +
+      '<section class="lkStayMetric lkTileCard lkStayMetricProcedure"><div class="lkTileHeader"><i class="lkBadge">Procedury</i></div><b>' +
+      escapeHtml(metrics[0] && metrics[0].value) + '</b><p>' + escapeHtml(metrics[0] && metrics[0].detail) + '</p></section>' +
+      '<section class="lkStayMetric lkTileCard"><div class="lkTileHeader"><i class="lkBadge">Dny</i></div><b>' +
+      escapeHtml(metrics[1] && metrics[1].value) + '</b><p>' + escapeHtml(metrics[1] && metrics[1].detail) + '</p></section></div>';
+    info.className = 'lkStaySection lkSectionCard lkStayInfoSection';
+    info.innerHTML = '<div class="lkSectionHeader"><h2>Informace o pobytu</h2></div>';
+    procedures.className = 'lkStaySection lkSectionCard lkStayProcedureSection';
+    procedures.innerHTML = '<div class="lkSectionHeader"><h2>Souhrn procedur</h2><i class="lkBadge">Procedury</i></div>';
+    info.appendChild(infoGrid);
+    procedureList.classList.add('lkProcedureList');
+    procedures.appendChild(procedureList);
+    main.innerHTML = '';
+    main.appendChild(shell);
     shell.appendChild(header);
-    status.appendChild(statusHeader);
-    status.appendChild(topStats);
     shell.appendChild(status);
-    sections.filter(function(section){ return section !== topStats; }).forEach(function(section){
-      section.classList.add('lkStaySection', 'lkSectionCard');
-      shell.appendChild(section);
-    });
-    Array.prototype.forEach.call(topStats.children, function(tile, index){
-      var label = tile.querySelector('span');
-      if(!label) return;
-      var tileHeader = document.createElement('div');
-      tileHeader.className = 'lkTileHeader';
-      tile.insertBefore(tileHeader, label);
-      tileHeader.appendChild(label);
-      tileHeader.insertAdjacentHTML('beforeend', '<i class="lkBadge">' + (index === 0 ? 'Procedury' : 'Dny') + '</i>');
-    });
-    var procedureSummary = shell.querySelector('.card:last-child h2');
-    if(procedureSummary){
-      procedureSummary.classList.add('lkStaySectionTitle');
-      procedureSummary.insertAdjacentHTML('beforeend', '<i class="lkBadge">Procedury</i>');
-    }
-    var stayInfo = shell.querySelector('.card h2');
-    if(stayInfo && stayInfo !== procedureSummary) stayInfo.classList.add('lkStaySectionTitle');
+    shell.appendChild(info);
+    shell.appendChild(procedures);
     main.classList.add('lkStayView');
   }
   function enhanceImportView(){
@@ -404,32 +405,36 @@
     if(!main || main.querySelector('[data-lk-import-view="1"]')) return;
     var exportHero = main.querySelector('.importHero');
     var advanced = main.querySelector('.importAdvanced');
+    var status = main.querySelector('.importStatus');
     var meals = main.querySelector('#expMeals');
     var procedures = main.querySelector('#expProcs');
-    if(!exportHero || !advanced || !meals || !procedures) return;
+    var advancedDetails = advanced && advanced.querySelector('details');
+    if(!exportHero || !advanced || !status || !advancedDetails || !meals || !procedures) return;
     var fallback = document.createElement('details');
     fallback.className = 'lkIcsFallback';
     fallback.dataset.lkIcsFallback = '1';
     fallback.innerHTML = '<summary>Kalendářové soubory</summary><p>Záložní export pro ruční práci s kalendářem.</p>';
     fallback.appendChild(meals);
     fallback.appendChild(procedures);
-    advanced.appendChild(fallback);
-    exportHero.remove();
-    var sections = Array.prototype.slice.call(main.children);
     var shell = document.createElement('section');
     var header = document.createElement('header');
-    shell.className = 'lkImportHero';
+    var technical = document.createElement('section');
+    shell.className = 'lkImportHero lkParentCard';
     shell.dataset.lkImportView = '1';
     header.className = 'lkImportHeader';
     header.innerHTML = '<div class="lkDayK">Import / rozpis</div><h1>Rozpis pobytu</h1>';
-    main.insertBefore(shell, sections[0]);
+    status.className = 'lkImportSection lkSectionCard lkImportStatusSection';
+    technical.className = 'lkImportSection lkSectionCard lkImportTechnicalSection';
+    technical.innerHTML = '<div class="lkSectionHeader"><h2>Technický import</h2></div>';
+    advancedDetails.className = 'lkImportControl';
+    fallback.classList.add('lkImportControl');
+    technical.appendChild(advancedDetails);
+    technical.appendChild(fallback);
+    main.innerHTML = '';
+    main.appendChild(shell);
     shell.appendChild(header);
-    sections.forEach(function(section){
-      section.classList.add('lkImportSection', 'lkSectionCard');
-      var title = section.querySelector('h2');
-      if(title) title.classList.add('lkImportSectionTitle');
-      shell.appendChild(section);
-    });
+    shell.appendChild(status);
+    shell.appendChild(technical);
     main.classList.add('lkImportView');
   }
   function renderDayIdentity(day, today){

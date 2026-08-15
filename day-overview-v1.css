@@ -16,6 +16,10 @@
   --lk-teal:#0e7490;
   --lk-teal-text:#ecfeff;
 }
+/* Safe-area values belong to the app frame, not to individual screens. */
+.app{
+  padding-bottom:calc(112px + env(safe-area-inset-bottom))!important;
+}
 /* Shared hierarchy: parent card -> section card -> semantic tile -> badge -> content. */
 .lkParentCard{
   background:var(--lk-surface)!important;
@@ -54,7 +58,11 @@
   line-height:1.25!important;
 }
 .head{
-  padding:calc(4px + env(safe-area-inset-top)) 16px 8px!important;
+  padding:
+    calc(4px + env(safe-area-inset-top))
+    max(16px, env(safe-area-inset-right))
+    8px
+    max(16px, env(safe-area-inset-left))!important;
   border-radius:0 0 20px 20px!important;
 }
 .top{ min-height:20px!important; }
@@ -71,8 +79,19 @@
   letter-spacing:0!important;
 }
 .content{
-  padding:12px 14px!important;
+  padding:
+    12px
+    max(14px, env(safe-area-inset-right))
+    12px
+    max(14px, env(safe-area-inset-left))!important;
   gap:12px!important;
+}
+nav{
+  padding:
+    9px
+    max(8px, env(safe-area-inset-right))
+    calc(9px + env(safe-area-inset-bottom))
+    max(8px, env(safe-area-inset-left))!important;
 }
 nav button.active{
   background:var(--lk-teal)!important;
@@ -507,20 +526,20 @@ nav button.active{
 .lkStayHero{
   display:flex!important;
   flex-direction:column!important;
-  gap:12px!important;
+  gap:8px!important;
   background:var(--lk-surface)!important;
   border:1px solid var(--lk-border)!important;
   border-radius:var(--lk-radius-parent)!important;
-  padding:var(--lk-space-parent)!important;
+  padding:14px!important;
 }
 .lkStayHeader{
   display:flex!important;
   flex-direction:column!important;
-  gap:6px!important;
+  gap:4px!important;
 }
 .lkStayHeader h1{
   margin:0!important;
-  font-size:27px!important;
+  font-size:24px!important;
   line-height:1.08!important;
   letter-spacing:0!important;
 }
@@ -532,14 +551,14 @@ nav button.active{
 .lkStaySection{
   display:flex!important;
   flex-direction:column!important;
-  gap:12px!important;
+  gap:8px!important;
 }
 .lkStayView .topstat{
   min-width:0!important;
   border:1px solid var(--lk-border)!important;
   border-radius:var(--lk-radius-child)!important;
-  padding:var(--lk-space-child)!important;
-  min-height:112px!important;
+  padding:11px!important;
+  min-height:96px!important;
   display:flex!important;
   flex-direction:column!important;
   justify-content:space-between!important;
@@ -564,6 +583,9 @@ nav button.active{
 .lkStayHero .topstat .lkTileHeader span{
   margin:0!important;
 }
+.lkStayView .topstat:first-child .lkTileHeader span{
+  display:none!important;
+}
 .lkStayHero .topstat .lkBadge{
   align-self:auto!important;
   border-color:currentColor!important;
@@ -573,8 +595,8 @@ nav button.active{
   letter-spacing:.06em!important;
 }
 .lkStayView .topstat b{
-  margin-top:10px!important;
-  font-size:35px!important;
+  margin-top:6px!important;
+  font-size:31px!important;
   line-height:1!important;
   letter-spacing:0!important;
 }
@@ -583,7 +605,7 @@ nav button.active{
   background:var(--lk-surface-raised)!important;
   border:1px solid var(--lk-border)!important;
   border-radius:var(--lk-radius-child)!important;
-  padding:var(--lk-space-child)!important;
+  padding:12px!important;
 }
 .lkStaySectionTitle{
   display:flex!important;
@@ -592,11 +614,22 @@ nav button.active{
   gap:10px!important;
 }
 .lkStaySectionTitle .lkBadge{ color:#d8b4fe!important; }
+.lkStayHero .infoGrid{
+  gap:8px!important;
+}
 .lkStayView .info{
   background:var(--lk-surface)!important;
   border-color:var(--lk-border)!important;
-  border-radius:var(--lk-radius-child)!important;
-  padding:12px!important;
+  border-radius:14px!important;
+  padding:10px!important;
+}
+.lkStayView .info span{
+  font-size:11px!important;
+}
+.lkStayView .info b{
+  margin-top:5px!important;
+  font-size:17px!important;
+  line-height:1.16!important;
 }
 .lkStayHero>.card:last-child .info{
   background:var(--lk-procedure-surface)!important;
@@ -604,7 +637,7 @@ nav button.active{
   color:#f3e8ff!important;
 }
 .lkStayHero>.card:last-child .list{
-  gap:8px!important;
+  gap:6px!important;
 }
 .lkStayHero>.card:last-child .info>div{
   align-items:center!important;
@@ -612,21 +645,21 @@ nav button.active{
 .lkStayHero>.card:last-child .info b:last-child{
   color:#d8b4fe!important;
   white-space:nowrap!important;
-  font-size:18px!important;
+  font-size:16px!important;
 }
 /* Existing alarm remains functional but uses the neutral application frame. */
 .notice{
   border:1px solid #475569!important;
 }
 .lkIcsFallback{
-  margin-top:12px!important;
+  margin-top:8px!important;
   border:1px solid var(--lk-border)!important;
   border-radius:var(--lk-radius-child)!important;
-  padding:0 12px 12px!important;
+  padding:0 11px 11px!important;
   background:var(--lk-surface)!important;
 }
 .lkIcsFallback summary{
-  min-height:42px!important;
+  min-height:38px!important;
   display:flex!important;
   align-items:center!important;
   color:#cbd5e1!important;
@@ -644,20 +677,20 @@ nav button.active{
 .lkImportHero{
   display:flex!important;
   flex-direction:column!important;
-  gap:12px!important;
+  gap:8px!important;
   background:var(--lk-surface)!important;
   border:1px solid var(--lk-border)!important;
   border-radius:var(--lk-radius-parent)!important;
-  padding:var(--lk-space-parent)!important;
+  padding:14px!important;
 }
 .lkImportHeader{
   display:flex!important;
   flex-direction:column!important;
-  gap:6px!important;
+  gap:4px!important;
 }
 .lkImportHeader h1{
   margin:0!important;
-  font-size:27px!important;
+  font-size:24px!important;
   line-height:1.08!important;
   letter-spacing:0!important;
 }
@@ -666,12 +699,12 @@ nav button.active{
   background:var(--lk-surface-raised)!important;
   border:1px solid var(--lk-border)!important;
   border-radius:var(--lk-radius-child)!important;
-  padding:var(--lk-space-child)!important;
+  padding:12px!important;
 }
 .lkImportSection{
   display:flex!important;
   flex-direction:column!important;
-  gap:12px!important;
+  gap:8px!important;
 }
 .lkImportSectionTitle{
   margin:0!important;
@@ -689,23 +722,154 @@ nav button.active{
   background:var(--lk-surface)!important;
   border:1px solid var(--lk-border)!important;
   border-radius:var(--lk-radius-child)!important;
-  padding:11px!important;
+  padding:10px!important;
 }
-.lkImportHero .importAdvanced details{
-  margin-top:10px!important;
+.lkImportHero .importAdvanced > details:not(.lkIcsFallback){
+  margin-top:8px!important;
   border:1px solid var(--lk-border)!important;
   border-radius:var(--lk-radius-child)!important;
-  padding:0 12px 12px!important;
+  padding:0 11px 11px!important;
   background:var(--lk-surface)!important;
 }
-.lkImportHero .importAdvanced summary{
-  min-height:42px!important;
+.lkImportHero .importAdvanced > details:not(.lkIcsFallback) > summary{
+  min-height:38px!important;
   display:flex!important;
   align-items:center!important;
   cursor:pointer!important;
   color:#cbd5e1!important;
   font-size:13px!important;
   font-weight:900!important;
+}
+/* Final compact Pobyt and Import markup. These selectors target no legacy wrappers. */
+.lkStayStatus,
+.lkStayInfoSection,
+.lkStayProcedureSection,
+.lkImportStatusSection,
+.lkImportTechnicalSection{
+  padding:11px!important;
+}
+.lkStayMetrics{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.lkStayMetric{
+  display:flex!important;
+  flex-direction:column!important;
+  min-width:0!important;
+  min-height:82px!important;
+  padding:10px!important;
+  background:var(--lk-surface-raised)!important;
+  border-color:var(--lk-border)!important;
+  color:#f8fafc!important;
+}
+.lkStayMetricProcedure{
+  background:var(--lk-procedure-surface)!important;
+  border-color:var(--lk-procedure-border)!important;
+  color:#f3e8ff!important;
+}
+.lkStayMetric .lkTileHeader{
+  justify-content:flex-end!important;
+  min-height:20px!important;
+}
+.lkStayMetric .lkBadge{
+  color:inherit!important;
+  padding:4px 7px!important;
+  font-size:9px!important;
+}
+.lkStayMetric b{
+  margin-top:4px!important;
+  font-size:29px!important;
+  line-height:1!important;
+  letter-spacing:0!important;
+}
+.lkStayMetric p{
+  margin:4px 0 0!important;
+  color:#cbd5e1!important;
+  font-size:11px!important;
+  line-height:1.15!important;
+}
+.lkStayInfoSection .infoGrid{
+  gap:7px!important;
+}
+.lkStayInfoSection .info{
+  min-height:0!important;
+  padding:8px 9px!important;
+}
+.lkStayInfoSection .info span{
+  font-size:10px!important;
+}
+.lkStayInfoSection .info b{
+  margin-top:3px!important;
+  font-size:15px!important;
+  line-height:1.15!important;
+}
+.lkStayInfoSection .info.wide{
+  display:flex!important;
+  align-items:baseline!important;
+  gap:8px!important;
+  padding:8px 9px!important;
+}
+.lkStayInfoSection .info.wide b{
+  margin:0!important;
+  white-space:nowrap!important;
+}
+.lkProcedureList{
+  gap:5px!important;
+}
+.lkProcedureList .info{
+  padding:8px 9px!important;
+  background:var(--lk-procedure-surface)!important;
+  border-color:var(--lk-procedure-border)!important;
+}
+.lkProcedureList .info b{
+  margin:0!important;
+  font-size:15px!important;
+  line-height:1.15!important;
+}
+.lkProcedureList .info b:last-child{
+  font-size:15px!important;
+}
+.lkImportStatusSection h2{
+  margin:0!important;
+  font-size:21px!important;
+  line-height:1.1!important;
+  letter-spacing:0!important;
+}
+.lkImportStatusSection .importStats{
+  gap:7px!important;
+}
+.lkImportStatusSection .importStats>div{
+  padding:9px!important;
+}
+.lkImportTechnicalSection{
+  gap:8px!important;
+}
+.lkImportControl{
+  width:100%!important;
+  margin:0!important;
+  border:1px solid var(--lk-border)!important;
+  border-radius:var(--lk-radius-child)!important;
+  padding:0 10px 10px!important;
+  background:var(--lk-surface)!important;
+}
+.lkImportControl > summary{
+  min-height:40px!important;
+  display:flex!important;
+  align-items:center!important;
+  color:#cbd5e1!important;
+  cursor:pointer!important;
+  font-size:13px!important;
+  font-weight:900!important;
+}
+.lkImportControl > p{
+  margin:0 0 7px!important;
+  color:#94a3b8!important;
+  font-size:13px!important;
+  line-height:1.25!important;
+}
+.lkImportTechnicalSection .lkIcsFallback{
+  margin-top:0!important;
 }
 .lkWeekView{
   gap:12px!important;
@@ -767,6 +931,7 @@ nav button.active{
   .lkOverviewDetail{ padding:10px 13px 13px!important; }
 }
 @media (orientation:landscape) and (max-height:520px){
+  .app{ padding-bottom:calc(88px + env(safe-area-inset-bottom))!important; }
   .lkDayHero{ border-radius:20px!important; padding:13px!important; gap:10px!important; }
   .lkDayIdentity{ font-size:24px!important; }
   .lkDayMetric{ min-height:0!important; padding:11px!important; }
@@ -775,4 +940,84 @@ nav button.active{
   .lkTimelineRow{ border-radius:20px!important; padding:12px!important; }
   .lkTimelineTime{ font-size:28px!important; }
   .lkTimelineTitle{ font-size:21px!important; }
+}
+
+/* Portrait cards keep the badge on its own row before readable content. */
+@media (max-width:430px) and (orientation:portrait){
+  .lkDayMetric{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    align-content:start!important;
+  }
+  .lkDayMetric .lkBadge{
+    grid-row:1!important;
+    justify-self:end!important;
+    align-self:start!important;
+  }
+  .lkDayMetric b,
+  .lkDayMetric small{
+    min-width:0!important;
+    overflow-wrap:anywhere!important;
+  }
+  .lkNextTop{
+    align-items:start!important;
+  }
+  .lkNextTop>span{
+    min-width:0!important;
+    overflow-wrap:anywhere!important;
+  }
+  .lkNextTop .lkBadge{
+    flex:0 0 auto!important;
+  }
+  .lkNextTitle,
+  .lkNext small{
+    min-width:0!important;
+    overflow-wrap:anywhere!important;
+  }
+  .lkNext small,
+  .lkTimelinePlace{
+    flex-wrap:wrap!important;
+  }
+  .lkTimelineRow{
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-areas:
+      "badge"
+      "main"!important;
+    gap:8px!important;
+    align-items:start!important;
+  }
+  .lkTimelineRow>.lkBadge{
+    grid-area:badge!important;
+    justify-self:end!important;
+    align-self:start!important;
+  }
+  .lkTimelineMain{
+    grid-area:main!important;
+    min-width:0!important;
+  }
+  .lkTimelineTime{
+    display:flex!important;
+    align-items:baseline!important;
+    gap:4px!important;
+    min-width:0!important;
+  }
+  .lkTimelineTime strong{ flex:0 0 auto!important; }
+  .lkTimelineTime span{
+    flex:0 1 auto!important;
+    font-size:32px!important;
+    line-height:1!important;
+  }
+  .lkTimelineTitle,
+  .lkTimelinePlace{
+    min-width:0!important;
+    overflow-wrap:anywhere!important;
+  }
+  .lkOverviewDayHead h2{
+    min-width:0!important;
+    overflow-wrap:anywhere!important;
+  }
+}
+
+@media (max-width:349px) and (orientation:portrait){
+  .lkTimelineTime{ flex-wrap:wrap!important; row-gap:2px!important; }
 }
