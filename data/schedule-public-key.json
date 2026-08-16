@@ -1,0 +1,6 @@
+{
+  "format": "lazensky-commander-rsa-public-key",
+  "version": 1,
+  "algorithm": "RSA-OAEP-256",
+  "spki": "MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAwjDXEXOwKvgkCliqNpyOsNBqhZaWbFeI5HQyu0Ayulme1C7fhSaL4cuU6q/56FodhMMm0ZodeR9WU1f1/nwzRUjY93J7XSfGYFUqsFJ3iiCgz/AgkWnDnS8XmEGmwKHr5miV/a9APnXhAiujUqJctA14lNlDeF1TeJS/0WCFnWp1Sxlw4MWA6Mg/W6wp9rYRuMHvxogXIlwNtapZBlCo+0ES7xA9wVDDHzRksO/FRBjWFXcnfbmojs2AX4YKmtYxiKMuRAwLOCpkRAl6Arlei2FbodHgA01SOTre3gV4n8j31B3RVQsFYC8f37Cj5rnX15KWm+EaenZdCmVml6VNxoD5Cup8jp9vgD/9CBE9ywzTWjYzgNaTMG+E+NK8nkiD+hxauNCq5NUktwtVJJxeC4Pl4NLZpmPZ7TWwy2r5g93tmApyI8XJMWEZKEBH2H9hNggMN/MDgCBFINtgovnhbNBGk9YBNLTvhm/JPls5gN7G2t3nDMHdhfuscfHdha5lAgMBAAE="
+}

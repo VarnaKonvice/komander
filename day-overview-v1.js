@@ -73,7 +73,13 @@
 
   function readData(){
     var stored = null;
-    try{ stored = JSON.parse(localStorage.getItem(STORE) || 'null'); }catch(e){}
+    try{
+      if(window.LazenskySchedule && window.LazenskySchedule.getSchedule){
+        var schedule = window.LazenskySchedule.getSchedule();
+        if(schedule) stored = window.LazenskySchedule.toLegacySchedule(schedule);
+      }
+    }catch(e){}
+    if(!stored) try{ stored = JSON.parse(localStorage.getItem(STORE) || 'null'); }catch(e){}
     if(!stored || !Array.isArray(stored.items)) return null;
     var items = stored.items.map(function(item, index){
       return {
@@ -375,6 +381,7 @@
     var status = document.createElement('section');
     var info = document.createElement('section');
     var procedures = document.createElement('section');
+    var settings = null;
     shell.className = 'lkStayHero lkParentCard';
     shell.dataset.lkStayView = '1';
     header.className = 'lkStayHeader';
@@ -390,6 +397,14 @@
     procedures.className = 'lkStaySection lkSectionCard lkStayProcedureSection';
     procedures.innerHTML = '<div class="lkSectionHeader"><h2>Souhrn procedur</h2><i class="lkBadge">Procedury</i></div>';
     info.appendChild(infoGrid);
+    if(window.LazenskySchedule && window.LazenskySchedule.renderNotificationSettings){
+      var settingsHolder = document.createElement('div');
+      settingsHolder.innerHTML = window.LazenskySchedule.renderNotificationSettings();
+      settings = settingsHolder.firstElementChild;
+      if(settings){
+        window.LazenskySchedule.bindNotificationSettings(settings);
+      }
+    }
     procedureList.classList.add('lkProcedureList');
     procedures.appendChild(procedureList);
     main.innerHTML = '';
@@ -397,6 +412,7 @@
     shell.appendChild(header);
     shell.appendChild(status);
     shell.appendChild(info);
+    if(settings) shell.appendChild(settings);
     shell.appendChild(procedures);
     main.classList.add('lkStayView');
   }
@@ -430,6 +446,9 @@
     fallback.classList.add('lkImportControl');
     technical.appendChild(advancedDetails);
     technical.appendChild(fallback);
+    if(window.LazenskySchedule && window.LazenskySchedule.mountPrivateSync){
+      window.LazenskySchedule.mountPrivateSync(advancedDetails);
+    }
     main.innerHTML = '';
     main.appendChild(shell);
     shell.appendChild(header);
@@ -542,6 +561,11 @@
   new MutationObserver(function(){ window.requestAnimationFrame(sync); })
     .observe(document.body, { childList: true, subtree: true });
   window.addEventListener('storage', sync);
+  window.addEventListener('lazensky-schedule-change', function(){
+    lastUiState = '';
+    lastStaticState = '';
+    sync();
+  });
   window.addEventListener('load', sync);
   window.setInterval(sync, 30000);
   sync();
