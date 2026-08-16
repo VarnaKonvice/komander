@@ -96,6 +96,39 @@ export async function runPublicScheduleSuite(options) {
     const reloaded = createRuntime(source, shared);
     assert(reloaded.api.getSchedule().scheduleVersion === 5, 'Public schedule did not survive reload');
   });
+  await test('calendar contract: procedures target Procedury and meals target Jídlo', async function() {
+    const schedule = runtime.api.normalizeSchedule(productionSchedule);
+    const events = runtime.api.calendarContract(schedule);
+    const procedure = events.find(function(event) { return event.kind === 'procedure'; });
+    const meal = events.find(function(event) { return event.kind === 'meal'; });
+    assert(procedure.targetCalendar === 'Procedury', 'Procedure target calendar is incorrect');
+    assert(meal.targetCalendar === 'Jídlo', 'Meal target calendar is incorrect');
+  });
+  await test('calendar contract: stable identifiers produce deterministic duplicate-safe metadata', async function() {
+    const schedule = runtime.api.normalizeSchedule(productionSchedule);
+    const original = schedule.events.find(function(event) { return event.stableId === 'synthetic-0815-magnet'; });
+    const contract = runtime.api.calendarContract(schedule);
+    const originalContract = contract.find(function(event) { return event.stableId === original.stableId; });
+    const corrected = clone(schedule);
+    corrected.events.find(function(event) { return event.stableId === original.stableId; }).start = '08:25';
+    const correctedContract = runtime.api.calendarContract(corrected).find(function(event) { return event.stableId === original.stableId; });
+    const otherContract = contract.find(function(event) { return event.stableId !== original.stableId; });
+    assert(originalContract.syncKey === 'lc:'+original.stableId, 'syncKey is not deterministic');
+    assert(originalContract.descriptionMarker === '[LC:'+original.stableId+']', 'Description marker does not contain stableId');
+    assert(correctedContract.syncKey === originalContract.syncKey, 'Time correction changed syncKey');
+    assert(otherContract.syncKey !== originalContract.syncKey, 'Different stable IDs share syncKey');
+    assert(originalContract.managedBy === 'lazensky-commander', 'Managed-by marker is missing');
+  });
+  await test('calendar contract: timezone, lead time and source schedule are preserved', async function() {
+    const schedule = runtime.api.normalizeSchedule(productionSchedule);
+    const before = JSON.stringify(schedule);
+    const contract = runtime.api.calendarContract(schedule);
+    const bath = schedule.events.find(function(event) { return event.stableId === 'synthetic-0815-bath'; });
+    const bathContract = contract.find(function(event) { return event.stableId === bath.stableId; });
+    assert(contract.every(function(event) { return event.timezone === 'Europe/Prague'; }), 'Timezone is not Europe/Prague');
+    assert(bathContract.leadTimeMinutes === runtime.api.getEffectiveLeadTime(bath, schedule), 'Effective lead time changed');
+    assert(JSON.stringify(schedule) === before, 'calendarContract mutated the source schedule');
+  });
   await test('public feed: no private pairing system remains', async function() {
     const names = (await fs.readdir(root, { recursive: true })).filter(function(name) { return !name.split(path.sep).includes('.git'); });
     assert(!names.some(function(name) { return /private-schedule|schedule\.enc|schedule-public-key|device-pairing|\.pk8$|\.pem$|\.key$/i.test(name); }), 'Private pairing artifact remains in repository');
