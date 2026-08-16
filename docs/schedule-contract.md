@@ -34,6 +34,18 @@ Jediným zdrojem pravdy pro Commander a podklady pro Kalendář je veřejný sou
 
 Commander kontroluje soubor při startu, návratu do aplikace a obnovení internetu. Novější platný rozpis automaticky uloží; offline používá poslední úspěšně uloženou verzi.
 
+## LIVE STATE CONTRACT
+
+`computeLiveState(schedule, now)` je společná čistá specifikace pro web a budoucí Swift, ActivityKit, AlarmKit a Apple Watch vrstvu. Časy jsou místní časy rozpisu a předstih vždy vychází z `getEffectiveLeadTime()`.
+
+- `UPCOMING`: existuje další dnešní událost a `now < leaveAt`.
+- `LEAVE_NOW`: `leaveAt <= now < startAt`; je čas vyrazit.
+- `IN_PROGRESS`: `startAt <= now < endAt`; událost právě probíhá.
+- `DAY_DONE`: všechny dnešní události skončily; `nextEvent` případně ukazuje první budoucí událost.
+- `NO_SCHEDULE`: rozpis nebo aktuální čas nejsou použitelné.
+
+Na hranici `endAt` se hledá další událost. Po půlnoci se stav vyhodnocuje podle nového místního dne.
+
 ## Google Calendar sync
 
 Externí synchronizátor používá `calendarContract()` a pouze logické názvy kalendářů: `procedure` → `Procedury`, `meal` → `Jídlo`. Skutečná Google calendar ID nikdy nepatří do Commanderu ani do repozitáře.

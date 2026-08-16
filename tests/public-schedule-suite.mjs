@@ -96,6 +96,90 @@ export async function runPublicScheduleSuite(options) {
     const reloaded = createRuntime(source, shared);
     assert(reloaded.api.getSchedule().scheduleVersion === 5, 'Public schedule did not survive reload');
   });
+  await test('live state: no usable schedule returns NO_SCHEDULE', async function() {
+    const state = runtime.api.computeLiveState(null, '2026-08-15T09:00:00');
+    assert(state.state === 'NO_SCHEDULE', 'Missing schedule did not return NO_SCHEDULE');
+  });
+  await test('live state: UPCOMING uses the procedure lead time', async function() {
+    const state = runtime.api.computeLiveState(productionSchedule, '2026-08-15T09:20:00');
+    assert(state.state === 'UPCOMING', 'Expected UPCOMING before the bath leave time');
+    assert(state.event.stableId === 'synthetic-0815-bath', 'UPCOMING selected the wrong event');
+    assert(state.leadTimeMinutes === 30 && state.leaveAt === '2026-08-15T09:30:00', 'Procedure lead time was not applied');
+    assert(state.minutesUntilLeave === 10, 'UPCOMING countdown is incorrect');
+  });
+  await test('live state: leave and progress boundaries are exact', async function() {
+    const leave = runtime.api.computeLiveState(productionSchedule, '2026-08-15T09:30:00');
+    const between = runtime.api.computeLiveState(productionSchedule, '2026-08-15T09:45:00');
+    const start = runtime.api.computeLiveState(productionSchedule, '2026-08-15T10:00:00');
+    const during = runtime.api.computeLiveState(productionSchedule, '2026-08-15T10:10:00');
+    assert(leave.state === 'LEAVE_NOW' && leave.minutesUntilLeave === 0, 'leaveAt boundary is incorrect');
+    assert(between.state === 'LEAVE_NOW', 'Time between leaveAt and startAt is incorrect');
+    assert(start.state === 'IN_PROGRESS', 'startAt boundary is incorrect');
+    assert(during.state === 'IN_PROGRESS', 'Time during an event is incorrect');
+  });
+  await test('live state: end boundary searches the next event and completes the day', async function() {
+    const end = runtime.api.computeLiveState(productionSchedule, '2026-08-15T10:30:00');
+    const gap = runtime.api.computeLiveState(productionSchedule, '2026-08-15T10:40:00');
+    const done = runtime.api.computeLiveState(productionSchedule, '2026-08-15T18:00:00');
+    assert(end.state === 'UPCOMING' && end.event.stableId === 'synthetic-0815-lunch', 'endAt did not select the next event');
+    assert(gap.state === 'UPCOMING' && gap.event.stableId === 'synthetic-0815-lunch', 'Gap between events is incorrect');
+    assert(done.state === 'DAY_DONE', 'Time after the final event is not DAY_DONE');
+    assert(done.nextEvent.stableId === 'synthetic-0816-breakfast', 'DAY_DONE has the wrong next event');
+  });
+  await test('live state: a new day uses that day’s first event', async function() {
+    const state = runtime.api.computeLiveState(productionSchedule, '2026-08-16T07:00:00');
+    assert(state.state === 'UPCOMING' && state.event.stableId === 'synthetic-0816-breakfast', 'New day did not start from its first event');
+  });
+  await test('live state: meal lead time is preserved', async function() {
+    const before = runtime.api.computeLiveState(productionSchedule, '2026-08-15T07:10:00');
+    const leave = runtime.api.computeLiveState(productionSchedule, '2026-08-15T07:15:00');
+    assert(before.state === 'UPCOMING' && before.leadTimeMinutes === 15, 'Meal lead time was not applied');
+    assert(leave.state === 'LEAVE_NOW' && leave.event.stableId === 'synthetic-0815-breakfast', 'Meal leave boundary is incorrect');
+  });
+  await test('live state: local type override has the same priority as production lead time', async function() {
+    shared.localStorage.setItem('lazensky_commander_local_settings_v1', JSON.stringify({ procedureTypeOverrides: { 'Jodobromová koupel': 40 } }));
+    const state = runtime.api.computeLiveState(productionSchedule, '2026-08-15T09:19:00');
+    shared.localStorage.removeItem('lazensky_commander_local_settings_v1');
+    assert(state.state === 'UPCOMING' && state.leadTimeMinutes === 40, 'Local procedure override was ignored');
+    assert(state.leaveAt === '2026-08-15T09:20:00', 'Local procedure override calculated the wrong leave time');
+  });
+  await test('live state: schedule version is accepted without mutating its input', async function() {
+    const schedule = clone(productionSchedule);
+    schedule.scheduleVersion = 6;
+    const before = JSON.stringify(schedule);
+    const state = runtime.api.computeLiveState(schedule, '2026-08-15T09:20:00');
+    assert(state.state === 'UPCOMING', 'Newer scheduleVersion is not usable by the live engine');
+    assert(JSON.stringify(schedule) === before, 'Live engine mutated the input schedule');
+  });
+  await test('live UI: Today uses the production engine and refreshes without a page reload', async function() {
+    const overview = await fs.readFile(path.join(root, 'day-overview-v1.js'), 'utf8');
+    assert(overview.includes('window.LazenskySchedule.computeLiveState'), 'Today does not call the production live engine');
+    assert(overview.includes('renderLiveCard(data, day)'), 'Today does not render from the live engine data');
+    assert(overview.includes('window.setInterval(sync, 30000)'), 'Live state is not checked every 30 seconds');
+    assert(overview.includes("document.addEventListener('visibilitychange'"), 'Live state is not refreshed on foreground return');
+    assert(!overview.includes('liveFreeInfo('), 'An obsolete parallel live-state implementation remains');
+  });
+  await test('live UI: long names and locations have portrait-safe wrapping', async function() {
+    const overview = await fs.readFile(path.join(root, 'day-overview-v1.js'), 'utf8');
+    const css = await fs.readFile(path.join(root, 'day-overview-v1.css'), 'utf8');
+    const longEvent = { title: 'Komplexní fyzioterapeutická procedura s dlouhým názvem', location: 'Léčebný dům B, rehabilitační oddělení, místnost 214' };
+    assert(longEvent.title.length > 40 && longEvent.location.length > 40, 'Long-text fixture is not representative');
+    assert(overview.includes('lkLiveLocation') && overview.includes('lkLiveNextEvent'), 'Live markup has no wrapping targets for long data');
+    assert(css.includes('.lkLiveBlock .lkLiveLocation') && css.includes('overflow-wrap:anywhere!important'), 'Live location does not have a wrapping rule');
+    assert(css.includes('.lkLiveBlock .lkNextTop') && css.includes('grid-template-columns:minmax(0,1fr)!important'), 'Portrait live badge has no reserved row');
+  });
+  await test('live UI: portrait layout covers 320, 375, 390 and 430 px without changing landscape', async function() {
+    const css = await fs.readFile(path.join(root, 'day-overview-v1.css'), 'utf8');
+    const portraitStart = css.indexOf('@media (max-width:430px) and (orientation:portrait)');
+    const portraitEnd = css.indexOf('@media (max-width:349px) and (orientation:portrait)', portraitStart);
+    const portrait = css.slice(portraitStart, portraitEnd);
+    const landscapeStart = css.indexOf('@media (orientation:landscape)');
+    const landscape = css.slice(landscapeStart, portraitStart);
+    [320, 375, 390, 430].forEach(function(width) {
+      assert(width <= 430 && portrait.includes('.lkLiveBlock .lkNextTop'), 'Portrait live layout does not cover '+width+' px');
+    });
+    assert(!landscape.includes('.lkLiveBlock .lkNextTop'), 'Portrait live layout leaked into landscape');
+  });
   await test('calendar contract: procedures target Procedury and meals target Jídlo', async function() {
     const schedule = runtime.api.normalizeSchedule(productionSchedule);
     const events = runtime.api.calendarContract(schedule);

@@ -205,13 +205,6 @@
       durationLabel(window.end - window.start) + '</b><small>' + minutesToTime(window.start) + '-' +
       minutesToTime(window.end) + (summary.freeToDinner ? '' : ' · do ' + escapeHtml(window.before.title)) + '</small></div>';
   }
-  function liveFreeInfo(summary){
-    if(!summary.isToday || summary.current || !summary.previous || !summary.next) return null;
-    return {
-      duration: durationLabel(itemStart(summary.next) - summary.reference),
-      target: itemShortLabel(summary.next)
-    };
-  }
   function nextProcedureAfter(data, day){
     var reference = day === todayIso() ? currentMinute() : 0;
     return data.items.find(function(item){
@@ -234,24 +227,42 @@
       escapeHtml(item.title) + '</div><small><mark>' + itemIcon(item) + '</mark>' + escapeHtml(item.place || 'Místo bude upřesněno') +
       '</small></section>';
   }
-  function renderLiveCard(summary, data, day){
-    if(!summary.isToday) return '';
-    if(!summary.hasUpcomingItem){
-      return '<section class="lkNext lkLiveStatus"><span>Program</span><b>Dnešní program hotový</b></section>';
+  function liveState(data, now){
+    if(!window.LazenskySchedule || !window.LazenskySchedule.computeLiveState) return null;
+    try{
+      var schedule = window.LazenskySchedule.getSchedule ? window.LazenskySchedule.getSchedule() : null;
+      return window.LazenskySchedule.computeLiveState(schedule || data, now || new Date());
+    }catch(e){ return null; }
+  }
+  function liveClock(iso){ return iso ? iso.slice(11, 16) : ''; }
+  function liveKind(event){ return event && event.kind === 'meal' ? 'meal' : 'procedure'; }
+  function liveIcon(event){ return liveKind(event) === 'meal' ? '♨︎' : '⌖'; }
+  function liveCountdown(minutes){ return durationLabel(Math.max(0, minutes || 0)); }
+  function renderLiveCard(data, day){
+    if(day !== todayIso()) return '';
+    var live = liveState(data);
+    if(!live || live.state === 'NO_SCHEDULE') return '';
+    if(live.state === 'UPCOMING'){
+      return '<section class="lkNext lkLiveBlock lkLiveUpcoming ' + liveKind(live.event) + '" data-lk-live-state="UPCOMING"><div class="lkNextTop"><span>Live · následuje</span><i class="lkBadge">' +
+        escapeHtml(liveKind(live.event) === 'meal' ? 'Jídlo' : 'Procedura') + '</i></div><b><strong>' + escapeHtml(liveClock(live.startAt)) +
+        '</strong></b><div class="lkNextTitle">' + escapeHtml(live.event.title) + '</div><small><mark>' + liveIcon(live.event) + '</mark>' +
+        '<span class="lkLiveLocation">' + escapeHtml(live.event.location || 'Místo bude upřesněno') + '</span></small><p>Vyrazit v ' + escapeHtml(liveClock(live.leaveAt)) + '</p><p class="lkLiveCountdown" data-lk-live-countdown="1">Vyrazit za ' +
+        escapeHtml(liveCountdown(live.minutesUntilLeave)) + '</p></section>';
     }
-    var free = liveFreeInfo(summary);
-    if(free){
-      return '<section class="lkNext lkLiveFree"><div class="lkNextTop"><span>Teď volno</span><i class="lkBadge">Volno</i></div><b data-lk-live-free-duration="1">' +
-        escapeHtml(free.duration) + '</b><div class="lkNextTitle">Do ' + escapeHtml(free.target) + '</div></section>';
+    if(live.state === 'LEAVE_NOW'){
+      return '<section class="lkNext lkLiveBlock lkLiveLeave" data-lk-live-state="LEAVE_NOW"><div class="lkNextTop"><span>VYRAZIT TEĎ</span><i class="lkBadge">Live</i></div><b><strong>' +
+        escapeHtml(liveClock(live.startAt)) + '</strong></b><div class="lkNextTitle">' + escapeHtml(live.event.title) + '</div><small><mark>' +
+        liveIcon(live.event) + '</mark><span class="lkLiveLocation">' + escapeHtml(live.event.location || 'Místo bude upřesněno') + '</span></small></section>';
     }
-    var item = summary.current || summary.next;
-    if(!item) return '';
-    return '<section class="lkNext ' + item.type + '"><div class="lkNextTop"><span>' +
-      (summary.current ? 'Právě probíhá' : 'Následuje') + '</span><i class="lkBadge">' + itemKindLabel(item).toUpperCase() +
-      '</i></div><b><strong>' + escapeHtml(item.start) + '</strong><em> - ' + escapeHtml(item.end) +
-      '</em></b><div class="lkNextTitle">' + escapeHtml(item.title) + '</div><small><mark>' +
-      itemIcon(item) + '</mark>' + escapeHtml(item.place || itemKindLabel(item)) +
-      '</small></section>';
+    if(live.state === 'IN_PROGRESS'){
+      return '<section class="lkNext lkLiveBlock lkLiveProgress ' + liveKind(live.event) + '" data-lk-live-state="IN_PROGRESS"><div class="lkNextTop"><span>PRÁVĚ PROBÍHÁ</span><i class="lkBadge">Live</i></div><b><strong>' +
+        escapeHtml(liveClock(live.endAt)) + '</strong><em> konec</em></b><div class="lkNextTitle">' + escapeHtml(live.event.title) + '</div><small><mark>' +
+        liveIcon(live.event) + '</mark><span class="lkLiveLocation">' + escapeHtml(live.event.location || 'Místo bude upřesněno') + '</span></small></section>';
+    }
+    var next = live.nextEvent;
+    return '<section class="lkNext lkLiveBlock lkLiveStatus" data-lk-live-state="DAY_DONE"><div class="lkNextTop"><span>DNEŠNÍ PROGRAM HOTOVÝ</span><i class="lkBadge">Live</i></div>' +
+      (next ? '<div class="lkNextProcedure"><span>' + (next.date === addDaysIso(todayIso(), 1) ? 'První zítřejší událost' : 'Další událost') + '</span><strong class="lkLiveNextEvent">' + escapeHtml(dateLabel(next.date)) + ' ' + escapeHtml(next.start) + ' · ' + escapeHtml(next.title) +
+        '</strong></div>' : '') + '</section>';
   }
   function renderTimelineItem(item, summary){
     var isPast = summary.isToday && itemEnd(item) <= summary.reference;
@@ -285,8 +296,10 @@
     var schedule = data.items.map(function(item){
       return [item.id, item.date, item.start, item.end, item.title, item.place, item.type].join('~');
     }).join('|');
+    var live = tab === 'today' && day === todayIso() ? liveState(data) : null;
     return [tab, day, schedule, summary.current && summary.current.id, summary.next && summary.next.id,
-      summary.remainingProcedures.length, summary.hasUpcomingItem ? '1' : '0'].join('^');
+      summary.remainingProcedures.length, summary.hasUpcomingItem ? '1' : '0', live && live.state, live && live.event && live.event.stableId,
+      live && live.nextEvent && live.nextEvent.stableId].join('^');
   }
   function scheduleStateKey(data, view){
     return view + '^' + data.items.map(function(item){
@@ -460,13 +473,15 @@
     return '<div class="lkDayIdentity lkSectionHeader"><span class="lkDayDate">' + escapeHtml(dateLabel(day)) +
       '</span>' + (label ? '<i class="lkBadge">' + label + '</i>' : '') + '</div>';
   }
-  function refreshLiveFreeDuration(data){
+  function refreshLiveBlock(data){
     if(selectedDay !== todayIso()) return;
-    var node = document.querySelector('[data-lk-live-free-duration="1"]');
+    var live = liveState(data);
+    var card = document.querySelector('[data-lk-live-state]');
+    if(!live || !card || card.getAttribute('data-lk-live-state') !== live.state) return;
+    if(live.state !== 'UPCOMING') return;
+    var node = card.querySelector('[data-lk-live-countdown="1"]');
     if(!node) return;
-    var info = liveFreeInfo(buildSummary(dayItems(data, selectedDay), selectedDay));
-    if(!info) return;
-    var text = info.duration;
+    var text = 'Vyrazit za ' + liveCountdown(live.minutesUntilLeave);
     if(node.textContent !== text) node.textContent = text;
   }
 
@@ -484,7 +499,7 @@
       '<div class="lkDayView" data-lk-day-swipe="1"><section class="lkDayHero lkParentCard" data-lk-overview="1"><header class="lkParentHeader"><div class="lkDayK">' +
         (day === today ? 'Dnešní program' : 'Den pobytu') + '</div></header><section class="lkDayOverview lkSectionCard">' + renderDayIdentity(day, today) +
       '<div class="lkDaySummary">' + renderProcedureFact(summary) + renderFreeFact(summary) + '</div>' +
-        renderLiveCard(summary, data, day) + renderNextProcedureCard(summary, data, day) +
+        renderLiveCard(data, day) + renderNextProcedureCard(summary, data, day) +
       '</section><section class="lkProgram lkSectionCard"><div class="lkProgramTitle"><h2>Program dne</h2><span>' + items.length + ' ' +
         itemWord(items.length) + '</span></div>' + timelineHtml + '</section></section></div>';
   }
@@ -523,7 +538,7 @@
     var main = document.querySelector('main.content');
     var nextUiState = overviewStateKey(data, selectedDay, tab);
     if(main && main.querySelector('[data-lk-overview="1"]') && nextUiState === lastUiState){
-      refreshLiveFreeDuration(data);
+      refreshLiveBlock(data);
       return;
     }
     busy = true;
@@ -563,6 +578,10 @@
     lastStaticState = '';
     sync();
   });
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden) sync();
+  });
+  window.addEventListener('focus', sync);
   window.addEventListener('load', sync);
   window.setInterval(sync, 30000);
   sync();
