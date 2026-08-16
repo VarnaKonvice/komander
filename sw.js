@@ -1,4 +1,4 @@
-const CACHE_NAME = 'komander-pwa-v3';
+const CACHE_NAME = 'komander-pwa-v4';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,7 +6,7 @@ const APP_SHELL = [
   './landscape-fix.css?v=45',
   './day-overview-v1.css?v=18',
   './day-overview-v1.js?v=16',
-  './private-schedule-feed.js?v=3',
+  './public-schedule-feed.js?v=1',
   './pwa-install.js',
   './icon-180.png',
   './icon-192.png',
@@ -37,8 +37,8 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  // Private feeds and pairing material must always use the browser's network path.
-  if (url.pathname.endsWith('/data/schedule.enc.json') || url.pathname.endsWith('/data/device-pairing.enc.json')) return;
+  // The public feed is always read from the network; localStorage keeps the last valid version offline.
+  if (url.pathname.endsWith('/data/schedule.json')) return;
 
   event.respondWith((async () => {
     try {

@@ -446,9 +446,6 @@
     fallback.classList.add('lkImportControl');
     technical.appendChild(advancedDetails);
     technical.appendChild(fallback);
-    if(window.LazenskySchedule && window.LazenskySchedule.mountPrivateSync){
-      window.LazenskySchedule.mountPrivateSync(advancedDetails);
-    }
     main.innerHTML = '';
     main.appendChild(shell);
     shell.appendChild(header);
