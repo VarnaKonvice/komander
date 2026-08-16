@@ -1087,6 +1087,50 @@ nav button.active{
   font-size:13px!important;
   font-weight:850!important;
 }
+.lkDevicePairing{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+  margin:12px 0 4px!important;
+  padding:12px!important;
+}
+.lkDevicePairing h3{ font-size:16px!important; }
+.lkDevicePairing .lkBadge{ color:#cbd5e1!important; }
+.lkPairingForm{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:7px!important;
+  margin:0!important;
+}
+.lkPairingForm label{
+  color:#cbd5e1!important;
+  font-size:13px!important;
+  font-weight:850!important;
+}
+.lkPairingForm input{
+  width:100%!important;
+  min-height:38px!important;
+  box-sizing:border-box!important;
+  padding:8px 10px!important;
+  border:1px solid #475569!important;
+  border-radius:10px!important;
+  background:#020617!important;
+  color:#f8fafc!important;
+  font:14px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace!important;
+}
+.lkPairingForm .lkTechnicalButton,
+.lkPairingRemove{ margin:0!important; }
+.lkPairingRemove{
+  width:100%!important;
+  min-height:36px!important;
+  padding:8px 10px!important;
+  border:1px solid #475569!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  color:#cbd5e1!important;
+  font:13px/1.2 inherit!important;
+  font-weight:850!important;
+}
 .lkPairToken,
 .lkPairResponse textarea{
   display:block!important;
