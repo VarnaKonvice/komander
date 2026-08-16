@@ -44,6 +44,11 @@ function createIndexedDb() {
           const request = {};
           queueMicrotask(function() { store.set(key, value); if (request.onsuccess) request.onsuccess(); });
           return request;
+        },
+        delete(key) {
+          const request = {};
+          queueMicrotask(function() { store.delete(key); if (request.onsuccess) request.onsuccess(); });
+          return request;
         }
       }; } };
     }
@@ -98,6 +103,7 @@ export async function runPrivateScheduleSuite(options) {
   const fixture = JSON.parse(await fs.readFile(path.join(root, 'fixtures/confirmed-schedule.synthetic.json'), 'utf8'));
   const publicKey = JSON.parse(await fs.readFile(path.join(root, 'data/schedule-public-key.json'), 'utf8'));
   const actualFeed = JSON.parse(await fs.readFile(path.join(root, 'data/schedule.enc.json'), 'utf8'));
+  const actualPairingPackage = JSON.parse(await fs.readFile(path.join(root, 'data/device-pairing.enc.json'), 'utf8'));
   const privateKey = await fs.readFile(privateKeyPath);
   const cases = [];
   async function test(name, run) {
@@ -106,7 +112,9 @@ export async function runPrivateScheduleSuite(options) {
   }
 
   const shared = { indexedDb: createIndexedDb(), localStorage: createLocalStorage(), fetch: null };
+  const deviceShared = { indexedDb: createIndexedDb(), localStorage: createLocalStorage(), fetch: null };
   const pairingToken = base64Url(privateKey);
+  const pairingSecret = options.pairingSecretPath ? (await fs.readFile(options.pairingSecretPath, 'utf8')).trim() : Buffer.from(webcrypto.getRandomValues(new Uint8Array(16))).toString('hex');
   const primary = createRuntime(source, shared, '#pair=' + pairingToken);
   const api = primary.api;
 
@@ -126,6 +134,49 @@ export async function runPrivateScheduleSuite(options) {
   await test('pairing: IndexedDB restores the private key after reload', async function() {
     assert(await restored.api.privateKeyAvailable(), 'Private key did not survive reload');
     assert(await restored.api.privateKeyIsNonExtractable(), 'Restored key is extractable');
+  });
+  const device = createRuntime(source, deviceShared, '');
+  let devicePairingPackage;
+  await test('device pairing: unpaired device cannot sync', async function() {
+    assert(!(await device.api.privateKeyAvailable()), 'Fresh device already has a private key');
+    const result = await device.api.refreshPrivateSchedule();
+    assert(result.status === 'unpaired', 'Fresh device did not remain unpaired');
+  });
+  await test('device pairing: package encrypts the private key without storing pairing material', async function() {
+    devicePairingPackage = options.pairingSecretPath ? actualPairingPackage : await device.api.createDevicePairingPackage(pairingToken, pairingSecret);
+    device.api.validatePairingPackage(devicePairingPackage);
+    const serialized = JSON.stringify(devicePairingPackage);
+    assert(!serialized.includes('privateKeyPkcs8') && !serialized.includes(pairingSecret), 'Pairing package exposes plaintext pairing material');
+  });
+  deviceShared.fetch = async function(url) {
+    if (String(url).includes('device-pairing.enc.json')) return { ok: true, status: 200, json: async function() { return clone(devicePairingPackage); } };
+    return { ok: true, status: 200, json: async function() { return clone(actualFeed); } };
+  };
+  device.sandbox.fetch = deviceShared.fetch;
+  await test('device pairing: wrong secret leaves the device unpaired', async function() {
+    try { await device.api.pairDeviceWithSecret('00000000000000000000000000000000'); throw new Error('Wrong pairing secret was accepted'); }
+    catch (error) { assert(error.message === 'Párovací kód neodpovídá tomuto zařízení.', error.message); }
+    assert(!(await device.api.privateKeyAvailable()), 'Wrong pairing secret stored a key');
+  });
+  await test('device pairing: correct secret stores a non-extractable key and decrypts the feed', async function() {
+    const result = await device.api.pairDeviceWithSecret(pairingSecret);
+    assert(result.paired && result.sync && result.sync.status === 'updated', 'Correct pairing did not update the encrypted schedule');
+    assert(await device.api.privateKeyAvailable(), 'Correct pairing did not persist the key');
+    assert(await device.api.privateKeyIsNonExtractable(), 'Paired key is extractable');
+    assert(device.api.getSchedule().scheduleVersion === 4, 'Paired device did not load the schedule');
+  });
+  const pairedReload = createRuntime(source, deviceShared, '');
+  await test('device pairing: key survives reload and removal affects only pairing', async function() {
+    assert(await pairedReload.api.privateKeyAvailable(), 'Paired key did not survive reload');
+    assert(await pairedReload.api.privateKeyIsNonExtractable(), 'Reloaded paired key is extractable');
+    await pairedReload.api.removeDevicePairing();
+    assert(!(await pairedReload.api.privateKeyAvailable()), 'Pairing removal did not remove the key');
+    assert(pairedReload.api.getSchedule().scheduleVersion === 4, 'Pairing removal removed the valid local schedule');
+  });
+  await test('device pairing: removed device can pair again', async function() {
+    const result = await pairedReload.api.pairDeviceWithSecret(pairingSecret);
+    assert(result.paired && result.sync && result.sync.status === 'current', 'Re-pairing did not restore the device');
+    assert(await pairedReload.api.privateKeyAvailable(), 'Re-pairing did not restore the private key');
   });
   await test('data: confirmed schedule accepts meals, procedures and a day without procedures', async function() {
     const schedule = api.normalizeSchedule(fixture);
@@ -224,11 +275,15 @@ export async function runPrivateScheduleSuite(options) {
   });
   await test('security: feed has no plaintext or private material and service worker bypasses it', async function() {
     const feedText = await fs.readFile(path.join(root, 'data/schedule.enc.json'), 'utf8');
+    const pairingPackageText = await fs.readFile(path.join(root, 'data/device-pairing.enc.json'), 'utf8');
     assert(!/keyIv|PRIVATE KEY|BEGIN [A-Z ]*PRIVATE|Magnetoterapie|Testovací lázně/.test(feedText), 'Encrypted feed contains forbidden material');
+    assert(!/privateKeyPkcs8|PRIVATE KEY|BEGIN [A-Z ]*PRIVATE/.test(pairingPackageText), 'Pairing package contains plaintext private material');
+    assert(!pairingPackageText.includes(pairingSecret), 'Pairing package contains the pairing secret');
     const names = await fs.readdir(root, { recursive: true });
     assert(!names.some(function(name) { return /\.(pem|pk8|p8|key)$/i.test(name); }), 'Private key file found in repository');
     const worker = await fs.readFile(path.join(root, 'sw.js'), 'utf8');
-    assert(/pathname\.endsWith\('\/data\/schedule\.enc\.json'\)\) return;/.test(worker), 'Service worker may cache encrypted feed');
+    assert(/pathname\.endsWith\('\/data\/schedule\.enc\.json'\)/.test(worker), 'Service worker may cache encrypted feed');
+    assert(/pathname\.endsWith\('\/data\/device-pairing\.enc\.json'\)/.test(worker), 'Service worker may cache pairing material');
   });
   await test('ui regression: locked views remain present and the shared module is loaded before the enhancer', async function() {
     const index = await fs.readFile(path.join(root, 'index.html'), 'utf8');
