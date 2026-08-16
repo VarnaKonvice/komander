@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "scheduleVersion": 1,
+  "updatedAt": "2026-08-15T08:00:00.000Z",
+  "stay": {
+    "spa": "Testovací lázně",
+    "dateFrom": "2026-08-15",
+    "dateTo": "2026-08-17",
+    "room": "208",
+    "doctor": "MUDr. Test",
+    "mealShift": "II. směna"
+  },
+  "events": [
+    {"stableId":"synthetic-0815-breakfast","date":"2026-08-15","start":"07:30","end":"08:00","title":"Snídaně","location":"Jídelna","kind":"meal","procedureType":"","mealType":"Snídaně","leadTimeMinutes":null,"source":"synthetic"},
+    {"stableId":"synthetic-0815-magnet","date":"2026-08-15","start":"08:20","end":"08:40","title":"Magnetoterapie","location":"LDB - Elektroléčba","kind":"procedure","procedureType":"Magnetoterapie","mealType":"","leadTimeMinutes":null,"source":"synthetic"},
+    {"stableId":"synthetic-0815-bath","date":"2026-08-15","start":"10:00","end":"10:30","title":"Jodobromová koupel","location":"Balneo","kind":"procedure","procedureType":"Jodobromová koupel","mealType":"","leadTimeMinutes":null,"source":"synthetic"},
+    {"stableId":"synthetic-0815-lunch","date":"2026-08-15","start":"12:00","end":"12:45","title":"Oběd","location":"Jídelna","kind":"meal","procedureType":"","mealType":"Oběd","leadTimeMinutes":null,"source":"synthetic"},
+    {"stableId":"synthetic-0815-massage","date":"2026-08-15","start":"14:00","end":"14:20","title":"Masáž","location":"Rehabilitace","kind":"procedure","procedureType":"Masáž","mealType":"","leadTimeMinutes":null,"source":"synthetic"},
+    {"stableId":"synthetic-0815-dinner","date":"2026-08-15","start":"17:30","end":"18:00","title":"Večeře","location":"Jídelna","kind":"meal","procedureType":"","mealType":"Večeře","leadTimeMinutes":null,"source":"synthetic"},
+    {"stableId":"synthetic-0816-breakfast","date":"2026-08-16","start":"07:30","end":"08:00","title":"Snídaně","location":"Jídelna","kind":"meal","procedureType":"","mealType":"Snídaně","leadTimeMinutes":null,"source":"synthetic"},
+    {"stableId":"synthetic-0816-lunch","date":"2026-08-16","start":"12:00","end":"12:45","title":"Oběd","location":"Jídelna","kind":"meal","procedureType":"","mealType":"Oběd","leadTimeMinutes":null,"source":"synthetic"},
+    {"stableId":"synthetic-0816-dinner","date":"2026-08-16","start":"17:30","end":"18:00","title":"Večeře","location":"Jídelna","kind":"meal","procedureType":"","mealType":"Večeře","leadTimeMinutes":null,"source":"synthetic"},
+    {"stableId":"synthetic-0817-breakfast","date":"2026-08-17","start":"07:30","end":"08:00","title":"Snídaně","location":"Jídelna","kind":"meal","procedureType":"","mealType":"Snídaně","leadTimeMinutes":null,"source":"synthetic"},
+    {"stableId":"synthetic-0817-exercise","date":"2026-08-17","start":"09:00","end":"09:30","title":"Skupinové cvičení","location":"Tělocvična","kind":"procedure","procedureType":"Cvičení","mealType":"","leadTimeMinutes":null,"source":"synthetic"},
+    {"stableId":"synthetic-0817-lunch","date":"2026-08-17","start":"12:00","end":"12:45","title":"Oběd","location":"Jídelna","kind":"meal","procedureType":"","mealType":"Oběd","leadTimeMinutes":null,"source":"synthetic"},
+    {"stableId":"synthetic-0817-dinner","date":"2026-08-17","start":"17:30","end":"18:00","title":"Večeře","location":"Jídelna","kind":"meal","procedureType":"","mealType":"Večeře","leadTimeMinutes":null,"source":"synthetic"}
+  ],
+  "settings": {
+    "defaultLeadTimeMinutes": 20,
+    "procedureTypeOverrides": {"Jodobromová koupel": 30},
+    "mealOverrides": {"Snídaně": 15, "Oběd": 15, "Večeře": 15}
+  }
+}

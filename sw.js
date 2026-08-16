@@ -1,4 +1,4 @@
-const CACHE_NAME = 'komander-pwa-v1';
+const CACHE_NAME = 'komander-pwa-v2';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   './landscape-fix.css?v=45',
   './day-overview-v1.css?v=18',
   './day-overview-v1.js?v=16',
+  './private-schedule-feed.js?v=2',
   './pwa-install.js',
   './icon-180.png',
   './icon-192.png',
@@ -36,6 +37,8 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // Private schedule feeds are always fetched by the app with cache: no-store.
+  if (url.pathname.endsWith('/data/schedule.enc.json')) return;
 
   event.respondWith((async () => {
     try {

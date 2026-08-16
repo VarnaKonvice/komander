@@ -1021,3 +1021,90 @@ nav button.active{
 @media (max-width:349px) and (orientation:portrait){
   .lkTimelineTime{ flex-wrap:wrap!important; row-gap:2px!important; }
 }
+
+/* The only new visible surface: compact local lead-time preferences in Pobyt. */
+.lkLeadSettings{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+}
+.lkLeadSettings .lkSecondaryText{
+  margin:0 0 2px!important;
+}
+.lkLeadRow{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 58px auto!important;
+  align-items:center!important;
+  gap:8px!important;
+  min-height:38px!important;
+  padding:7px 0!important;
+  border-top:1px solid rgba(148,163,184,.18)!important;
+  color:#e2e8f0!important;
+  font-size:15px!important;
+  font-weight:800!important;
+}
+.lkLeadRow input{
+  width:58px!important;
+  min-height:32px!important;
+  padding:4px 6px!important;
+  border:1px solid #475569!important;
+  border-radius:10px!important;
+  background:#0f172a!important;
+  color:#f8fafc!important;
+  font:inherit!important;
+  text-align:center!important;
+}
+.lkLeadRow em{
+  color:#94a3b8!important;
+  font-size:12px!important;
+  font-style:normal!important;
+  font-weight:800!important;
+}
+
+/* Pairing remains inside the pre-existing technical fallback. */
+.lkPrivateSync{
+  margin-top:12px!important;
+  padding-top:12px!important;
+  border-top:1px solid rgba(148,163,184,.22)!important;
+}
+.lkPrivateSync>summary{
+  cursor:pointer!important;
+  color:#cbd5e1!important;
+  font-size:14px!important;
+  font-weight:900!important;
+}
+.lkPrivateSync p{ margin:10px 0!important; }
+.lkTechnicalButton{
+  width:100%!important;
+  min-height:38px!important;
+  margin:8px 0 0!important;
+  padding:9px 11px!important;
+  border:1px solid #475569!important;
+  border-radius:10px!important;
+  background:#0f172a!important;
+  color:#e2e8f0!important;
+  font:inherit!important;
+  font-size:13px!important;
+  font-weight:850!important;
+}
+.lkPairToken,
+.lkPairResponse textarea{
+  display:block!important;
+  width:100%!important;
+  min-height:74px!important;
+  margin-top:8px!important;
+  padding:8px!important;
+  border:1px solid #475569!important;
+  border-radius:10px!important;
+  background:#020617!important;
+  color:#cbd5e1!important;
+  font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace!important;
+  resize:vertical!important;
+}
+.lkPairResponse{ display:block!important; margin-top:10px!important; }
+.lkPairResponse>span{
+  display:block!important;
+  color:#94a3b8!important;
+  font-size:12px!important;
+  font-weight:800!important;
+}
