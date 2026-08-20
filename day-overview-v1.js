@@ -1,7 +1,6 @@
 (function(){
   'use strict';
 
-  var STORE = 'lazensky_commander_schedule_v10';
   var PLANNING_FREE_MINUTES = 60;
   var selectedDay = null;
   var lastTab = null;
@@ -74,12 +73,11 @@
   function readData(){
     var stored = null;
     try{
-      if(window.LazenskySchedule && window.LazenskySchedule.getSchedule){
-        var schedule = window.LazenskySchedule.getSchedule();
-        if(schedule) stored = window.LazenskySchedule.toLegacySchedule(schedule);
-      }
-    }catch(e){}
-    if(!stored) try{ stored = JSON.parse(localStorage.getItem(STORE) || 'null'); }catch(e){}
+      if(!window.LazenskySchedule || !window.LazenskySchedule.getSchedule || !window.LazenskySchedule.toLegacySchedule) return null;
+      var schedule = window.LazenskySchedule.getSchedule();
+      if(!schedule) return null;
+      stored = window.LazenskySchedule.toLegacySchedule(schedule);
+    }catch(e){ return null; }
     if(!stored || !Array.isArray(stored.items)) return null;
     var items = stored.items.map(function(item, index){
       return {

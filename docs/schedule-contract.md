@@ -34,6 +34,12 @@ Jediným zdrojem pravdy pro Commander a podklady pro Kalendář je veřejný sou
 
 Commander kontroluje soubor při startu, návratu do aplikace a obnovení internetu. Novější platný rozpis automaticky uloží; offline používá poslední úspěšně uloženou verzi.
 
+## Lokální kompatibilita
+
+`lazensky_commander_public_schedule_v1` je pouze validovaná lokální cache staženého `data/schedule.json` pro offline provoz. Není to další zdroj rozpisu a nesmí se plnit z jiných lokálních dat.
+
+`lazensky_commander_schedule_v10` zůstává dočasně jednosměrnou kompatibilní projekcí této cache pro staré inline UI. Nový schedule feed a `day-overview-v1.js` jej nečtou jako vstup. Staré UI jej zatím potřebuje, proto se po úspěšném načtení kanonického rozpisu stále přepisuje.
+
 ## LIVE STATE CONTRACT
 
 `computeLiveState(schedule, now)` je společná čistá specifikace pro web a budoucí Swift, ActivityKit, AlarmKit a Apple Watch vrstvu. Časy jsou místní časy rozpisu a předstih vždy vychází z `getEffectiveLeadTime()`.
