@@ -38,7 +38,7 @@ Commander kontroluje soubor při startu, návratu do aplikace a obnovení intern
 
 `lazensky_commander_public_schedule_v1` je pouze validovaná lokální cache staženého `data/schedule.json` pro offline provoz. Není to další zdroj rozpisu a nesmí se plnit z jiných lokálních dat.
 
-`lazensky_commander_schedule_v10` zůstává dočasně jednosměrnou kompatibilní projekcí této cache pro staré inline UI. Nový schedule feed a `day-overview-v1.js` jej nečtou jako vstup. Staré UI jej zatím potřebuje, proto se po úspěšném načtení kanonického rozpisu stále přepisuje.
+`lazensky_commander_schedule_v10` zůstává dočasně jednosměrnou kompatibilní projekcí této cache pro dříve nainstalované verze PWA. Aktuální inline UI, nový schedule feed ani `day-overview-v1.js` jej nečtou jako vstup. Po úspěšném načtení kanonického rozpisu se stále přepisuje po dobu kompatibilitního období.
 
 ## LIVE STATE CONTRACT
 
