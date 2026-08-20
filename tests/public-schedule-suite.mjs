@@ -163,6 +163,23 @@ export async function runPublicScheduleSuite(options) {
     assert(checkSignals && checkSignals[0].includes('window.LazenskySchedule.alarmContract()'), 'Web alarm does not use the alarm contract');
     assert(!checkSignals[0].includes('data.stay.leaveBufferMinutes'), 'Web alarm still calculates leave time from the legacy stay buffer');
   });
+  await test('legacy inline Commander displays the same overridden leaveAt as the web alarm', async function() {
+    shared.localStorage.setItem('lazensky_commander_local_settings_v1', JSON.stringify({ procedureTypeOverrides: { 'Jodobromová koupel': 44 }, mealOverrides: { 'Snídaně': 8 } }));
+    const alarms = runtime.api.alarmContract(productionSchedule);
+    shared.localStorage.removeItem('lazensky_commander_local_settings_v1');
+    const bath = alarms.find(function(alarm) { return alarm.stableId === 'synthetic-0815-bath'; });
+    const breakfast = alarms.find(function(alarm) { return alarm.stableId === 'synthetic-0815-breakfast'; });
+    const index = await fs.readFile(path.join(root, 'index.html'), 'utf8');
+    const freeCard = index.match(/function freeCard\(next,now\)\{.*?\}function nextCard/);
+    const nextCard = index.match(/function nextCard\(i,now,rank\)\{.*?\}function item/);
+    const item = index.match(/function item\(i,now\)\{.*?\}function emptySchedule/);
+    const exportWeek = index.match(/function exportWeek\(kind\)\{.*?\}function importView/);
+    assert(bath.leaveAt === '2026-08-15T09:16:00' && breakfast.leaveAt === '2026-08-15T07:22:00', 'Procedure and meal overrides did not produce the expected leaveAt values');
+    [freeCard, nextCard, item, exportWeek].forEach(function(fragment) {
+      assert(fragment && fragment[0].includes('leaveAtFor') || fragment && fragment[0].includes('leaveTimeFor'), 'A displayed leave time does not use the alarm contract helper');
+      assert(!fragment[0].includes('leaveBufferMinutes'), 'A displayed leave time still uses the legacy stay buffer');
+    });
+  });
   await test('live state: no usable schedule returns NO_SCHEDULE', async function() {
     const state = runtime.api.computeLiveState(null, '2026-08-15T09:00:00');
     assert(state.state === 'NO_SCHEDULE', 'Missing schedule did not return NO_SCHEDULE');
