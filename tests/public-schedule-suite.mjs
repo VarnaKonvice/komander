@@ -96,6 +96,19 @@ export async function runPublicScheduleSuite(options) {
     const reloaded = createRuntime(source, shared);
     assert(reloaded.api.getSchedule().scheduleVersion === 5, 'Public schedule did not survive reload');
   });
+  await test('public feed: legacy storage is a derived compatibility projection', async function() {
+    const legacy = JSON.parse(shared.localStorage.getItem('lazensky_commander_schedule_v10'));
+    assert(typeof runtime.api.toLegacySchedule === 'function', 'Legacy compatibility adapter is not exported');
+    assert(legacy.stay.spaName === productionSchedule.stay.spa, 'Legacy stay projection is incorrect');
+    assert(legacy.items.some(function(event) { return event.id === 'synthetic-0815-bath' && event.type === 'procedure'; }), 'Legacy event projection is incorrect');
+    assert(!source.includes('LEGACY_MIRROR_STORE'), 'Redundant legacy mirror remains');
+  });
+  await test('public feed: legacy storage is never accepted as the canonical schedule', async function() {
+    const legacyOnly = { localStorage: createLocalStorage(), fetch: async function() { throw new Error('offline'); } };
+    legacyOnly.localStorage.setItem('lazensky_commander_schedule_v10', JSON.stringify(runtime.api.toLegacySchedule(productionSchedule)));
+    const legacyRuntime = createRuntime(source, legacyOnly);
+    assert(legacyRuntime.api.getSchedule() === null, 'Legacy storage became a canonical schedule source');
+  });
   await test('live state: no usable schedule returns NO_SCHEDULE', async function() {
     const state = runtime.api.computeLiveState(null, '2026-08-15T09:00:00');
     assert(state.state === 'NO_SCHEDULE', 'Missing schedule did not return NO_SCHEDULE');
@@ -154,6 +167,8 @@ export async function runPublicScheduleSuite(options) {
   await test('live UI: Today uses the production engine and refreshes without a page reload', async function() {
     const overview = await fs.readFile(path.join(root, 'day-overview-v1.js'), 'utf8');
     assert(overview.includes('window.LazenskySchedule.computeLiveState'), 'Today does not call the production live engine');
+    assert(overview.includes('window.LazenskySchedule.toLegacySchedule(schedule)'), 'Today does not use the canonical compatibility adapter');
+    assert(!overview.includes('localStorage.getItem(STORE)'), 'Today still reads the legacy schedule store directly');
     assert(overview.includes('renderLiveCard(data, day)'), 'Today does not render from the live engine data');
     assert(overview.includes('window.setInterval(sync, 30000)'), 'Live state is not checked every 30 seconds');
     assert(overview.includes("document.addEventListener('visibilitychange'"), 'Live state is not refreshed on foreground return');
