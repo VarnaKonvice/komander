@@ -109,6 +109,14 @@ export async function runPublicScheduleSuite(options) {
     const legacyRuntime = createRuntime(source, legacyOnly);
     assert(legacyRuntime.api.getSchedule() === null, 'Legacy storage became a canonical schedule source');
   });
+  await test('legacy inline Commander starts and refreshes from the canonical API', async function() {
+    const index = await fs.readFile(path.join(root, 'index.html'), 'utf8');
+    assert(index.indexOf('public-schedule-feed.js') < index.indexOf("var VERSION='"), 'Public schedule API is not available before inline Commander startup');
+    assert(index.includes('api&&api.getSchedule&&api.toLegacySchedule'), 'Inline Commander does not read the canonical schedule API');
+    assert(index.includes("window.addEventListener('lazensky-schedule-change'"), 'Inline Commander does not refresh after a canonical schedule update');
+    assert(!index.includes('localStorage.getItem(STORE)'), 'Inline Commander still reads v10 as its schedule source');
+    assert(index.includes("localStorage.setItem(STORE,JSON.stringify(data))"), 'Legacy compatibility write was removed prematurely');
+  });
   await test('live state: no usable schedule returns NO_SCHEDULE', async function() {
     const state = runtime.api.computeLiveState(null, '2026-08-15T09:00:00');
     assert(state.state === 'NO_SCHEDULE', 'Missing schedule did not return NO_SCHEDULE');
