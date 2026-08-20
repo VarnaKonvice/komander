@@ -1,0 +1,27 @@
+name: Public schedule tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run public schedule suite
+        run: >-
+          node --input-type=module -e
+          "import('./tests/public-schedule-suite.mjs').then(async ({ runPublicScheduleSuite }) => {
+          const result = await runPublicScheduleSuite({ repoRoot: process.cwd() });
+          console.log(JSON.stringify(result, null, 2));
+          if (result.failed) process.exit(1);
+          })"
