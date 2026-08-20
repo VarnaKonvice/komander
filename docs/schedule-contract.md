@@ -42,6 +42,10 @@ Commander kontroluje soubor při startu, návratu do aplikace a obnovení intern
 
 Aktuální aplikace nevytváří vlastní lokální rozpis: historický import v inline UI je deaktivovaný a rozpis se načítá pouze z kanonického feedu.
 
+## Alarm contract
+
+`alarmContract(schedule)` je společný neměnný výstup pro webovou a budoucí nativní alarmovou vrstvu. Vrací jednu položku pro každou událost se strukturou `stableId`, `scheduleVersion`, `kind`, `title`, `location`, `startAt`, `endAt`, `effectiveLeadTimeMinutes` a `leaveAt`. `leaveAt` vždy vychází z `getEffectiveLeadTime()`; nesmí existovat druhý výpočet předstihu.
+
 ## LIVE STATE CONTRACT
 
 `computeLiveState(schedule, now)` je společná čistá specifikace pro web a budoucí Swift, ActivityKit, AlarmKit a Apple Watch vrstvu. Časy jsou místní časy rozpisu a předstih vždy vychází z `getEffectiveLeadTime()`.
