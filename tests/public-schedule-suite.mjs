@@ -119,6 +119,50 @@ export async function runPublicScheduleSuite(options) {
     assert(!index.includes('localStorage.setItem(STORE,JSON.stringify(data))'), 'Inline Commander can still create a local schedule source');
     assert(index.includes("alert('Rozpis se načítá z data/schedule.json.')"), 'Legacy schedule import is not disabled');
   });
+  await test('alarm contract: meals and procedures expose the canonical leave time', async function() {
+    const alarms = runtime.api.alarmContract(productionSchedule);
+    const bath = alarms.find(function(alarm) { return alarm.stableId === 'synthetic-0815-bath'; });
+    const breakfast = alarms.find(function(alarm) { return alarm.stableId === 'synthetic-0815-breakfast'; });
+    assert(typeof runtime.api.alarmContract === 'function', 'Alarm contract is not exported');
+    assert(bath.scheduleVersion === 4 && bath.kind === 'procedure', 'Procedure alarm metadata is incorrect');
+    assert(bath.title === 'Jodobromová koupel' && bath.location === 'Balneo', 'Procedure alarm text is incorrect');
+    assert(bath.startAt === '2026-08-15T10:00:00' && bath.endAt === '2026-08-15T10:30:00', 'Procedure alarm times are incorrect');
+    assert(bath.effectiveLeadTimeMinutes === 30 && bath.leaveAt === '2026-08-15T09:30:00', 'Procedure alarm leave time is incorrect');
+    assert(breakfast.kind === 'meal' && breakfast.effectiveLeadTimeMinutes === 15 && breakfast.leaveAt === '2026-08-15T07:15:00', 'Meal alarm leave time is incorrect');
+    assert(runtime.api.computeLiveState(productionSchedule, '2026-08-15T09:20:00').leaveAt === bath.leaveAt, 'Alarm and live state have different leaveAt values');
+  });
+  await test('alarm contract: lead-time priority and zero remain intact', async function() {
+    const schedule = clone(productionSchedule);
+    const bath = schedule.events.find(function(event) { return event.stableId === 'synthetic-0815-bath'; });
+    bath.leadTimeMinutes = 25;
+    const before = JSON.stringify(schedule);
+    assert(runtime.api.alarmContract(schedule).find(function(alarm) { return alarm.stableId === bath.stableId; }).effectiveLeadTimeMinutes === 25, 'Event lead time did not override the source type default');
+    shared.localStorage.setItem('lazensky_commander_local_settings_v1', JSON.stringify({ defaultLeadTimeMinutes: 12 }));
+    const defaultOverride = runtime.api.alarmContract(schedule).find(function(alarm) { return alarm.stableId === bath.stableId; });
+    shared.localStorage.setItem('lazensky_commander_local_settings_v1', JSON.stringify({ defaultLeadTimeMinutes: 12, procedureTypeOverrides: { 'Jodobromová koupel': 40 } }));
+    const typeOverride = runtime.api.alarmContract(schedule).find(function(alarm) { return alarm.stableId === bath.stableId; });
+    shared.localStorage.setItem('lazensky_commander_local_settings_v1', JSON.stringify({ defaultLeadTimeMinutes: 12, procedureTypeOverrides: { 'Jodobromová koupel': 40 }, eventOverrides: { 'synthetic-0815-bath': 0 } }));
+    const eventOverride = runtime.api.alarmContract(schedule).find(function(alarm) { return alarm.stableId === bath.stableId; });
+    shared.localStorage.removeItem('lazensky_commander_local_settings_v1');
+    assert(defaultOverride.effectiveLeadTimeMinutes === 12, 'Local default override was ignored');
+    assert(typeOverride.effectiveLeadTimeMinutes === 40, 'Local type override did not override the local default');
+    assert(eventOverride.effectiveLeadTimeMinutes === 0 && eventOverride.leaveAt === eventOverride.startAt, 'Local event override with zero was not preserved');
+    assert(JSON.stringify(schedule) === before, 'Alarm contract mutated the source schedule');
+  });
+  await test('alarm contract: a time correction keeps stableId and recalculates leaveAt', async function() {
+    const corrected = clone(productionSchedule);
+    const original = runtime.api.alarmContract(productionSchedule).find(function(alarm) { return alarm.stableId === 'synthetic-0815-magnet'; });
+    corrected.events.find(function(event) { return event.stableId === original.stableId; }).start = '08:25';
+    const updated = runtime.api.alarmContract(corrected).find(function(alarm) { return alarm.stableId === original.stableId; });
+    assert(updated.stableId === original.stableId, 'Time correction changed stableId');
+    assert(updated.startAt === '2026-08-15T08:25:00' && updated.leaveAt === '2026-08-15T08:05:00', 'Time correction did not recalculate leaveAt');
+  });
+  await test('legacy inline Commander uses the alarm contract instead of its stay buffer', async function() {
+    const index = await fs.readFile(path.join(root, 'index.html'), 'utf8');
+    const checkSignals = index.match(/function checkSignals\(\)\{.*?\}function showNav/);
+    assert(checkSignals && checkSignals[0].includes('window.LazenskySchedule.alarmContract()'), 'Web alarm does not use the alarm contract');
+    assert(!checkSignals[0].includes('data.stay.leaveBufferMinutes'), 'Web alarm still calculates leave time from the legacy stay buffer');
+  });
   await test('live state: no usable schedule returns NO_SCHEDULE', async function() {
     const state = runtime.api.computeLiveState(null, '2026-08-15T09:00:00');
     assert(state.state === 'NO_SCHEDULE', 'Missing schedule did not return NO_SCHEDULE');
