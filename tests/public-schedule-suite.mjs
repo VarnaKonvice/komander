@@ -45,6 +45,7 @@ export async function runPublicScheduleSuite(options) {
   const root = options.repoRoot;
   const source = await fs.readFile(path.join(root, 'public-schedule-feed.js'), 'utf8');
   const productionSchedule = JSON.parse(await fs.readFile(path.join(root, 'data/schedule.json'), 'utf8'));
+  const nativeAlarmFixtures = JSON.parse(await fs.readFile(path.join(root, 'tests/fixtures/native-alarm-reconciliation-v1.json'), 'utf8'));
   const cases = [];
   async function test(name, run) {
     try { await run(); cases.push({ name, ok: true }); }
@@ -156,6 +157,58 @@ export async function runPublicScheduleSuite(options) {
     const updated = runtime.api.alarmContract(corrected).find(function(alarm) { return alarm.stableId === original.stableId; });
     assert(updated.stableId === original.stableId, 'Time correction changed stableId');
     assert(updated.startAt === '2026-08-15T08:25:00' && updated.leaveAt === '2026-08-15T08:05:00', 'Time correction did not recalculate leaveAt');
+  });
+  await test('native alarm payload: versioned output is deterministic and derived from the alarm contract', async function() {
+    const payload = runtime.api.nativeAlarmPayload(productionSchedule);
+    const repeated = runtime.api.nativeAlarmPayload(productionSchedule);
+    const contract = runtime.api.alarmContract(productionSchedule);
+    const bath = payload.alarms.find(function(alarm) { return alarm.stableId === 'synthetic-0815-bath'; });
+    const contractBath = contract.find(function(alarm) { return alarm.stableId === bath.stableId; });
+    assert(typeof runtime.api.nativeAlarmPayload === 'function', 'Native alarm payload is not exported');
+    assert(payload.contractVersion === 1 && payload.scheduleVersion === 4, 'Native payload version metadata is incorrect');
+    assert(JSON.stringify(payload) === JSON.stringify(repeated), 'Native payload is not deterministic');
+    shared.localStorage.setItem('lazensky_commander_local_settings_v1', JSON.stringify({ eventOverrides: { 'synthetic-0815-bath': 0 } }));
+    const withBrowserStoredOverride = runtime.api.nativeAlarmPayload(productionSchedule);
+    shared.localStorage.removeItem('lazensky_commander_local_settings_v1');
+    assert(JSON.stringify(payload) === JSON.stringify(withBrowserStoredOverride), 'Native payload read a browser-stored override');
+    assert(!JSON.stringify(payload).includes('generatedAt'), 'Native payload includes a volatile generated timestamp');
+    assert(JSON.stringify(Object.keys(bath).sort()) === JSON.stringify(['effectiveLeadTimeMinutes', 'endAt', 'kind', 'leaveAt', 'location', 'stableId', 'startAt', 'title']), 'Native alarm payload entry shape is incorrect');
+    assert(JSON.stringify(bath) === JSON.stringify({ stableId: contractBath.stableId, kind: contractBath.kind, title: contractBath.title, location: contractBath.location, startAt: contractBath.startAt, endAt: contractBath.endAt, effectiveLeadTimeMinutes: contractBath.effectiveLeadTimeMinutes, leaveAt: contractBath.leaveAt }), 'Native payload does not reuse the alarm contract values');
+  });
+  await test('native alarm reconciliation: cross-platform fixtures cover all contract outcomes', async function() {
+    assert(typeof runtime.api.reconcileNativeAlarms === 'function', 'Native alarm reconciliation is not exported');
+    assert(nativeAlarmFixtures.contractVersion === 1, 'Native alarm fixture contract version is incorrect');
+    nativeAlarmFixtures.cases.forEach(function(fixture) {
+      const plan = runtime.api.reconcileNativeAlarms(fixture.currentAlarms, fixture.nextPayload);
+      const repeated = runtime.api.reconcileNativeAlarms(fixture.currentAlarms, fixture.nextPayload);
+      ['create', 'update', 'cancel', 'unchanged'].forEach(function(action) {
+        assert(JSON.stringify(plan[action].map(function(item) { return item.stableId; })) === JSON.stringify(fixture.expected[action]), fixture.name+' produced wrong '+action+' actions');
+      });
+      assert(JSON.stringify(plan) === JSON.stringify(repeated), fixture.name+' reconciliation is not deterministic');
+    });
+  });
+  await test('native alarm reconciliation: scheduleVersion alone leaves an alarm unchanged', async function() {
+    const fixture = nativeAlarmFixtures.cases.find(function(item) { return item.name === 'unchanged-after-schedule-version-increase'; });
+    const plan = runtime.api.reconcileNativeAlarms({ contractVersion: 1, scheduleVersion: 4, alarms: fixture.currentAlarms }, fixture.nextPayload);
+    assert(plan.unchanged.length === 1 && plan.unchanged[0].stableId === 'procedure-bath', 'ScheduleVersion alone updated an unchanged alarm');
+    assert(plan.create.length === 0 && plan.update.length === 0 && plan.cancel.length === 0, 'ScheduleVersion-only reconciliation produced a change action');
+  });
+  await test('native alarm payload: explicit overrides match the shared alarm and live-state contracts', async function() {
+    const fixture = nativeAlarmFixtures.explicitOverrideCase;
+    const currentPayload = runtime.api.nativeAlarmPayload(fixture.schedule, fixture.currentOverrides);
+    const nextPayload = runtime.api.nativeAlarmPayload(fixture.schedule, fixture.nextOverrides);
+    const currentAlarm = currentPayload.alarms[0];
+    const nextAlarm = nextPayload.alarms[0];
+    const sharedAlarm = runtime.api.alarmContract(fixture.schedule, fixture.nextOverrides)[0];
+    const liveState = runtime.api.computeLiveState(fixture.schedule, '2026-08-20T09:00:00', fixture.nextOverrides);
+    const plan = runtime.api.reconcileNativeAlarms(currentPayload, nextPayload);
+    assert(currentAlarm.stableId === nextAlarm.stableId, 'Explicit override changed stableId');
+    assert(currentAlarm.leaveAt === fixture.expected.currentLeaveAt && currentAlarm.effectiveLeadTimeMinutes === 30, 'Current explicit override did not set the expected leave time');
+    assert(nextAlarm.leaveAt === fixture.expected.nextLeaveAt && nextAlarm.effectiveLeadTimeMinutes === 0, 'Next explicit override did not preserve lead time zero');
+    assert(nextAlarm.leaveAt === sharedAlarm.leaveAt && nextAlarm.leaveAt === liveState.leaveAt, 'Native, alarm, and live-state contracts have different leaveAt values');
+    ['create', 'update', 'cancel', 'unchanged'].forEach(function(action) {
+      assert(JSON.stringify(plan[action].map(function(item) { return item.stableId; })) === JSON.stringify(fixture.expected[action]), 'Explicit override reconciliation produced wrong '+action+' actions');
+    });
   });
   await test('legacy inline Commander uses the alarm contract instead of its stay buffer', async function() {
     const index = await fs.readFile(path.join(root, 'index.html'), 'utf8');
