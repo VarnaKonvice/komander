@@ -1,0 +1,126 @@
+{
+  "contractVersion": 1,
+  "cases": [
+    {
+      "name": "new-alarm",
+      "currentAlarms": [],
+      "nextPayload": {
+        "contractVersion": 1,
+        "scheduleVersion": 4,
+        "alarms": [{"stableId":"procedure-bath","kind":"procedure","title":"Jodobromová koupel","location":"Balneo","startAt":"2026-08-15T10:00:00","endAt":"2026-08-15T10:30:00","effectiveLeadTimeMinutes":30,"leaveAt":"2026-08-15T09:30:00"}]
+      },
+      "expected": {"create":["procedure-bath"],"update":[],"cancel":[],"unchanged":[]}
+    },
+    {
+      "name": "unchanged-after-schedule-version-increase",
+      "currentAlarms": [{"stableId":"procedure-bath","kind":"procedure","title":"Jodobromová koupel","location":"Balneo","startAt":"2026-08-15T10:00:00","endAt":"2026-08-15T10:30:00","effectiveLeadTimeMinutes":30,"leaveAt":"2026-08-15T09:30:00"}],
+      "nextPayload": {
+        "contractVersion": 1,
+        "scheduleVersion": 5,
+        "alarms": [{"stableId":"procedure-bath","kind":"procedure","title":"Jodobromová koupel","location":"Balneo","startAt":"2026-08-15T10:00:00","endAt":"2026-08-15T10:30:00","effectiveLeadTimeMinutes":30,"leaveAt":"2026-08-15T09:30:00"}]
+      },
+      "expected": {"create":[],"update":[],"cancel":[],"unchanged":["procedure-bath"]}
+    },
+    {
+      "name": "same-stable-id-time-correction",
+      "currentAlarms": [{"stableId":"procedure-bath","kind":"procedure","title":"Jodobromová koupel","location":"Balneo","startAt":"2026-08-15T10:00:00","endAt":"2026-08-15T10:30:00","effectiveLeadTimeMinutes":30,"leaveAt":"2026-08-15T09:30:00"}],
+      "nextPayload": {
+        "contractVersion": 1,
+        "scheduleVersion": 5,
+        "alarms": [{"stableId":"procedure-bath","kind":"procedure","title":"Jodobromová koupel","location":"Balneo","startAt":"2026-08-15T10:20:00","endAt":"2026-08-15T10:50:00","effectiveLeadTimeMinutes":30,"leaveAt":"2026-08-15T09:50:00"}]
+      },
+      "expected": {"create":[],"update":["procedure-bath"],"cancel":[],"unchanged":[]}
+    },
+    {
+      "name": "lead-time-override-change",
+      "currentAlarms": [{"stableId":"procedure-bath","kind":"procedure","title":"Jodobromová koupel","location":"Balneo","startAt":"2026-08-15T10:00:00","endAt":"2026-08-15T10:30:00","effectiveLeadTimeMinutes":30,"leaveAt":"2026-08-15T09:30:00"}],
+      "nextPayload": {
+        "contractVersion": 1,
+        "scheduleVersion": 5,
+        "alarms": [{"stableId":"procedure-bath","kind":"procedure","title":"Jodobromová koupel","location":"Balneo","startAt":"2026-08-15T10:00:00","endAt":"2026-08-15T10:30:00","effectiveLeadTimeMinutes":0,"leaveAt":"2026-08-15T10:00:00"}]
+      },
+      "expected": {"create":[],"update":["procedure-bath"],"cancel":[],"unchanged":[]}
+    },
+    {
+      "name": "location-and-title-change",
+      "currentAlarms": [{"stableId":"meal-breakfast","kind":"meal","title":"Snídaně","location":"Jídelna A","startAt":"2026-08-15T07:30:00","endAt":"2026-08-15T08:00:00","effectiveLeadTimeMinutes":15,"leaveAt":"2026-08-15T07:15:00"}],
+      "nextPayload": {
+        "contractVersion": 1,
+        "scheduleVersion": 5,
+        "alarms": [{"stableId":"meal-breakfast","kind":"meal","title":"Snídaně - dietní","location":"Jídelna B","startAt":"2026-08-15T07:30:00","endAt":"2026-08-15T08:00:00","effectiveLeadTimeMinutes":15,"leaveAt":"2026-08-15T07:15:00"}]
+      },
+      "expected": {"create":[],"update":["meal-breakfast"],"cancel":[],"unchanged":[]}
+    },
+    {
+      "name": "removed-alarm",
+      "currentAlarms": [{"stableId":"procedure-bath","kind":"procedure","title":"Jodobromová koupel","location":"Balneo","startAt":"2026-08-15T10:00:00","endAt":"2026-08-15T10:30:00","effectiveLeadTimeMinutes":30,"leaveAt":"2026-08-15T09:30:00"}],
+      "nextPayload": {"contractVersion":1,"scheduleVersion":5,"alarms":[]},
+      "expected": {"create":[],"update":[],"cancel":["procedure-bath"],"unchanged":[]}
+    },
+    {
+      "name": "new-stable-id-keeps-existing-alarm",
+      "currentAlarms": [{"stableId":"meal-breakfast","kind":"meal","title":"Snídaně","location":"Jídelna","startAt":"2026-08-15T07:30:00","endAt":"2026-08-15T08:00:00","effectiveLeadTimeMinutes":15,"leaveAt":"2026-08-15T07:15:00"}],
+      "nextPayload": {
+        "contractVersion": 1,
+        "scheduleVersion": 5,
+        "alarms": [
+          {"stableId":"meal-breakfast","kind":"meal","title":"Snídaně","location":"Jídelna","startAt":"2026-08-15T07:30:00","endAt":"2026-08-15T08:00:00","effectiveLeadTimeMinutes":15,"leaveAt":"2026-08-15T07:15:00"},
+          {"stableId":"procedure-magnet","kind":"procedure","title":"Magnetoterapie","location":"Elektroléčba","startAt":"2026-08-15T08:20:00","endAt":"2026-08-15T08:40:00","effectiveLeadTimeMinutes":20,"leaveAt":"2026-08-15T08:00:00"}
+        ]
+      },
+      "expected": {"create":["procedure-magnet"],"update":[],"cancel":[],"unchanged":["meal-breakfast"]}
+    },
+    {
+      "name": "meal-and-procedure-with-zero-lead-time",
+      "currentAlarms": [],
+      "nextPayload": {
+        "contractVersion": 1,
+        "scheduleVersion": 6,
+        "alarms": [
+          {"stableId":"meal-lunch","kind":"meal","title":"Oběd","location":"Jídelna","startAt":"2026-08-15T12:00:00","endAt":"2026-08-15T12:45:00","effectiveLeadTimeMinutes":15,"leaveAt":"2026-08-15T11:45:00"},
+          {"stableId":"procedure-zero","kind":"procedure","title":"Kontrola","location":"Ambulance","startAt":"2026-08-15T13:00:00","endAt":"2026-08-15T13:10:00","effectiveLeadTimeMinutes":0,"leaveAt":"2026-08-15T13:00:00"}
+        ]
+      },
+      "expected": {"create":["meal-lunch","procedure-zero"],"update":[],"cancel":[],"unchanged":[]}
+    }
+  ],
+  "explicitOverrideCase": {
+    "schedule": {
+      "schemaVersion": 1,
+      "scheduleVersion": 7,
+      "updatedAt": "2026-08-20T08:00:00.000Z",
+      "stay": {},
+      "settings": {
+        "defaultLeadTimeMinutes": 20,
+        "procedureTypeOverrides": {},
+        "mealOverrides": {}
+      },
+      "events": [
+        {
+          "stableId": "procedure-bath",
+          "date": "2026-08-20",
+          "start": "10:00",
+          "end": "10:30",
+          "title": "Jodobromová koupel",
+          "location": "Balneo",
+          "kind": "procedure",
+          "procedureType": "Jodobromová koupel"
+        }
+      ]
+    },
+    "currentOverrides": {
+      "eventOverrides": { "procedure-bath": 30 }
+    },
+    "nextOverrides": {
+      "eventOverrides": { "procedure-bath": 0 }
+    },
+    "expected": {
+      "currentLeaveAt": "2026-08-20T09:30:00",
+      "nextLeaveAt": "2026-08-20T10:00:00",
+      "create": [],
+      "update": ["procedure-bath"],
+      "cancel": [],
+      "unchanged": []
+    }
+  }
+}

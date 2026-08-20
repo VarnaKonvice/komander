@@ -44,11 +44,13 @@ Aktuální aplikace nevytváří vlastní lokální rozpis: historický import v
 
 ## Alarm contract
 
-`alarmContract(schedule)` je společný neměnný výstup pro webovou a budoucí nativní alarmovou vrstvu. Vrací jednu položku pro každou událost se strukturou `stableId`, `scheduleVersion`, `kind`, `title`, `location`, `startAt`, `endAt`, `effectiveLeadTimeMinutes` a `leaveAt`. `leaveAt` vždy vychází z `getEffectiveLeadTime()`; nesmí existovat druhý výpočet předstihu.
+The versioned platform-neutral payload and reconciliation contract for future native companions is documented in [native-alarm-contract.md](native-alarm-contract.md). It is derived from this canonical schedule and does not add another source of truth.
+
+`alarmContract(schedule, overrides)` je společný neměnný výstup pro webovou a budoucí nativní alarmovou vrstvu. Vrací jednu položku pro každou událost se strukturou `stableId`, `scheduleVersion`, `kind`, `title`, `location`, `startAt`, `endAt`, `effectiveLeadTimeMinutes` a `leaveAt`. `leaveAt` vždy vychází z `getEffectiveLeadTime()`; nesmí existovat druhý výpočet předstihu. `data/schedule.json` obsahuje kanonický rozpis a zdrojová nastavení, zatímco preference zařízení se předávají jako explicitní JSON `overrides`; do rozpisu nepatří.
 
 ## LIVE STATE CONTRACT
 
-`computeLiveState(schedule, now)` je společná čistá specifikace pro web a budoucí Swift, ActivityKit, AlarmKit a Apple Watch vrstvu. Časy jsou místní časy rozpisu a předstih vždy vychází z `getEffectiveLeadTime()`.
+`computeLiveState(schedule, now, overrides)` je společná čistá specifikace pro web a budoucí Swift, ActivityKit, AlarmKit a Apple Watch vrstvu. Časy jsou místní časy rozpisu a předstih vždy vychází z `getEffectiveLeadTime()`.
 
 - `UPCOMING`: existuje další dnešní událost a `now < leaveAt`.
 - `LEAVE_NOW`: `leaveAt <= now < startAt`; je čas vyrazit.
