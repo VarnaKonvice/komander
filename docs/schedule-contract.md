@@ -40,6 +40,8 @@ Commander kontroluje soubor při startu, návratu do aplikace a obnovení intern
 
 `lazensky_commander_schedule_v10` zůstává dočasně jednosměrnou kompatibilní projekcí této cache pro dříve nainstalované verze PWA. Aktuální inline UI, nový schedule feed ani `day-overview-v1.js` jej nečtou jako vstup. Po úspěšném načtení kanonického rozpisu se stále přepisuje po dobu kompatibilitního období.
 
+Aktuální aplikace nevytváří vlastní lokální rozpis: historický import v inline UI je deaktivovaný a rozpis se načítá pouze z kanonického feedu.
+
 ## LIVE STATE CONTRACT
 
 `computeLiveState(schedule, now)` je společná čistá specifikace pro web a budoucí Swift, ActivityKit, AlarmKit a Apple Watch vrstvu. Časy jsou místní časy rozpisu a předstih vždy vychází z `getEffectiveLeadTime()`.
