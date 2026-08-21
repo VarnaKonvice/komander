@@ -1,39 +1,43 @@
-# Lazensky Commander native companion
+# Lazensky Commander iOS AlarmKit app
 
-The Xcode-openable Swift Package is in `native/LazenskyCommander/Package.swift`. Open that file in Xcode and select the `LazenskyCommander` executable scheme. The package has no external dependencies and contains a SwiftUI iOS shell plus a separately testable core.
+Open `native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj` in Xcode. It is a standard signable iOS app target linked to the local Swift Package `native/LazenskyCommander`, which provides `LazenskyCommanderCore` and `LazenskyCommanderCoreCheck`.
 
-## Requirements
+## Requirements and signing
 
-The package declares iOS 26 as its deployment target because AlarmKit belongs to that platform generation. A full Xcode installation with the matching iOS 26 SDK is required to build for an iPhone. The current local environment has Command Line Tools only, without Xcode or the iOS SDK; it cannot verify AlarmKit calls or device entitlements.
+`LazenskyCommanderCore` supports iOS 26+. The actual `LazenskyCommanderApp` target requires iOS 26.1+ because it uses `AlarmPresentation.Alert`; its bundle ID is `com.varnakonvice.lazenskycommander`. In Xcode, select the `LazenskyCommanderApp` target, choose your Development Team under **Signing & Capabilities**, and allow Xcode to create the provisioning profile. No Apple Development Team is stored in this project.
 
-## Schedule source and contract
+The app needs full Xcode with an iOS 26.1-or-newer SDK and a physical iPhone on a supported iOS version. The current repository environment only has Command Line Tools, so it cannot compile or install the `import AlarmKit` app target.
 
-`AppConfiguration.scheduleURL` is the only production schedule URL and defaults to the public raw GitHub schedule:
+## Schedule and native contract
+
+`AppConfiguration.scheduleURL` is the only production URL. It currently points to:
 
 `https://raw.githubusercontent.com/VarnaKonvice/komander/main/data/schedule.json`
 
-Change this one configuration value when the final GitHub Pages URL is confirmed. `URLSessionScheduleService` validates schema version, schedule version, required event fields, event kinds, dates, times, ranges, lead times, and unique `stableId` values before a sync can change local state.
+`URLSessionScheduleService` validates the downloaded schedule before it can change local alarms. `NativeAlarmContract.payload(schedule:overrides:)` implements the shared canonical contract and decodes the fixture at `tests/fixtures/native-alarm-reconciliation-v1.json` in the Swift tests.
 
-`NativeAlarmContract.payload(schedule:overrides:)` implements the documented `schedule + explicit overrides -> native alarm payload` contract. The shared JSON fixture remains at `tests/fixtures/native-alarm-reconciliation-v1.json`; Swift tests decode that exact file rather than a Swift-only equivalent.
+The local ISO `leaveAt` contract is parsed as an `Europe/Prague` wall-clock time before it becomes the absolute `Date` passed to `Alarm.Schedule.fixed`. The device-local lead-time preferences remain explicit `overrides`; they are never written into `schedule.json`.
 
-## Alarm sync and local state
+## AlarmKit permission and sync
 
-`AlarmSyncService` performs fetch, validation, payload creation, reconciliation, cancellation, update, creation, and persistence in that order. A fetch or validation error runs no alarm mutation. On a partial adapter error, each successfully applied change is persisted immediately so the next sync reconciles against the actual managed state rather than a falsely successful snapshot.
+`Info.plist` contains the nonempty `NSAlarmKitUsageDescription` string required by AlarmKit. It explains that the app schedules a departure alarm for procedures and meals. If this key is missing or empty, the app reports AlarmKit as unavailable and does not schedule an alarm.
 
-`UserDefaultsAlarmStateStore` stores only managed alarm records: `stableId`, the platform alarm identifier, the last applied alarm content, last successful payload, and last successful sync time. Canonical schedule data never receives a platform UUID.
+`AlarmKitAdapter` maps `AlarmManager.shared.authorizationState` and calls `AlarmManager.shared.requestAuthorization()`. The app displays authorization status and offers **Povolit alarmy** when permission has not been requested. A denied state is shown as inactive and the sync does not persist a false success.
 
-## AlarmKit status
+The sync path is:
 
-`AlarmAdapting` is the isolated adapter boundary. `UnavailableAlarmKitAdapter` is active in this repository because the available SDK cannot expose or compile the real AlarmKit API. `AlarmKitSDKBoundary.swift` is the single place where a concrete adapter must be added after checking the actual Xcode SDK. No AlarmKit method signature, entitlement, Info.plist key, or authorization API has been guessed.
+`schedule.json -> native payload -> reconciliation -> AlarmKitAdapter -> UserDefaults state`
 
-The adapter contract already requires availability, authorization status, authorization request, schedule, and cancel. The sync service uses cancel plus schedule for update, preserving the local `stableId -> platformAlarmID` map with the identifier returned by the real adapter.
+Each native alarm is a one-shot `Alarm.Schedule.fixed(leaveAt)` alarm with a system stop control and default system sound. It has no countdown, secondary action, snooze, Live Activity, widget extension, App Intent, or Apple Watch UI. The displayed title is `Čas vyrazit: <název>`.
 
-## First iPhone alarm
+The app stores only `stableId -> platformAlarmID`, last applied alarm content, and the successful payload/sync timestamp. It never writes an AlarmKit UUID into the canonical schedule. On each authorized sync it compares the persisted map with `AlarmManager.shared.alarms`; mappings for system alarms that no longer exist are pruned before reconciliation. Updates cancel the prior alarm and schedule a new one, saving each successful step so a partial failure cannot claim a fully successful sync.
 
-1. Install full Xcode with the iOS 26 SDK and open `native/LazenskyCommander/Package.swift`.
-2. Verify the exact AlarmKit API, entitlement/capability, authorization request, and any required Info.plist entries from that SDK.
-3. Implement `AlarmAdapting` in `AlarmKitSDKBoundary.swift` using those verified APIs, then inject it into `CompanionViewModel` in place of `UnavailableAlarmKitAdapter`.
-4. Select a signed physical iPhone running the supported iOS version, build, tap **Synchronize**, approve the system alarm permission, and verify one event at its `leaveAt` time.
-5. Change an event time and then a lead-time override; confirm the next sync updates the same `stableId`. Remove an event and confirm the next sync cancels it.
+## First alarm on an iPhone
 
-ActivityKit, widgets, Apple Watch, countdown UI, snooze, and a PWA replacement are intentionally outside iOS Companion v1.
+1. Open the `.xcodeproj`, select the `LazenskyCommanderApp` scheme and a signed physical iPhone, then build and run.
+2. Confirm that the AlarmKit status is available. Tap **Povolit alarmy** and accept the system permission prompt.
+3. Use a future `leaveAt` in the configured schedule URL, then tap **Synchronizovat**.
+4. Verify the app reports a created alarm. In a subsequent foreground sync, the adapter also checks `AlarmManager.shared.alarms`; an existing UUID remains in the local mapping only while the system still has that alarm.
+5. Wait for the configured departure time and confirm the system alarm presents `Čas vyrazit: ...` with its standard stop control. Then change an event time or override and sync again to verify update; remove an event and verify cancel.
+
+`today.json`, `alarms.json`, their generators, `lazensky-import-28dni.json`, and `update-today.yml` remain unchanged. They are not removed until a real AlarmKit alarm has been verified on an iPhone.

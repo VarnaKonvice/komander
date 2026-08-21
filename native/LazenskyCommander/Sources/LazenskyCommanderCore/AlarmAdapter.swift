@@ -29,6 +29,31 @@ public protocol AlarmAdapting: Sendable {
   func requestAuthorization() async throws
   func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) async throws -> String
   func cancel(platformAlarmID: String) async throws
+  func existingPlatformAlarmIDs() async throws -> Set<String>?
+}
+
+public extension AlarmAdapting {
+  /// Returns nil when the backing platform cannot enumerate alarms.
+  func existingPlatformAlarmIDs() async throws -> Set<String>? { nil }
+}
+
+public enum PlatformAlarmIdentifier {
+  public static func uuid(from persistedValue: String) -> UUID? {
+    UUID(uuidString: persistedValue)
+  }
+
+  public static func newPersistedValue() -> String {
+    UUID().uuidString
+  }
+}
+
+public enum NativeAlarmPresentation {
+  public static func title(for alarm: NativeAlarm) -> String {
+    switch alarm.kind {
+    case .procedure: return "Čas vyrazit: \(alarm.title)"
+    case .meal: return "Čas vyrazit: \(alarm.title)"
+    }
+  }
 }
 
 /// This implementation deliberately does not invent AlarmKit calls when the iOS 26 SDK is unavailable.

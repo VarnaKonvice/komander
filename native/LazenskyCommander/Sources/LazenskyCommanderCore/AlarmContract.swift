@@ -61,6 +61,14 @@ public enum NativeAlarmContract {
     return result
   }
 
+  /// Parses the contract's timezone-free local ISO representation in Europe/Prague.
+  public static func date(fromLocalISO value: String) throws -> Date {
+    let parts = value.split(separator: "T", maxSplits: 1).map(String.init)
+    guard parts.count == 2 else { throw ScheduleValidationError.invalidDate(value) }
+    let time = parts[1].hasSuffix(":00") ? String(parts[1].dropLast(3)) : parts[1]
+    return try dateTime(date: parts[0], time: time)
+  }
+
   private static func validateLeadTime(_ value: Int, field: String) throws {
     guard (0...180).contains(value) else { throw ScheduleValidationError.invalidLeadTime(field) }
   }

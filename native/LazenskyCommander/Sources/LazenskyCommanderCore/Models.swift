@@ -71,6 +71,17 @@ public struct NativeAlarm: Codable, Equatable, Sendable {
   public let endAt: String
   public let effectiveLeadTimeMinutes: Int
   public let leaveAt: String
+
+  public init(stableId: String, kind: ScheduleKind, title: String, location: String, startAt: String, endAt: String, effectiveLeadTimeMinutes: Int, leaveAt: String) {
+    self.stableId = stableId
+    self.kind = kind
+    self.title = title
+    self.location = location
+    self.startAt = startAt
+    self.endAt = endAt
+    self.effectiveLeadTimeMinutes = effectiveLeadTimeMinutes
+    self.leaveAt = leaveAt
+  }
 }
 
 public struct NativeAlarmPayload: Codable, Equatable, Sendable {
