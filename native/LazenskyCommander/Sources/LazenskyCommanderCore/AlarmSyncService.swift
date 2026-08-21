@@ -40,10 +40,10 @@ public struct AlarmSyncService: Sendable {
     let schedule = try await scheduleService.fetchSchedule()
     let payload = try NativeAlarmContract.payload(schedule: schedule, overrides: overrides)
     var state = try await store.load()
-    let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: payload)
 
     let availability = await adapter.availability()
     guard case .available = availability else {
+      let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: payload)
       let message: String
       if case .unavailable(let reason) = availability { message = reason } else { message = "AlarmKit is unavailable." }
       return summary(scheduleVersion: schedule.scheduleVersion, payload: payload, plan: plan, created: 0, updated: 0, cancelled: 0, error: message, completedAt: nil)
@@ -53,6 +53,13 @@ public struct AlarmSyncService: Sendable {
     case .notDetermined: try await adapter.requestAuthorization()
     case .denied: throw AlarmAdapterError.authorizationDenied
     }
+
+    if let existingIDs = try await adapter.existingPlatformAlarmIDs() {
+      let before = state.records.count
+      state.records = state.records.filter { existingIDs.contains($0.value.platformAlarmID) }
+      if state.records.count != before { try await store.save(state) }
+    }
+    let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: payload)
 
     var created = 0
     var updated = 0

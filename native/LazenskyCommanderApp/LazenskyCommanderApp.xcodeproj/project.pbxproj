@@ -1,0 +1,240 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 71;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* LazenskyCommanderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* LazenskyCommanderApp.swift */; };
+		A10000000000000000000002 /* AlarmKitAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* AlarmKitAdapter.swift */; };
+		A10000000000000000000003 /* LazenskyCommanderCore in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000031 /* LazenskyCommanderCore */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A10000000000000000000010 /* LazenskyCommanderApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LazenskyCommanderApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000011 /* LazenskyCommanderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazenskyCommanderApp.swift; sourceTree = "<group>"; };
+		A10000000000000000000012 /* AlarmKitAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitAdapter.swift; sourceTree = "<group>"; };
+		A10000000000000000000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A10000000000000000000020 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000003 /* LazenskyCommanderCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A10000000000000000000040 /* LazenskyCommanderApp */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000011 /* LazenskyCommanderApp.swift */,
+				A10000000000000000000012 /* AlarmKitAdapter.swift */,
+				A10000000000000000000013 /* Info.plist */,
+			);
+			path = LazenskyCommanderApp;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000041 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000010 /* LazenskyCommanderApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000042 = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000040 /* LazenskyCommanderApp */,
+				A10000000000000000000041 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A10000000000000000000050 /* LazenskyCommanderApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000061 /* Build configuration list for PBXNativeTarget "LazenskyCommanderApp" */;
+			buildPhases = (
+				A10000000000000000000021 /* Sources */,
+				A10000000000000000000020 /* Frameworks */,
+				A10000000000000000000022 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LazenskyCommanderApp;
+			packageProductDependencies = (
+				A10000000000000000000031 /* LazenskyCommanderCore */,
+			);
+			productName = LazenskyCommanderApp;
+			productReference = A10000000000000000000010 /* LazenskyCommanderApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A10000000000000000000060 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1620;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					A10000000000000000000050 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+				};
+			};
+			buildConfigurationList = A10000000000000000000062 /* Build configuration list for PBXProject "LazenskyCommanderApp" */;
+			compatibilityVersion = "Xcode 16.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+				cs,
+			);
+			mainGroup = A10000000000000000000042;
+			packageReferences = (
+				A10000000000000000000030 /* XCLocalSwiftPackageReference "../LazenskyCommander" */,
+			);
+			productRefGroup = A10000000000000000000041 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A10000000000000000000050 /* LazenskyCommanderApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A10000000000000000000022 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A10000000000000000000021 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* LazenskyCommanderApp.swift in Sources */,
+				A10000000000000000000002 /* AlarmKitAdapter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A10000000000000000000070 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		A10000000000000000000071 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		A10000000000000000000072 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 2CCL69T42P;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LazenskyCommanderApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.varnakonvice.lazenskycommander;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A10000000000000000000073 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 2CCL69T42P;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LazenskyCommanderApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.varnakonvice.lazenskycommander;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A10000000000000000000061 /* Build configuration list for PBXNativeTarget "LazenskyCommanderApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000072 /* Debug */,
+				A10000000000000000000073 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000062 /* Build configuration list for PBXProject "LazenskyCommanderApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000070 /* Debug */,
+				A10000000000000000000071 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A10000000000000000000030 /* XCLocalSwiftPackageReference "../LazenskyCommander" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../LazenskyCommander;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A10000000000000000000031 /* LazenskyCommanderCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000030 /* XCLocalSwiftPackageReference "../LazenskyCommander" */;
+			productName = LazenskyCommanderCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A10000000000000000000060 /* Project object */;
+}

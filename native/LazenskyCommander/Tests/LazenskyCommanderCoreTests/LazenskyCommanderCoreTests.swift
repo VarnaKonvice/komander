@@ -69,6 +69,71 @@ import Testing
   #expect((try await store.load()).records["kept"]?.platformAlarmID == "alarm-kept")
 }
 
+@Test func platformAlarmIDRoundTripsAsUUIDAndTitlesAreUserFacing() throws {
+  let identifier = PlatformAlarmIdentifier.newPersistedValue()
+  #expect(PlatformAlarmIdentifier.uuid(from: identifier)?.uuidString == identifier)
+  #expect(PlatformAlarmIdentifier.uuid(from: "not-a-uuid") == nil)
+  let procedure = NativeAlarm(stableId: "procedure", kind: .procedure, title: "Masáž", location: "Rehabilitace", startAt: "2026-08-20T10:00:00", endAt: "2026-08-20T10:30:00", effectiveLeadTimeMinutes: 0, leaveAt: "2026-08-20T10:00:00")
+  let meal = NativeAlarm(stableId: "meal", kind: .meal, title: "Oběd", location: "Jídelna", startAt: "2026-08-20T12:00:00", endAt: "2026-08-20T12:30:00", effectiveLeadTimeMinutes: 0, leaveAt: "2026-08-20T12:00:00")
+  #expect(NativeAlarmPresentation.title(for: procedure) == "Čas vyrazit: Masáž")
+  #expect(NativeAlarmPresentation.title(for: meal) == "Čas vyrazit: Oběd")
+}
+
+@Test func localISODateUsesPragueWallClockWithoutUTCShift() throws {
+  let date = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T09:30:00")
+  var calendar = Calendar(identifier: .gregorian)
+  calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+  let components = calendar.dateComponents([.hour, .minute], from: date)
+  #expect(components.hour == 9)
+  #expect(components.minute == 30)
+}
+
+@Test func deniedAuthorizationDoesNotPersistFalseSuccess() async throws {
+  let schedule = try decodeSchedule(named: "data/schedule.json")
+  let store = InMemoryAlarmStateStore()
+  let adapter = RecordingAlarmAdapter(authorization: .denied)
+  let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: store, adapter: adapter)
+  var didThrow = false
+  do { _ = try await service.synchronize() } catch { didThrow = true }
+  #expect(didThrow)
+  #expect((try await store.load()).records.isEmpty)
+  #expect(await adapter.scheduledCount() == 0)
+}
+
+@Test func missingSystemAlarmPrunesStaleMappingBeforeSync() async throws {
+  let schedule = try decodeSchedule(named: "data/schedule.json")
+  let stale = NativeAlarm(stableId: "stale", kind: .procedure, title: "Stale", location: "Room", startAt: "2026-08-20T10:00:00", endAt: "2026-08-20T10:30:00", effectiveLeadTimeMinutes: 0, leaveAt: "2026-08-20T10:00:00")
+  let store = InMemoryAlarmStateStore(ManagedAlarmState(records: ["stale": ManagedAlarmRecord(stableId: "stale", platformAlarmID: UUID().uuidString, alarm: stale)]))
+  let adapter = RecordingAlarmAdapter(existingIDs: [])
+  let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: store, adapter: adapter)
+  let summary = try await service.synchronize()
+  #expect(summary.plan.cancel.isEmpty)
+  #expect((try await store.load()).records["stale"] == nil)
+}
+
+@Test func syncPersistsCreateThenAppliesUpdateAndCancel() async throws {
+  let original = try decodeSchedule(named: "data/schedule.json")
+  let source = MutableScheduleService(schedule: original)
+  let store = InMemoryAlarmStateStore()
+  let adapter = RecordingAlarmAdapter()
+  let service = AlarmSyncService(scheduleService: source, store: store, adapter: adapter)
+  _ = try await service.synchronize()
+  let initialState = try await store.load()
+  #expect(initialState.records.count == original.events.count)
+  #expect(initialState.records.values.allSatisfy { PlatformAlarmIdentifier.uuid(from: $0.platformAlarmID) != nil })
+
+  var correctedEvents = original.events
+  let first = correctedEvents[0]
+  correctedEvents[0] = ScheduleEvent(stableId: first.stableId, date: first.date, start: "07:35", end: "08:00", title: first.title, location: first.location, kind: first.kind, procedureType: first.procedureType, mealType: first.mealType, leadTimeMinutes: first.leadTimeMinutes)
+  await source.replace(Schedule(schemaVersion: original.schemaVersion, scheduleVersion: original.scheduleVersion + 1, updatedAt: original.updatedAt, stay: original.stay, events: correctedEvents, settings: original.settings))
+  let updated = try await service.synchronize()
+  #expect(updated.appliedUpdate == 1)
+
+  await source.replace(Schedule(schemaVersion: original.schemaVersion, scheduleVersion: original.scheduleVersion + 2, updatedAt: original.updatedAt, stay: original.stay, events: Array(correctedEvents.dropLast()), settings: original.settings))
+  let cancelled = try await service.synchronize()
+  #expect(cancelled.appliedCancel == 1)
+}
+
 private func decodeSchedule(named path: String) throws -> Schedule {
   try JSONDecoder().decode(Schedule.self, from: Data(contentsOf: repositoryRoot().appendingPathComponent(path)))
 }
@@ -129,16 +194,31 @@ private struct FailingScheduleService: ScheduleServing {
 private actor RecordingAlarmAdapter: AlarmAdapting {
   private var scheduled = 0
   private var cancelled = 0
+  private let authorization: AlarmAuthorizationStatus
+  private let existingIDs: Set<String>?
+
+  init(authorization: AlarmAuthorizationStatus = .authorized, existingIDs: Set<String>? = nil) {
+    self.authorization = authorization
+    self.existingIDs = existingIDs
+  }
 
   func availability() -> AlarmKitAvailability { .available }
-  func authorizationStatus() -> AlarmAuthorizationStatus { .authorized }
-  func requestAuthorization() throws {}
+  func authorizationStatus() -> AlarmAuthorizationStatus { authorization }
+  func requestAuthorization() throws { if authorization != .authorized { throw AlarmAdapterError.authorizationDenied } }
   func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) throws -> String {
     scheduled += 1
-    return platformAlarmID ?? "alarm-\(alarm.stableId)"
+    return PlatformAlarmIdentifier.newPersistedValue()
   }
   func cancel(platformAlarmID: String) throws { cancelled += 1 }
   func scheduledCount() -> Int { scheduled }
   func cancelledCount() -> Int { cancelled }
+  func existingPlatformAlarmIDs() async throws -> Set<String>? { existingIDs }
+}
+
+private actor MutableScheduleService: ScheduleServing {
+  private var schedule: Schedule
+  init(schedule: Schedule) { self.schedule = schedule }
+  func fetchSchedule() async throws -> Schedule { schedule }
+  func replace(_ value: Schedule) { schedule = value }
 }
 #endif
