@@ -1,6 +1,6 @@
 # Native alarm contract v1
 
-`LazenskySchedule.nativeAlarmPayload(schedule, overrides)` is the versioned, platform-neutral alarm input derived from the canonical schedule. It is intended for native companions and does not create another schedule source.
+`LazenskySchedule.nativeAlarmPayload(schedule, overrides)` is the versioned, platform-neutral alarm input derived from the canonical schedule. It is used by the native iOS AlarmKit app and does not create another schedule source.
 
 ## Payload schema
 

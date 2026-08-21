@@ -39,5 +39,3 @@ The app stores only `stableId -> platformAlarmID`, last applied alarm content, a
 3. Use a future `leaveAt` in the configured schedule URL, then tap **Synchronizovat**.
 4. Verify the app reports a created alarm. In a subsequent foreground sync, the adapter also checks `AlarmManager.shared.alarms`; an existing UUID remains in the local mapping only while the system still has that alarm.
 5. Wait for the configured departure time and confirm the system alarm presents `Čas vyrazit: ...` with its standard stop control. Then change an event time or override and sync again to verify update; remove an event and verify cancel.
-
-`today.json`, `alarms.json`, their generators, `lazensky-import-28dni.json`, and `update-today.yml` remain unchanged. They are not removed until a real AlarmKit alarm has been verified on an iPhone.

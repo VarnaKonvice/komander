@@ -1,8 +1,0 @@
-{
-  "stay": {
-    "appName": "Lázeňský Komandér",
-    "leaveBufferMinutes": 15,
-    "alarmBeforeLeaveMinutes": 5
-  },
-  "items": []
-}

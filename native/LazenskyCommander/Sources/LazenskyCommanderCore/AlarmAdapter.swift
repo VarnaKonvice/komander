@@ -56,8 +56,8 @@ public enum NativeAlarmPresentation {
   }
 }
 
-/// This implementation deliberately does not invent AlarmKit calls when the iOS 26 SDK is unavailable.
-/// Replace it with the SDK-verified adapter described in AlarmKitSDKBoundary.swift on a machine with Xcode.
+/// This implementation is for CoreCheck and non-iOS test environments.
+/// The Xcode app uses the SDK-verified adapter in LazenskyCommanderApp/AlarmKitAdapter.swift.
 public struct UnavailableAlarmKitAdapter: AlarmAdapting {
   public init() {}
   public func availability() async -> AlarmKitAvailability { .unavailable("AlarmKit was not compiled because this environment has no iOS SDK.") }
