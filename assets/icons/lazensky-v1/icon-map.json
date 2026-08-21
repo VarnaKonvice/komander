@@ -1,0 +1,177 @@
+{
+  "version": 1,
+  "design": "Lazensky Commander Icon Set v1 Full — approved",
+  "rules": {
+    "singleVisualLanguage": true,
+    "sameArtworkAcrossPwaIphoneLiveWatch": true,
+    "smallSurfacesUseScaledSameAsset": true,
+    "canonicalScheduleSource": "data/schedule.json"
+  },
+  "icons": [
+    {
+      "key": "meal_breakfast",
+      "label": "Snídaně",
+      "watchLabel": "Snídaně",
+      "accent": "#F59E0B",
+      "keywords": [
+        "snídaně",
+        "snidane"
+      ]
+    },
+    {
+      "key": "meal_lunch",
+      "label": "Oběd",
+      "watchLabel": "Oběd",
+      "accent": "#F59E0B",
+      "keywords": [
+        "oběd",
+        "obed"
+      ]
+    },
+    {
+      "key": "meal_dinner",
+      "label": "Večeře",
+      "watchLabel": "Večeře",
+      "accent": "#F59E0B",
+      "keywords": [
+        "večeře",
+        "vecere"
+      ]
+    },
+    {
+      "key": "pool",
+      "label": "Bazén",
+      "watchLabel": "Bazén",
+      "accent": "#0EA5B7",
+      "keywords": [
+        "bazén",
+        "bazen",
+        "plavání",
+        "plavani"
+      ]
+    },
+    {
+      "key": "iodobrom",
+      "label": "Jodobrom",
+      "watchLabel": "Jodobrom",
+      "accent": "#B27A2C",
+      "keywords": [
+        "jodobrom",
+        "jodobromová koupel",
+        "jodobromova koupel",
+        "jodobromový bazén",
+        "jodobromovy bazen",
+        "solanka"
+      ]
+    },
+    {
+      "key": "whirlpool",
+      "label": "Vířivka",
+      "watchLabel": "Vířivka",
+      "accent": "#38BDF8",
+      "keywords": [
+        "vířivka",
+        "virivka",
+        "vířivá vana",
+        "viriva vana",
+        "vířivá lázeň",
+        "viriva lazen",
+        "whirlpool"
+      ]
+    },
+    {
+      "key": "peat_wrap",
+      "label": "Rašelina / slatina / zábal",
+      "watchLabel": "Rašelina",
+      "accent": "#5B3A29",
+      "keywords": [
+        "rašelina",
+        "raselina",
+        "rašelinový",
+        "raselinovy",
+        "slatina",
+        "slatinný",
+        "slatinny",
+        "zábal",
+        "zabal",
+        "parafín",
+        "parafin"
+      ]
+    },
+    {
+      "key": "imoove",
+      "label": "iMoove",
+      "watchLabel": "iMoove",
+      "accent": "#149B91",
+      "keywords": [
+        "imoove",
+        "i-moove"
+      ]
+    },
+    {
+      "key": "massage",
+      "label": "Masáž",
+      "watchLabel": "Masáž",
+      "accent": "#65A30D",
+      "keywords": [
+        "masáž",
+        "masaz",
+        "klasická masáž",
+        "klasicka masaz"
+      ]
+    },
+    {
+      "key": "hydrojet",
+      "label": "Hydrojet",
+      "watchLabel": "Hydrojet",
+      "accent": "#0EA5E9",
+      "keywords": [
+        "hydrojet",
+        "hydro jet"
+      ]
+    },
+    {
+      "key": "electro_therapy",
+      "label": "Elektro / magneto / ultrazvuk",
+      "watchLabel": "Elektro",
+      "accent": "#6D5BD0",
+      "keywords": [
+        "elektro",
+        "magnet",
+        "magnetoterapie",
+        "ultrazvuk",
+        "galvan",
+        "galvanická",
+        "galvanicka",
+        "čtyřkomor",
+        "ctyrkomor",
+        "laser"
+      ]
+    },
+    {
+      "key": "individual_rehab",
+      "label": "Individuální rehab",
+      "watchLabel": "Rehab",
+      "accent": "#22A06B",
+      "keywords": [
+        "ltv",
+        "individuální",
+        "individualni",
+        "ergoterapie",
+        "ergoter",
+        "rehabilitace",
+        "rehab",
+        "chůze",
+        "chuze",
+        "chodicí pás",
+        "chodici pas",
+        "walking pás",
+        "walking pas"
+      ]
+    }
+  ],
+  "fallback": {
+    "key": "individual_rehab",
+    "strategy": "Use only as neutral fallback until a known category is resolved; do not invent new artwork."
+  }
+}

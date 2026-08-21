@@ -1,0 +1,24 @@
+{
+  "brand": {
+    "commanderPurple": "#6E56CF",
+    "commanderPurpleDark": "#4C359B"
+  },
+  "procedures": {
+    "meal": "#F59E0B",
+    "pool": "#0EA5B7",
+    "iodobrom": "#B27A2C",
+    "whirlpool": "#38BDF8",
+    "peat_wrap": "#5B3A29",
+    "imoove": "#149B91",
+    "massage": "#65A30D",
+    "hydrojet": "#0EA5E9",
+    "electro_therapy": "#6D5BD0",
+    "individual_rehab": "#22A06B"
+  },
+  "state": {
+    "upcoming": "#6E56CF",
+    "leave_now": "#F97316",
+    "in_progress": "#22C55E",
+    "day_done": "#9CA3AF"
+  }
+}
