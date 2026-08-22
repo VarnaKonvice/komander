@@ -107,7 +107,7 @@
     var nextEvent = events.find(function(event){ var startAt = eventDateTime(event,event.start); return startAt && startAt.getTime() > now.getTime(); }) || null;
     return liveResult('DAY_DONE', null, nextEvent, null, null, null, now, null);
   }
-  function calendarContract(schedule){ schedule = schedule || currentSchedule(); return schedule ? schedule.events.map(function(event){ return { stableId: event.stableId, syncKey: 'lc:'+event.stableId, managedBy: 'lazensky-commander', targetCalendar: event.kind === 'meal' ? 'Jídlo' : 'Procedury', title: event.title, start: event.date+'T'+event.start+':00', end: event.date+'T'+event.end+':00', timezone: 'Europe/Prague', location: event.location, kind: event.kind, procedureType: event.procedureType || null, mealType: event.mealType || null, leadTimeMinutes: effectiveLeadTime(event, schedule), descriptionMarker: '[LC:'+event.stableId+']' }; }) : []; }
+  function calendarContract(schedule){ schedule = schedule || currentSchedule(); if(!schedule) return []; if(!window.LazenskyCalendarContract) throw new Error('Calendar contract není načtený.'); return window.LazenskyCalendarContract.createCalendarContract(schedule, function(event){ return effectiveLeadTime(event, schedule); }); }
   async function refreshPublicSchedule(){
     if(syncRunning) return { status: 'busy' }; syncRunning = true;
     try {

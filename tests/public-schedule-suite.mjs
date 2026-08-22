@@ -19,7 +19,7 @@ function createLocalStorage() {
   };
 }
 
-function createRuntime(source, shared) {
+function createRuntime(calendarSource, source, shared) {
   const listeners = {};
   const location = { pathname: '/', search: '', hash: '' };
   const window = {
@@ -37,12 +37,14 @@ function createRuntime(source, shared) {
     URL, TextEncoder, Event: class Event { constructor(type) { this.type = type; } },
     console, setTimeout, clearTimeout
   };
+  vm.runInNewContext(calendarSource, sandbox, { filename: 'calendar-contract.js' });
   vm.runInNewContext(source, sandbox, { filename: 'public-schedule-feed.js' });
   return { api: window.LazenskySchedule, sandbox, listeners };
 }
 
 export async function runPublicScheduleSuite(options) {
   const root = options.repoRoot;
+  const calendarSource = await fs.readFile(path.join(root, 'calendar-contract.js'), 'utf8');
   const source = await fs.readFile(path.join(root, 'public-schedule-feed.js'), 'utf8');
   const productionSchedule = JSON.parse(await fs.readFile(path.join(root, 'data/schedule.json'), 'utf8'));
   const nativeAlarmFixtures = JSON.parse(await fs.readFile(path.join(root, 'tests/fixtures/native-alarm-reconciliation-v1.json'), 'utf8'));
@@ -57,7 +59,7 @@ export async function runPublicScheduleSuite(options) {
   const shared = { localStorage: createLocalStorage(), fetch: null };
   let activeSchedule = clone(productionSchedule);
   shared.fetch = async function() { return { ok: true, status: 200, json: async function() { return clone(activeSchedule); } }; };
-  const runtime = createRuntime(source, shared);
+  const runtime = createRuntime(calendarSource, source, shared);
 
   await test('public feed: production schedule validates', async function() {
     runtime.api.validateSchedule(runtime.api.normalizeSchedule(productionSchedule));
@@ -102,7 +104,7 @@ export async function runPublicScheduleSuite(options) {
       if(String(url).endsWith('/colors.json')) return { ok: true, status: 200, json: async function() { return clone(iconColors); } };
       throw new Error('Unexpected visual contract URL: '+url);
     } };
-    const visualRuntime = createRuntime(source, visualShared);
+    const visualRuntime = createRuntime(calendarSource, source, visualShared);
     const contract = await visualRuntime.api.loadVisualContract();
     const electro = visualRuntime.api.getEventVisual({ title: 'Ultrazvuková masáž', kind: 'procedure', procedureType: 'Ultrazvuková masáž' });
     const unknown = visualRuntime.api.getEventVisual({ title: 'Neznámá péče XYZ', kind: 'procedure' });
@@ -121,7 +123,8 @@ export async function runPublicScheduleSuite(options) {
     assert(overview.includes("window.addEventListener('lazensky-visual-contract-ready'"), 'PWA does not refresh after the visual contract loads');
     assert(!overview.includes("return item.type === 'meal' ? '♨︎' : '⌖'"), 'Legacy generic symbols remain as the visual category source');
     assert(css.includes('border-left-color:var(--lk-category-accent)') && css.includes('.lkEventIcon'), 'Category accent or icon styling is missing');
-    assert(worker.includes("const CACHE_NAME = 'komander-pwa-v6'"), 'PWA cache version was not advanced');
+    assert(worker.includes("const CACHE_NAME = 'komander-pwa-v7'"), 'PWA cache version was not advanced');
+    assert(worker.includes("'./calendar-contract.js?v=1'"), 'Shared calendar contract is missing from the offline cache');
     ['icon-map.json','colors.json'].forEach(function(file) { assert(worker.includes('assets/icons/lazensky-v1/'+file), file+' is missing from offline cache'); });
     iconMap.icons.forEach(function(icon) {
       assert(worker.includes('assets/icons/lazensky-v1/icons/256/'+icon.key+'.png'), icon.key+' is missing from offline cache');
@@ -158,7 +161,7 @@ export async function runPublicScheduleSuite(options) {
     assert(runtime.api.getSchedule().scheduleVersion === 5, 'Offline refresh removed local schedule');
   });
   await test('public feed: reload uses the locally persisted schedule', async function() {
-    const reloaded = createRuntime(source, shared);
+    const reloaded = createRuntime(calendarSource, source, shared);
     assert(reloaded.api.getSchedule().scheduleVersion === 5, 'Public schedule did not survive reload');
   });
   await test('public feed: legacy storage is a derived compatibility projection', async function() {
@@ -171,11 +174,12 @@ export async function runPublicScheduleSuite(options) {
   await test('public feed: legacy storage is never accepted as the canonical schedule', async function() {
     const legacyOnly = { localStorage: createLocalStorage(), fetch: async function() { throw new Error('offline'); } };
     legacyOnly.localStorage.setItem('lazensky_commander_schedule_v10', JSON.stringify(runtime.api.toLegacySchedule(productionSchedule)));
-    const legacyRuntime = createRuntime(source, legacyOnly);
+    const legacyRuntime = createRuntime(calendarSource, source, legacyOnly);
     assert(legacyRuntime.api.getSchedule() === null, 'Legacy storage became a canonical schedule source');
   });
   await test('legacy inline Commander starts and refreshes from the canonical API', async function() {
     const index = await fs.readFile(path.join(root, 'index.html'), 'utf8');
+    assert(index.indexOf('calendar-contract.js?v=1') < index.indexOf('public-schedule-feed.js?v=4'), 'Shared calendar contract is not loaded before the public schedule feed');
     assert(index.indexOf('public-schedule-feed.js') < index.indexOf("var VERSION='"), 'Public schedule API is not available before inline Commander startup');
     assert(index.includes('api&&api.getSchedule&&api.toLegacySchedule'), 'Inline Commander does not read the canonical schedule API');
     assert(index.includes("window.addEventListener('lazensky-schedule-change'"), 'Inline Commander does not refresh after a canonical schedule update');

@@ -78,12 +78,11 @@ Celý pobyt zůstává aktivní do konce poslední události plus 24 hodin. Roll
 
 ## Google Calendar sync
 
-Externí synchronizátor používá `calendarContract()` a pouze logické názvy kalendářů: `procedure` → `Procedury`, `meal` → `Jídlo`. Skutečná Google calendar ID nikdy nepatří do Commanderu ani do repozitáře.
+Google Calendar je pouze odvozená projekce celého `data/schedule.json`, včetně minulých událostí. Sdílený `calendar-contract.js` určuje stejnou sémantiku pro PWA `calendarContract()` i serverový sync: `procedure` → `Procedury`, `meal` → `Jídlo`, místní čas `Europe/Prague`, identita `stableId` a `syncKey = "lc:<stableId>"`. Skutečná Google calendar ID se předávají výhradně prostředím a nepatří do rozpisu ani zdrojového kódu.
 
-1. U každé události hledá v cílovém kalendáři marker `[LC:stableId]` v popisu.
-2. Nalezenou událost aktualizuje; nenalezenou vytvoří.
-3. Commander ani synchronizátor nesmí upravovat cizí kalendářové události bez tohoto markeru.
-4. `stableId` zůstává stejné při opravě času, názvu nebo místa téže události. Nová skutečná událost dostává nové `stableId`.
+Událost je vlastněná Commanderem pouze tehdy, když její Google private extended properties současně obsahují `managedBy = "lazensky-commander"`, neprázdné canonical `stableId` a odpovídající `syncKey`. Marker `[LC:<stableId>]` v popisu je čitelná diagnostická stopa, nikoli oprávnění k úpravě. Synchronizátor smí aktualizovat a mazat jen takto vlastněné události; osobních a cizích položek se nedotýká.
+
+Nové `stableId` se vytvoří, změněný obsah se aktualizuje, nezměněný obsah nevyvolá žádný write a vlastněná událost odstraněná z rozpisu se smaže. Změna `meal ↔ procedure` přesune stejné `stableId` mezi kalendáři. Google reminders jsou vypnuté a projekce nepřidává attendees ani Google Meet. Provozní nastavení a GitHub Actions jsou popsané v [google-calendar-sync.md](google-calendar-sync.md).
 
 ## Priorita předstihu
 

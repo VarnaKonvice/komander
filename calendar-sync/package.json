@@ -1,0 +1,11 @@
+{
+  "name": "lazensky-commander-calendar-sync",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "google-auth-library": "11.0.2"
+  }
+}

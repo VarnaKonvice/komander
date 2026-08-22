@@ -6,7 +6,7 @@ Schválený asset balík odvozený výhradně z obrázku **Icon Set v1 (Full)**.
 - `icons/512`: iPhone / větší UI
 - `icons/256`: PWA / běžné karty
 - `icons/128`: Watch / Dynamic Island / malé plochy
-- `icon-map.json`: kanonické mapování procedur včetně priority shod a neutrálního fallbacku bez falešné kategorie
+- `icon-map.json`: kanonické mapování procedur včetně priority shod, Google Calendar `colorId` a neutrálního fallbacku bez falešné kategorie
 - `colors.json`: jednotné barvy
 - `reference/icon-set-v1-full-approved.png`: schválený zdrojový vizuál
 

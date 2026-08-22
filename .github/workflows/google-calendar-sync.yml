@@ -1,0 +1,42 @@
+name: Google Calendar sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - data/schedule.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: google-calendar-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: calendar-sync/package-lock.json
+
+      - name: Install calendar sync dependencies
+        run: npm ci --prefix calendar-sync --ignore-scripts
+
+      - name: Validate canonical schedule and build dry-run plan
+        run: node calendar-sync/sync-google-calendar.mjs --dry-run
+
+      - name: Reconcile Google Calendars
+        env:
+          LC_GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.LC_GOOGLE_SERVICE_ACCOUNT_JSON }}
+          LC_GOOGLE_CALENDAR_PROCEDURES_ID: ${{ vars.LC_GOOGLE_CALENDAR_PROCEDURES_ID }}
+          LC_GOOGLE_CALENDAR_MEALS_ID: ${{ vars.LC_GOOGLE_CALENDAR_MEALS_ID }}
+        run: node calendar-sync/sync-google-calendar.mjs --write

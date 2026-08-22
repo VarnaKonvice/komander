@@ -1,4 +1,4 @@
-const CACHE_NAME = 'komander-pwa-v6';
+const CACHE_NAME = 'komander-pwa-v7';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,7 +6,8 @@ const APP_SHELL = [
   './landscape-fix.css?v=45',
   './day-overview-v1.css?v=20',
   './day-overview-v1.js?v=18',
-  './public-schedule-feed.js?v=3',
+  './calendar-contract.js?v=1',
+  './public-schedule-feed.js?v=4',
   './pwa-install.js',
   './assets/icons/lazensky-v1/icon-map.json',
   './assets/icons/lazensky-v1/colors.json',
