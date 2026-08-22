@@ -46,6 +46,8 @@ export async function runPublicScheduleSuite(options) {
   const source = await fs.readFile(path.join(root, 'public-schedule-feed.js'), 'utf8');
   const productionSchedule = JSON.parse(await fs.readFile(path.join(root, 'data/schedule.json'), 'utf8'));
   const nativeAlarmFixtures = JSON.parse(await fs.readFile(path.join(root, 'tests/fixtures/native-alarm-reconciliation-v1.json'), 'utf8'));
+  const iconMap = JSON.parse(await fs.readFile(path.join(root, 'assets/icons/lazensky-v1/icon-map.json'), 'utf8'));
+  const iconColors = JSON.parse(await fs.readFile(path.join(root, 'assets/icons/lazensky-v1/colors.json'), 'utf8'));
   const cases = [];
   async function test(name, run) {
     try { await run(); cases.push({ name, ok: true }); }
@@ -62,6 +64,68 @@ export async function runPublicScheduleSuite(options) {
     assert(productionSchedule.scheduleVersion === 4, 'Unexpected production scheduleVersion');
     assert(productionSchedule.events.some(function(event) { return event.kind === 'meal'; }), 'Meals are missing');
     assert(productionSchedule.events.some(function(event) { return event.kind === 'procedure'; }), 'Procedures are missing');
+  });
+  await test('visual contract: all approved categories and specialized precedence classify consistently', async function() {
+    const mappings = [
+      ['Snídaně', 'meal', 'meal_breakfast'], ['Oběd', 'meal', 'meal_lunch'], ['Večeře', 'meal', 'meal_dinner'],
+      ['Plavání v bazénu', 'procedure', 'pool'], ['Jodobromový bazén', 'procedure', 'iodobrom'],
+      ['Vířivá vana', 'procedure', 'whirlpool'], ['Whirlpool', 'procedure', 'whirlpool'],
+      ['Rašelinový zábal', 'procedure', 'peat_wrap'], ['Slatina', 'procedure', 'peat_wrap'], ['Parafín', 'procedure', 'peat_wrap'],
+      ['iMoove', 'procedure', 'imoove'], ['Hydrojet masáž', 'procedure', 'hydrojet'],
+      ['Magnetoterapie', 'procedure', 'electro_therapy'], ['Elektroterapie', 'procedure', 'electro_therapy'],
+      ['Ultrazvuková masáž', 'procedure', 'electro_therapy'], ['Galvanická lázeň', 'procedure', 'electro_therapy'], ['Čtyřkomorová lázeň', 'procedure', 'electro_therapy'],
+      ['Individuální LTV', 'procedure', 'individual_rehab'], ['Ergoterapie', 'procedure', 'individual_rehab'],
+      ['Rehabilitace', 'procedure', 'individual_rehab'], ['Chodicí pás', 'procedure', 'individual_rehab'],
+      ['Klasická masáž', 'procedure', 'massage']
+    ];
+    mappings.forEach(function(item) {
+      const event = { title: item[0], kind: item[1], procedureType: item[1] === 'procedure' ? item[0] : '', mealType: item[1] === 'meal' ? item[0] : '' };
+      const icon = runtime.api.classifyEventIcon(event, iconMap);
+      assert(icon && icon.key === item[2], item[0]+' was classified as '+(icon && icon.key));
+    });
+    iconMap.icons.forEach(function(icon) {
+      const colorKey = icon.key.startsWith('meal_') ? 'meal' : icon.key;
+      assert(icon.accent === iconColors.procedures[colorKey], icon.key+' accent differs from colors.json');
+    });
+  });
+  await test('visual contract: unknown procedures preserve a neutral no-category fallback', async function() {
+    const unknown = runtime.api.classifyEventIcon({ title: 'Neznámá péče XYZ', kind: 'procedure', procedureType: 'Neznámá péče XYZ' }, iconMap);
+    assert(unknown === null, 'Unknown procedure received a concrete category');
+    assert(iconMap.fallback.key === null, 'Fallback still points to a concrete icon');
+    assert(iconMap.fallback.accent === iconColors.brand.commanderPurple, 'Fallback is not neutral Commander purple');
+  });
+  await test('visual contract: PWA loads icon-map and colors through the shared schedule API', async function() {
+    const requests = [];
+    const visualShared = { localStorage: createLocalStorage(), fetch: async function(url) {
+      requests.push(String(url));
+      if(String(url).endsWith('/icon-map.json')) return { ok: true, status: 200, json: async function() { return clone(iconMap); } };
+      if(String(url).endsWith('/colors.json')) return { ok: true, status: 200, json: async function() { return clone(iconColors); } };
+      throw new Error('Unexpected visual contract URL: '+url);
+    } };
+    const visualRuntime = createRuntime(source, visualShared);
+    const contract = await visualRuntime.api.loadVisualContract();
+    const electro = visualRuntime.api.getEventVisual({ title: 'Ultrazvuková masáž', kind: 'procedure', procedureType: 'Ultrazvuková masáž' });
+    const unknown = visualRuntime.api.getEventVisual({ title: 'Neznámá péče XYZ', kind: 'procedure' });
+    assert(contract.iconMap.version === 1 && contract.colors.brand.commanderPurple === '#6E56CF', 'Loaded visual contract is incomplete');
+    assert(requests.length === 2 && requests.some(function(url) { return url.endsWith('/icon-map.json'); }) && requests.some(function(url) { return url.endsWith('/colors.json'); }), 'Shared API did not load both canonical visual files');
+    assert(electro.key === 'electro_therapy' && electro.iconUrl.endsWith('/icons/256/electro_therapy.png'), 'Known PWA visual is incorrect');
+    assert(electro.accent === iconColors.procedures.electro_therapy, 'PWA accent is not sourced from colors.json');
+    assert(unknown.known === false && unknown.key === null && unknown.iconUrl === null, 'Unknown PWA visual uses a fake icon');
+    assert(visualRuntime.api.visualAssetUrls(256).length === iconMap.icons.length + 2, 'Visual asset list is incomplete');
+  });
+  await test('visual contract: current cards render approved PNGs and offline cache contains every dependency', async function() {
+    const overview = await fs.readFile(path.join(root, 'day-overview-v1.js'), 'utf8');
+    const css = await fs.readFile(path.join(root, 'day-overview-v1.css'), 'utf8');
+    const worker = await fs.readFile(path.join(root, 'sw.js'), 'utf8');
+    assert(overview.includes('window.LazenskySchedule.getEventVisual') && overview.includes('lkEventIcon'), 'PWA cards do not use the shared visual API');
+    assert(overview.includes("window.addEventListener('lazensky-visual-contract-ready'"), 'PWA does not refresh after the visual contract loads');
+    assert(!overview.includes("return item.type === 'meal' ? '♨︎' : '⌖'"), 'Legacy generic symbols remain as the visual category source');
+    assert(css.includes('border-left-color:var(--lk-category-accent)') && css.includes('.lkEventIcon'), 'Category accent or icon styling is missing');
+    assert(worker.includes("const CACHE_NAME = 'komander-pwa-v6'"), 'PWA cache version was not advanced');
+    ['icon-map.json','colors.json'].forEach(function(file) { assert(worker.includes('assets/icons/lazensky-v1/'+file), file+' is missing from offline cache'); });
+    iconMap.icons.forEach(function(icon) {
+      assert(worker.includes('assets/icons/lazensky-v1/icons/256/'+icon.key+'.png'), icon.key+' is missing from offline cache');
+    });
   });
   await test('public feed: first launch downloads and persists the schedule', async function() {
     const result = await runtime.api.refreshPublicSchedule();
@@ -131,6 +195,8 @@ export async function runPublicScheduleSuite(options) {
     assert(bath.effectiveLeadTimeMinutes === 30 && bath.leaveAt === '2026-08-15T09:30:00', 'Procedure alarm leave time is incorrect');
     assert(breakfast.kind === 'meal' && breakfast.effectiveLeadTimeMinutes === 15 && breakfast.leaveAt === '2026-08-15T07:15:00', 'Meal alarm leave time is incorrect');
     assert(runtime.api.computeLiveState(productionSchedule, '2026-08-15T09:20:00').leaveAt === bath.leaveAt, 'Alarm and live state have different leaveAt values');
+    assert(source.includes('var alarm = alarmForEvent(event,schedule,effectiveOverrides)'), 'Live state does not consume the shared alarm event contract');
+    assert(!/function computeLiveState[\s\S]*?startAt\.getTime\(\)-leadTimeMinutes\*60000/.test(source), 'Live state still contains a second leaveAt calculation');
   });
   await test('alarm contract: lead-time priority and zero remain intact', async function() {
     const schedule = clone(productionSchedule);

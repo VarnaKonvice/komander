@@ -390,6 +390,34 @@ nav button.active{
   font-weight:950!important;
   line-height:1!important;
 }
+.lkNext.lkHasCategoryIcon,
+.lkTimelineRow.lkHasCategoryIcon{
+  border-left-color:var(--lk-category-accent)!important;
+}
+.lkTimelineRow.lkHasCategoryIcon{ border-left-width:4px!important; }
+.lkEventIconFrame{
+  display:inline-flex!important;
+  flex:0 0 38px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:38px!important;
+  height:38px!important;
+  margin:0!important;
+  border-radius:8px!important;
+  background:#fff!important;
+  box-shadow:0 0 0 2px var(--lk-category-accent)!important;
+  overflow:hidden!important;
+}
+.lkEventIcon{
+  display:block!important;
+  width:34px!important;
+  height:34px!important;
+  object-fit:contain!important;
+}
+.lkEventLocation{
+  min-width:0!important;
+  overflow-wrap:anywhere!important;
+}
 
 .lkProgram{
   gap:12px!important;

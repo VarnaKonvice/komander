@@ -1,6 +1,6 @@
 import Foundation
 
-public enum ScheduleKind: String, Codable, Sendable {
+public enum ScheduleKind: String, Codable, Hashable, Sendable {
   case meal
   case procedure
 }

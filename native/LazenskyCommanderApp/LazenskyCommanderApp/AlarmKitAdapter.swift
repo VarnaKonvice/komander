@@ -3,8 +3,6 @@ import Foundation
 import SwiftUI
 import LazenskyCommanderCore
 
-struct CommanderAlarmMetadata: AlarmMetadata {}
-
 enum AlarmKitAdapterError: LocalizedError {
   case invalidPlatformAlarmID(String)
   case invalidLeaveAt(String)
@@ -19,7 +17,13 @@ enum AlarmKitAdapterError: LocalizedError {
   }
 }
 
-struct AlarmKitAdapter: AlarmAdapting {
+actor AlarmKitAdapter: AlarmAdapting {
+  private var scheduleContext: Schedule?
+
+  func prepare(schedule: Schedule) {
+    scheduleContext = schedule
+  }
+
   func availability() async -> AlarmKitAvailability {
     guard Self.hasUsageDescription else {
       return .unavailable("Chybí NSAlarmKitUsageDescription v Info.plist.")
@@ -48,12 +52,18 @@ struct AlarmKitAdapter: AlarmAdapting {
 
     let id = UUID()
     let alert = AlarmPresentation.Alert(title: LocalizedStringResource(stringLiteral: NativeAlarmPresentation.title(for: alarm)))
+    let schedule = scheduleContext
+    let event = schedule?.events.first(where: { $0.stableId == alarm.stableId })
+    let iconKey = event.flatMap { CommanderVisualAssets.icon(for: $0)?.key } ?? ""
+    let countdown = AlarmPresentation.Countdown(title: LocalizedStringResource(stringLiteral: "Odchod za \(alarm.title)"))
     let attributes = AlarmAttributes(
-      presentation: AlarmPresentation(alert: alert),
-      metadata: CommanderAlarmMetadata(),
+      presentation: AlarmPresentation(alert: alert, countdown: countdown),
+      metadata: CommanderAlarmMetadata(stableId: alarm.stableId, scheduleVersion: schedule?.scheduleVersion ?? 0, iconKey: iconKey, title: alarm.title, location: alarm.location, kind: alarm.kind, startAt: alarm.startAt, leaveAt: alarm.leaveAt),
       tintColor: .teal
     )
-    let configuration = AlarmManager.AlarmConfiguration.alarm(
+    let preAlert = try schedule.map { try AlarmCountdown.preAlertDuration(for: alarm, in: $0) } ?? 30 * 60
+    let configuration = AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>(
+      countdownDuration: Alarm.CountdownDuration(preAlert: preAlert, postAlert: nil),
       schedule: .fixed(leaveAt),
       attributes: attributes,
       sound: .default

@@ -13,6 +13,7 @@
       "label": "Snídaně",
       "watchLabel": "Snídaně",
       "accent": "#F59E0B",
+      "priority": 300,
       "keywords": [
         "snídaně",
         "snidane"
@@ -23,6 +24,7 @@
       "label": "Oběd",
       "watchLabel": "Oběd",
       "accent": "#F59E0B",
+      "priority": 300,
       "keywords": [
         "oběd",
         "obed"
@@ -33,6 +35,7 @@
       "label": "Večeře",
       "watchLabel": "Večeře",
       "accent": "#F59E0B",
+      "priority": 300,
       "keywords": [
         "večeře",
         "vecere"
@@ -43,6 +46,7 @@
       "label": "Bazén",
       "watchLabel": "Bazén",
       "accent": "#0EA5B7",
+      "priority": 100,
       "keywords": [
         "bazén",
         "bazen",
@@ -55,6 +59,7 @@
       "label": "Jodobrom",
       "watchLabel": "Jodobrom",
       "accent": "#B27A2C",
+      "priority": 220,
       "keywords": [
         "jodobrom",
         "jodobromová koupel",
@@ -69,6 +74,7 @@
       "label": "Vířivka",
       "watchLabel": "Vířivka",
       "accent": "#38BDF8",
+      "priority": 220,
       "keywords": [
         "vířivka",
         "virivka",
@@ -84,6 +90,7 @@
       "label": "Rašelina / slatina / zábal",
       "watchLabel": "Rašelina",
       "accent": "#5B3A29",
+      "priority": 220,
       "keywords": [
         "rašelina",
         "raselina",
@@ -103,6 +110,7 @@
       "label": "iMoove",
       "watchLabel": "iMoove",
       "accent": "#149B91",
+      "priority": 240,
       "keywords": [
         "imoove",
         "i-moove"
@@ -113,6 +121,7 @@
       "label": "Masáž",
       "watchLabel": "Masáž",
       "accent": "#65A30D",
+      "priority": 10,
       "keywords": [
         "masáž",
         "masaz",
@@ -125,6 +134,7 @@
       "label": "Hydrojet",
       "watchLabel": "Hydrojet",
       "accent": "#0EA5E9",
+      "priority": 240,
       "keywords": [
         "hydrojet",
         "hydro jet"
@@ -135,6 +145,7 @@
       "label": "Elektro / magneto / ultrazvuk",
       "watchLabel": "Elektro",
       "accent": "#6D5BD0",
+      "priority": 220,
       "keywords": [
         "elektro",
         "magnet",
@@ -153,10 +164,11 @@
       "label": "Individuální rehab",
       "watchLabel": "Rehab",
       "accent": "#22A06B",
+      "priority": 100,
       "keywords": [
         "ltv",
-        "individuální",
-        "individualni",
+        "individuální ltv",
+        "individualni ltv",
         "ergoterapie",
         "ergoter",
         "rehabilitace",
@@ -171,7 +183,9 @@
     }
   ],
   "fallback": {
-    "key": "individual_rehab",
-    "strategy": "Use only as neutral fallback until a known category is resolved; do not invent new artwork."
+    "key": null,
+    "label": "Neznámá procedura",
+    "accent": "#6E56CF",
+    "strategy": "Preserve the source text and use neutral Commander presentation without assigning a category icon."
   }
 }

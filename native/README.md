@@ -1,41 +1,75 @@
-# Lazensky Commander iOS AlarmKit app
+# Lazensky Commander native apps
 
-Open `native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj` in Xcode. It is a standard signable iOS app target linked to the local Swift Package `native/LazenskyCommander`, which provides `LazenskyCommanderCore` and `LazenskyCommanderCoreCheck`.
+Open `LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj` in Xcode 26.6 or newer. The project contains the iPhone app, its AlarmKit Live Activity extension, the paired Watch app, and the Watch widget extension. Shared platform-neutral behavior lives in the local Swift package `LazenskyCommander`.
 
-## Requirements and signing
+## Targets and requirements
 
-`LazenskyCommanderCore` supports iOS 26+. The actual `LazenskyCommanderApp` target requires iOS 26.1+ because it uses `AlarmPresentation.Alert`; its bundle ID is `com.varnakonvice.lazenskycommander`. In Xcode, select the `LazenskyCommanderApp` target, choose your Development Team under **Signing & Capabilities**, and allow Xcode to create the provisioning profile. No Apple Development Team is stored in this project.
+| Target | Bundle identifier | Minimum OS |
+| --- | --- | --- |
+| `LazenskyCommanderApp` | `com.varnakonvice.lazenskycommander` | iOS 26.1 |
+| `LazenskyCommanderLiveActivity` | `com.varnakonvice.lazenskycommander.liveactivity` | iOS 26.1 |
+| `LazenskyCommanderWatchApp` | `com.varnakonvice.lazenskycommander.watchkitapp` | watchOS 26.0 |
+| `LazenskyCommanderWatchWidget` | `com.varnakonvice.lazenskycommander.watchkitapp.widget` | watchOS 26.0 |
 
-The app needs full Xcode with an iOS 26.1-or-newer SDK and a physical iPhone on a supported iOS version. The current repository environment only has Command Line Tools, so it cannot compile or install the `import AlarmKit` app target.
+`LazenskyCommanderCore` supports iOS 26 and watchOS 26. The app requires iOS 26.1 because `AlarmPresentation.Alert` is available from that version. The Xcode project contains development team `2CCL69T42P`; physical-device builds still require valid local signing and provisioning for all targets and the Watch App Group.
 
-## Schedule and native contract
+The Watch app and widget share `group.com.varnakonvice.lazenskycommander.watch`. The iPhone app embeds the Live Activity extension and Watch app; the Watch app embeds its widget extension.
 
-`AppConfiguration.scheduleURL` is the only production URL. It currently points to:
+## Canonical schedule and one-fetch sync
 
-`https://raw.githubusercontent.com/VarnaKonvice/komander/main/data/schedule.json`
+`data/schedule.json` is the only schedule source of truth. `AppConfiguration.scheduleURL` points to its production raw GitHub URL. One manual iPhone sync downloads and validates the complete `Schedule` once through `CommanderScheduleSyncCoordinator`. The same validated value is then used by:
 
-`URLSessionScheduleService` validates the downloaded schedule before it can change local alarms. `NativeAlarmContract.payload(schedule:overrides:)` implements the shared canonical contract and decodes the fixture at `tests/fixtures/native-alarm-reconciliation-v1.json` in the Swift tests.
+- `AlarmSyncService` and AlarmKit reconciliation;
+- the persisted iPhone snapshot and Commander Live Card;
+- the complete `WatchScheduleSnapshot` sent with `WCSession.updateApplicationContext`.
 
-The local ISO `leaveAt` contract is parsed as an `Europe/Prague` wall-clock time before it becomes the absolute `Date` passed to `Alarm.Schedule.fixed`. The device-local lead-time preferences remain explicit `overrides`; they are never written into `schedule.json`.
+The iPhone and Watch stores are validated local caches, not alternative schedule sources. Device-local lead-time preferences are explicit contract inputs and are never written to `schedule.json`.
 
-## AlarmKit permission and sync
+## iPhone AlarmKit and Live Activity
 
-`Info.plist` contains the nonempty `NSAlarmKitUsageDescription` string required by AlarmKit. It explains that the app schedules a departure alarm for procedures and meals. If this key is missing or empty, the app reports AlarmKit as unavailable and does not schedule an alarm.
+`NativeAlarmContract` is the single source of effective lead time and `leaveAt` for native alarm, live-state, and Watch projections. AlarmKit reconciliation identifies events by `stableId`; it stores the local `stableId -> AlarmKit Alarm.ID` mapping outside the canonical schedule.
 
-`AlarmKitAdapter` maps `AlarmManager.shared.authorizationState` and calls `AlarmManager.shared.requestAuthorization()`. The app displays authorization status and offers **Povolit alarmy** when permission has not been requested. A denied state is shown as inactive and the sync does not persist a false success.
+Each AlarmKit alarm fires at canonical `leaveAt`. Its pre-alert starts at the previous event's `endAt` when that time is before `leaveAt`, otherwise no more than 30 minutes before `leaveAt`. `CommanderAlarmMetadata` is carried by `AlarmAttributes<CommanderAlarmMetadata>` into the Live Activity extension. The Lock Screen and Dynamic Island render AlarmKit countdown, paused, and alert states with system date/timer rendering and no polling timer.
 
-The sync path is:
+The Commander Live Card reads the last validated iPhone snapshot and evaluates presentation transitions through `CommanderLiveStateCalculator`; countdown changes do not trigger another network fetch.
 
-`schedule.json -> native payload -> reconciliation -> AlarmKitAdapter -> UserDefaults state`
+## Watch transport, cache, and offline behavior
 
-Each native alarm is a one-shot `Alarm.Schedule.fixed(leaveAt)` alarm with a system stop control and default system sound. It has no countdown, secondary action, snooze, Live Activity, widget extension, App Intent, or Apple Watch UI. The displayed title is `Čas vyrazit: <název>`.
+The iPhone sends the entire multi-day schedule, not only today's events. The Watch receiver validates the envelope and schedule, applies the shared version decision, and atomically replaces the App Group cache. Equal snapshots are idempotent; stale or conflicting versions are rejected.
 
-The app stores only `stableId -> platformAlarmID`, last applied alarm content, and the successful payload/sync timestamp. It never writes an AlarmKit UUID into the canonical schedule. On each authorized sync it compares the persisted map with `AlarmManager.shared.alarms`; mappings for system alarms that no longer exist are pruned before reconciliation. Updates cancel the prior alarm and schedule a new one, saving each successful step so a partial failure cannot claim a fully successful sync.
+The Watch app, WidgetKit timeline, Smart Stack relevance, and local leave notifications all use this cache. Timeline entries include day-boundary and event-state transitions, so the next day works without a new sync. Cached data expires after the final event plus 24 hours.
 
-## First alarm on an iPhone
+The Watch has no direct schedule network fetch and no GPS or cellular dependency. `WCSession.isReachable` is not required when an alarm fires; `updateApplicationContext` provides the latest snapshot whenever the paired devices can exchange it.
 
-1. Open the `.xcodeproj`, select the `LazenskyCommanderApp` scheme and a signed physical iPhone, then build and run.
-2. Confirm that the AlarmKit status is available. Tap **Povolit alarmy** and accept the system permission prompt.
-3. Use a future `leaveAt` in the configured schedule URL, then tap **Synchronizovat**.
-4. Verify the app reports a created alarm. In a subsequent foreground sync, the adapter also checks `AlarmManager.shared.alarms`; an existing UUID remains in the local mapping only while the system still has that alarm.
-5. Wait for the configured departure time and confirm the system alarm presents `Čas vyrazit: ...` with its standard stop control. Then change an event time or override and sync again to verify update; remove an event and verify cancel.
+## Standalone Watch alarms
+
+The persistent **Samostatné alarmy Watch** setting authorizes and reconciles time-sensitive `UNUserNotificationCenter` requests on watchOS. The Watch app target declares the time-sensitive notification entitlement, and each request uses `UNNotificationInterruptionLevel.timeSensitive`. Requests use deterministic identifiers in the `lazensky.commander.watch.leave.<stableId>` namespace and canonical `leaveAt` values. Reconciliation creates, updates, preserves, or cancels only requests owned by this namespace.
+
+At most the nearest 60 future requests are pending because of the platform limit. This rolling limit does not truncate the full schedule cache. Disabling the setting removes only Commander Watch leave notifications and leaves unrelated notifications untouched.
+
+## Visual assets
+
+`../assets/icons/lazensky-v1/icon-map.json` and `colors.json` are the shared visual contract. The PWA uses approved 256px PNGs, the iPhone app uses 512px assets, and Live Activity/Watch surfaces use 128px assets. Unknown procedures retain their source text, receive no fabricated category icon, and use neutral Commander purple.
+
+## Verification
+
+Run the platform-neutral checks from the repository root:
+
+```sh
+swift test --package-path native/LazenskyCommander
+swift run --package-path native/LazenskyCommander LazenskyCommanderCoreCheck
+```
+
+Run unsigned generic builds with full Xcode:
+
+```sh
+xcodebuild -project native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj \
+  -scheme LazenskyCommanderApp -destination 'generic/platform=iOS' \
+  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+
+xcodebuild -project native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj \
+  -scheme LazenskyCommanderWatchApp -destination 'generic/platform=watchOS' \
+  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build
+```
+
+Generic unsigned builds verify compilation, target dependencies, embedding, and resources. AlarmKit authorization and presentation, Dynamic Island behavior, WatchConnectivity delivery, Smart Stack relevance, and Watch haptics/local notifications require physical-device testing.

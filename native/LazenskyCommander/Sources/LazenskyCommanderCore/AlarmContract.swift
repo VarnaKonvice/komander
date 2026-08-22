@@ -25,14 +25,22 @@ public enum NativeAlarmContract {
 
   public static func payload(schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> NativeAlarmPayload {
     try validate(schedule)
-    let alarms = try schedule.events.map { event in
-      let startAt = try dateTime(date: event.date, time: event.start)
-      let endAt = try dateTime(date: event.date, time: event.end)
-      let leadTime = try effectiveLeadTime(event: event, schedule: schedule, overrides: overrides)
-      let leaveAt = startAt.addingTimeInterval(TimeInterval(-leadTime * 60))
-      return NativeAlarm(stableId: event.stableId, kind: event.kind, title: event.title, location: event.location, startAt: format(startAt), endAt: format(endAt), effectiveLeadTimeMinutes: leadTime, leaveAt: format(leaveAt))
+    return try payloadValidated(schedule: schedule, overrides: overrides)
+  }
+
+  static func payloadValidated(schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> NativeAlarmPayload {
+    let alarms = try schedule.events.map {
+      try alarm(event: $0, schedule: schedule, overrides: overrides)
     }.sorted { [$0.startAt, $0.endAt, $0.stableId].joined(separator: "|") < [$1.startAt, $1.endAt, $1.stableId].joined(separator: "|") }
     return NativeAlarmPayload(contractVersion: contractVersion, scheduleVersion: schedule.scheduleVersion, alarms: alarms)
+  }
+
+  static func alarm(event: ScheduleEvent, schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> NativeAlarm {
+    let startAt = try dateTime(date: event.date, time: event.start)
+    let endAt = try dateTime(date: event.date, time: event.end)
+    let leadTime = try effectiveLeadTime(event: event, schedule: schedule, overrides: overrides)
+    let leaveAt = startAt.addingTimeInterval(TimeInterval(-leadTime * 60))
+    return NativeAlarm(stableId: event.stableId, kind: event.kind, title: event.title, location: event.location, startAt: format(startAt), endAt: format(endAt), effectiveLeadTimeMinutes: leadTime, leaveAt: format(leaveAt))
   }
 
   public static func effectiveLeadTime(event: ScheduleEvent, schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> Int {

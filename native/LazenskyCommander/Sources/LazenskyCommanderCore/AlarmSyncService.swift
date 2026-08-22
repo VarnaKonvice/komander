@@ -38,7 +38,21 @@ public struct AlarmSyncService: Sendable {
 
   public func synchronize(overrides: LeadTimeOverrides? = nil, now: Date = Date()) async throws -> AlarmSyncSummary {
     let schedule = try await scheduleService.fetchSchedule()
+    return try await synchronizeValidated(schedule: schedule, overrides: overrides, now: now)
+  }
+
+  public func synchronize(schedule: Schedule, overrides: LeadTimeOverrides? = nil, now: Date = Date()) async throws -> AlarmSyncSummary {
     let payload = try NativeAlarmContract.payload(schedule: schedule, overrides: overrides)
+    return try await synchronize(schedule: schedule, payload: payload, now: now)
+  }
+
+  func synchronizeValidated(schedule: Schedule, overrides: LeadTimeOverrides? = nil, now: Date = Date()) async throws -> AlarmSyncSummary {
+    let payload = try NativeAlarmContract.payloadValidated(schedule: schedule, overrides: overrides)
+    return try await synchronize(schedule: schedule, payload: payload, now: now)
+  }
+
+  private func synchronize(schedule: Schedule, payload: NativeAlarmPayload, now: Date) async throws -> AlarmSyncSummary {
+    await adapter.prepare(schedule: schedule)
     var state = try await store.load()
 
     let availability = await adapter.availability()

@@ -6,7 +6,12 @@
   var LOCAL_SETTINGS_STORE = 'lazensky_commander_local_settings_v1';
   var MODULE_URL = typeof document !== 'undefined' && document.currentScript && document.currentScript.src ? document.currentScript.src : '';
   var SCHEDULE_URL = MODULE_URL ? new URL('./data/schedule.json', MODULE_URL).href : './data/schedule.json';
+  var ICON_ROOT_URL = MODULE_URL ? new URL('./assets/icons/lazensky-v1/', MODULE_URL).href : './assets/icons/lazensky-v1/';
+  var ICON_MAP_URL = MODULE_URL ? new URL('icon-map.json', ICON_ROOT_URL).href : ICON_ROOT_URL+'icon-map.json';
+  var COLORS_URL = MODULE_URL ? new URL('colors.json', ICON_ROOT_URL).href : ICON_ROOT_URL+'colors.json';
   var syncRunning = false;
+  var visualContract = null;
+  var visualContractPromise = null;
 
   function safeParse(value){ try { return JSON.parse(value); } catch (error) { return null; } }
   function compactText(value){ return String(value == null ? '' : value).trim(); }
@@ -36,6 +41,41 @@
   function toLegacySchedule(schedule){ return { stay: Object.assign({}, schedule.stay, { spaName: schedule.stay.spa || schedule.stay.spaName, stayFrom: schedule.stay.dateFrom || schedule.stay.stayFrom, stayTo: schedule.stay.dateTo || schedule.stay.stayTo, leaveBufferMinutes: schedule.settings.defaultLeadTimeMinutes }), items: schedule.events.map(function(event){ return { id: event.stableId, type: event.kind, date: event.date, start: event.start, end: event.end, title: event.title, place: event.location }; }) }; }
   function persistSchedule(schedule, source){ localStorage.setItem(STORE, JSON.stringify({ source: source || 'public-feed', schedule: schedule })); localStorage.setItem(LEGACY_STORE, JSON.stringify(toLegacySchedule(schedule))); window.dispatchEvent(new Event('lazensky-schedule-change')); return schedule; }
   function currentSchedule(){ var stored = safeParse(localStorage.getItem(STORE) || 'null'); if(stored && stored.schedule){ try { return normalizeSchedule(stored.schedule, { defaultVersion: 0 }); } catch(error) {} } return null; }
+  function visualSource(event){ event = event || {}; return overrideKey([event.title, event.procedureType, event.mealType].map(compactText).join(' ')); }
+  function classifyEventIcon(event, iconMap){
+    if(!event || !iconMap || !Array.isArray(iconMap.icons)) return null;
+    var source = visualSource(event), matches = [];
+    iconMap.icons.forEach(function(icon, index){
+      var lengths = (Array.isArray(icon.keywords) ? icon.keywords : []).map(overrideKey).filter(function(keyword){ return keyword && source.indexOf(keyword) >= 0; }).map(function(keyword){ return keyword.length; });
+      if(lengths.length) matches.push({ icon:icon, priority:Number.isInteger(icon.priority) ? icon.priority : 0, keywordLength:Math.max.apply(Math,lengths), index:index });
+    });
+    matches.sort(function(left,right){ return right.priority-left.priority || right.keywordLength-left.keywordLength || left.index-right.index; });
+    return matches.length ? matches[0].icon : null;
+  }
+  function visualIconUrl(key, size){ var path = 'icons/'+(size || 256)+'/'+encodeURIComponent(key)+'.png'; return key ? (MODULE_URL ? new URL(path,ICON_ROOT_URL).href : ICON_ROOT_URL+path) : null; }
+  function eventVisual(event){
+    var iconMap = visualContract && visualContract.iconMap, colors = visualContract && visualContract.colors, icon = classifyEventIcon(event,iconMap);
+    if(icon){ var colorKey = icon.key.indexOf('meal_') === 0 ? 'meal' : icon.key, accent = colors && colors.procedures && colors.procedures[colorKey] || icon.accent; return { known:true, key:icon.key, label:icon.label, accent:accent, iconUrl:visualIconUrl(icon.key,256) }; }
+    var fallback = iconMap && iconMap.fallback;
+    return { known:false, key:null, label:fallback && fallback.label || '', accent:colors && colors.brand && colors.brand.commanderPurple || fallback && fallback.accent || '#6E56CF', iconUrl:null };
+  }
+  function validateVisualContract(iconMap, colors){
+    if(!iconMap || iconMap.version !== 1 || !Array.isArray(iconMap.icons) || !iconMap.icons.length) throw new Error('Icon map nemá platnou strukturu.');
+    if(!colors || !colors.brand || !compactText(colors.brand.commanderPurple) || !colors.procedures) throw new Error('Barevný kontrakt nemá platnou strukturu.');
+    var keys = {};
+    iconMap.icons.forEach(function(icon){ if(!compactText(icon.key) || keys[icon.key] || !Array.isArray(icon.keywords) || !icon.keywords.length || !Number.isInteger(icon.priority)) throw new Error('Icon map obsahuje neplatnou kategorii.'); keys[icon.key] = true; });
+    return true;
+  }
+  async function fetchVisualJson(url){ var response = await fetch(url,{ cache:'force-cache' }); if(!response.ok) throw new Error('Vizuální kontrakt se nepodařilo načíst.'); return response.json(); }
+  function loadVisualContract(){
+    if(visualContract) return Promise.resolve(visualContract);
+    if(visualContractPromise) return visualContractPromise;
+    visualContractPromise = Promise.all([fetchVisualJson(ICON_MAP_URL),fetchVisualJson(COLORS_URL)]).then(function(values){
+      validateVisualContract(values[0],values[1]); visualContract = { iconMap:values[0], colors:values[1] }; window.dispatchEvent(new Event('lazensky-visual-contract-ready')); return visualContract;
+    }).catch(function(error){ visualContractPromise = null; throw error; });
+    return visualContractPromise;
+  }
+  function visualAssetUrls(size){ var contract = visualContract; return contract ? [ICON_MAP_URL,COLORS_URL].concat(contract.iconMap.icons.map(function(icon){ return visualIconUrl(icon.key,size || 256); })) : [ICON_MAP_URL,COLORS_URL]; }
   function normalizeLeadTimeOverrides(value){ value = value || {}; return { defaultLeadTimeMinutes: own(value, 'defaultLeadTimeMinutes') ? validMinutes(value.defaultLeadTimeMinutes) : null, procedureTypeOverrides: objectOfMinutes(value.procedureTypeOverrides), mealOverrides: objectOfMinutes(value.mealOverrides), eventOverrides: objectOfMinutes(value.eventOverrides) }; }
   function getLocalSettings(){ return normalizeLeadTimeOverrides(safeParse(localStorage.getItem(LOCAL_SETTINGS_STORE) || 'null')); }
   function saveLocalSettings(value){ localStorage.setItem(LOCAL_SETTINGS_STORE, JSON.stringify(value)); window.dispatchEvent(new Event('lazensky-schedule-settings-change')); }
@@ -43,7 +83,8 @@
   function localIso(date){ return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0'); }
   function eventDateTime(event, time){ var value = new Date(event.date+'T'+time+':00'); return Number.isNaN(value.getTime()) ? null : value; }
   function localDateTimeIso(date){ return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')+'T'+String(date.getHours()).padStart(2,'0')+':'+String(date.getMinutes()).padStart(2,'0')+':00'; }
-  function alarmContract(schedule, overrides){ var effectiveOverrides = arguments.length > 1 ? overrides : getLocalSettings(); schedule = schedule || currentSchedule(); if(!schedule) return []; try { schedule = normalizeSchedule(schedule, { defaultVersion: 0 }); } catch(error) { return []; } return schedule.events.map(function(event){ var startAt = eventDateTime(event,event.start), endAt = eventDateTime(event,event.end), effectiveLeadTimeMinutes = effectiveLeadTime(event,schedule,effectiveOverrides), leaveAt = new Date(startAt.getTime()-effectiveLeadTimeMinutes*60000); return { stableId:event.stableId, scheduleVersion:schedule.scheduleVersion, kind:event.kind, title:event.title, location:event.location, startAt:localDateTimeIso(startAt), endAt:localDateTimeIso(endAt), effectiveLeadTimeMinutes:effectiveLeadTimeMinutes, leaveAt:localDateTimeIso(leaveAt) }; }); }
+  function alarmForEvent(event, schedule, overrides){ var startAt = eventDateTime(event,event.start), endAt = eventDateTime(event,event.end), effectiveLeadTimeMinutes = effectiveLeadTime(event,schedule,overrides), leaveAt = new Date(startAt.getTime()-effectiveLeadTimeMinutes*60000); return { stableId:event.stableId, scheduleVersion:schedule.scheduleVersion, kind:event.kind, title:event.title, location:event.location, startAt:localDateTimeIso(startAt), endAt:localDateTimeIso(endAt), effectiveLeadTimeMinutes:effectiveLeadTimeMinutes, leaveAt:localDateTimeIso(leaveAt) }; }
+  function alarmContract(schedule, overrides){ var effectiveOverrides = arguments.length > 1 ? overrides : getLocalSettings(); schedule = schedule || currentSchedule(); if(!schedule) return []; try { schedule = normalizeSchedule(schedule, { defaultVersion: 0 }); } catch(error) { return []; } return schedule.events.map(function(event){ return alarmForEvent(event,schedule,effectiveOverrides); }); }
   function nativeAlarmPayload(schedule, overrides){ var source = schedule || currentSchedule(), normalized = null; if(source) try { normalized = normalizeSchedule(source, { defaultVersion: 0 }); } catch(error) {} var alarms = alarmContract(normalized, overrides); return { contractVersion:1, scheduleVersion:normalized ? normalized.scheduleVersion : 0, alarms:alarms.map(function(alarm){ return { stableId:alarm.stableId, kind:alarm.kind, title:alarm.title, location:alarm.location, startAt:alarm.startAt, endAt:alarm.endAt, effectiveLeadTimeMinutes:alarm.effectiveLeadTimeMinutes, leaveAt:alarm.leaveAt }; }) }; }
   function sameNativeAlarm(current, next){ return ['kind','title','location','startAt','endAt','effectiveLeadTimeMinutes','leaveAt'].every(function(field){ return current[field] === next[field]; }); }
   function reconcileNativeAlarms(currentAlarms, nextPayload){ var current = Array.isArray(currentAlarms) ? currentAlarms : (currentAlarms && Array.isArray(currentAlarms.alarms) ? currentAlarms.alarms : []), next = nextPayload && Array.isArray(nextPayload.alarms) ? nextPayload.alarms : [], byStableId = Object.create(null); current.forEach(function(alarm){ if(alarm && compactText(alarm.stableId) && !byStableId[alarm.stableId]) byStableId[alarm.stableId] = alarm; }); var plan = { create:[], update:[], cancel:[], unchanged:[] }; next.forEach(function(alarm){ var existing = byStableId[alarm.stableId]; if(!existing) plan.create.push({ stableId:alarm.stableId, nextAlarm:alarm }); else if(sameNativeAlarm(existing,alarm)) plan.unchanged.push({ stableId:alarm.stableId, currentAlarm:existing, nextAlarm:alarm }); else plan.update.push({ stableId:alarm.stableId, currentAlarm:existing, nextAlarm:alarm }); delete byStableId[alarm.stableId]; }); Object.keys(byStableId).sort().forEach(function(stableId){ plan.cancel.push({ stableId:stableId, currentAlarm:byStableId[stableId] }); }); return plan; }
@@ -58,7 +99,7 @@
     for(var index=0; index<todayEvents.length; index++){
       var event = todayEvents[index], startAt = eventDateTime(event,event.start), endAt = eventDateTime(event,event.end);
       if(!startAt || !endAt || endAt.getTime() < startAt.getTime()) return liveResult('NO_SCHEDULE', null, null, null, null, null, now, null);
-      var leadTimeMinutes = effectiveLeadTime(event,schedule,effectiveOverrides), leaveAt = new Date(startAt.getTime()-leadTimeMinutes*60000);
+      var alarm = alarmForEvent(event,schedule,effectiveOverrides), leadTimeMinutes = alarm.effectiveLeadTimeMinutes, leaveAt = new Date(alarm.leaveAt);
       if(now.getTime() < leaveAt.getTime()) return liveResult('UPCOMING', event, event, startAt, endAt, leaveAt, now, leadTimeMinutes);
       if(now.getTime() < startAt.getTime()) return liveResult('LEAVE_NOW', event, event, startAt, endAt, leaveAt, now, leadTimeMinutes);
       if(now.getTime() < endAt.getTime()) return liveResult('IN_PROGRESS', event, event, startAt, endAt, leaveAt, now, leadTimeMinutes);
@@ -83,8 +124,8 @@
   function escapeHtml(value){ return String(value == null ? '' : value).replace(/[&<>"']/g, function(character){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[character]; }); }
   function notificationSettingsHtml(){ var schedule = currentSchedule(); if(!schedule) return ''; var local = getLocalSettings(), procedureTypes = Array.from(new Set(schedule.events.filter(function(event){ return event.kind === 'procedure'; }).map(function(event){ return event.procedureType; }))).sort(), mealTypes = ['Snídaně','Oběd','Večeře']; function valueFor(group, type){ if(group === 'default') return local.defaultLeadTimeMinutes != null ? local.defaultLeadTimeMinutes : schedule.settings.defaultLeadTimeMinutes; var localValues = group === 'procedure' ? local.procedureTypeOverrides : local.mealOverrides, sourceValues = group === 'procedure' ? schedule.settings.procedureTypeOverrides : schedule.settings.mealOverrides, key = overrideKey(type); return own(localValues, key) ? localValues[key] : (own(sourceValues, key) ? sourceValues[key] : schedule.settings.defaultLeadTimeMinutes); } function row(label, group, type){ return '<label class="lkLeadRow"><span>'+escapeHtml(label)+'</span><input type="number" min="0" max="180" inputmode="numeric" value="'+valueFor(group,type)+'" data-lk-lead-group="'+group+'" data-lk-lead-type="'+escapeHtml(type || '')+'"><em>min</em></label>'; } return '<section class="lkStaySection lkSectionCard lkLeadSettings" data-lk-lead-settings="1"><div class="lkSectionHeader"><h2>Nastavení upozornění</h2><i class="lkBadge">Vyrazit</i></div><p class="lkSecondaryText">Časy se použijí pro budoucí upozornění, neukazují se v programu dne.</p>'+row('Výchozí','default','')+procedureTypes.map(function(type){ return row(type,'procedure',type); }).join('')+mealTypes.map(function(type){ return row(type,'meal',type); }).join('')+'</section>'; }
   function bindNotificationSettings(root){ if(!root) return; root.addEventListener('change', function(event){ var input = event.target.closest('[data-lk-lead-group]'); if(!input) return; var minutes = validMinutes(input.value); if(minutes == null){ input.value = ''; return; } var group = input.dataset.lkLeadGroup, type = input.dataset.lkLeadType || '', local = getLocalSettings(); if(group === 'default') local.defaultLeadTimeMinutes = minutes; else if(group === 'procedure') local.procedureTypeOverrides[type] = minutes; else if(group === 'meal') local.mealOverrides[type] = minutes; saveLocalSettings(local); }); }
-  function startAutoSync(){ refreshPublicSchedule().catch(function(){}); document.addEventListener('visibilitychange', function(){ if(!document.hidden) refreshPublicSchedule().catch(function(){}); }); window.addEventListener('online', function(){ refreshPublicSchedule().catch(function(){}); }); }
+  function startAutoSync(){ loadVisualContract().catch(function(){}); refreshPublicSchedule().catch(function(){}); document.addEventListener('visibilitychange', function(){ if(!document.hidden){ loadVisualContract().catch(function(){}); refreshPublicSchedule().catch(function(){}); } }); window.addEventListener('online', function(){ loadVisualContract().catch(function(){}); refreshPublicSchedule().catch(function(){}); }); }
 
-  window.LazenskySchedule = { normalizeSchedule: normalizeSchedule, validateSchedule: validateSchedule, toLegacySchedule: toLegacySchedule, getSchedule: currentSchedule, getEffectiveLeadTime: effectiveLeadTime, computeLiveState: computeLiveState, alarmContract: alarmContract, nativeAlarmPayload: nativeAlarmPayload, reconcileNativeAlarms: reconcileNativeAlarms, calendarContract: calendarContract, renderNotificationSettings: notificationSettingsHtml, bindNotificationSettings: bindNotificationSettings, refreshPublicSchedule: refreshPublicSchedule, scheduleUrl: SCHEDULE_URL };
+  window.LazenskySchedule = { normalizeSchedule: normalizeSchedule, validateSchedule: validateSchedule, toLegacySchedule: toLegacySchedule, getSchedule: currentSchedule, getEffectiveLeadTime: effectiveLeadTime, computeLiveState: computeLiveState, alarmContract: alarmContract, nativeAlarmPayload: nativeAlarmPayload, reconcileNativeAlarms: reconcileNativeAlarms, calendarContract: calendarContract, classifyEventIcon: classifyEventIcon, getEventVisual: eventVisual, getVisualContract: function(){ return visualContract; }, loadVisualContract: loadVisualContract, visualAssetUrls: visualAssetUrls, renderNotificationSettings: notificationSettingsHtml, bindNotificationSettings: bindNotificationSettings, refreshPublicSchedule: refreshPublicSchedule, scheduleUrl: SCHEDULE_URL, iconMapUrl: ICON_MAP_URL, colorsUrl: COLORS_URL };
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startAutoSync, { once: true }); else startAutoSync();
 })();

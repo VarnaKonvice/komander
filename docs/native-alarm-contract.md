@@ -53,3 +53,17 @@ Every alarm entry is derived through `LazenskySchedule.alarmContract(schedule, o
 - A higher `scheduleVersion` alone never produces `update`.
 
 The native client owns its local mapping from `stableId` to `AlarmKit.Alarm.ID` (or another platform identifier). Neither `data/schedule.json` nor this payload contains a platform UUID. The mapping is local implementation state and can be recreated from the canonical payload and reconciliation plan.
+
+## Implementovaná iPhone adaptace
+
+`LazenskyCommanderApp` načte a validuje schedule jednou. Stejný `Schedule` používá `AlarmSyncService`, Commander Live Card a `WatchScheduleSnapshot`. AlarmKit reconciliation ukládá lokální mapování `stableId -> AlarmKit Alarm.ID`; změněné alarmově relevantní pole vede k update, odstraněná událost k cancel a samotné zvýšení `scheduleVersion` update nevytváří.
+
+Každý AlarmKit alarm je naplánovaný na canonical `leaveAt`. `AlarmCountdown.preAlertDuration` zahájí pre-alert na konci předchozí události, pokud tento konec leží před `leaveAt`; jinak nejvýše 30 minut před `leaveAt`. `AlarmAttributes<CommanderAlarmMetadata>` předává `stableId`, `scheduleVersion`, `iconKey`, `title`, `location`, `kind`, `startAt` a `leaveAt` skutečné Live Activity extension. Lock Screen a Dynamic Island používají AlarmKit stav a systémový timer rendering bez polling timeru.
+
+## Implementovaná Watch adaptace
+
+iPhone předává celý `WatchScheduleSnapshot` přes `WCSession.updateApplicationContext`. Watch envelope i schedule se znovu validují a vyšší verze se atomicky uloží do App Group `group.com.varnakonvice.lazenskycommander.watch`. Watch app a WidgetKit extension čtou pouze tuto cache; přímý Watch internet fetch není implementovaný ani potřebný.
+
+Widget timeline a RelevanceKit intervaly se odvozují z celého cached pobytu a společného live-state/alarm contractu. Cache je platná do poslední události plus 24 hodin. Neobsahuje GPS, location relevance ani cellular podmínky.
+
+Volitelný persistentní režim **Samostatné alarmy Watch** používá `UNUserNotificationCenter` přímo na watchOS. Watch app target deklaruje time-sensitive notification capability a požadavky nastavují `UNNotificationInterruptionLevel.timeSensitive`. Budoucí notifikace se odvozují ze stejného native payloadu a mají deterministický identifikátor `lazensky.commander.watch.leave.<stableId>`, titul `Čas vyrazit` a tělo `<procedura> · <místo>`. Reconciliation spravuje pouze tento namespace, podporuje create/update/cancel/unchanged a plánuje nejbližších nejvýše 60 pending požadavků. Rolling limit neomezuje data uložená v cache. Vypnutí režimu odstraní pouze tyto Watch leave notifikace; cizí požadavky zůstávají nedotčené.
