@@ -496,9 +496,6 @@
 							com.apple.ApplicationGroups.iOS = {
 								enabled = 1;
 							};
-							com.apple.UserNotifications.time-sensitive = {
-								enabled = 1;
-							};
 						};
 					};
 					F60000000000000000000050 = {

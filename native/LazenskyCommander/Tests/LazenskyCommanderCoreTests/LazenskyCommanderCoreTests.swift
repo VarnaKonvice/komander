@@ -56,6 +56,150 @@ import Testing
   #expect(await adapter.scheduledCount() == schedule.events.count)
 }
 
+@Test func alarmSyncSucceedsWithNoDesiredAlarmsWhenScheduleIsEntirelyPast() async throws {
+  let schedule = watchSchedule(events: [
+    watchEvent("past", date: "2026-08-20", start: "09:00", end: "09:30", title: "Minulá procedura")
+  ], lead: 0)
+  let store = InMemoryAlarmStateStore()
+  let adapter = RecordingAlarmAdapter()
+  let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: store, adapter: adapter)
+
+  let summary = try await service.synchronize(
+    now: NativeAlarmContract.date(fromLocalISO: "2026-08-20T10:00:00")
+  )
+
+  #expect(summary.succeeded)
+  #expect(summary.desiredAlarmCount == 0)
+  #expect(summary.plan.create.isEmpty)
+  #expect(await adapter.scheduledCount() == 0)
+  #expect((await store.load()).records.isEmpty)
+}
+
+@Test func alarmSyncSchedulesOnlyFutureAlarmFromMixedCanonicalSchedule() async throws {
+  let schedule = watchSchedule(events: [
+    watchEvent("past", date: "2026-08-20", start: "09:00", end: "09:30", title: "Minulá procedura"),
+    watchEvent("future", date: "2026-08-20", start: "11:00", end: "11:30", title: "Budoucí procedura")
+  ], lead: 0)
+  let adapter = RecordingAlarmAdapter()
+  let store = InMemoryAlarmStateStore()
+  let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: store, adapter: adapter)
+
+  let summary = try await service.synchronize(
+    now: NativeAlarmContract.date(fromLocalISO: "2026-08-20T10:00:00")
+  )
+
+  #expect(summary.desiredAlarmCount == 1)
+  #expect(summary.plan.create.map(\.stableId) == ["future"])
+  #expect(await adapter.scheduledStableIds() == ["future"])
+  #expect(Set((await store.load()).records.keys) == ["future"])
+  #expect((await store.load()).lastSuccessfulPayload?.alarms.map(\.stableId) == ["future"])
+}
+
+@Test func alarmSyncDoesNotScheduleAlarmWhoseLeaveAtEqualsNow() async throws {
+  let schedule = watchSchedule(events: [
+    watchEvent("boundary", date: "2026-08-20", start: "10:00", end: "10:30", title: "Hraniční procedura")
+  ], lead: 0)
+  let adapter = RecordingAlarmAdapter()
+  let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: InMemoryAlarmStateStore(), adapter: adapter)
+
+  let summary = try await service.synchronize(
+    now: NativeAlarmContract.date(fromLocalISO: "2026-08-20T10:00:00")
+  )
+
+  #expect(summary.desiredAlarmCount == 0)
+  #expect(summary.plan.create.isEmpty)
+  #expect(await adapter.scheduledCount() == 0)
+}
+
+@Test func alarmSyncSchedulesAlarmWhoseLeaveAtIsOneSecondInTheFuture() async throws {
+  let schedule = watchSchedule(events: [
+    watchEvent("future-second", date: "2026-08-20", start: "10:00", end: "10:30", title: "Budoucí procedura")
+  ], lead: 0)
+  let adapter = RecordingAlarmAdapter()
+  let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: InMemoryAlarmStateStore(), adapter: adapter)
+  let leaveAt = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T10:00:00")
+
+  let summary = try await service.synchronize(
+    now: leaveAt.addingTimeInterval(-1)
+  )
+
+  #expect(summary.desiredAlarmCount == 1)
+  #expect(summary.appliedCreate == 1)
+  #expect(await adapter.scheduledStableIds() == ["future-second"])
+}
+
+@Test func alarmSyncCancelsManagedAlarmAfterItsLeaveAtPasses() async throws {
+  let schedule = watchSchedule(events: [
+    watchEvent("managed", date: "2026-08-20", start: "10:00", end: "10:30", title: "Spravovaná procedura")
+  ], lead: 0)
+  let store = InMemoryAlarmStateStore()
+  let adapter = RecordingAlarmAdapter()
+  let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: store, adapter: adapter)
+
+  let initial = try await service.synchronize(
+    now: NativeAlarmContract.date(fromLocalISO: "2026-08-20T09:00:00")
+  )
+  let expired = try await service.synchronize(
+    now: NativeAlarmContract.date(fromLocalISO: "2026-08-20T10:00:00")
+  )
+
+  #expect(initial.appliedCreate == 1)
+  #expect(expired.desiredAlarmCount == 0)
+  #expect(expired.plan.cancel.map(\.stableId) == ["managed"])
+  #expect(expired.appliedCancel == 1)
+  #expect(await adapter.cancelledCount() == 1)
+  #expect((await store.load()).records.isEmpty)
+  #expect((await store.load()).lastSuccessfulPayload?.alarms.isEmpty == true)
+}
+
+@Test func mixedScheduleRemainsWholeForIPhoneAndWatchSnapshot() async throws {
+  let schedule = watchSchedule(events: [
+    watchEvent("past", date: "2026-08-20", start: "09:00", end: "09:30", title: "Minulá procedura"),
+    watchEvent("future", date: "2026-08-20", start: "11:00", end: "11:30", title: "Budoucí procedura")
+  ], lead: 0)
+  let source = CountingScheduleService(schedule: schedule)
+  let scheduleStore = InMemoryScheduleSnapshotStore()
+  let adapter = RecordingAlarmAdapter()
+  let watchDelivery = RecordingWatchScheduleDelivery()
+  let alarmSync = AlarmSyncService(scheduleService: source, store: InMemoryAlarmStateStore(), adapter: adapter)
+  let coordinator = CommanderScheduleSyncCoordinator(
+    scheduleService: source,
+    alarmSyncService: alarmSync,
+    scheduleStore: scheduleStore,
+    watchDelivery: watchDelivery
+  )
+
+  let result = try await coordinator.synchronize(
+    now: NativeAlarmContract.date(fromLocalISO: "2026-08-20T10:00:00")
+  )
+
+  #expect(result.alarmSummary.desiredAlarmCount == 1)
+  #expect(await adapter.scheduledStableIds() == ["future"])
+  #expect(result.schedule == schedule)
+  #expect(result.watchSnapshot.schedule == schedule)
+  #expect(result.watchSnapshot.schedule.events.map(\.stableId) == ["past", "future"])
+  #expect(await scheduleStore.load() == schedule)
+  #expect(await watchDelivery.receivedSnapshot()?.schedule == schedule)
+}
+
+@Test func productionVersionFourHasNoDesiredAlarmsOnAugustTwentySecond() async throws {
+  let schedule = try decodeSchedule(named: "data/schedule.json")
+  let canonicalPayload = try NativeAlarmContract.payload(schedule: schedule)
+  let adapter = RecordingAlarmAdapter()
+  let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: InMemoryAlarmStateStore(), adapter: adapter)
+
+  let summary = try await service.synchronize(
+    now: NativeAlarmContract.date(fromLocalISO: "2026-08-22T12:00:00")
+  )
+
+  #expect(schedule.scheduleVersion == 4)
+  #expect(canonicalPayload.alarms.count == 13)
+  #expect(summary.succeeded)
+  #expect(summary.desiredAlarmCount == 0)
+  #expect(summary.plan.create.isEmpty)
+  #expect(await adapter.scheduledCount() == 0)
+}
+
 @Test func fetchFailureDoesNotCancelExistingAlarm() async throws {
   let existing = NativeAlarm(stableId: "kept", kind: .procedure, title: "Kept", location: "Room", startAt: "2026-08-20T10:00:00", endAt: "2026-08-20T10:30:00", effectiveLeadTimeMinutes: 0, leaveAt: "2026-08-20T10:00:00")
   let initial = ManagedAlarmState(records: ["kept": ManagedAlarmRecord(stableId: "kept", platformAlarmID: "alarm-kept", alarm: existing)])
@@ -94,21 +238,25 @@ import Testing
   let adapter = RecordingAlarmAdapter(authorization: .denied)
   let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: store, adapter: adapter)
   var didThrow = false
-  do { _ = try await service.synchronize() } catch { didThrow = true }
+  do { _ = try await service.synchronize(now: Date(timeIntervalSince1970: 1)) } catch { didThrow = true }
   #expect(didThrow)
   #expect((await store.load()).records.isEmpty)
   #expect(await adapter.scheduledCount() == 0)
 }
 
-@Test func missingSystemAlarmPrunesStaleMappingBeforeSync() async throws {
+@Test func missingPastSystemAlarmIsPrunedWithoutCancelAttempt() async throws {
   let schedule = try decodeSchedule(named: "data/schedule.json")
   let stale = NativeAlarm(stableId: "stale", kind: .procedure, title: "Stale", location: "Room", startAt: "2026-08-20T10:00:00", endAt: "2026-08-20T10:30:00", effectiveLeadTimeMinutes: 0, leaveAt: "2026-08-20T10:00:00")
   let store = InMemoryAlarmStateStore(ManagedAlarmState(records: ["stale": ManagedAlarmRecord(stableId: "stale", platformAlarmID: UUID().uuidString, alarm: stale)]))
   let adapter = RecordingAlarmAdapter(existingIDs: [])
   let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: store, adapter: adapter)
-  let summary = try await service.synchronize()
+  let summary = try await service.synchronize(
+    now: NativeAlarmContract.date(fromLocalISO: "2026-08-22T12:00:00")
+  )
+  #expect(summary.desiredAlarmCount == 0)
   #expect(summary.plan.cancel.isEmpty)
   #expect((await store.load()).records["stale"] == nil)
+  #expect(await adapter.cancelledCount() == 0)
 }
 
 @Test func syncPersistsCreateThenAppliesUpdateAndCancel() async throws {
@@ -117,7 +265,8 @@ import Testing
   let store = InMemoryAlarmStateStore()
   let adapter = RecordingAlarmAdapter()
   let service = AlarmSyncService(scheduleService: source, store: store, adapter: adapter)
-  _ = try await service.synchronize()
+  let syncNow = Date(timeIntervalSince1970: 1)
+  _ = try await service.synchronize(now: syncNow)
   let initialState = await store.load()
   #expect(initialState.records.count == original.events.count)
   #expect(initialState.records.values.allSatisfy { PlatformAlarmIdentifier.uuid(from: $0.platformAlarmID) != nil })
@@ -126,11 +275,11 @@ import Testing
   let first = correctedEvents[0]
   correctedEvents[0] = ScheduleEvent(stableId: first.stableId, date: first.date, start: "07:35", end: "08:00", title: first.title, location: first.location, kind: first.kind, procedureType: first.procedureType, mealType: first.mealType, leadTimeMinutes: first.leadTimeMinutes)
   await source.replace(Schedule(schemaVersion: original.schemaVersion, scheduleVersion: original.scheduleVersion + 1, updatedAt: original.updatedAt, stay: original.stay, events: correctedEvents, settings: original.settings))
-  let updated = try await service.synchronize()
+  let updated = try await service.synchronize(now: syncNow)
   #expect(updated.appliedUpdate == 1)
 
   await source.replace(Schedule(schemaVersion: original.schemaVersion, scheduleVersion: original.scheduleVersion + 2, updatedAt: original.updatedAt, stay: original.stay, events: Array(correctedEvents.dropLast()), settings: original.settings))
-  let cancelled = try await service.synchronize()
+  let cancelled = try await service.synchronize(now: syncNow)
   #expect(cancelled.appliedCancel == 1)
 }
 
@@ -206,7 +355,7 @@ import Testing
   let coordinator = CommanderScheduleSyncCoordinator(scheduleService: source, alarmSyncService: alarmSync, scheduleStore: scheduleStore)
 
   var didThrow = false
-  do { _ = try await coordinator.synchronize() } catch { didThrow = true }
+  do { _ = try await coordinator.synchronize(now: Date(timeIntervalSince1970: 1)) } catch { didThrow = true }
 
   #expect(didThrow)
   #expect(await source.fetchCount() == 1)
@@ -732,7 +881,7 @@ import Testing
   #expect(!disabled.isOperational)
 }
 
-@Test func watchAppDeclaresTimeSensitiveNotificationEntitlement() throws {
+@Test func watchAppUsesActiveNotificationsWithoutRestrictedEntitlement() throws {
   let entitlementURL = repositoryRoot().appendingPathComponent(
     "native/LazenskyCommanderApp/LazenskyCommanderWatchApp/LazenskyCommanderWatchApp.entitlements"
   )
@@ -742,7 +891,15 @@ import Testing
       format: nil
     ) as? [String: Any]
   )
-  #expect(plist["com.apple.developer.usernotifications.time-sensitive"] as? Bool == true)
+  #expect(plist["com.apple.developer.usernotifications.time-sensitive"] == nil)
+
+  let serviceURL = repositoryRoot().appendingPathComponent(
+    "native/LazenskyCommanderApp/LazenskyCommanderWatchApp/WatchLocalNotificationService.swift"
+  )
+  let service = try String(contentsOf: serviceURL, encoding: .utf8)
+  #expect(service.contains("requestAuthorization(options: [.alert, .sound])"))
+  #expect(service.contains("content.interruptionLevel = .active"))
+  #expect(!service.contains(".timeSensitive"))
 }
 
 private func live(_ date: String, schedule: Schedule) -> CommanderLiveStateResult {
@@ -866,7 +1023,7 @@ private struct FailingScheduleService: ScheduleServing {
 }
 
 private actor RecordingAlarmAdapter: AlarmAdapting {
-  private var scheduled = 0
+  private var scheduled: [NativeAlarm] = []
   private var cancelled = 0
   private var prepared: Schedule?
   private let authorization: AlarmAuthorizationStatus
@@ -882,11 +1039,12 @@ private actor RecordingAlarmAdapter: AlarmAdapting {
   func authorizationStatus() -> AlarmAuthorizationStatus { authorization }
   func requestAuthorization() throws { if authorization != .authorized { throw AlarmAdapterError.authorizationDenied } }
   func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) throws -> String {
-    scheduled += 1
+    scheduled.append(alarm)
     return PlatformAlarmIdentifier.newPersistedValue()
   }
   func cancel(platformAlarmID: String) throws { cancelled += 1 }
-  func scheduledCount() -> Int { scheduled }
+  func scheduledCount() -> Int { scheduled.count }
+  func scheduledStableIds() -> [String] { scheduled.map(\.stableId) }
   func cancelledCount() -> Int { cancelled }
   func preparedSchedule() -> Schedule? { prepared }
   func existingPlatformAlarmIDs() async throws -> Set<String>? { existingIDs }

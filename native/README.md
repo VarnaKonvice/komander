@@ -29,6 +29,8 @@ The iPhone and Watch stores are validated local caches, not alternative schedule
 
 `NativeAlarmContract` is the single source of effective lead time and `leaveAt` for native alarm, live-state, and Watch projections. AlarmKit reconciliation identifies events by `stableId`; it stores the local `stableId -> AlarmKit Alarm.ID` mapping outside the canonical schedule.
 
+For each sync, `AlarmSyncService` derives the AlarmKit desired set by retaining only canonical alarms with `leaveAt > now`. An alarm exactly at `now` is not newly scheduled. Past managed alarms still present in AlarmKit are cancelled, and stale mappings absent from the platform are pruned. This filter does not modify the complete `Schedule` used by the Live Card or Watch snapshot.
+
 Each AlarmKit alarm fires at canonical `leaveAt`. Its pre-alert starts at the previous event's `endAt` when that time is before `leaveAt`, otherwise no more than 30 minutes before `leaveAt`. `CommanderAlarmMetadata` is carried by `AlarmAttributes<CommanderAlarmMetadata>` into the Live Activity extension. The Lock Screen and Dynamic Island render AlarmKit countdown, paused, and alert states with system date/timer rendering and no polling timer.
 
 The Commander Live Card reads the last validated iPhone snapshot and evaluates presentation transitions through `CommanderLiveStateCalculator`; countdown changes do not trigger another network fetch.
@@ -43,7 +45,7 @@ The Watch has no direct schedule network fetch and no GPS or cellular dependency
 
 ## Standalone Watch alarms
 
-The persistent **Samostatné alarmy Watch** setting authorizes and reconciles time-sensitive `UNUserNotificationCenter` requests on watchOS. The Watch app target declares the time-sensitive notification entitlement, and each request uses `UNNotificationInterruptionLevel.timeSensitive`. Requests use deterministic identifiers in the `lazensky.commander.watch.leave.<stableId>` namespace and canonical `leaveAt` values. Reconciliation creates, updates, preserves, or cancels only requests owned by this namespace.
+The persistent **Samostatné alarmy Watch** setting authorizes and reconciles standard active `UNUserNotificationCenter` requests on watchOS. Requests use the system sound and respect the Watch system notification and Focus settings. They use deterministic identifiers in the `lazensky.commander.watch.leave.<stableId>` namespace and canonical `leaveAt` values. Reconciliation creates, updates, preserves, or cancels only requests owned by this namespace.
 
 At most the nearest 60 future requests are pending because of the platform limit. This rolling limit does not truncate the full schedule cache. Disabling the setting removes only Commander Watch leave notifications and leaves unrelated notifications untouched.
 

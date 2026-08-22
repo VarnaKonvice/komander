@@ -52,15 +52,16 @@ public struct AlarmSyncService: Sendable {
   }
 
   private func synchronize(schedule: Schedule, payload: NativeAlarmPayload, now: Date) async throws -> AlarmSyncSummary {
+    let desiredPayload = try desiredPayload(from: payload, now: now)
     await adapter.prepare(schedule: schedule)
     var state = try await store.load()
 
     let availability = await adapter.availability()
     guard case .available = availability else {
-      let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: payload)
+      let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
       let message: String
       if case .unavailable(let reason) = availability { message = reason } else { message = "AlarmKit is unavailable." }
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: payload, plan: plan, created: 0, updated: 0, cancelled: 0, error: message, completedAt: nil)
+      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: message, completedAt: nil)
     }
     switch await adapter.authorizationStatus() {
     case .authorized: break
@@ -73,7 +74,7 @@ public struct AlarmSyncService: Sendable {
       state.records = state.records.filter { existingIDs.contains($0.value.platformAlarmID) }
       if state.records.count != before { try await store.save(state) }
     }
-    let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: payload)
+    let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
 
     var created = 0
     var updated = 0
@@ -96,14 +97,25 @@ public struct AlarmSyncService: Sendable {
         created += 1
         try await store.save(state)
       }
-      state.lastSuccessfulPayload = payload
+      state.lastSuccessfulPayload = desiredPayload
       state.lastSuccessfulSync = now
       try await store.save(state)
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: payload, plan: plan, created: created, updated: updated, cancelled: cancelled, error: nil, completedAt: now)
+      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: created, updated: updated, cancelled: cancelled, error: nil, completedAt: now)
     } catch {
       try await store.save(state)
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: payload, plan: plan, created: created, updated: updated, cancelled: cancelled, error: error.localizedDescription, completedAt: nil)
+      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: created, updated: updated, cancelled: cancelled, error: error.localizedDescription, completedAt: nil)
     }
+  }
+
+  private func desiredPayload(from payload: NativeAlarmPayload, now: Date) throws -> NativeAlarmPayload {
+    let futureAlarms = try payload.alarms.filter {
+      try NativeAlarmContract.date(fromLocalISO: $0.leaveAt) > now
+    }
+    return NativeAlarmPayload(
+      contractVersion: payload.contractVersion,
+      scheduleVersion: payload.scheduleVersion,
+      alarms: futureAlarms
+    )
   }
 
   private func create(_ change: AlarmChange, state: inout ManagedAlarmState) async throws {

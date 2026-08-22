@@ -95,7 +95,7 @@ actor WatchLocalNotificationService {
     content.title = notification.notificationTitle
     content.body = notification.notificationBody
     content.sound = .default
-    content.interruptionLevel = .timeSensitive
+    content.interruptionLevel = .active
     content.userInfo = [
       UserInfoKey.stableId: notification.stableId,
       UserInfoKey.scheduleVersion: notification.scheduleVersion,
