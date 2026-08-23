@@ -102,6 +102,14 @@
 		H80000000000000000000008 /* BrandAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000014 /* BrandAssets.xcassets */; };
 		H80000000000000000000009 /* BrandAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000014 /* BrandAssets.xcassets */; };
 		H8000000000000000000000A /* BrandAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000014 /* BrandAssets.xcassets */; };
+		I90000000000000000000001 /* CommanderDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000011 /* CommanderDashboardView.swift */; };
+		I90000000000000000000002 /* CommanderDashboardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000012 /* CommanderDashboardStyle.swift */; };
+		I90000000000000000000003 /* CommanderHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000013 /* CommanderHeroView.swift */; };
+		I90000000000000000000004 /* CommanderNextEventView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000014 /* CommanderNextEventView.swift */; };
+		I90000000000000000000005 /* CommanderMealSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000015 /* CommanderMealSummaryView.swift */; };
+		I90000000000000000000006 /* CommanderDayTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000016 /* CommanderDayTimelineView.swift */; };
+		I90000000000000000000007 /* CommanderSystemStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000017 /* CommanderSystemStatusView.swift */; };
+		I90000000000000000000008 /* CommanderDashboardPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000018 /* CommanderDashboardPreviews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -224,6 +232,14 @@
 		H80000000000000000000012 /* AppAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AppAssets.xcassets; sourceTree = "<group>"; };
 		H80000000000000000000013 /* WatchAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WatchAssets.xcassets; sourceTree = "<group>"; };
 		H80000000000000000000014 /* BrandAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = BrandAssets.xcassets; sourceTree = "<group>"; };
+		I90000000000000000000011 /* CommanderDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDashboardView.swift; sourceTree = "<group>"; };
+		I90000000000000000000012 /* CommanderDashboardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDashboardStyle.swift; sourceTree = "<group>"; };
+		I90000000000000000000013 /* CommanderHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderHeroView.swift; sourceTree = "<group>"; };
+		I90000000000000000000014 /* CommanderNextEventView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderNextEventView.swift; sourceTree = "<group>"; };
+		I90000000000000000000015 /* CommanderMealSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderMealSummaryView.swift; sourceTree = "<group>"; };
+		I90000000000000000000016 /* CommanderDayTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDayTimelineView.swift; sourceTree = "<group>"; };
+		I90000000000000000000017 /* CommanderSystemStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderSystemStatusView.swift; sourceTree = "<group>"; };
+		I90000000000000000000018 /* CommanderDashboardPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDashboardPreviews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -275,6 +291,14 @@
 				E50000000000000000000011 /* IPhoneWatchConnectivityCoordinator.swift */,
 				C30000000000000000000011 /* CommanderLiveCard.swift */,
 				C30000000000000000000012 /* CommanderVisualAssets.swift */,
+				I90000000000000000000011 /* CommanderDashboardView.swift */,
+				I90000000000000000000012 /* CommanderDashboardStyle.swift */,
+				I90000000000000000000013 /* CommanderHeroView.swift */,
+				I90000000000000000000014 /* CommanderNextEventView.swift */,
+				I90000000000000000000015 /* CommanderMealSummaryView.swift */,
+				I90000000000000000000016 /* CommanderDayTimelineView.swift */,
+				I90000000000000000000017 /* CommanderSystemStatusView.swift */,
+				I90000000000000000000018 /* CommanderDashboardPreviews.swift */,
 				H80000000000000000000012 /* AppAssets.xcassets */,
 				A10000000000000000000013 /* Info.plist */,
 			);
@@ -652,6 +676,14 @@
 				E50000000000000000000001 /* IPhoneWatchConnectivityCoordinator.swift in Sources */,
 				C30000000000000000000001 /* CommanderLiveCard.swift in Sources */,
 				C30000000000000000000002 /* CommanderVisualAssets.swift in Sources */,
+				I90000000000000000000001 /* CommanderDashboardView.swift in Sources */,
+				I90000000000000000000002 /* CommanderDashboardStyle.swift in Sources */,
+				I90000000000000000000003 /* CommanderHeroView.swift in Sources */,
+				I90000000000000000000004 /* CommanderNextEventView.swift in Sources */,
+				I90000000000000000000005 /* CommanderMealSummaryView.swift in Sources */,
+				I90000000000000000000006 /* CommanderDayTimelineView.swift in Sources */,
+				I90000000000000000000007 /* CommanderSystemStatusView.swift in Sources */,
+				I90000000000000000000008 /* CommanderDashboardPreviews.swift in Sources */,
 				B20000000000000000000001 /* CommanderAlarmMetadata.swift in Sources */,
 				H80000000000000000000001 /* CommanderBrandAssets.swift in Sources */,
 			);

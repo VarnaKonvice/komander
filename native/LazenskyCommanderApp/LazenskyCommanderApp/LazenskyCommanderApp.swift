@@ -99,50 +99,10 @@ struct LazenskyCommanderApp: App {
   var body: some Scene {
     WindowGroup {
       NavigationStack {
-        Form {
-          Section {
-            TimelineView(.periodic(from: .now, by: 1)) { timeline in
-              CommanderLiveCard(schedule: model.latestSchedule, now: timeline.date)
-            }
-            .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-            .listRowBackground(Color.clear)
-          }
-
-          Section("Synchronizace") {
-            Button {
-              model.synchronize()
-            } label: {
-              HStack {
-                Text(model.isSynchronizing ? "Synchronizuji…" : "Synchronizovat rozpis")
-                Spacer()
-                if model.isSynchronizing { ProgressView() }
-              }
-            }
-            .disabled(model.isSynchronizing)
-            LabeledContent("Verze", value: model.summary.map { String($0.scheduleVersion ?? 0) } ?? "Dosud nesynchronizováno")
-            LabeledContent("Požadované alarmy", value: model.summary.map { String($0.desiredAlarmCount) } ?? "0")
-            LabeledContent("Poslední úspěšný sync", value: model.summary?.completedAt?.formatted() ?? "Nikdy")
-            LabeledContent("Apple Watch", value: model.watchTransferStatus)
-          }
-          Section("AlarmKit") {
-            Text(model.accessStatus)
-            if model.accessStatus.contains("not been requested") {
-              Button("Povolit alarmy") { model.requestAuthorization() }
-            }
-          }
-          Section("Poslední synchronizace") {
-            LabeledContent("Vytvořeno", value: model.summary.map { String($0.appliedCreate) } ?? "0")
-            LabeledContent("Aktualizováno", value: model.summary.map { String($0.appliedUpdate) } ?? "0")
-            LabeledContent("Zrušeno", value: model.summary.map { String($0.appliedCancel) } ?? "0")
-            LabeledContent("Beze změny", value: model.summary.map { String($0.plan.unchanged.count) } ?? "0")
-          }
-          if let error = model.errorMessage {
-            Section("Chyba") { Text(error).foregroundStyle(.red) }
-          }
-        }
-        .navigationTitle("Lázeňský Commander")
-        .task { await model.bootstrap() }
+        CommanderDashboardView(model: model)
       }
+      .preferredColorScheme(.dark)
+      .task { await model.bootstrap() }
     }
   }
 }
