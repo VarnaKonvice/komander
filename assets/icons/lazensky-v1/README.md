@@ -10,6 +10,6 @@ Schválený asset balík odvozený výhradně z obrázku **Icon Set v1 (Full)**.
 - `colors.json`: jednotné barvy
 - `reference/icon-set-v1-full-approved.png`: schválený zdrojový vizuál
 
-Pravidlo: stejný artwork napříč PWA, iPhone, AlarmKit/Live Activity a Apple Watch; na menších plochách pouze zmenšená verze.
+Pravidlo: stejný procedurní artwork napříč PWA, iPhone, AlarmKit/Live Activity a Apple Watch; na menších plochách pouze zmenšená verze. Logo a launcher assety jsou oddělené v `assets/brand/lazensky-commander-v1`.
 
 Klasifikace vybírá shodu s nejvyšší `priority`, při shodné prioritě nejdelší klíčové slovo. Neznámá procedura zachová zdrojový název a nepřiřadí žádný `key` ani obrázek.

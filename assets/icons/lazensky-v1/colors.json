@@ -1,7 +1,11 @@
 {
   "brand": {
     "commanderPurple": "#6E56CF",
-    "commanderPurpleDark": "#4C359B"
+    "commanderPurpleDark": "#4C359B",
+    "commanderPurpleLight": "#A178FF",
+    "waterBlue": "#38B6FF",
+    "timeGold": "#FFC45A",
+    "brandSurfaceDark": "#2B1A4D"
   },
   "procedures": {
     "meal": "#F59E0B",

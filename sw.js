@@ -1,4 +1,4 @@
-const CACHE_NAME = 'komander-pwa-v7';
+const CACHE_NAME = 'komander-pwa-v8';
 const APP_SHELL = [
   './',
   './index.html',
@@ -23,9 +23,11 @@ const APP_SHELL = [
   './assets/icons/lazensky-v1/icons/256/peat_wrap.png',
   './assets/icons/lazensky-v1/icons/256/pool.png',
   './assets/icons/lazensky-v1/icons/256/whirlpool.png',
-  './icon-180.png',
-  './icon-192.png',
-  './icon-512.png'
+  './assets/brand/lazensky-commander-v1/pwa/launcher-192.png',
+  './assets/brand/lazensky-commander-v1/pwa/launcher-512.png',
+  './assets/brand/lazensky-commander-v1/pwa/apple-touch-icon-180.png',
+  './assets/brand/lazensky-commander-v1/pwa/favicon-32.png',
+  './assets/brand/lazensky-commander-v1/pwa/header-mark-180.png'
 ];
 const APP_SHELL_URLS = new Set(APP_SHELL.map(path => new URL(path, self.registration.scope).href));
 

@@ -123,7 +123,7 @@ export async function runPublicScheduleSuite(options) {
     assert(overview.includes("window.addEventListener('lazensky-visual-contract-ready'"), 'PWA does not refresh after the visual contract loads');
     assert(!overview.includes("return item.type === 'meal' ? '♨︎' : '⌖'"), 'Legacy generic symbols remain as the visual category source');
     assert(css.includes('border-left-color:var(--lk-category-accent)') && css.includes('.lkEventIcon'), 'Category accent or icon styling is missing');
-    assert(worker.includes("const CACHE_NAME = 'komander-pwa-v7'"), 'PWA cache version was not advanced');
+    assert(worker.includes("const CACHE_NAME = 'komander-pwa-v8'"), 'PWA cache version was not advanced');
     assert(worker.includes("'./calendar-contract.js?v=1'"), 'Shared calendar contract is missing from the offline cache');
     ['icon-map.json','colors.json'].forEach(function(file) { assert(worker.includes('assets/icons/lazensky-v1/'+file), file+' is missing from offline cache'); });
     iconMap.icons.forEach(function(icon) {

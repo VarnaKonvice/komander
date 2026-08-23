@@ -31,5 +31,8 @@ jobs:
           if (result.failed) process.exit(1);
           })"
 
+      - name: Run brand assets suite
+        run: node tests/brand-assets-suite.mjs
+
       - name: Run Google Calendar sync suite
         run: node tests/calendar-sync-suite.mjs
