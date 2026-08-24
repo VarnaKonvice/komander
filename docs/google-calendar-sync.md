@@ -63,15 +63,27 @@ Klasifikaci událostí stále provádí existující PWA vizuální kontrakt. `a
 | `electro_therapy` | `3` |
 | `individual_rehab` | `10` |
 
-## Service account
+## Bezklíčová autentizace GitHub -> Google
 
-1. V Google Cloud projektu zapnout Google Calendar API.
-2. Vytvořit service account bez domain-wide delegation.
-3. Oba cílové kalendáře explicitně sdílet s e-mailem service accountu s oprávněním upravovat události.
-4. Do GitHub repository secret uložit celý service-account JSON pod názvem `LC_GOOGLE_SERVICE_ACCOUNT_JSON`.
-5. Do GitHub repository variables uložit ID kalendářů jako `LC_GOOGLE_CALENDAR_PROCEDURES_ID` a `LC_GOOGLE_CALENDAR_MEALS_ID`.
+Produkční GitHub Actions nepoužívá service-account JSON key ani dlouhodobý GitHub secret. Přihlášení je založené na GitHub OIDC a Google Workload Identity Federation s krátkodobým tokenem.
 
-Credentials, private key, tokeny ani konkrétní calendar IDs se necommitují. Nástroj při chybějící nebo neplatné konfiguraci skončí před vytvořením Google adaptéru a před prvním write. Chybové hlášky nevypisují credential JSON ani tělo odpovědi Google API.
+Google Cloud konfigurace:
+
+- projekt: `lazensky-commander`;
+- project number: `217549425263`;
+- Workload Identity Pool: `github-actions`;
+- OIDC provider: `github-actions`;
+- issuer: `https://token.actions.githubusercontent.com`;
+- service account: `lazensky-commander-calendar-sy@lazensky-commander.iam.gserviceaccount.com`;
+- GitHub repository ID povolený providerem a service-account impersonation policy: `1246852468` (`VarnaKonvice/komander`).
+
+Provider mapuje `google.subject = assertion.sub`, `attribute.repository_id = assertion.repository_id` a `attribute.workflow_ref = assertion.workflow_ref`. Attribute condition omezuje autentizaci na repository ID `1246852468`.
+
+Pro service-account impersonation musí být v Google Cloud zapnuté potřebné IAM/STS služby včetně Service Account Credentials API. Google Calendar API musí být zapnuté samostatně.
+
+Service account nemá domain-wide delegation ani obecné Google Cloud role pro Calendar. Přístup ke kalendářům vzniká pouze tak, že kalendáře `Procedury` a `Jídlo` jsou explicitně nasdílené tomuto service accountu s oprávněním měnit události a zobrazit jejich podrobnosti. Service account nesmí spravovat sdílení kalendáře.
+
+Soukromý klíč se nevytváří. `google-github-actions/auth` vytvoří pouze krátkodobý ADC credential file pro daný běh workflow; `gha-creds-*.json` je v `.gitignore`.
 
 ## GitHub Actions
 
@@ -80,9 +92,27 @@ Workflow `.github/workflows/google-calendar-sync.yml` provede write pouze pro `r
 - automaticky po pushi na `main`, jen když se změnil `data/schedule.json`;
 - ručně přes `workflow_dispatch`, pokud je spuštěn nad `main`.
 
-Workflow checkoutne repozitář, nainstaluje zamčené Node dependencies, validuje canonical schedule a sestaví lokální dry-run plán. Teprve potom načte secrets/variables a provede produkční reconciliation. Logovaný výsledek obsahuje jen `scheduleVersion`, `desired`, `created`, `updated`, `deleted` a `unchanged`.
+Workflow postupuje v tomto pořadí:
 
-Pull request ani běžný push feature branche produkční write nespouští. `.github/workflows/public-schedule-tests.yml` na nich provádí pouze unit testy s fake adaptérem.
+1. checkout repozitáře;
+2. instalace zamčených Node dependencies;
+3. validace canonical schedule a lokální dry-run;
+4. `google-github-actions/auth@v3` získá přes GitHub OIDC krátkodobé Google ADC credentials a impersonuje vyhrazený service account;
+5. produkční reconciliation zapíše pouze Commander-owned události.
+
+Workflow má `permissions: contents: read` a `id-token: write`. Nepoužívá `LC_GOOGLE_SERVICE_ACCOUNT_JSON` ani žádný Google credential secret.
+
+ID cílových kalendářů jsou pro tento jedno-uživatelský projekt ne-tajné provozní identifikátory a jsou připnuté přímo v main-only workflow. Nejsou autentizačním údajem a samy o sobě neposkytují přístup ke kalendáři. Tím odpadá další ruční správa GitHub variables.
+
+Pull request ani běžný push feature branche produkční write nespouští. `.github/workflows/public-schedule-tests.yml` na nich provádí pouze unit/static testy s fake adaptérem a kontrolou bezklíčové auth konfigurace.
+
+## Adapter a lokální autentizace
+
+`calendar-sync/google-calendar-adapter.mjs` používá v produkci Application Default Credentials z `GOOGLE_APPLICATION_CREDENTIALS`, který nastaví OIDC auth action. Google klient dostává pouze Calendar OAuth scope.
+
+Pro zpětnou kompatibilitu lokálních vývojových testů adapter zatím umí také explicitní `LC_GOOGLE_SERVICE_ACCOUNT_JSON`; produkční workflow tuto cestu nepoužívá a žádný takový secret není potřeba. Tato fallback větev se může odstranit po úplném přechodu testovací infrastruktury na ADC.
+
+Produkční write selže před vytvořením Google adaptéru, pokud není k dispozici ani ADC, ani explicitní legacy credential, nebo pokud chybí cílové calendar ID.
 
 ## Lokální dry-run
 
@@ -91,10 +121,11 @@ npm ci --prefix calendar-sync --ignore-scripts
 node calendar-sync/sync-google-calendar.mjs --dry-run
 ```
 
-Dry-run validuje `data/schedule.json`, vytvoří sdílenou kalendářovou projekci a reconciliation plán proti prázdnému lokálnímu adaptéru. Nepotřebuje Google účet ani environment variables a nemá žádnou implementovanou write cestu. Produkční režim je explicitní `--write` a bez všech tří environment hodnot bezpečně selže.
+Dry-run validuje `data/schedule.json`, vytvoří sdílenou kalendářovou projekci a reconciliation plán proti prázdnému lokálnímu adaptéru. Nepotřebuje Google účet ani environment variables a nemá žádnou implementovanou write cestu. Produkční režim je explicitní `--write`.
 
-Regresní testy se spouštějí příkazem:
+Regresní testy:
 
 ```bash
 node tests/calendar-sync-suite.mjs
+node tests/google-calendar-auth-suite.mjs
 ```
