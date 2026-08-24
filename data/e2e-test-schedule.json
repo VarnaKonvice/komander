@@ -1,66 +1,42 @@
 {
   "schemaVersion": 1,
-  "scheduleVersion": 9002,
-  "updatedAt": "2026-08-24T18:01:30.000Z",
+  "scheduleVersion": 9003,
+  "updatedAt": "2026-08-24T18:36:00.000Z",
   "stay": {
     "spa": "E2E test Lázeňského Commanderu",
     "dateFrom": "2026-08-24",
-    "dateTo": "2026-08-25",
+    "dateTo": "2026-08-24",
     "room": "TEST",
     "doctor": "TEST",
     "mealShift": "TEST"
   },
   "events": [
     {
-      "stableId": "e2e-20260824-iodobrom-2030-v2",
+      "stableId": "e2e-20260824-iodobrom-2055-v3",
       "date": "2026-08-24",
-      "start": "20:30",
-      "end": "20:45",
+      "start": "20:55",
+      "end": "21:05",
       "title": "TEST – Jodobromová koupel",
       "location": "E2E test",
       "kind": "procedure",
-      "procedureType": "Jodobromová koupel"
+      "procedureType": "Jodobromová koupel",
+      "leadTimeMinutes": 10
     },
     {
-      "stableId": "e2e-20260824-massage-2100-v2",
+      "stableId": "e2e-20260824-massage-2115-v3",
       "date": "2026-08-24",
-      "start": "21:00",
-      "end": "21:15",
+      "start": "21:15",
+      "end": "21:25",
       "title": "TEST – Masáž",
       "location": "E2E test",
       "kind": "procedure",
-      "procedureType": "Masáž"
-    },
-    {
-      "stableId": "e2e-20260824-dinner-2130-v2",
-      "date": "2026-08-24",
-      "start": "21:30",
-      "end": "21:50",
-      "title": "TEST – Večeře",
-      "location": "E2E test",
-      "kind": "meal",
-      "mealType": "Večeře"
-    },
-    {
-      "stableId": "e2e-20260825-breakfast-0800-v2",
-      "date": "2026-08-25",
-      "start": "08:00",
-      "end": "08:20",
-      "title": "TEST – Snídaně",
-      "location": "E2E test",
-      "kind": "meal",
-      "mealType": "Snídaně"
+      "procedureType": "Masáž",
+      "leadTimeMinutes": 10
     }
   ],
   "settings": {
-    "defaultLeadTimeMinutes": 15,
-    "procedureTypeOverrides": {
-      "Jodobromová koupel": 15,
-      "Masáž": 15
-    },
-    "mealOverrides": {
-      "Snídaně": 15,
-      "Večeře": 15
-    }
+    "defaultLeadTimeMinutes": 10,
+    "procedureTypeOverrides": {},
+    "mealOverrides": {}
   }
 }
