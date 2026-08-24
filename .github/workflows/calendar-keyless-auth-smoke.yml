@@ -9,6 +9,14 @@ on:
       - .github/workflows/google-calendar-sync.yml
       - calendar-sync/google-calendar-adapter.mjs
       - tests/google-calendar-auth-suite.mjs
+  pull_request:
+    branches:
+      - main
+    paths:
+      - .github/workflows/calendar-keyless-auth-smoke.yml
+      - .github/workflows/google-calendar-sync.yml
+      - calendar-sync/google-calendar-adapter.mjs
+      - tests/google-calendar-auth-suite.mjs
   workflow_dispatch:
 
 permissions:
