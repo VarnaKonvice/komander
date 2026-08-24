@@ -88,11 +88,11 @@ actor AlarmKitAdapter: AlarmAdapting {
     guard let id = PlatformAlarmIdentifier.uuid(from: platformAlarmID) else {
       throw AlarmKitAdapterError.invalidPlatformAlarmID(platformAlarmID)
     }
-    try await AlarmManager.shared.cancel(id: id)
+    try AlarmManager.shared.cancel(id: id)
   }
 
   func existingPlatformAlarmIDs() async throws -> Set<String>? {
-    let alarms = try await AlarmManager.shared.alarms
+    let alarms = try AlarmManager.shared.alarms
     return Set(alarms.map { $0.id.uuidString })
   }
 
