@@ -36,9 +36,7 @@ struct LazenskyCommanderAlarmLiveActivity: Widget {
           }
         }
         DynamicIslandExpandedRegion(.trailing) {
-          CommanderAlarmCountdown(mode: context.state.mode)
-            .font(.headline.monospacedDigit())
-            .foregroundStyle(.teal)
+          CommanderAlarmCountdownContext(mode: context.state.mode, showsLabel: true)
         }
         DynamicIslandExpandedRegion(.bottom) {
           HStack {
@@ -53,9 +51,7 @@ struct LazenskyCommanderAlarmLiveActivity: Widget {
       } compactLeading: {
         CommanderAlarmIcon(iconKey: context.attributes.metadata?.iconKey, size: 22)
       } compactTrailing: {
-        CommanderAlarmCountdown(mode: context.state.mode)
-          .font(.caption2.monospacedDigit())
-          .foregroundStyle(.teal)
+        CommanderAlarmCountdownContext(mode: context.state.mode, showsLabel: false)
       } minimal: {
         CommanderAlarmIcon(iconKey: context.attributes.metadata?.iconKey, size: 20)
       }
@@ -88,12 +84,41 @@ private struct CommanderAlarmLockScreenView: View {
 
       Spacer(minLength: 8)
 
-      CommanderAlarmCountdown(mode: context.state.mode)
-        .font(.title3.bold().monospacedDigit())
-        .foregroundStyle(.teal)
+      CommanderAlarmCountdownContext(mode: context.state.mode, showsLabel: true)
         .multilineTextAlignment(.trailing)
     }
     .padding()
+  }
+}
+
+private struct CommanderAlarmCountdownContext: View {
+  let mode: AlarmPresentationState.Mode
+  let showsLabel: Bool
+
+  var body: some View {
+    VStack(alignment: .trailing, spacing: 1) {
+      if showsLabel {
+        Text(label)
+          .font(.caption2.weight(.semibold))
+          .foregroundStyle(.secondary)
+          .lineLimit(1)
+      }
+      CommanderAlarmCountdown(mode: mode)
+        .font(showsLabel ? .headline.monospacedDigit() : .caption2.monospacedDigit())
+        .foregroundStyle(.teal)
+        .lineLimit(1)
+    }
+  }
+
+  private var label: String {
+    switch mode {
+    case .alert:
+      "Čas vyrazit"
+    case .countdown, .paused:
+      "Vyrazit za"
+    @unknown default:
+      "Vyrazit za"
+    }
   }
 }
 
