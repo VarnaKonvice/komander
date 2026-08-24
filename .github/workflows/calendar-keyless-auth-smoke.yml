@@ -58,9 +58,9 @@ jobs:
             *gha-creds-*.json) ;;
             *) echo "Unexpected ADC credential path" >&2; exit 1 ;;
           esac
-          echo "OIDC/WIF authentication succeeded; no Calendar write was attempted."
+          echo "OIDC/WIF authentication succeeded."
 
-      - name: Verify read access to Commander calendars
+      - name: Verify read and create-delete access to Commander calendars
         env:
           LC_GOOGLE_CALENDAR_PROCEDURES_ID: db2404031f09c22434d9bdd742fc36923f883dd7ce74e226eede91eff7251e52@group.calendar.google.com
           LC_GOOGLE_CALENDAR_MEALS_ID: 9cff5505c1e7952468ba2655da0bb69a7a06d35e80afe6787f7b9785f99a1fb9@group.calendar.google.com
@@ -71,19 +71,42 @@ jobs:
           node --input-type=module <<'NODE'
           import { GoogleAuth } from 'google-auth-library';
 
-          const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/calendar.readonly'] });
+          const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/calendar'] });
           const client = await auth.getClient();
           const calendars = [
             ['Procedury', process.env.LC_GOOGLE_CALENDAR_PROCEDURES_ID],
             ['Jídlo', process.env.LC_GOOGLE_CALENDAR_MEALS_ID]
           ];
 
+          const now = new Date();
+          const start = new Date(now.getTime() + 60 * 60 * 1000);
+          const end = new Date(start.getTime() + 5 * 60 * 1000);
+
           for (const [name, id] of calendars) {
-            const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}`;
-            const response = await client.request({ method: 'GET', url });
-            if (!response?.data?.id) throw new Error(`${name}: Calendar metadata was not readable.`);
-            console.log(`${name}: read access OK`);
+            const calendarUrl = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}`;
+            const metadata = await client.request({ method: 'GET', url: calendarUrl });
+            if (!metadata?.data?.id) throw new Error(`${name}: Calendar metadata was not readable.`);
+
+            const eventsUrl = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}/events?sendUpdates=none`;
+            const created = await client.request({
+              method: 'POST',
+              url: eventsUrl,
+              data: {
+                summary: `TEST Lázeňský Commander – ${name}`,
+                description: 'Dočasný automatický create/delete test. Událost se ihned maže.',
+                start: { dateTime: start.toISOString(), timeZone: 'Europe/Prague' },
+                end: { dateTime: end.toISOString(), timeZone: 'Europe/Prague' },
+                reminders: { useDefault: false, overrides: [] },
+                transparency: 'transparent'
+              }
+            });
+            const eventId = created?.data?.id;
+            if (!eventId) throw new Error(`${name}: Test event was not created.`);
+
+            const eventUrl = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}?sendUpdates=none`;
+            await client.request({ method: 'DELETE', url: eventUrl });
+            console.log(`${name}: create/delete access OK`);
           }
 
-          console.log('Calendar ACL read smoke succeeded; no Calendar write was attempted.');
+          console.log('Calendar service-account write smoke succeeded; both test events were deleted.');
           NODE
