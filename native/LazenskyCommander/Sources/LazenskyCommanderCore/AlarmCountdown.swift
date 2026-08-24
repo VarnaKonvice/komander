@@ -16,7 +16,7 @@ public enum AlarmCountdown {
     let sameDayPreviousEnd = try schedule.events.compactMap { event -> Date? in
       guard event.date == String(alarm.startAt.prefix(10)) else { return nil }
       let endAt = try NativeAlarmContract.dateTime(date: event.date, time: event.end)
-      return endAt < leaveAt ? endAt : nil
+      return endAt <= leaveAt ? endAt : nil
     }.max()
     if let endAt = sameDayPreviousEnd { return max(0, leaveAt.timeIntervalSince(endAt)) }
     return 30 * 60
