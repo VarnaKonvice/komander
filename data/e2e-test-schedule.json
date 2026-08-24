@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "scheduleVersion": 9001,
+  "updatedAt": "2026-08-24T15:55:00.000Z",
+  "stay": {
+    "spa": "E2E test Lázeňského Commanderu",
+    "dateFrom": "2026-08-24",
+    "dateTo": "2026-08-25",
+    "room": "TEST",
+    "doctor": "TEST",
+    "mealShift": "TEST"
+  },
+  "events": [
+    {
+      "stableId": "e2e-20260824-iodobrom-1840",
+      "date": "2026-08-24",
+      "start": "18:40",
+      "end": "18:55",
+      "title": "TEST – Jodobromová koupel",
+      "location": "E2E test",
+      "kind": "procedure",
+      "procedureType": "Jodobromová koupel"
+    },
+    {
+      "stableId": "e2e-20260824-massage-1910",
+      "date": "2026-08-24",
+      "start": "19:10",
+      "end": "19:25",
+      "title": "TEST – Masáž",
+      "location": "E2E test",
+      "kind": "procedure",
+      "procedureType": "Masáž"
+    },
+    {
+      "stableId": "e2e-20260824-whirlpool-1940",
+      "date": "2026-08-24",
+      "start": "19:40",
+      "end": "19:55",
+      "title": "TEST – Vířivka",
+      "location": "E2E test",
+      "kind": "procedure",
+      "procedureType": "Vířivka"
+    },
+    {
+      "stableId": "e2e-20260824-dinner-2010",
+      "date": "2026-08-24",
+      "start": "20:10",
+      "end": "20:30",
+      "title": "TEST – Večeře",
+      "location": "E2E test",
+      "kind": "meal",
+      "mealType": "Večeře"
+    },
+    {
+      "stableId": "e2e-20260825-breakfast-0800",
+      "date": "2026-08-25",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "TEST – Snídaně",
+      "location": "E2E test",
+      "kind": "meal",
+      "mealType": "Snídaně"
+    }
+  ],
+  "settings": {
+    "defaultLeadTimeMinutes": 15,
+    "procedureTypeOverrides": {
+      "Jodobromová koupel": 15,
+      "Masáž": 15,
+      "Vířivka": 15
+    },
+    "mealOverrides": {
+      "Snídaně": 15,
+      "Večeře": 15
+    }
+  }
+}
