@@ -1,0 +1,56 @@
+name: Calendar keyless code smoke
+
+on:
+  push:
+    branches:
+      - lc/watch-activitykit-v1
+    paths:
+      - .github/workflows/calendar-keyless-code-smoke.yml
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: calendar-sync/package-lock.json
+
+      - name: Install calendar sync dependencies
+        run: npm ci --prefix calendar-sync --ignore-scripts
+
+      - name: Run calendar and keyless-auth tests
+        id: tests
+        continue-on-error: true
+        run: |
+          node tests/calendar-sync-suite.mjs
+          node tests/google-calendar-auth-suite.mjs
+
+      - name: Publish code-smoke result as commit status
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+        run: |
+          if [ "$TEST_OUTCOME" = "success" ]; then
+            STATE=success
+            DESCRIPTION="Calendar keyless code tests succeeded"
+          else
+            STATE=failure
+            DESCRIPTION="Calendar keyless code tests failed"
+          fi
+          curl --fail-with-body --silent --show-error \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -d "{\"state\":\"${STATE}\",\"context\":\"calendar-keyless-code-smoke\",\"description\":\"${DESCRIPTION}\"}"
+          test "$STATE" = "success"
