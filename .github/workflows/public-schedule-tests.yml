@@ -36,3 +36,6 @@ jobs:
 
       - name: Run Google Calendar sync suite
         run: node tests/calendar-sync-suite.mjs
+
+      - name: Run Google Calendar keyless auth suite
+        run: node tests/google-calendar-auth-suite.mjs
