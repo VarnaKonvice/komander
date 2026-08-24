@@ -72,14 +72,24 @@ actor AlarmKitAdapter: AlarmAdapting {
         duration: max(0, leaveAt.timeIntervalSince(now))
       )
     }
-    let countdownSchedule: Alarm.Schedule? = countdownPlan.scheduledStartAt.map { .fixed($0) }
 
-    let configuration = AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>(
-      countdownDuration: Alarm.CountdownDuration(preAlert: countdownPlan.duration, postAlert: nil),
-      schedule: countdownSchedule,
-      attributes: attributes,
-      sound: .default
-    )
+    let configuration: AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>
+    if countdownPlan.duration > 0 {
+      let countdownSchedule: Alarm.Schedule? = countdownPlan.scheduledStartAt.map { .fixed($0) }
+      configuration = AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>(
+        countdownDuration: Alarm.CountdownDuration(preAlert: countdownPlan.duration, postAlert: nil),
+        schedule: countdownSchedule,
+        attributes: attributes,
+        sound: .default
+      )
+    } else {
+      configuration = .alarm(
+        schedule: .fixed(leaveAt),
+        attributes: attributes,
+        sound: .default
+      )
+    }
+
     let scheduled = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
     return scheduled.id.uuidString
   }
