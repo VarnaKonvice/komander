@@ -418,8 +418,10 @@ export async function runPublicScheduleSuite(options) {
     const contract = runtime.api.calendarContract(schedule);
     const bath = schedule.events.find(function(event) { return event.stableId === 'synthetic-0815-bath'; });
     const bathContract = contract.find(function(event) { return event.stableId === bath.stableId; });
+    const bathAlarm = runtime.api.alarmContract(schedule).find(function(event) { return event.stableId === bath.stableId; });
     assert(contract.every(function(event) { return event.timezone === 'Europe/Prague'; }), 'Timezone is not Europe/Prague');
     assert(bathContract.leadTimeMinutes === runtime.api.getEffectiveLeadTime(bath, schedule), 'Effective lead time changed');
+    assert(bathContract.leaveAt === bathAlarm.leaveAt && bathContract.start === bathAlarm.startAt, 'Calendar contract does not reuse canonical alarm times');
     assert(JSON.stringify(schedule) === before, 'calendarContract mutated the source schedule');
   });
   await test('public feed: no private pairing system remains', async function() {

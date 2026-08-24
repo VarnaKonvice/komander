@@ -82,7 +82,7 @@ Google Calendar je pouze odvozená projekce celého `data/schedule.json`, včetn
 
 Událost je vlastněná Commanderem pouze tehdy, když její Google private extended properties současně obsahují `managedBy = "lazensky-commander"`, neprázdné canonical `stableId` a odpovídající `syncKey`. Marker `[LC:<stableId>]` v popisu je čitelná diagnostická stopa, nikoli oprávnění k úpravě. Synchronizátor smí aktualizovat a mazat jen takto vlastněné události; osobních a cizích položek se nedotýká.
 
-Nové `stableId` se vytvoří, změněný obsah se aktualizuje, nezměněný obsah nevyvolá žádný write a vlastněná událost odstraněná z rozpisu se smaže. Změna `meal ↔ procedure` přesune stejné `stableId` mezi kalendáři. Google reminders jsou vypnuté a projekce nepřidává attendees ani Google Meet. Provozní nastavení a GitHub Actions jsou popsané v [google-calendar-sync.md](google-calendar-sync.md).
+Nové `stableId` se vytvoří, změněný obsah se aktualizuje, nezměněný obsah nevyvolá žádný write a vlastněná událost odstraněná z rozpisu se smaže. Změna `meal ↔ procedure` přesune stejné `stableId` mezi kalendáři. Calendar projection přidává právě jeden popup reminder s `minutes = startAt - leaveAt = effectiveLeadTimeMinutes`; `leaveAt` i předstih přebírá ze společného alarm contractu a hodnota `0` je platná. Jde o záložní odvozené upozornění, zatímco v nativní aplikaci zůstává primární vrstvou AlarmKit. Projekce nepřidává email reminder, attendees ani Google Meet. Provozní nastavení a GitHub Actions jsou popsané v [google-calendar-sync.md](google-calendar-sync.md).
 
 ## Priorita předstihu
 

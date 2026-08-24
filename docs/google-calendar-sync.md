@@ -21,8 +21,10 @@ Synchronizuje se celý canonical rozpis, tedy minulé, dnešní i budoucí udál
 - Časy používají `Europe/Prague`, canonical datum a canonical `start`/`end`.
 - Název a místo jsou canonical `title` a `location`.
 - Popis obsahuje `Lázeňský Commander` a `[LC:<stableId>]`.
-- Google reminders mají `useDefault = false` a prázdné overrides.
+- Google reminder je odvozený z canonical alarm contractu: `useDefault = false` a právě jeden popup override s `minutes = startAt - leaveAt = effectiveLeadTimeMinutes`. Hodnota `0` znamená popup v čase začátku. Email ani druhý popup se nepřidávají.
 - Projekce nepřidává attendees, Google Meet ani conference data.
+
+Calendar popup je záložní odvozené upozornění. Pokud uživatel používá nativní aplikaci, primární vrstvou zůstává AlarmKit naplánovaný přímo na stejné canonical `leaveAt`; Google Calendar není další alarmový ani schedule zdroj pravdy.
 
 Vlastnictví se ověřuje výhradně společnou kombinací private extended properties:
 
@@ -37,7 +39,7 @@ Samotný textový marker v popisu nestačí. Cizí položky, neúplně označen�
 Reconciliation pravidla jsou:
 
 - chybějící `stableId`: create;
-- stejné `stableId` se změněným kalendářově relevantním obsahem: update;
+- stejné `stableId` se změněným kalendářově relevantním obsahem, včetně popup reminderu: update;
 - stejný obsah: unchanged bez API write;
 - vlastněné `stableId`, které zmizelo z rozpisu: delete;
 - změna `meal ↔ procedure`: create/udržení v novém kalendáři a delete ve starém.

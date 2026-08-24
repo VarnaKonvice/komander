@@ -18,6 +18,7 @@ function contractFingerprint(event) {
     procedureType: event.procedureType,
     mealType: event.mealType,
     leadTimeMinutes: event.leadTimeMinutes,
+    leaveAt: event.leaveAt,
     descriptionMarker: event.descriptionMarker,
     iconKey: event.iconKey,
     colorId: event.colorId
@@ -26,13 +27,19 @@ function contractFingerprint(event) {
 }
 
 export function googleEventResource(event) {
+  if (!Number.isInteger(event.leadTimeMinutes) || event.leadTimeMinutes < 0) {
+    throw new Error(`Calendar event ${event.stableId} has an invalid canonical lead time.`);
+  }
   const resource = {
     summary: event.title,
     location: event.location,
     description: `Lázeňský Commander\n${event.descriptionMarker}`,
     start: { dateTime: event.start, timeZone: event.timezone },
     end: { dateTime: event.end, timeZone: event.timezone },
-    reminders: { useDefault: false, overrides: [] },
+    reminders: {
+      useDefault: false,
+      overrides: [{ method: 'popup', minutes: event.leadTimeMinutes }]
+    },
     extendedProperties: {
       private: {
         managedBy: event.managedBy,
@@ -77,6 +84,7 @@ export function sameGoogleEventContent(current, desiredEvent) {
   const desired = googleEventResource(desiredEvent);
   const properties = current.extendedProperties && current.extendedProperties.private || {};
   const currentOverrides = current.reminders && Array.isArray(current.reminders.overrides) ? current.reminders.overrides : [];
+  const desiredReminder = desired.reminders.overrides[0];
   const hasConference = Boolean(current.hangoutLink || (current.conferenceData && Object.keys(current.conferenceData).length));
   return current.summary === desired.summary &&
     (current.location || '') === desired.location &&
@@ -85,7 +93,9 @@ export function sameGoogleEventContent(current, desiredEvent) {
     localDateTime(current.start.dateTime, desired.start.timeZone) === desired.start.dateTime &&
     current.end && current.end.timeZone === desired.end.timeZone &&
     localDateTime(current.end.dateTime, desired.end.timeZone) === desired.end.dateTime &&
-    current.reminders && current.reminders.useDefault === false && currentOverrides.length === 0 &&
+    current.reminders && current.reminders.useDefault === false &&
+    currentOverrides.length === 1 && currentOverrides[0].method === desiredReminder.method &&
+    currentOverrides[0].minutes === desiredReminder.minutes &&
     (!Array.isArray(current.attendees) || current.attendees.length === 0) && !hasConference &&
     (current.colorId || null) === (desired.colorId || null) &&
     properties.managedBy === desired.extendedProperties.private.managedBy &&

@@ -24,6 +24,19 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function wallClockMinutes(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})$/.exec(value || '');
+  if (!match) throw new Error(`Invalid local calendar timestamp: ${value}.`);
+  return Date.UTC(
+    Number(match[1]),
+    Number(match[2]) - 1,
+    Number(match[3]),
+    Number(match[4]),
+    Number(match[5]),
+    Number(match[6])
+  ) / 60000;
+}
+
 class FakeCalendarAdapter {
   constructor(seed = {}) {
     this.events = {
@@ -128,7 +141,7 @@ export async function runCalendarSyncSuite({ repoRoot }) {
     assert(result.deleted === 1 && adapter.writes[0].action === 'delete', 'Removed event did not produce delete.');
   });
 
-  await test('G: a second identical sync performs zero writes', async () => {
+  await test('G: a second sync with an identical popup reminder performs zero writes', async () => {
     const desired = [productionProjection.events[0]];
     const adapter = new FakeCalendarAdapter();
     await synchronizeCalendarProjection({ desiredEvents: desired, adapter, dryRun: false });
@@ -139,10 +152,15 @@ export async function runCalendarSyncSuite({ repoRoot }) {
   });
 
   await test('H: a foreign Google event is untouched', async () => {
-    const foreign = { id: 'foreign', summary: 'Soukroma udalost' };
+    const foreign = {
+      id: 'foreign',
+      summary: 'Soukroma udalost',
+      reminders: { useDefault: false, overrides: [{ method: 'email', minutes: 60 }] }
+    };
+    const before = clone(foreign);
     const adapter = new FakeCalendarAdapter({ Procedury: [foreign] });
     const result = await synchronizeCalendarProjection({ desiredEvents: [], adapter, dryRun: false });
-    assert(result.deleted === 0 && adapter.writes.length === 0 && adapter.events.Procedury.length === 1, 'Foreign event was modified.');
+    assert(result.deleted === 0 && adapter.writes.length === 0 && JSON.stringify(adapter.events.Procedury[0]) === JSON.stringify(before), 'Foreign event was modified.');
   });
 
   await test('I: an event managed by another system is untouched', async () => {
@@ -155,6 +173,16 @@ export async function runCalendarSyncSuite({ repoRoot }) {
     assert(!isOwnedGoogleEvent(foreign) && result.deleted === 0 && adapter.writes.length === 0, 'Other managed event was modified.');
   });
 
+  await test('I2: an incompletely owned event is never updated or deleted', async () => {
+    const desired = clone(productionProjection.events.find(event => event.kind === 'procedure'));
+    const incomplete = storedEvent(desired, 'incomplete-owned');
+    delete incomplete.extendedProperties.private.syncKey;
+    const adapter = new FakeCalendarAdapter({ Procedury: [incomplete] });
+    const result = await synchronizeCalendarProjection({ desiredEvents: [desired], adapter, dryRun: false });
+    assert(result.created === 1 && result.updated === 0 && result.deleted === 0, 'Incomplete ownership was treated as permission to mutate.');
+    assert(adapter.events.Procedury.some(event => event.id === 'incomplete-owned'), 'Incomplete event was removed.');
+  });
+
   await test('J: changing meal to procedure moves the event between calendars', async () => {
     const original = clone(productionProjection.events.find(event => event.kind === 'meal'));
     const moved = { ...original, kind: 'procedure', mealType: null, procedureType: 'Rehabilitace', targetCalendar: 'Procedury' };
@@ -163,6 +191,8 @@ export async function runCalendarSyncSuite({ repoRoot }) {
     assert(result.created === 1 && result.deleted === 1 && result.updated === 0, 'Kind change did not produce create and delete.');
     assert(adapter.writes.some(write => write.action === 'create' && write.calendarName === 'Procedury'), 'Moved event was not created in Procedury.');
     assert(adapter.writes.some(write => write.action === 'delete' && write.calendarName === 'Jídlo'), 'Old meal event was not deleted from Jidlo.');
+    const created = adapter.events.Procedury.find(event => event.extendedProperties.private.stableId === moved.stableId);
+    assert(JSON.stringify(created.reminders) === JSON.stringify(googleEventResource(moved).reminders), 'Calendar move changed the canonical popup reminder.');
   });
 
   await test('K: past canonical events remain in the desired calendar set', async () => {
@@ -178,9 +208,55 @@ export async function runCalendarSyncSuite({ repoRoot }) {
     }
   });
 
-  await test('M: Google reminders are disabled', async () => {
-    const resource = googleEventResource(productionProjection.events[0]);
-    assert(resource.reminders.useDefault === false && resource.reminders.overrides.length === 0, 'Google reminders are enabled.');
+  await test('M1: a procedure popup reminder is derived from canonical leaveAt', async () => {
+    const event = productionProjection.events.find(item => item.kind === 'procedure');
+    const resource = googleEventResource(event);
+    const derivedLead = wallClockMinutes(event.start) - wallClockMinutes(event.leaveAt);
+    assert(event.leadTimeMinutes === derivedLead, 'Procedure lead time differs from start minus leaveAt.');
+    assert(resource.reminders.useDefault === false, 'Procedure reminder uses Google defaults.');
+    assert(JSON.stringify(resource.reminders.overrides) === JSON.stringify([{ method: 'popup', minutes: derivedLead }]), 'Procedure reminder is not exactly one canonical popup.');
+  });
+
+  await test('M2: a meal uses the same canonical popup reminder contract', async () => {
+    const event = productionProjection.events.find(item => item.kind === 'meal');
+    const resource = googleEventResource(event);
+    const derivedLead = wallClockMinutes(event.start) - wallClockMinutes(event.leaveAt);
+    assert(event.leadTimeMinutes === derivedLead, 'Meal lead time differs from start minus leaveAt.');
+    assert(JSON.stringify(resource.reminders.overrides) === JSON.stringify([{ method: 'popup', minutes: derivedLead }]), 'Meal reminder differs from procedure reminder semantics.');
+  });
+
+  await test('M3: canonical lead time zero creates a popup at event start', async () => {
+    const source = clone(procedureSource);
+    source.stableId = 'zero-lead-time';
+    source.leadTimeMinutes = 0;
+    const projection = await projectCanonicalSchedule({ repoRoot, schedule: oneEventSchedule(productionSchedule, source) });
+    const event = projection.events[0];
+    const resource = googleEventResource(event);
+    assert(event.leaveAt === event.start && event.leadTimeMinutes === 0, 'Lead time zero did not preserve leaveAt equal to start.');
+    assert(JSON.stringify(resource.reminders.overrides) === JSON.stringify([{ method: 'popup', minutes: 0 }]), 'Lead time zero is not a start-time popup.');
+  });
+
+  await test('M4: changing canonical lead time updates the managed event', async () => {
+    const originalSource = clone(procedureSource);
+    originalSource.stableId = 'changed-lead-time';
+    originalSource.leadTimeMinutes = 10;
+    const changedSource = clone(originalSource);
+    changedSource.leadTimeMinutes = 35;
+    const original = (await projectCanonicalSchedule({ repoRoot, schedule: oneEventSchedule(productionSchedule, originalSource) })).events[0];
+    const changed = (await projectCanonicalSchedule({ repoRoot, schedule: oneEventSchedule(productionSchedule, changedSource) })).events[0];
+    const adapter = new FakeCalendarAdapter({ Procedury: [storedEvent(original)] });
+    const result = await synchronizeCalendarProjection({ desiredEvents: [changed], adapter, dryRun: false });
+    assert(result.updated === 1 && adapter.writes.length === 1 && adapter.writes[0].action === 'update', 'Canonical lead-time change did not produce one update.');
+    assert(adapter.events.Procedury[0].reminders.overrides[0].minutes === 35, 'Updated reminder does not contain the new canonical lead time.');
+  });
+
+  await test('M5: a Google-only reminder difference updates managed content', async () => {
+    const desired = clone(productionProjection.events.find(event => event.kind === 'procedure'));
+    const current = storedEvent(desired);
+    current.reminders.overrides = [{ method: 'popup', minutes: desired.leadTimeMinutes + 1 }];
+    const adapter = new FakeCalendarAdapter({ Procedury: [current] });
+    const result = await synchronizeCalendarProjection({ desiredEvents: [desired], adapter, dryRun: false });
+    assert(result.updated === 1 && adapter.writes.length === 1 && adapter.events.Procedury[0].reminders.overrides[0].minutes === desired.leadTimeMinutes, 'Reminder-only difference was not reconciled.');
   });
 
   await test('N: Google events contain no attendees or Meet data', async () => {
@@ -204,6 +280,7 @@ export async function runCalendarSyncSuite({ repoRoot }) {
     const resource = googleEventResource(projection.events[0]);
     assert(projection.events[0].iconKey === null && projection.events[0].colorId === null, 'Unknown procedure was classified.');
     assert(!Object.hasOwn(resource, 'colorId'), 'Unknown procedure received a Google colorId.');
+    assert(JSON.stringify(resource.reminders.overrides) === JSON.stringify([{ method: 'popup', minutes: projection.events[0].leadTimeMinutes }]), 'Unknown procedure changed reminder semantics.');
   });
 
   await test('Q: all 12 approved icon keys have deterministic Google colors', async () => {

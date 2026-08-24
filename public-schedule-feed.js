@@ -107,7 +107,7 @@
     var nextEvent = events.find(function(event){ var startAt = eventDateTime(event,event.start); return startAt && startAt.getTime() > now.getTime(); }) || null;
     return liveResult('DAY_DONE', null, nextEvent, null, null, null, now, null);
   }
-  function calendarContract(schedule){ schedule = schedule || currentSchedule(); if(!schedule) return []; if(!window.LazenskyCalendarContract) throw new Error('Calendar contract není načtený.'); return window.LazenskyCalendarContract.createCalendarContract(schedule, function(event){ return effectiveLeadTime(event, schedule); }); }
+  function calendarContract(schedule){ schedule = schedule || currentSchedule(); if(!schedule) return []; if(!window.LazenskyCalendarContract) throw new Error('Calendar contract není načtený.'); var alarmsByStableId = Object.create(null); alarmContract(schedule).forEach(function(alarm){ alarmsByStableId[alarm.stableId] = alarm; }); return window.LazenskyCalendarContract.createCalendarContract(schedule, function(event){ return alarmsByStableId[event.stableId]; }); }
   async function refreshPublicSchedule(){
     if(syncRunning) return { status: 'busy' }; syncRunning = true;
     try {

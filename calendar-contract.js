@@ -12,28 +12,31 @@
   var PROCEDURES_CALENDAR = 'Procedury';
   var MEALS_CALENDAR = 'Jídlo';
 
-  function createCalendarContract(schedule, resolveLeadTime) {
+  function createCalendarContract(schedule, resolveAlarm) {
     if (!schedule) return [];
     if (!Array.isArray(schedule.events)) throw new Error('Schedule events must be an array.');
-    if (typeof resolveLeadTime !== 'function') throw new Error('Calendar contract requires the shared lead-time resolver.');
+    if (typeof resolveAlarm !== 'function') throw new Error('Calendar contract requires the shared alarm resolver.');
 
     return schedule.events.map(function(event) {
       var stableId = String(event.stableId || '').trim();
       if (!stableId) throw new Error('Calendar event is missing stableId.');
+      var alarm = resolveAlarm(event, schedule);
+      if (!alarm || alarm.stableId !== stableId) throw new Error('Calendar event is missing its canonical alarm contract.');
       return {
         stableId: stableId,
         syncKey: 'lc:' + stableId,
         managedBy: MANAGED_BY,
         targetCalendar: event.kind === 'meal' ? MEALS_CALENDAR : PROCEDURES_CALENDAR,
         title: event.title,
-        start: event.date + 'T' + event.start + ':00',
-        end: event.date + 'T' + event.end + ':00',
+        start: alarm.startAt,
+        end: alarm.endAt,
+        leaveAt: alarm.leaveAt,
         timezone: TIMEZONE,
         location: event.location,
         kind: event.kind,
         procedureType: event.procedureType || null,
         mealType: event.mealType || null,
-        leadTimeMinutes: resolveLeadTime(event, schedule),
+        leadTimeMinutes: alarm.effectiveLeadTimeMinutes,
         descriptionMarker: '[LC:' + stableId + ']'
       };
     });
