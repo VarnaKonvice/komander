@@ -61,10 +61,22 @@ actor AlarmKitAdapter: AlarmAdapting {
       metadata: CommanderAlarmMetadata(stableId: alarm.stableId, scheduleVersion: schedule?.scheduleVersion ?? 0, iconKey: iconKey, title: alarm.title, location: alarm.location, kind: alarm.kind, startAt: alarm.startAt, leaveAt: alarm.leaveAt),
       tintColor: .teal
     )
-    let preAlert = try schedule.map { try AlarmCountdown.preAlertDuration(for: alarm, in: $0) } ?? 30 * 60
+
+    let now = Date()
+    let countdownPlan: AlarmCountdownPlan
+    if let schedule {
+      countdownPlan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
+    } else {
+      countdownPlan = AlarmCountdownPlan(
+        scheduledStartAt: nil,
+        duration: max(0, leaveAt.timeIntervalSince(now))
+      )
+    }
+    let countdownSchedule: Alarm.Schedule? = countdownPlan.scheduledStartAt.map { .fixed($0) }
+
     let configuration = AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>(
-      countdownDuration: Alarm.CountdownDuration(preAlert: preAlert, postAlert: nil),
-      schedule: .fixed(leaveAt),
+      countdownDuration: Alarm.CountdownDuration(preAlert: countdownPlan.duration, postAlert: nil),
+      schedule: countdownSchedule,
       attributes: attributes,
       sound: .default
     )
@@ -76,11 +88,11 @@ actor AlarmKitAdapter: AlarmAdapting {
     guard let id = PlatformAlarmIdentifier.uuid(from: platformAlarmID) else {
       throw AlarmKitAdapterError.invalidPlatformAlarmID(platformAlarmID)
     }
-    try AlarmManager.shared.cancel(id: id)
+    try await AlarmManager.shared.cancel(id: id)
   }
 
   func existingPlatformAlarmIDs() async throws -> Set<String>? {
-    let alarms = try AlarmManager.shared.alarms
+    let alarms = try await AlarmManager.shared.alarms
     return Set(alarms.map { $0.id.uuidString })
   }
 
