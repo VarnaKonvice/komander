@@ -6,9 +6,9 @@ import Testing
 @Test func alarmCountdownPlanSchedulesWindowSoItEndsAtLeaveAt() throws {
   let schedule = countdownTestSchedule()
   let alarm = try NativeAlarmContract.payload(schedule: schedule).alarms.first(where: { $0.stableId == "first" })!
-  let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T09:00:00")
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:00:00")
   let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
-  let expectedStart = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T09:10:00")
+  let expectedStart = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:10:00")
 
   let plan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
 
@@ -20,7 +20,7 @@ import Testing
 @Test func alarmCountdownPlanStartsImmediatelyWhenSyncHappensInsideWindow() throws {
   let schedule = countdownTestSchedule()
   let alarm = try NativeAlarmContract.payload(schedule: schedule).alarms.first(where: { $0.stableId == "first" })!
-  let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T09:25:00")
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:25:00")
   let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
 
   let plan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
@@ -54,8 +54,8 @@ private func countdownTestSchedule() -> Schedule {
       ScheduleEvent(
         stableId: "first",
         date: "2026-08-20",
-        start: "10:00",
-        end: "10:30",
+        start: "09:00",
+        end: "09:30",
         title: "Jodobromová koupel",
         location: "Bazén",
         kind: .procedure,
