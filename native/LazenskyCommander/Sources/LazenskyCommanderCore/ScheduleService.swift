@@ -3,7 +3,7 @@ import Foundation
 public struct AppConfiguration: Sendable {
   public var scheduleURL: URL
 
-  public init(scheduleURL: URL = URL(string: "https://raw.githubusercontent.com/VarnaKonvice/komander/main/data/schedule.json")!) {
+  public init(scheduleURL: URL = URL(string: "https://raw.githubusercontent.com/VarnaKonvice/komander/lc/e2e-alarm-test-v1/data/e2e-test-schedule.json")!) {
     self.scheduleURL = scheduleURL
   }
 }
