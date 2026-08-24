@@ -4,16 +4,18 @@ import { CALENDAR_NAMES, MANAGED_BY } from './calendar-reconciliation.mjs';
 const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar';
 const API_ROOT = 'https://www.googleapis.com/calendar/v3';
 
+function optionalEnvironment(env, name) {
+  return typeof env[name] === 'string' ? env[name].trim() : '';
+}
+
 function requiredEnvironment(env, name) {
-  const value = typeof env[name] === 'string' ? env[name].trim() : '';
+  const value = optionalEnvironment(env, name);
   if (!value) throw new Error(`Missing required calendar sync configuration: ${name}.`);
   return value;
 }
 
-export function readWriteConfiguration(env = process.env) {
-  const credentialText = requiredEnvironment(env, 'LC_GOOGLE_SERVICE_ACCOUNT_JSON');
-  const procedures = requiredEnvironment(env, 'LC_GOOGLE_CALENDAR_PROCEDURES_ID');
-  const meals = requiredEnvironment(env, 'LC_GOOGLE_CALENDAR_MEALS_ID');
+function parseLegacyServiceAccountCredentials(credentialText) {
+  if (!credentialText) return null;
   let credentials;
   try {
     credentials = JSON.parse(credentialText);
@@ -23,7 +25,22 @@ export function readWriteConfiguration(env = process.env) {
   if (credentials.type !== 'service_account' || typeof credentials.client_email !== 'string' || !credentials.client_email.trim() || typeof credentials.private_key !== 'string' || !credentials.private_key.trim()) {
     throw new Error('LC_GOOGLE_SERVICE_ACCOUNT_JSON is not a valid service account credential.');
   }
+  return credentials;
+}
+
+export function readWriteConfiguration(env = process.env) {
+  const legacyCredentialText = optionalEnvironment(env, 'LC_GOOGLE_SERVICE_ACCOUNT_JSON');
+  const applicationDefaultCredentialFile = optionalEnvironment(env, 'GOOGLE_APPLICATION_CREDENTIALS');
+  if (!legacyCredentialText && !applicationDefaultCredentialFile) {
+    throw new Error('Missing required calendar sync authentication: GOOGLE_APPLICATION_CREDENTIALS (OIDC/WIF) or LC_GOOGLE_SERVICE_ACCOUNT_JSON.');
+  }
+
+  const credentials = parseLegacyServiceAccountCredentials(legacyCredentialText);
+  const procedures = requiredEnvironment(env, 'LC_GOOGLE_CALENDAR_PROCEDURES_ID');
+  const meals = requiredEnvironment(env, 'LC_GOOGLE_CALENDAR_MEALS_ID');
+
   return {
+    authMode: credentials ? 'service-account-json' : 'application-default',
     credentials,
     calendarIds: { Procedury: procedures, 'Jídlo': meals }
   };
@@ -87,10 +104,12 @@ export class GoogleCalendarAdapter {
 
 export async function createGoogleCalendarAdapter(configuration) {
   try {
-    const auth = new GoogleAuth({ credentials: configuration.credentials, scopes: [CALENDAR_SCOPE] });
+    const options = { scopes: [CALENDAR_SCOPE] };
+    if (configuration.credentials) options.credentials = configuration.credentials;
+    const auth = new GoogleAuth(options);
     const authClient = await auth.getClient();
     return new GoogleCalendarAdapter(authClient, configuration.calendarIds);
   } catch {
-    throw new Error('Google service account authentication failed.');
+    throw new Error('Google Calendar authentication failed.');
   }
 }
