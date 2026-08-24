@@ -44,6 +44,18 @@ import Testing
   #expect(plan.scheduledStartAt?.addingTimeInterval(plan.duration) == leaveAt)
 }
 
+@Test func alarmCountdownPlanDoesNotShowNextCountdownBeforeBackToBackHandoff() throws {
+  let schedule = backToBackCountdownTestSchedule()
+  let alarm = try NativeAlarmContract.payload(schedule: schedule).alarms.first(where: { $0.stableId == "next" })!
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T10:00:00")
+  let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+
+  let plan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
+
+  #expect(plan.scheduledStartAt == leaveAt)
+  #expect(plan.duration == 0)
+}
+
 private func countdownTestSchedule() -> Schedule {
   Schedule(
     schemaVersion: 1,
@@ -78,6 +90,46 @@ private func countdownTestSchedule() -> Schedule {
     ],
     settings: ScheduleSettings(
       defaultLeadTimeMinutes: 20,
+      procedureTypeOverrides: [:],
+      mealOverrides: [:]
+    )
+  )
+}
+
+private func backToBackCountdownTestSchedule() -> Schedule {
+  Schedule(
+    schemaVersion: 1,
+    scheduleVersion: 1,
+    updatedAt: "2026-08-20T00:00:00Z",
+    stay: [:],
+    events: [
+      ScheduleEvent(
+        stableId: "current",
+        date: "2026-08-20",
+        start: "10:00",
+        end: "10:30",
+        title: "Jodobromová koupel",
+        location: "Bazén",
+        kind: .procedure,
+        procedureType: "Jodobromová koupel",
+        mealType: nil,
+        leadTimeMinutes: 15
+      ),
+      ScheduleEvent(
+        stableId: "next",
+        date: "2026-08-20",
+        start: "10:45",
+        end: "11:00",
+        title: "Masáž",
+        location: "Rehabilitace",
+        kind: .procedure,
+        procedureType: "Masáž",
+        mealType: nil,
+        leadTimeMinutes: 15
+      )
+    ],
+    settings: ScheduleSettings(
+      defaultLeadTimeMinutes: 15,
       procedureTypeOverrides: [:],
       mealOverrides: [:]
     )
