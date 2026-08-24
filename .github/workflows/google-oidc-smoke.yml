@@ -1,0 +1,38 @@
+name: Google OIDC smoke test
+
+on:
+  push:
+    branches:
+      - lc/watch-activitykit-v1
+    paths:
+      - .github/workflows/google-oidc-smoke.yml
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  auth-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Exchange GitHub OIDC for short-lived Google token
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: lazensky-commander
+          workload_identity_provider: projects/217549425263/locations/global/workloadIdentityPools/github-actions/providers/github-actions
+          service_account: lazensky-commander-calendar-sy@lazensky-commander.iam.gserviceaccount.com
+          token_format: access_token
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Verify keyless credentials exist without calling Calendar API
+        env:
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          test -n "$ACCESS_TOKEN"
+          test -n "$GOOGLE_APPLICATION_CREDENTIALS"
+          test -f "$GOOGLE_APPLICATION_CREDENTIALS"
+          echo "OIDC/WIF authentication OK"
