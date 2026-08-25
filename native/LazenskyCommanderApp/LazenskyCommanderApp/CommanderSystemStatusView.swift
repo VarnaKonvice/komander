@@ -13,7 +13,7 @@ struct CommanderSystemStatusView: View {
 
   private var alarmState: String {
     guard let summary = model.summary else { return "Dosud neověřen" }
-    return summary.succeeded ? "Ověřeno" : "Automatická oprava nedokončena"
+    return summary.succeeded ? "Ověřeno" : "Automatická oprava pokračuje"
   }
 
   var body: some View {
@@ -36,6 +36,7 @@ struct CommanderSystemStatusView: View {
         LabeledContent("AlarmKit", value: alarmState)
         LabeledContent("Alarm verze", value: alarmVersion)
         LabeledContent("Požadované alarmy", value: model.summary.map { String($0.desiredAlarmCount) } ?? "0")
+        LabeledContent("Záložní upozornění", value: model.safetyNetStatus)
         LabeledContent("Pokusy o automatickou opravu", value: model.alarmRecoveryAttempts == 0 ? "—" : String(model.alarmRecoveryAttempts))
         LabeledContent("Poslední ověřený AlarmKit sync", value: model.summary?.completedAt?.formatted() ?? "Dosud neověřen")
         LabeledContent("Apple Watch", value: model.watchTransferStatus)
@@ -53,6 +54,7 @@ struct CommanderSystemStatusView: View {
         LabeledContent("Aktualizováno", value: model.summary.map { String($0.appliedUpdate) } ?? "0")
         LabeledContent("Zrušeno", value: model.summary.map { String($0.appliedCancel) } ?? "0")
         LabeledContent("Beze změny", value: model.summary.map { String($0.plan.unchanged.count) } ?? "0")
+        LabeledContent("Bez primárního krytí", value: model.summary.map { String($0.uncoveredStableIds.count) } ?? "0")
       }
 
       if let error = model.errorMessage {
