@@ -4,10 +4,16 @@ struct CommanderSystemStatusView: View {
   @ObservedObject var model: CommanderViewModel
 
   private var scheduleVersion: String {
-    if let version = model.summary?.scheduleVersion ?? model.latestSchedule?.scheduleVersion {
-      return String(version)
-    }
-    return "Dosud nesynchronizováno"
+    model.latestSchedule.map { "v\($0.scheduleVersion)" } ?? "Dosud nenačten"
+  }
+
+  private var alarmVersion: String {
+    model.summary?.scheduleVersion.map { "v\($0)" } ?? "Dosud neověřen"
+  }
+
+  private var alarmState: String {
+    guard let summary = model.summary else { return "Dosud neověřen" }
+    return summary.succeeded ? "Ověřeno" : "Automatická oprava nedokončena"
   }
 
   var body: some View {
@@ -26,20 +32,23 @@ struct CommanderSystemStatusView: View {
           }
         }
         .disabled(model.isSynchronizing)
-        LabeledContent("Verze", value: scheduleVersion)
+        LabeledContent("Rozpis", value: scheduleVersion)
+        LabeledContent("AlarmKit", value: alarmState)
+        LabeledContent("Alarm verze", value: alarmVersion)
         LabeledContent("Požadované alarmy", value: model.summary.map { String($0.desiredAlarmCount) } ?? "0")
-        LabeledContent("Poslední úspěšný sync", value: model.summary?.completedAt?.formatted() ?? "Nikdy")
+        LabeledContent("Pokusy o automatickou opravu", value: model.alarmRecoveryAttempts == 0 ? "—" : String(model.alarmRecoveryAttempts))
+        LabeledContent("Poslední ověřený AlarmKit sync", value: model.summary?.completedAt?.formatted() ?? "Dosud neověřen")
         LabeledContent("Apple Watch", value: model.watchTransferStatus)
       }
 
-      Section("AlarmKit") {
+      Section("AlarmKit oprávnění") {
         Text(model.accessStatus)
         if model.accessStatus.contains("not been requested") {
           Button("Povolit alarmy") { model.requestAuthorization() }
         }
       }
 
-      Section("Poslední synchronizace") {
+      Section("Poslední reconciliation") {
         LabeledContent("Vytvořeno", value: model.summary.map { String($0.appliedCreate) } ?? "0")
         LabeledContent("Aktualizováno", value: model.summary.map { String($0.appliedUpdate) } ?? "0")
         LabeledContent("Zrušeno", value: model.summary.map { String($0.appliedCancel) } ?? "0")
@@ -47,7 +56,7 @@ struct CommanderSystemStatusView: View {
       }
 
       if let error = model.errorMessage {
-        Section("Chyba") {
+        Section("Vyžaduje zásah") {
           Text(error)
             .foregroundStyle(.red)
         }
