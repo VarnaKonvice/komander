@@ -45,7 +45,7 @@ public struct URLSessionScheduleService: ScheduleServing {
       throw URLError(.badServerResponse)
     }
     let schedule = try JSONDecoder().decode(Schedule.self, from: data)
-    try NativeAlarmContract.validate(schedule)
+    try NativeAlarmContract.validateCanonical(schedule)
     return schedule
   }
 }
