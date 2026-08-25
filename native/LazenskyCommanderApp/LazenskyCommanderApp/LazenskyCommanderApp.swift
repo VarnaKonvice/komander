@@ -15,24 +15,38 @@ final class CommanderViewModel: ObservableObject {
   private let service: AlarmSyncService
   private let scheduleSync: CommanderScheduleSyncCoordinator
   private let watchConnectivity: IPhoneWatchConnectivityCoordinator
+  private let usesWatchTransport: Bool
 
   init() {
     let adapter = AlarmKitAdapter()
-    let scheduleService = URLSessionScheduleService(configuration: AppConfiguration())
+    let watchConnectivity = IPhoneWatchConnectivityCoordinator()
+
+    #if LC_E2E
+    let configuration = AppConfiguration.e2e
+    let usesWatchTransport = false
+    #else
+    let configuration = AppConfiguration()
+    let usesWatchTransport = true
+    #endif
+
+    let scheduleService = URLSessionScheduleService(configuration: configuration)
     let service = AlarmSyncService(
       scheduleService: scheduleService,
       store: UserDefaultsAlarmStateStore(),
       adapter: adapter
     )
-    let watchConnectivity = IPhoneWatchConnectivityCoordinator()
+
     self.adapter = adapter
     self.service = service
     self.watchConnectivity = watchConnectivity
+    self.usesWatchTransport = usesWatchTransport
+    self.watchTransferStatus = usesWatchTransport ? "Aktivuji WatchConnectivity…" : "E2E test – Watch transport vypnut"
+
     scheduleSync = CommanderScheduleSyncCoordinator(
       scheduleService: scheduleService,
       alarmSyncService: service,
       scheduleStore: UserDefaultsScheduleSnapshotStore(),
-      watchDelivery: watchConnectivity
+      watchDelivery: usesWatchTransport ? watchConnectivity : nil
     )
   }
 
@@ -43,7 +57,7 @@ final class CommanderViewModel: ObservableObject {
   func bootstrap() async {
     do {
       latestSchedule = try await scheduleSync.loadLastSchedule()
-      if let watchScheduleSnapshot {
+      if usesWatchTransport, let watchScheduleSnapshot {
         do {
           watchTransferStatus = try await watchConnectivity.deliver(watchScheduleSnapshot).diagnosticText
         } catch {
@@ -83,7 +97,9 @@ final class CommanderViewModel: ObservableObject {
         alarmRecoveryAttempts = result.alarmRecoveryAttempts
         latestSchedule = result.schedule
         errorMessage = result.alarmSummary.errorMessage
-        watchTransferStatus = result.watchDeliveryStatus.diagnosticText
+        if usesWatchTransport {
+          watchTransferStatus = result.watchDeliveryStatus.diagnosticText
+        }
       } catch {
         errorMessage = error.localizedDescription
       }
