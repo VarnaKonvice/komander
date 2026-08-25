@@ -9,6 +9,7 @@ final class CommanderViewModel: ObservableObject {
   @Published private(set) var isSynchronizing = false
   @Published private(set) var latestSchedule: Schedule?
   @Published private(set) var watchTransferStatus = "Aktivuji WatchConnectivity…"
+  @Published private(set) var alarmRecoveryAttempts = 0
 
   private let adapter: AlarmKitAdapter
   private let service: AlarmSyncService
@@ -46,7 +47,7 @@ final class CommanderViewModel: ObservableObject {
         do {
           watchTransferStatus = try await watchConnectivity.deliver(watchScheduleSnapshot).diagnosticText
         } catch {
-          watchTransferStatus = "Chyba přenosu: \(error.localizedDescription)"
+          watchTransferStatus = "Přenos se obnoví automaticky"
         }
       }
     } catch {
@@ -72,16 +73,16 @@ final class CommanderViewModel: ObservableObject {
   }
 
   func synchronize() {
+    guard !isSynchronizing else { return }
     isSynchronizing = true
     errorMessage = nil
     Task {
       do {
         let result = try await scheduleSync.synchronize()
         summary = result.alarmSummary
+        alarmRecoveryAttempts = result.alarmRecoveryAttempts
+        latestSchedule = result.schedule
         errorMessage = result.alarmSummary.errorMessage
-        if result.succeeded {
-          latestSchedule = result.schedule
-        }
         watchTransferStatus = result.watchDeliveryStatus.diagnosticText
       } catch {
         errorMessage = error.localizedDescription
@@ -123,7 +124,7 @@ private extension WatchScheduleDeliveryStatus {
     case .notAttempted: "Neprovedeno"
     case .queued: "Čeká na aktivaci"
     case .sent: "Předáno"
-    case .failed(let message): "Chyba přenosu: \(message)"
+    case .failed: "Přenos se obnoví automaticky"
     }
   }
 }
