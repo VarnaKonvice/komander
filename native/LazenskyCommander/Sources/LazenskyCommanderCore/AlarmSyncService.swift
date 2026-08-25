@@ -73,42 +73,46 @@ public struct AlarmSyncService: Sendable {
 
     let availability = await adapter.availability()
     guard case .available = availability else {
-      let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
-      let message: String
-      if case .unavailable(let reason) = availability { message = reason } else { message = "AlarmKit is unavailable." }
-      return summary(
-        scheduleVersion: schedule.scheduleVersion,
+      return failureSummary(
+        schedule: schedule,
         payload: desiredPayload,
-        plan: plan,
-        created: 0,
-        updated: 0,
-        cancelled: 0,
-        uncoveredStableIds: uncoveredStableIds(payload: desiredPayload, state: state, knownPlatformIDs: nil),
-        error: message,
-        completedAt: nil
+        state: state,
+        error: availabilityReason(availability)
       )
     }
+
     switch await adapter.authorizationStatus() {
-    case .authorized: break
-    case .notDetermined: try await adapter.requestAuthorization()
-    case .denied: throw AlarmAdapterError.authorizationDenied
+    case .authorized:
+      break
+    case .notDetermined:
+      do {
+        try await adapter.requestAuthorization()
+      } catch {
+        return failureSummary(
+          schedule: schedule,
+          payload: desiredPayload,
+          state: state,
+          error: error.localizedDescription
+        )
+      }
+    case .denied:
+      return failureSummary(
+        schedule: schedule,
+        payload: desiredPayload,
+        state: state,
+        error: AlarmAdapterError.authorizationDenied.localizedDescription
+      )
     }
 
     do {
       try await repairPersistedPlatformMapping(state: &state)
     } catch {
-      let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
       try await store.save(state)
-      return summary(
-        scheduleVersion: schedule.scheduleVersion,
+      return failureSummary(
+        schedule: schedule,
         payload: desiredPayload,
-        plan: plan,
-        created: 0,
-        updated: 0,
-        cancelled: 0,
-        uncoveredStableIds: uncoveredStableIds(payload: desiredPayload, state: state, knownPlatformIDs: nil),
-        error: error.localizedDescription,
-        completedAt: nil
+        state: state,
+        error: error.localizedDescription
       )
     }
 
@@ -167,6 +171,31 @@ public struct AlarmSyncService: Sendable {
         completedAt: nil
       )
     }
+  }
+
+  private func failureSummary(
+    schedule: Schedule,
+    payload: NativeAlarmPayload,
+    state: ManagedAlarmState,
+    error: String
+  ) -> AlarmSyncSummary {
+    let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: payload)
+    return summary(
+      scheduleVersion: schedule.scheduleVersion,
+      payload: payload,
+      plan: plan,
+      created: 0,
+      updated: 0,
+      cancelled: 0,
+      uncoveredStableIds: uncoveredStableIds(payload: payload, state: state, knownPlatformIDs: nil),
+      error: error,
+      completedAt: nil
+    )
+  }
+
+  private func availabilityReason(_ availability: AlarmKitAvailability) -> String {
+    if case .unavailable(let reason) = availability { return reason }
+    return "AlarmKit is unavailable."
   }
 
   private func repairPersistedPlatformMapping(state: inout ManagedAlarmState) async throws {
