@@ -61,11 +61,30 @@ import Testing
   #expect(await scheduleStore.load() == schedule)
 }
 
+@Test func alarmSyncRemovesOrphanedPlatformAlarmThenVerifiesTheDesiredSet() async throws {
+  let schedule = stabilitySchedule(version: 43)
+  let orphanID = PlatformAlarmIdentifier.newPersistedValue()
+  let adapter = TrackingPlatformAlarmAdapter(initialIDs: [orphanID])
+  let alarmSync = AlarmSyncService(
+    scheduleService: StabilityScheduleService(schedule: schedule),
+    store: InMemoryAlarmStateStore(),
+    adapter: adapter
+  )
+
+  let summary = try await alarmSync.synchronize(
+    schedule: schedule,
+    now: NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:00:00")
+  )
+
+  #expect(summary.succeeded)
+  #expect(await adapter.cancelledIDs() == [orphanID])
+  #expect(await adapter.currentIDs().count == 1)
+  #expect(await adapter.currentIDs().contains(orphanID) == false)
+}
+
 @Test func publishedCanonicalValidationRejectsNonPositiveVersionAndInvalidUpdatedAt() throws {
   let valid = stabilitySchedule(version: 1)
-  #expect(throws: Never.self) {
-    try NativeAlarmContract.validateCanonical(valid)
-  }
+  try NativeAlarmContract.validateCanonical(valid)
 
   let zeroVersion = Schedule(
     schemaVersion: valid.schemaVersion,
@@ -165,5 +184,34 @@ private actor RecoveringAlarmAdapter: AlarmAdapting {
 
   func cancel(platformAlarmID: String) async throws {}
   func scheduledCount() -> Int { scheduled }
+}
+
+private actor TrackingPlatformAlarmAdapter: AlarmAdapting {
+  private var ids: Set<String>
+  private var cancelled: [String] = []
+
+  init(initialIDs: Set<String>) {
+    ids = initialIDs
+  }
+
+  func availability() async -> AlarmKitAvailability { .available }
+  func authorizationStatus() async -> AlarmAuthorizationStatus { .authorized }
+  func requestAuthorization() async throws {}
+
+  func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) async throws -> String {
+    if let platformAlarmID { ids.remove(platformAlarmID) }
+    let id = PlatformAlarmIdentifier.newPersistedValue()
+    ids.insert(id)
+    return id
+  }
+
+  func cancel(platformAlarmID: String) async throws {
+    ids.remove(platformAlarmID)
+    cancelled.append(platformAlarmID)
+  }
+
+  func existingPlatformAlarmIDs() async throws -> Set<String>? { ids }
+  func cancelledIDs() -> [String] { cancelled }
+  func currentIDs() -> Set<String> { ids }
 }
 #endif
