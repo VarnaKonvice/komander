@@ -11,6 +11,8 @@ public struct AlarmCountdownPlan: Equatable, Sendable {
 }
 
 public enum AlarmCountdown {
+  public static let maximumWindow: TimeInterval = 30 * 60
+
   public static func preAlertDuration(for alarm: NativeAlarm, in schedule: Schedule) throws -> TimeInterval {
     let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
     let sameDayPreviousEnd = try schedule.events.compactMap { event -> Date? in
@@ -18,8 +20,10 @@ public enum AlarmCountdown {
       let endAt = try NativeAlarmContract.dateTime(date: event.date, time: event.end)
       return endAt <= leaveAt ? endAt : nil
     }.max()
-    if let endAt = sameDayPreviousEnd { return max(0, leaveAt.timeIntervalSince(endAt)) }
-    return 30 * 60
+    if let endAt = sameDayPreviousEnd {
+      return min(maximumWindow, max(0, leaveAt.timeIntervalSince(endAt)))
+    }
+    return maximumWindow
   }
 
   public static func plan(for alarm: NativeAlarm, in schedule: Schedule, now: Date) throws -> AlarmCountdownPlan {
@@ -33,7 +37,7 @@ public enum AlarmCountdown {
 
     return AlarmCountdownPlan(
       scheduledStartAt: nil,
-      duration: max(0, leaveAt.timeIntervalSince(now))
+      duration: min(maximumWindow, max(0, leaveAt.timeIntervalSince(now)))
     )
   }
 }
