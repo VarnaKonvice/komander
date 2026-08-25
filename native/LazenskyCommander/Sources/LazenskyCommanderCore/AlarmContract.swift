@@ -23,6 +23,16 @@ public enum NativeAlarmContract {
     }
   }
 
+  /// Strict validation for a published canonical schedule. Internal fixtures may use
+  /// scheduleVersion 0 for stale-version policy tests, but a network-published schedule may not.
+  public static func validateCanonical(_ schedule: Schedule) throws {
+    try validate(schedule)
+    guard schedule.scheduleVersion >= 1 else { throw ScheduleValidationError.invalidScheduleVersion }
+    guard !schedule.updatedAt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+          ISO8601DateFormatter().date(from: schedule.updatedAt) != nil
+    else { throw ScheduleValidationError.invalidUpdatedAt }
+  }
+
   public static func payload(schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> NativeAlarmPayload {
     try validate(schedule)
     return try payloadValidated(schedule: schedule, overrides: overrides)
