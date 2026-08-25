@@ -99,6 +99,7 @@ public struct NativeAlarmPayload: Codable, Equatable, Sendable {
 public enum ScheduleValidationError: LocalizedError, Equatable {
   case unsupportedSchemaVersion(Int)
   case invalidScheduleVersion
+  case invalidUpdatedAt
   case duplicateStableId(String)
   case missingField(String)
   case invalidDate(String)
@@ -109,7 +110,8 @@ public enum ScheduleValidationError: LocalizedError, Equatable {
   public var errorDescription: String? {
     switch self {
     case .unsupportedSchemaVersion(let version): return "Unsupported schemaVersion: \(version)."
-    case .invalidScheduleVersion: return "scheduleVersion must be non-negative."
+    case .invalidScheduleVersion: return "scheduleVersion must be positive for a canonical schedule."
+    case .invalidUpdatedAt: return "updatedAt must be a valid ISO-8601 timestamp."
     case .duplicateStableId(let stableId): return "Duplicate stableId: \(stableId)."
     case .missingField(let field): return "Missing required field: \(field)."
     case .invalidDate(let value): return "Invalid date: \(value)."
