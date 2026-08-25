@@ -10,16 +10,20 @@ final class CommanderViewModel: ObservableObject {
   @Published private(set) var latestSchedule: Schedule?
   @Published private(set) var watchTransferStatus = "Aktivuji WatchConnectivity…"
   @Published private(set) var alarmRecoveryAttempts = 0
+  @Published private(set) var safetyNetStatus = "Nepotřebné"
 
   private let adapter: AlarmKitAdapter
   private let service: AlarmSyncService
   private let scheduleSync: CommanderScheduleSyncCoordinator
   private let watchConnectivity: IPhoneWatchConnectivityCoordinator
+  private let safetyNet: IPhoneAlarmSafetyNet
   private let usesWatchTransport: Bool
+  private var repairTask: Task<Void, Never>?
 
   init() {
     let adapter = AlarmKitAdapter()
     let watchConnectivity = IPhoneWatchConnectivityCoordinator()
+    let safetyNet = IPhoneAlarmSafetyNet()
 
     #if LC_E2E
     let configuration = AppConfiguration.e2e
@@ -39,6 +43,7 @@ final class CommanderViewModel: ObservableObject {
     self.adapter = adapter
     self.service = service
     self.watchConnectivity = watchConnectivity
+    self.safetyNet = safetyNet
     self.usesWatchTransport = usesWatchTransport
     self.watchTransferStatus = usesWatchTransport ? "Aktivuji WatchConnectivity…" : "E2E test – Watch transport vypnut"
 
@@ -48,6 +53,10 @@ final class CommanderViewModel: ObservableObject {
       scheduleStore: UserDefaultsScheduleSnapshotStore(),
       watchDelivery: usesWatchTransport ? watchConnectivity : nil
     )
+  }
+
+  deinit {
+    repairTask?.cancel()
   }
 
   var watchScheduleSnapshot: WatchScheduleSnapshot? {
@@ -107,17 +116,56 @@ final class CommanderViewModel: ObservableObject {
       summary = result.alarmSummary
       alarmRecoveryAttempts = result.alarmRecoveryAttempts
       latestSchedule = result.schedule
-      errorMessage = result.alarmSummary.errorMessage
       if usesWatchTransport {
         watchTransferStatus = result.watchDeliveryStatus.diagnosticText
+      }
+
+      do {
+        let safetyState = try await safetyNet.reconcile(
+          schedule: result.schedule,
+          uncoveredStableIds: result.alarmSummary.uncoveredStableIds
+        )
+        safetyNetStatus = safetyState.diagnosticText
+        // A verified AlarmKit set or a verified fallback notification set both keep
+        // the user covered. Technical recovery can continue silently in the background.
+        errorMessage = nil
+      } catch {
+        safetyNetStatus = "Nelze zajistit zálohu"
+        errorMessage = result.alarmSummary.uncoveredStableIds.isEmpty ? nil : error.localizedDescription
+      }
+
+      if result.alarmSummary.succeeded {
+        cancelRepairRetry()
+      } else {
+        scheduleRepairRetry()
       }
     } catch {
       if reportFetchFailure || latestSchedule == nil {
         errorMessage = error.localizedDescription
       }
+      scheduleRepairRetry()
     }
 
     await refreshAccess()
+  }
+
+  private func scheduleRepairRetry() {
+    guard repairTask == nil else { return }
+    repairTask = Task { [weak self] in
+      do {
+        try await Task.sleep(for: .seconds(60))
+      } catch {
+        return
+      }
+      guard !Task.isCancelled, let self else { return }
+      self.repairTask = nil
+      await self.refreshFromNetwork(reportFetchFailure: false)
+    }
+  }
+
+  private func cancelRepairRetry() {
+    repairTask?.cancel()
+    repairTask = nil
   }
 }
 
