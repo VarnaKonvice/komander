@@ -13,6 +13,20 @@ public struct AlarmSyncSummary: Equatable, Sendable {
   public var succeeded: Bool { errorMessage == nil }
 }
 
+public enum AlarmSyncVerificationError: LocalizedError, Equatable, Sendable {
+  case missingPlatformAlarms(Int)
+  case orphanedPlatformAlarms(Int)
+
+  public var errorDescription: String? {
+    switch self {
+    case .missingPlatformAlarms(let count):
+      return "AlarmKit verification is missing \(count) expected alarm(s)."
+    case .orphanedPlatformAlarms(let count):
+      return "AlarmKit verification found \(count) orphaned alarm(s)."
+    }
+  }
+}
+
 public struct AlarmSyncService: Sendable {
   private let scheduleService: any ScheduleServing
   private let store: any AlarmStateStoring
@@ -69,11 +83,14 @@ public struct AlarmSyncService: Sendable {
     case .denied: throw AlarmAdapterError.authorizationDenied
     }
 
-    if let existingIDs = try await adapter.existingPlatformAlarmIDs() {
-      let before = state.records.count
-      state.records = state.records.filter { existingIDs.contains($0.value.platformAlarmID) }
-      if state.records.count != before { try await store.save(state) }
+    do {
+      try await repairPersistedPlatformMapping(state: &state)
+    } catch {
+      let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
+      try await store.save(state)
+      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil)
     }
+
     let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
 
     var created = 0
@@ -97,6 +114,9 @@ public struct AlarmSyncService: Sendable {
         created += 1
         try await store.save(state)
       }
+
+      try await verifyPlatformState(state)
+
       state.lastSuccessfulPayload = desiredPayload
       state.lastSuccessfulSync = now
       try await store.save(state)
@@ -104,6 +124,35 @@ public struct AlarmSyncService: Sendable {
     } catch {
       try await store.save(state)
       return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: created, updated: updated, cancelled: cancelled, error: error.localizedDescription, completedAt: nil)
+    }
+  }
+
+  private func repairPersistedPlatformMapping(state: inout ManagedAlarmState) async throws {
+    guard let existingIDs = try await adapter.existingPlatformAlarmIDs() else { return }
+
+    let managedIDs = Set(state.records.values.map(\.platformAlarmID))
+    let orphanedIDs = existingIDs.subtracting(managedIDs)
+    for orphanedID in orphanedIDs.sorted() {
+      try await adapter.cancel(platformAlarmID: orphanedID)
+    }
+
+    let before = state.records.count
+    state.records = state.records.filter { existingIDs.contains($0.value.platformAlarmID) }
+    if state.records.count != before {
+      try await store.save(state)
+    }
+  }
+
+  private func verifyPlatformState(_ state: ManagedAlarmState) async throws {
+    guard let existingIDs = try await adapter.existingPlatformAlarmIDs() else { return }
+    let expectedIDs = Set(state.records.values.map(\.platformAlarmID))
+    let missing = expectedIDs.subtracting(existingIDs)
+    if !missing.isEmpty {
+      throw AlarmSyncVerificationError.missingPlatformAlarms(missing.count)
+    }
+    let orphaned = existingIDs.subtracting(expectedIDs)
+    if !orphaned.isEmpty {
+      throw AlarmSyncVerificationError.orphanedPlatformAlarms(orphaned.count)
     }
   }
 
