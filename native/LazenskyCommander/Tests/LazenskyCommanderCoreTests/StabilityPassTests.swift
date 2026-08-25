@@ -61,6 +61,37 @@ import Testing
   #expect(await scheduleStore.load() == schedule)
 }
 
+@Test func publishedCanonicalValidationRejectsNonPositiveVersionAndInvalidUpdatedAt() throws {
+  let valid = stabilitySchedule(version: 1)
+  #expect(throws: Never.self) {
+    try NativeAlarmContract.validateCanonical(valid)
+  }
+
+  let zeroVersion = Schedule(
+    schemaVersion: valid.schemaVersion,
+    scheduleVersion: 0,
+    updatedAt: valid.updatedAt,
+    stay: valid.stay,
+    events: valid.events,
+    settings: valid.settings
+  )
+  #expect(throws: ScheduleValidationError.invalidScheduleVersion) {
+    try NativeAlarmContract.validateCanonical(zeroVersion)
+  }
+
+  let invalidTimestamp = Schedule(
+    schemaVersion: valid.schemaVersion,
+    scheduleVersion: valid.scheduleVersion,
+    updatedAt: "not-a-timestamp",
+    stay: valid.stay,
+    events: valid.events,
+    settings: valid.settings
+  )
+  #expect(throws: ScheduleValidationError.invalidUpdatedAt) {
+    try NativeAlarmContract.validateCanonical(invalidTimestamp)
+  }
+}
+
 private func stabilitySchedule(version: Int) -> Schedule {
   Schedule(
     schemaVersion: 1,
