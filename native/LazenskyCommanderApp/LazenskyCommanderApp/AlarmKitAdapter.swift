@@ -1,6 +1,7 @@
 import AlarmKit
 import Foundation
 import SwiftUI
+import UserNotifications
 import LazenskyCommanderCore
 
 enum AlarmKitAdapterError: LocalizedError {
@@ -69,7 +70,7 @@ actor AlarmKitAdapter: AlarmAdapting {
     } else {
       countdownPlan = AlarmCountdownPlan(
         scheduledStartAt: nil,
-        duration: max(0, leaveAt.timeIntervalSince(now))
+        duration: min(AlarmCountdown.maximumWindow, max(0, leaveAt.timeIntervalSince(now)))
       )
     }
 
@@ -118,5 +119,130 @@ actor AlarmKitAdapter: AlarmAdapting {
   static var hasUsageDescription: Bool {
     let value = Bundle.main.object(forInfoDictionaryKey: "NSAlarmKitUsageDescription") as? String
     return !(value?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+  }
+}
+
+enum IPhoneAlarmSafetyNetState: Equatable, Sendable {
+  case notNeeded
+  case active(Int)
+
+  var coversCriticalGap: Bool {
+    switch self {
+    case .notNeeded: return true
+    case .active: return true
+    }
+  }
+
+  var diagnosticText: String {
+    switch self {
+    case .notNeeded: return "Nepotřebné"
+    case .active(let count): return "Aktivní · \(count)"
+    }
+  }
+}
+
+enum IPhoneAlarmSafetyNetError: LocalizedError {
+  case notificationsDenied
+  case verificationFailed(Int)
+
+  var errorDescription: String? {
+    switch self {
+    case .notificationsDenied:
+      return "Zapni upozornění pro Lázeňský Commander, aby tě mohl bezpečně upozornit na odchod."
+    case .verificationFailed:
+      return "Záložní upozornění se nepodařilo bezpečně ověřit."
+    }
+  }
+}
+
+actor IPhoneAlarmSafetyNet {
+  private static let identifierPrefix = "lazensky.commander.iphone.fallback."
+  private static let prague = TimeZone(identifier: "Europe/Prague")!
+
+  private let center: UNUserNotificationCenter
+
+  init(center: UNUserNotificationCenter = .current()) {
+    self.center = center
+  }
+
+  func reconcile(
+    schedule: Schedule,
+    uncoveredStableIds: [String],
+    now: Date = Date()
+  ) async throws -> IPhoneAlarmSafetyNetState {
+    let uncovered = Set(uncoveredStableIds)
+    let payload = try NativeAlarmContract.payload(schedule: schedule)
+    let desired = try payload.alarms.filter { alarm in
+      uncovered.contains(alarm.stableId) && NativeAlarmContract.date(fromLocalISO: alarm.leaveAt) > now
+    }
+    let desiredIdentifiers = Set(desired.map { Self.identifier(for: $0.stableId) })
+
+    let pending = await center.pendingNotificationRequests()
+    let currentManaged = Set(pending.map(\.identifier).filter { $0.hasPrefix(Self.identifierPrefix) })
+    let stale = currentManaged.subtracting(desiredIdentifiers)
+    if !stale.isEmpty {
+      center.removePendingNotificationRequests(withIdentifiers: Array(stale))
+    }
+
+    guard !desired.isEmpty else {
+      if !currentManaged.isEmpty {
+        center.removePendingNotificationRequests(withIdentifiers: Array(currentManaged))
+      }
+      return .notNeeded
+    }
+
+    var settings = await center.notificationSettings()
+    if settings.authorizationStatus == .notDetermined {
+      _ = try await center.requestAuthorization(options: [.alert, .sound])
+      settings = await center.notificationSettings()
+    }
+    guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+      throw IPhoneAlarmSafetyNetError.notificationsDenied
+    }
+
+    for alarm in desired {
+      try await center.add(request(for: alarm, scheduleVersion: schedule.scheduleVersion))
+    }
+
+    let verified = await center.pendingNotificationRequests()
+    let verifiedManaged = Set(verified.map(\.identifier).filter { $0.hasPrefix(Self.identifierPrefix) })
+    let missing = desiredIdentifiers.subtracting(verifiedManaged)
+    guard missing.isEmpty else {
+      throw IPhoneAlarmSafetyNetError.verificationFailed(missing.count)
+    }
+
+    return .active(desired.count)
+  }
+
+  private func request(for alarm: NativeAlarm, scheduleVersion: Int) throws -> UNNotificationRequest {
+    let content = UNMutableNotificationContent()
+    content.title = NativeAlarmPresentation.title(for: alarm)
+    content.body = alarm.location
+    content.sound = .default
+    content.interruptionLevel = .timeSensitive
+    content.userInfo = [
+      "stableId": alarm.stableId,
+      "scheduleVersion": scheduleVersion,
+      "leaveAt": alarm.leaveAt
+    ]
+
+    let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = Self.prague
+    var components = calendar.dateComponents(
+      [.year, .month, .day, .hour, .minute, .second],
+      from: leaveAt
+    )
+    components.timeZone = Self.prague
+
+    return UNNotificationRequest(
+      identifier: Self.identifier(for: alarm.stableId),
+      content: content,
+      trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+    )
+  }
+
+  private static func identifier(for stableId: String) -> String {
+    identifierPrefix + stableId
   }
 }
