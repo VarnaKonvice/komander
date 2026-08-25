@@ -67,7 +67,9 @@ final class CommanderViewModel: ObservableObject {
     } catch {
       errorMessage = "Uložený rozpis nelze načíst: \(error.localizedDescription)"
     }
+
     await refreshAccess()
+    await refreshFromNetwork(reportFetchFailure: latestSchedule == nil)
   }
 
   func refreshAccess() async {
@@ -79,6 +81,7 @@ final class CommanderViewModel: ObservableObject {
       do {
         try await adapter.requestAuthorization()
         errorMessage = nil
+        await refreshFromNetwork(reportFetchFailure: true)
       } catch {
         errorMessage = error.localizedDescription
       }
@@ -87,31 +90,41 @@ final class CommanderViewModel: ObservableObject {
   }
 
   func synchronize() {
+    Task { await refreshFromNetwork(reportFetchFailure: true) }
+  }
+
+  func refreshWhenActive() async {
+    await refreshFromNetwork(reportFetchFailure: false)
+  }
+
+  private func refreshFromNetwork(reportFetchFailure: Bool) async {
     guard !isSynchronizing else { return }
     isSynchronizing = true
-    errorMessage = nil
-    Task {
-      do {
-        let result = try await scheduleSync.synchronize()
-        summary = result.alarmSummary
-        alarmRecoveryAttempts = result.alarmRecoveryAttempts
-        latestSchedule = result.schedule
-        errorMessage = result.alarmSummary.errorMessage
-        if usesWatchTransport {
-          watchTransferStatus = result.watchDeliveryStatus.diagnosticText
-        }
-      } catch {
+    defer { isSynchronizing = false }
+
+    do {
+      let result = try await scheduleSync.synchronize()
+      summary = result.alarmSummary
+      alarmRecoveryAttempts = result.alarmRecoveryAttempts
+      latestSchedule = result.schedule
+      errorMessage = result.alarmSummary.errorMessage
+      if usesWatchTransport {
+        watchTransferStatus = result.watchDeliveryStatus.diagnosticText
+      }
+    } catch {
+      if reportFetchFailure || latestSchedule == nil {
         errorMessage = error.localizedDescription
       }
-      await refreshAccess()
-      isSynchronizing = false
     }
+
+    await refreshAccess()
   }
 }
 
 @main
 struct LazenskyCommanderApp: App {
   @StateObject private var model = CommanderViewModel()
+  @Environment(\.scenePhase) private var scenePhase
 
   var body: some Scene {
     WindowGroup {
@@ -120,6 +133,10 @@ struct LazenskyCommanderApp: App {
       }
       .preferredColorScheme(.dark)
       .task { await model.bootstrap() }
+      .onChange(of: scenePhase) { _, phase in
+        guard phase == .active else { return }
+        Task { await model.refreshWhenActive() }
+      }
     }
   }
 }
