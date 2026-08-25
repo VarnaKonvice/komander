@@ -1,10 +1,27 @@
 import Foundation
 
-public struct AppConfiguration: Sendable {
-  public var scheduleURL: URL
+public enum ScheduleChannel: String, Equatable, Sendable {
+  case production
+  case e2e
+}
 
-  public init(scheduleURL: URL = URL(string: "https://raw.githubusercontent.com/VarnaKonvice/komander/lc/e2e-alarm-test-v1/data/e2e-test-schedule.json")!) {
+public struct AppConfiguration: Sendable {
+  public static let productionScheduleURL = URL(string: "https://raw.githubusercontent.com/VarnaKonvice/komander/main/data/schedule.json")!
+  public static let e2eScheduleURL = URL(string: "https://raw.githubusercontent.com/VarnaKonvice/komander/lc/e2e-alarm-test-v1/data/e2e-test-schedule.json")!
+
+  public var scheduleURL: URL
+  public var channel: ScheduleChannel
+
+  public init(
+    scheduleURL: URL = AppConfiguration.productionScheduleURL,
+    channel: ScheduleChannel = .production
+  ) {
     self.scheduleURL = scheduleURL
+    self.channel = channel
+  }
+
+  public static var e2e: AppConfiguration {
+    AppConfiguration(scheduleURL: e2eScheduleURL, channel: .e2e)
   }
 }
 
