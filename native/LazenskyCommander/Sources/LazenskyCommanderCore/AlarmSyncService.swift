@@ -7,10 +7,11 @@ public struct AlarmSyncSummary: Equatable, Sendable {
   public let appliedCreate: Int
   public let appliedUpdate: Int
   public let appliedCancel: Int
+  public let uncoveredStableIds: [String]
   public let errorMessage: String?
   public let completedAt: Date?
 
-  public var succeeded: Bool { errorMessage == nil }
+  public var succeeded: Bool { errorMessage == nil && uncoveredStableIds.isEmpty }
 }
 
 public enum AlarmSyncVerificationError: LocalizedError, Equatable, Sendable {
@@ -75,7 +76,17 @@ public struct AlarmSyncService: Sendable {
       let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
       let message: String
       if case .unavailable(let reason) = availability { message = reason } else { message = "AlarmKit is unavailable." }
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: message, completedAt: nil)
+      return summary(
+        scheduleVersion: schedule.scheduleVersion,
+        payload: desiredPayload,
+        plan: plan,
+        created: 0,
+        updated: 0,
+        cancelled: 0,
+        uncoveredStableIds: uncoveredStableIds(payload: desiredPayload, state: state, knownPlatformIDs: nil),
+        error: message,
+        completedAt: nil
+      )
     }
     switch await adapter.authorizationStatus() {
     case .authorized: break
@@ -88,7 +99,17 @@ public struct AlarmSyncService: Sendable {
     } catch {
       let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
       try await store.save(state)
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil)
+      return summary(
+        scheduleVersion: schedule.scheduleVersion,
+        payload: desiredPayload,
+        plan: plan,
+        created: 0,
+        updated: 0,
+        cancelled: 0,
+        uncoveredStableIds: uncoveredStableIds(payload: desiredPayload, state: state, knownPlatformIDs: nil),
+        error: error.localizedDescription,
+        completedAt: nil
+      )
     }
 
     let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
@@ -120,10 +141,31 @@ public struct AlarmSyncService: Sendable {
       state.lastSuccessfulPayload = desiredPayload
       state.lastSuccessfulSync = now
       try await store.save(state)
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: created, updated: updated, cancelled: cancelled, error: nil, completedAt: now)
+      return summary(
+        scheduleVersion: schedule.scheduleVersion,
+        payload: desiredPayload,
+        plan: plan,
+        created: created,
+        updated: updated,
+        cancelled: cancelled,
+        uncoveredStableIds: [],
+        error: nil,
+        completedAt: now
+      )
     } catch {
       try await store.save(state)
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: created, updated: updated, cancelled: cancelled, error: error.localizedDescription, completedAt: nil)
+      let knownPlatformIDs = await knownPlatformIDsIfAvailable()
+      return summary(
+        scheduleVersion: schedule.scheduleVersion,
+        payload: desiredPayload,
+        plan: plan,
+        created: created,
+        updated: updated,
+        cancelled: cancelled,
+        uncoveredStableIds: uncoveredStableIds(payload: desiredPayload, state: state, knownPlatformIDs: knownPlatformIDs),
+        error: error.localizedDescription,
+        completedAt: nil
+      )
     }
   }
 
@@ -156,6 +198,30 @@ public struct AlarmSyncService: Sendable {
     }
   }
 
+  private func knownPlatformIDsIfAvailable() async -> Set<String>? {
+    do {
+      return try await adapter.existingPlatformAlarmIDs()
+    } catch {
+      return nil
+    }
+  }
+
+  private func uncoveredStableIds(
+    payload: NativeAlarmPayload,
+    state: ManagedAlarmState,
+    knownPlatformIDs: Set<String>?
+  ) -> [String] {
+    payload.alarms.compactMap { alarm in
+      guard let record = state.records[alarm.stableId], record.alarm == alarm else {
+        return alarm.stableId
+      }
+      if let knownPlatformIDs, !knownPlatformIDs.contains(record.platformAlarmID) {
+        return alarm.stableId
+      }
+      return nil
+    }.sorted()
+  }
+
   private func desiredPayload(from payload: NativeAlarmPayload, now: Date) throws -> NativeAlarmPayload {
     let futureAlarms = try payload.alarms.filter {
       try NativeAlarmContract.date(fromLocalISO: $0.leaveAt) > now
@@ -180,7 +246,27 @@ public struct AlarmSyncService: Sendable {
     state.records.removeValue(forKey: change.stableId)
   }
 
-  private func summary(scheduleVersion: Int, payload: NativeAlarmPayload, plan: AlarmReconciliationPlan, created: Int, updated: Int, cancelled: Int, error: String?, completedAt: Date?) -> AlarmSyncSummary {
-    AlarmSyncSummary(scheduleVersion: scheduleVersion, desiredAlarmCount: payload.alarms.count, plan: plan, appliedCreate: created, appliedUpdate: updated, appliedCancel: cancelled, errorMessage: error, completedAt: completedAt)
+  private func summary(
+    scheduleVersion: Int,
+    payload: NativeAlarmPayload,
+    plan: AlarmReconciliationPlan,
+    created: Int,
+    updated: Int,
+    cancelled: Int,
+    uncoveredStableIds: [String],
+    error: String?,
+    completedAt: Date?
+  ) -> AlarmSyncSummary {
+    AlarmSyncSummary(
+      scheduleVersion: scheduleVersion,
+      desiredAlarmCount: payload.alarms.count,
+      plan: plan,
+      appliedCreate: created,
+      appliedUpdate: updated,
+      appliedCancel: cancelled,
+      uncoveredStableIds: uncoveredStableIds,
+      errorMessage: error,
+      completedAt: completedAt
+    )
   }
 }
