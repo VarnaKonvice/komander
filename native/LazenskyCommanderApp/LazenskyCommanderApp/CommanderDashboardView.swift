@@ -24,7 +24,7 @@ struct CommanderDashboardView: View {
         } label: {
           Image(systemName: "gearshape")
             .overlay(alignment: .topTrailing) {
-              if model.errorMessage != nil {
+              if model.requiresUserAction {
                 Circle()
                   .fill(.red)
                   .frame(width: 7, height: 7)

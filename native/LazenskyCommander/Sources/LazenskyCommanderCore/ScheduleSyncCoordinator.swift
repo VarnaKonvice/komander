@@ -2,6 +2,7 @@ import Foundation
 
 public struct CommanderScheduleSyncResult: Equatable, Sendable {
   public let schedule: Schedule
+  public let scheduleDecision: ScheduleSnapshotDecision
   public let alarmSummary: AlarmSyncSummary
   public let watchSnapshot: WatchScheduleSnapshot
   public let watchDeliveryStatus: WatchScheduleDeliveryStatus
@@ -32,16 +33,33 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
   }
 
   public func synchronize(overrides: LeadTimeOverrides? = nil, now: Date = Date()) async throws -> CommanderScheduleSyncResult {
-    let schedule = try await scheduleService.fetchSchedule()
-    let summary = try await alarmSyncService.synchronizeValidated(schedule: schedule, overrides: overrides, now: now)
-    if summary.succeeded {
-      try await scheduleStore.save(schedule)
+    let fetchedSchedule = try await scheduleService.fetchSchedule()
+
+    // Explicitly denied AlarmKit access is a hard user-action boundary. Preserve the
+    // last operational snapshot until the permission is restored rather than silently
+    // accepting a schedule that cannot currently be protected by the primary alarm path.
+    if await alarmSyncService.authorizationStatus() == .denied {
+      _ = try await alarmSyncService.synchronizeValidated(schedule: fetchedSchedule, overrides: overrides, now: now)
     }
+
+    let decision = try await scheduleStore.accept(fetchedSchedule)
+    let schedule: Schedule
+    switch decision {
+    case .stored, .unchanged:
+      schedule = fetchedSchedule
+    case .rejectedVersion:
+      guard let existing = try await scheduleStore.load() else {
+        throw ScheduleValidationError.invalidScheduleVersion
+      }
+      schedule = existing
+    }
+
+    // Once the canonical snapshot has been accepted, every projection works from that
+    // exact Schedule. A projection failure must never roll the dashboard back.
+    let summary = try await alarmSyncService.synchronizeValidated(schedule: schedule, overrides: overrides, now: now)
     let watchSnapshot = WatchScheduleSnapshot(schedule: schedule)
     let watchDeliveryStatus: WatchScheduleDeliveryStatus
-    if !summary.succeeded {
-      watchDeliveryStatus = .notAttempted
-    } else if let watchDelivery {
+    if let watchDelivery {
       do {
         switch try await watchDelivery.deliver(watchSnapshot) {
         case .queued: watchDeliveryStatus = .queued
@@ -53,8 +71,10 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     } else {
       watchDeliveryStatus = .notConfigured
     }
+
     return CommanderScheduleSyncResult(
       schedule: schedule,
+      scheduleDecision: decision,
       alarmSummary: summary,
       watchSnapshot: watchSnapshot,
       watchDeliveryStatus: watchDeliveryStatus

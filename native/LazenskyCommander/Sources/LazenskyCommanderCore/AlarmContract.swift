@@ -23,6 +23,17 @@ public enum NativeAlarmContract {
     }
   }
 
+  public static func validateCanonical(_ schedule: Schedule) throws {
+    try validate(schedule)
+    guard schedule.scheduleVersion > 0 else { throw ScheduleValidationError.invalidScheduleVersion }
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    let fallback = ISO8601DateFormatter()
+    guard formatter.date(from: schedule.updatedAt) != nil || fallback.date(from: schedule.updatedAt) != nil else {
+      throw ScheduleValidationError.invalidUpdatedAt(schedule.updatedAt)
+    }
+  }
+
   public static func payload(schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> NativeAlarmPayload {
     try validate(schedule)
     return try payloadValidated(schedule: schedule, overrides: overrides)

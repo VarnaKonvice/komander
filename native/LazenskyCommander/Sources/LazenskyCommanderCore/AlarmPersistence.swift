@@ -40,7 +40,12 @@ public actor UserDefaultsAlarmStateStore: AlarmStateStoring {
 
   public func load() throws -> ManagedAlarmState {
     guard let data = defaults.data(forKey: key) else { return ManagedAlarmState() }
-    return try JSONDecoder().decode(ManagedAlarmState.self, from: data)
+    do {
+      return try JSONDecoder().decode(ManagedAlarmState.self, from: data)
+    } catch {
+      defaults.removeObject(forKey: key)
+      return ManagedAlarmState()
+    }
   }
 
   public func save(_ state: ManagedAlarmState) throws {

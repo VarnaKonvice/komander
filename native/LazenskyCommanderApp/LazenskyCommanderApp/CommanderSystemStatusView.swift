@@ -4,21 +4,32 @@ struct CommanderSystemStatusView: View {
   @ObservedObject var model: CommanderViewModel
 
   private var scheduleVersion: String {
-    if let version = model.summary?.scheduleVersion ?? model.latestSchedule?.scheduleVersion {
-      return String(version)
+    model.latestSchedule.map { "v\($0.scheduleVersion)" } ?? "Dosud nenačteno"
+  }
+
+  private var alarmState: String {
+    guard let summary = model.summary else { return model.recoveryStatus }
+    if summary.succeeded {
+      return "v\(summary.scheduleVersion ?? 0) · ověřeno"
     }
-    return "Dosud nesynchronizováno"
+    return "Automatická obnova"
   }
 
   var body: some View {
     Form {
+      if model.requiresUserAction, let message = model.userActionMessage {
+        Section("Potřebuje tvůj zásah") {
+          Text(message)
+        }
+      }
+
       Section("Synchronizace") {
         Button {
           model.synchronize()
         } label: {
           HStack {
             Label(
-              model.isSynchronizing ? "Synchronizuji…" : "Synchronizovat rozpis",
+              model.isSynchronizing ? "Kontroluji…" : "Zkontrolovat rozpis",
               systemImage: "arrow.triangle.2.circlepath"
             )
             Spacer()
@@ -26,30 +37,35 @@ struct CommanderSystemStatusView: View {
           }
         }
         .disabled(model.isSynchronizing)
-        LabeledContent("Verze", value: scheduleVersion)
-        LabeledContent("Požadované alarmy", value: model.summary.map { String($0.desiredAlarmCount) } ?? "0")
-        LabeledContent("Poslední úspěšný sync", value: model.summary?.completedAt?.formatted() ?? "Nikdy")
+
+        LabeledContent("Rozpis", value: scheduleVersion)
+        LabeledContent("AlarmKit", value: alarmState)
+        LabeledContent("Bezpečnostní pojistka", value: model.fallbackStatus)
         LabeledContent("Apple Watch", value: model.watchTransferStatus)
+        LabeledContent("Obnova", value: model.recoveryStatus)
+        LabeledContent("Poslední ověření", value: model.summary?.completedAt?.formatted() ?? "Zatím neověřeno")
       }
 
-      Section("AlarmKit") {
+      Section("AlarmKit oprávnění") {
         Text(model.accessStatus)
-        if model.accessStatus.contains("not been requested") {
+        if model.accessStatus.contains("not been requested") || model.accessStatus.contains("denied") {
           Button("Povolit alarmy") { model.requestAuthorization() }
         }
       }
 
-      Section("Poslední synchronizace") {
+      Section("Poslední reconciliation") {
+        LabeledContent("Požadované alarmy", value: model.summary.map { String($0.desiredAlarmCount) } ?? "0")
         LabeledContent("Vytvořeno", value: model.summary.map { String($0.appliedCreate) } ?? "0")
         LabeledContent("Aktualizováno", value: model.summary.map { String($0.appliedUpdate) } ?? "0")
         LabeledContent("Zrušeno", value: model.summary.map { String($0.appliedCancel) } ?? "0")
-        LabeledContent("Beze změny", value: model.summary.map { String($0.plan.unchanged.count) } ?? "0")
+        LabeledContent("Automatické opravy", value: model.summary.map { String($0.repairAttempts) } ?? "0")
       }
 
-      if let error = model.errorMessage {
-        Section("Chyba") {
-          Text(error)
-            .foregroundStyle(.red)
+      if let detail = model.errorMessage, !model.requiresUserAction {
+        Section("Technická diagnostika") {
+          Text(detail)
+            .foregroundStyle(.secondary)
+            .font(.footnote)
         }
       }
     }

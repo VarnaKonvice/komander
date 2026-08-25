@@ -14,11 +14,13 @@ public enum AlarmAuthorizationStatus: Equatable, Sendable {
 public enum AlarmAdapterError: LocalizedError, Equatable, Sendable {
   case unavailable(String)
   case authorizationDenied
+  case verificationFailed
 
   public var errorDescription: String? {
     switch self {
     case .unavailable(let message): return message
     case .authorizationDenied: return "Alarm authorization was denied."
+    case .verificationFailed: return "AlarmKit verification did not match the desired alarm set."
     }
   }
 }
