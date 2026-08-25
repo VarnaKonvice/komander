@@ -1,0 +1,35 @@
+name: Native validation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  swift-tests:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Run Swift core tests
+        run: swift test --package-path native/LazenskyCommander
+
+  ios-build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Build iPhone app and embedded extensions without signing
+        run: >-
+          xcodebuild
+          -project native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj
+          -scheme LazenskyCommanderApp
+          -configuration Debug
+          -destination 'generic/platform=iOS'
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+          build
