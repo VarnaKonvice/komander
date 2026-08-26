@@ -28,7 +28,7 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
       return
     }
     session.delegate = self
-    receiveAcknowledgement(from: session.receivedApplicationContext)
+    recordAcknowledgement(Self.acknowledgementVersion(from: session.receivedApplicationContext))
     session.activate()
   }
 
@@ -57,18 +57,22 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
     return .sent
   }
 
-  private func receiveAcknowledgement(from applicationContext: [String: Any]) {
-    guard let acknowledgement = try? WatchScheduleAcknowledgementCodec.decode(applicationContext: applicationContext) else { return }
-    acknowledgedScheduleVersion = acknowledgement.scheduleVersion
-    diagnostic = "Apple Watch ověřily rozpis v\(acknowledgement.scheduleVersion)"
+  private func recordAcknowledgement(_ scheduleVersion: Int?) {
+    guard let scheduleVersion else { return }
+    acknowledgedScheduleVersion = scheduleVersion
+    diagnostic = "Apple Watch ověřily rozpis v\(scheduleVersion)"
   }
 
-  private func didActivate(errorDescription: String?, receivedApplicationContext: [String: Any]) {
+  nonisolated private static func acknowledgementVersion(from applicationContext: [String: Any]) -> Int? {
+    try? WatchScheduleAcknowledgementCodec.decode(applicationContext: applicationContext).scheduleVersion
+  }
+
+  private func didActivate(errorDescription: String?, acknowledgedVersion: Int?) {
     if let errorDescription {
       diagnostic = "Aktivace WatchConnectivity selhala: \(errorDescription)"
       return
     }
-    receiveAcknowledgement(from: receivedApplicationContext)
+    recordAcknowledgement(acknowledgedVersion)
     guard let session else { return }
     do {
       _ = try publishPendingContext(using: session)
@@ -93,15 +97,16 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
     error: Error?
   ) {
     let errorDescription = error?.localizedDescription
-    let receivedApplicationContext = session.receivedApplicationContext
+    let acknowledgedVersion = Self.acknowledgementVersion(from: session.receivedApplicationContext)
     Task { @MainActor [weak self] in
-      self?.didActivate(errorDescription: errorDescription, receivedApplicationContext: receivedApplicationContext)
+      self?.didActivate(errorDescription: errorDescription, acknowledgedVersion: acknowledgedVersion)
     }
   }
 
   nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+    let acknowledgedVersion = Self.acknowledgementVersion(from: applicationContext)
     Task { @MainActor [weak self] in
-      self?.receiveAcknowledgement(from: applicationContext)
+      self?.recordAcknowledgement(acknowledgedVersion)
     }
   }
 
