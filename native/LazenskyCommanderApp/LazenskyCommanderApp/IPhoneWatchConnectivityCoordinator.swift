@@ -16,6 +16,7 @@ enum IPhoneWatchConnectivityError: LocalizedError {
 final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotDelivering, WCSessionDelegate {
   private let session: WCSession?
   private var pendingApplicationContext: [String: Any]?
+  private var acknowledgedScheduleVersion: Int?
 
   private(set) var diagnostic = "Aktivuji WatchConnectivity…"
 
@@ -27,6 +28,7 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
       return
     }
     session.delegate = self
+    receiveAcknowledgement(from: session.receivedApplicationContext)
     session.activate()
   }
 
@@ -43,23 +45,36 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
     return try publishPendingContext(using: session)
   }
 
+  func verifiedScheduleVersion() async -> Int? {
+    acknowledgedScheduleVersion
+  }
+
   private func publishPendingContext(using session: WCSession) throws -> WatchScheduleDeliveryDisposition {
     guard let pendingApplicationContext else { return .sent }
     try session.updateApplicationContext(pendingApplicationContext)
     self.pendingApplicationContext = nil
-    diagnostic = "Poslední rozpis předán Apple Watch"
+    diagnostic = "Rozpis odeslán, čekám na potvrzení Watch"
     return .sent
   }
 
-  private func didActivate(errorDescription: String?) {
+  private func receiveAcknowledgement(from applicationContext: [String: Any]) {
+    guard let acknowledgement = try? WatchScheduleAcknowledgementCodec.decode(applicationContext: applicationContext) else { return }
+    acknowledgedScheduleVersion = acknowledgement.scheduleVersion
+    diagnostic = "Apple Watch ověřily rozpis v\(acknowledgement.scheduleVersion)"
+  }
+
+  private func didActivate(errorDescription: String?, receivedApplicationContext: [String: Any]) {
     if let errorDescription {
       diagnostic = "Aktivace WatchConnectivity selhala: \(errorDescription)"
       return
     }
+    receiveAcknowledgement(from: receivedApplicationContext)
     guard let session else { return }
     do {
       _ = try publishPendingContext(using: session)
-      if pendingApplicationContext == nil, diagnostic != "Poslední rozpis předán Apple Watch" {
+      if pendingApplicationContext == nil,
+         acknowledgedScheduleVersion == nil,
+         diagnostic != "Rozpis odeslán, čekám na potvrzení Watch" {
         diagnostic = "WatchConnectivity aktivní"
       }
     } catch {
@@ -78,8 +93,15 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
     error: Error?
   ) {
     let errorDescription = error?.localizedDescription
+    let receivedApplicationContext = session.receivedApplicationContext
     Task { @MainActor [weak self] in
-      self?.didActivate(errorDescription: errorDescription)
+      self?.didActivate(errorDescription: errorDescription, receivedApplicationContext: receivedApplicationContext)
+    }
+  }
+
+  nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+    Task { @MainActor [weak self] in
+      self?.receiveAcknowledgement(from: applicationContext)
     }
   }
 
