@@ -33,6 +33,10 @@ public protocol AlarmAdapting: Sendable {
   func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) async throws -> String
   func cancel(platformAlarmID: String) async throws
   func existingPlatformAlarmIDs() async throws -> Set<String>?
+
+  /// Returns the real fixed alert date for each AlarmKit alarm when the platform adapter
+  /// can inspect it. nil means this verification capability is unavailable in that adapter.
+  func existingPlatformFixedAlertDates() async throws -> [String: Date]?
 }
 
 public extension AlarmAdapting {
@@ -40,6 +44,9 @@ public extension AlarmAdapting {
 
   /// Returns nil when the backing platform cannot enumerate alarms.
   func existingPlatformAlarmIDs() async throws -> Set<String>? { nil }
+
+  /// Non-iOS/test adapters may not expose schedule details. The real AlarmKit adapter does.
+  func existingPlatformFixedAlertDates() async throws -> [String: Date]? { nil }
 }
 
 public enum PlatformAlarmIdentifier {
