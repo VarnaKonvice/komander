@@ -1,19 +1,20 @@
 import Foundation
 
 public struct AlarmCountdownPlan: Equatable, Sendable {
-  public let scheduledStartAt: Date?
-  public let duration: TimeInterval
+  /// The instant at which AlarmKit must actually alert. A countdown window never changes this value.
+  public let scheduledAlertAt: Date
+  public let countdownWindow: TimeInterval
 
-  public init(scheduledStartAt: Date?, duration: TimeInterval) {
-    self.scheduledStartAt = scheduledStartAt
-    self.duration = duration
+  public init(scheduledAlertAt: Date, countdownWindow: TimeInterval) {
+    self.scheduledAlertAt = scheduledAlertAt
+    self.countdownWindow = countdownWindow
   }
 }
 
 public enum AlarmCountdown {
   public static let maximumWindow: TimeInterval = 30 * 60
 
-  public static func preAlertDuration(for alarm: NativeAlarm, in schedule: Schedule) throws -> TimeInterval {
+  public static func countdownWindow(for alarm: NativeAlarm, in schedule: Schedule) throws -> TimeInterval {
     let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
     let sameDayPreviousEnd = try schedule.events.compactMap { event -> Date? in
       guard event.date == String(alarm.startAt.prefix(10)) else { return nil }
@@ -28,16 +29,12 @@ public enum AlarmCountdown {
 
   public static func plan(for alarm: NativeAlarm, in schedule: Schedule, now: Date) throws -> AlarmCountdownPlan {
     let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
-    let desiredDuration = try preAlertDuration(for: alarm, in: schedule)
-    let desiredStartAt = leaveAt.addingTimeInterval(-desiredDuration)
-
-    if desiredStartAt > now {
-      return AlarmCountdownPlan(scheduledStartAt: desiredStartAt, duration: desiredDuration)
-    }
+    let desiredWindow = try countdownWindow(for: alarm, in: schedule)
+    let remaining = max(0, leaveAt.timeIntervalSince(now))
 
     return AlarmCountdownPlan(
-      scheduledStartAt: nil,
-      duration: min(maximumWindow, max(0, leaveAt.timeIntervalSince(now)))
+      scheduledAlertAt: leaveAt,
+      countdownWindow: min(desiredWindow, remaining)
     )
   }
 }
