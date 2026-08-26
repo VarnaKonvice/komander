@@ -35,13 +35,8 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
   public func synchronize(overrides: LeadTimeOverrides? = nil, now: Date = Date()) async throws -> CommanderScheduleSyncResult {
     let fetchedSchedule = try await scheduleService.fetchSchedule()
 
-    // Explicitly denied AlarmKit access is a hard user-action boundary. Preserve the
-    // last operational snapshot until the permission is restored rather than silently
-    // accepting a schedule that cannot currently be protected by the primary alarm path.
-    if await alarmSyncService.authorizationStatus() == .denied {
-      _ = try await alarmSyncService.synchronizeValidated(schedule: fetchedSchedule, overrides: overrides, now: now)
-    }
-
+    // Accept the validated canonical snapshot first. AlarmKit and Watch are independent
+    // projections: losing one projection must never roll the dashboard back to an older version.
     let decision = try await scheduleStore.accept(fetchedSchedule)
     let schedule: Schedule
     switch decision {
@@ -54,8 +49,6 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
       schedule = existing
     }
 
-    // Once the canonical snapshot has been accepted, every projection works from that
-    // exact Schedule. A projection failure must never roll the dashboard back.
     let summary = try await alarmSyncService.synchronizeValidated(schedule: schedule, overrides: overrides, now: now)
     let watchSnapshot = WatchScheduleSnapshot(schedule: schedule)
     let watchDeliveryStatus: WatchScheduleDeliveryStatus
