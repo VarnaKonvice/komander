@@ -7,6 +7,7 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
   private weak var model: WatchCommanderModel?
   private let session: WCSession?
   private var didStart = false
+  private var pendingAcknowledgementVersion: Int?
 
   init(model: WatchCommanderModel) {
     self.model = model
@@ -32,11 +33,43 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
       guard let self, let model else { return }
       do {
         let snapshot = try WatchScheduleTransportCodec.decode(data)
-        _ = try await model.receive(snapshot)
+        let decision = try await model.receive(snapshot)
         model.recordTransportError(nil)
+
+        switch decision {
+        case .stored, .unchanged, .rejectedVersion:
+          // ACK the version actually loaded from the atomic cache, never merely the incoming payload.
+          if let verifiedVersion = model.schedule?.scheduleVersion {
+            acknowledge(scheduleVersion: verifiedVersion)
+          }
+        case .rejectedInvalid:
+          break
+        }
       } catch {
         model.recordTransportError(error.localizedDescription)
       }
+    }
+  }
+
+  private func acknowledge(scheduleVersion: Int) {
+    pendingAcknowledgementVersion = scheduleVersion
+    guard let session, session.activationState == .activated else {
+      session?.activate()
+      return
+    }
+    publishPendingAcknowledgement(using: session)
+  }
+
+  private func publishPendingAcknowledgement(using session: WCSession) {
+    guard let scheduleVersion = pendingAcknowledgementVersion else { return }
+    do {
+      try session.updateApplicationContext(
+        WatchScheduleAcknowledgementCodec.applicationContext(scheduleVersion: scheduleVersion)
+      )
+      pendingAcknowledgementVersion = nil
+      model?.recordTransportError(nil)
+    } catch {
+      model?.recordTransportError("Potvrzení rozpisu iPhonu selhalo: \(error.localizedDescription)")
     }
   }
 
@@ -55,6 +88,9 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
       guard let self else { return }
       if let errorDescription {
         model?.recordTransportError(errorDescription)
+      }
+      if activationState == .activated {
+        publishPendingAcknowledgement(using: session)
       }
       if let payload { receive(payload) }
     }
