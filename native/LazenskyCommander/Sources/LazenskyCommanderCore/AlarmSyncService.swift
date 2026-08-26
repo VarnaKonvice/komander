@@ -44,7 +44,14 @@ public struct AlarmSyncService: Sendable {
 
   public func synchronize(overrides: LeadTimeOverrides? = nil, now: Date = Date()) async throws -> AlarmSyncSummary {
     let schedule = try await scheduleService.fetchSchedule()
-    return try await synchronizeValidated(schedule: schedule, overrides: overrides, now: now)
+    let result = try await synchronizeValidated(schedule: schedule, overrides: overrides, now: now)
+    // Preserve the standalone service API's historical permission signal. The Commander
+    // coordinator intentionally uses synchronizeValidated so a denied AlarmKit projection
+    // never blocks acceptance of the canonical schedule or the fallback path.
+    if result.errorMessage == AlarmAdapterError.authorizationDenied.localizedDescription {
+      throw AlarmAdapterError.authorizationDenied
+    }
+    return result
   }
 
   public func synchronize(schedule: Schedule, overrides: LeadTimeOverrides? = nil, now: Date = Date()) async throws -> AlarmSyncSummary {
