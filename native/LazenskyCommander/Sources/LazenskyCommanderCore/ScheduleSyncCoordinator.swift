@@ -7,7 +7,15 @@ public struct CommanderScheduleSyncResult: Equatable, Sendable {
   public let watchSnapshot: WatchScheduleSnapshot
   public let watchDeliveryStatus: WatchScheduleDeliveryStatus
 
-  public var succeeded: Bool { alarmSummary.succeeded }
+  public var succeeded: Bool {
+    guard alarmSummary.succeeded else { return false }
+    switch watchDeliveryStatus {
+    case .notConfigured, .verified:
+      return true
+    case .notAttempted, .queued, .sent, .failed:
+      return false
+    }
+  }
 }
 
 public struct CommanderScheduleSyncCoordinator: Sendable {
@@ -54,9 +62,14 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     let watchDeliveryStatus: WatchScheduleDeliveryStatus
     if let watchDelivery {
       do {
-        switch try await watchDelivery.deliver(watchSnapshot) {
-        case .queued: watchDeliveryStatus = .queued
-        case .sent: watchDeliveryStatus = .sent
+        let disposition = try await watchDelivery.deliver(watchSnapshot)
+        if await watchDelivery.verifiedScheduleVersion() == schedule.scheduleVersion {
+          watchDeliveryStatus = .verified
+        } else {
+          switch disposition {
+          case .queued: watchDeliveryStatus = .queued
+          case .sent: watchDeliveryStatus = .sent
+          }
         }
       } catch {
         watchDeliveryStatus = .failed(error.localizedDescription)
