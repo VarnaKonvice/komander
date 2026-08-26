@@ -68,23 +68,22 @@ actor AlarmKitAdapter: AlarmAdapting {
       countdownPlan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
     } else {
       countdownPlan = AlarmCountdownPlan(
-        scheduledStartAt: nil,
-        duration: max(0, leaveAt.timeIntervalSince(now))
+        scheduledAlertAt: leaveAt,
+        countdownWindow: min(AlarmCountdown.maximumWindow, max(0, leaveAt.timeIntervalSince(now)))
       )
     }
 
     let configuration: AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>
-    if countdownPlan.duration > 0 {
-      let countdownSchedule: Alarm.Schedule? = countdownPlan.scheduledStartAt.map { .fixed($0) }
+    if countdownPlan.countdownWindow > 0 {
       configuration = AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>(
-        countdownDuration: Alarm.CountdownDuration(preAlert: countdownPlan.duration, postAlert: nil),
-        schedule: countdownSchedule,
+        countdownDuration: Alarm.CountdownDuration(preAlert: countdownPlan.countdownWindow, postAlert: nil),
+        schedule: .fixed(countdownPlan.scheduledAlertAt),
         attributes: attributes,
         sound: .default
       )
     } else {
       configuration = .alarm(
-        schedule: .fixed(leaveAt),
+        schedule: .fixed(countdownPlan.scheduledAlertAt),
         attributes: attributes,
         sound: .default
       )
@@ -104,6 +103,17 @@ actor AlarmKitAdapter: AlarmAdapting {
   func existingPlatformAlarmIDs() async throws -> Set<String>? {
     let alarms = try AlarmManager.shared.alarms
     return Set(alarms.map { $0.id.uuidString })
+  }
+
+  func existingPlatformFixedAlertDates() async throws -> [String: Date]? {
+    let alarms = try AlarmManager.shared.alarms
+    var result: [String: Date] = [:]
+    for alarm in alarms {
+      if case .fixed(let date)? = alarm.schedule {
+        result[alarm.id.uuidString] = date
+      }
+    }
+    return result
   }
 
   static func map(_ state: AlarmManager.AuthorizationState) -> AlarmAuthorizationStatus {
