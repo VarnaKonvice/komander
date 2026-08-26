@@ -93,33 +93,32 @@ public struct AlarmSyncService: Sendable {
     }
 
     var repairs = 0
-    let platformIDs: Set<String>
+    let platformIDs: Set<String>?
     let fixedAlertDates: [String: Date]?
     do {
-      guard let ids = try await adapter.existingPlatformAlarmIDs() else {
-        let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
-        return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: AlarmAdapterError.verificationFailed.localizedDescription, completedAt: nil, verified: false, repairs: 0)
-      }
-      platformIDs = ids
-      fixedAlertDates = try await adapter.existingPlatformFixedAlertDates()
+      platformIDs = try await adapter.existingPlatformAlarmIDs()
+      fixedAlertDates = platformIDs == nil ? nil : try await adapter.existingPlatformFixedAlertDates()
     } catch {
       let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
       return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0)
     }
 
-    // Reconcile persisted state against the real platform before computing the write plan.
-    // A record with the right ID but the wrong fixed alert time is just as broken as a missing alarm.
-    let invalidBeforeWrite = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates)
-    if !invalidBeforeWrite.isEmpty {
-      repairs += 1
-      for stableID in invalidBeforeWrite {
-        guard let record = state.records[stableID] else { continue }
-        if platformIDs.contains(record.platformAlarmID) {
-          try? await adapter.cancel(platformAlarmID: record.platformAlarmID)
+    // Real AlarmKit exposes its daemon state, so production verifies persisted IDs and fixed
+    // alert dates here. Minimal non-platform test adapters may return nil to opt out of this
+    // platform-specific observation; their unit tests then exercise reconciliation only.
+    if let platformIDs {
+      let invalidBeforeWrite = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates)
+      if !invalidBeforeWrite.isEmpty {
+        repairs += 1
+        for stableID in invalidBeforeWrite {
+          guard let record = state.records[stableID] else { continue }
+          if platformIDs.contains(record.platformAlarmID) {
+            try? await adapter.cancel(platformAlarmID: record.platformAlarmID)
+          }
+          state.records.removeValue(forKey: stableID)
         }
-        state.records.removeValue(forKey: stableID)
+        try await store.save(state)
       }
-      try await store.save(state)
     }
 
     let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
@@ -146,36 +145,40 @@ public struct AlarmSyncService: Sendable {
         try await store.save(state)
       }
 
-      var verification = try await inspectPlatform(state: state)
-      if !verification.invalidStableIDs.isEmpty || !verification.orphanPlatformIDs.isEmpty {
-        repairs += 1
+      if var verification = try await inspectPlatform(state: state) {
+        if !verification.invalidStableIDs.isEmpty || !verification.orphanPlatformIDs.isEmpty {
+          repairs += 1
 
-        let desiredByStableID = Dictionary(uniqueKeysWithValues: desiredPayload.alarms.map { ($0.stableId, $0) })
-        for stableID in verification.invalidStableIDs {
-          if let record = state.records[stableID] {
-            if verification.platformIDs.contains(record.platformAlarmID) {
-              try? await adapter.cancel(platformAlarmID: record.platformAlarmID)
+          let desiredByStableID = Dictionary(uniqueKeysWithValues: desiredPayload.alarms.map { ($0.stableId, $0) })
+          for stableID in verification.invalidStableIDs {
+            if let record = state.records[stableID] {
+              if verification.platformIDs.contains(record.platformAlarmID) {
+                try? await adapter.cancel(platformAlarmID: record.platformAlarmID)
+              }
+              state.records.removeValue(forKey: stableID)
             }
-            state.records.removeValue(forKey: stableID)
           }
-        }
-        if !verification.invalidStableIDs.isEmpty { try await store.save(state) }
+          if !verification.invalidStableIDs.isEmpty { try await store.save(state) }
 
-        for orphanID in verification.orphanPlatformIDs {
-          try await adapter.cancel(platformAlarmID: orphanID)
-        }
+          for orphanID in verification.orphanPlatformIDs {
+            try await adapter.cancel(platformAlarmID: orphanID)
+          }
 
-        for stableID in verification.invalidStableIDs.sorted() {
-          guard let alarm = desiredByStableID[stableID] else { continue }
-          let platformAlarmID = try await adapter.schedule(alarm, replacing: nil)
-          state.records[alarm.stableId] = ManagedAlarmRecord(stableId: alarm.stableId, platformAlarmID: platformAlarmID, alarm: alarm)
-          created += 1
-          try await store.save(state)
-        }
+          for stableID in verification.invalidStableIDs.sorted() {
+            guard let alarm = desiredByStableID[stableID] else { continue }
+            let platformAlarmID = try await adapter.schedule(alarm, replacing: nil)
+            state.records[alarm.stableId] = ManagedAlarmRecord(stableId: alarm.stableId, platformAlarmID: platformAlarmID, alarm: alarm)
+            created += 1
+            try await store.save(state)
+          }
 
-        verification = try await inspectPlatform(state: state)
-        guard verification.invalidStableIDs.isEmpty, verification.orphanPlatformIDs.isEmpty else {
-          throw AlarmAdapterError.verificationFailed
+          guard let repairedVerification = try await inspectPlatform(state: state) else {
+            throw AlarmAdapterError.verificationFailed
+          }
+          verification = repairedVerification
+          guard verification.invalidStableIDs.isEmpty, verification.orphanPlatformIDs.isEmpty else {
+            throw AlarmAdapterError.verificationFailed
+          }
         }
       }
 
@@ -225,10 +228,8 @@ public struct AlarmSyncService: Sendable {
     platformIDs: Set<String>,
     invalidStableIDs: Set<String>,
     orphanPlatformIDs: Set<String>
-  ) {
-    guard let platformIDs = try await adapter.existingPlatformAlarmIDs() else {
-      throw AlarmAdapterError.verificationFailed
-    }
+  )? {
+    guard let platformIDs = try await adapter.existingPlatformAlarmIDs() else { return nil }
     let fixedAlertDates = try await adapter.existingPlatformFixedAlertDates()
     let invalid = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates)
     let expectedIDs = Set(state.records.values.map(\.platformAlarmID))
