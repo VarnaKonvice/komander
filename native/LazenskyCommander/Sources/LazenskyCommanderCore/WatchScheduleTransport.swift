@@ -85,7 +85,7 @@ public enum WatchScheduleTransportCodec {
       throw WatchScheduleTransportError.invalidSnapshotContractVersion(snapshot.contractVersion)
     }
     do {
-      try NativeAlarmContract.validate(snapshot.schedule)
+      try NativeAlarmContract.validateCanonical(snapshot.schedule)
     } catch {
       throw WatchScheduleTransportError.invalidSchedule
     }
