@@ -3,21 +3,19 @@ import Foundation
 import Testing
 @testable import LazenskyCommanderCore
 
-@Test func alarmCountdownPlanSchedulesWindowSoItEndsAtLeaveAt() throws {
+@Test func alarmCountdownPlanKeepsAlertAtLeaveAtAndUsesThirtyMinuteWindow() throws {
   let schedule = countdownTestSchedule()
   let alarm = try NativeAlarmContract.payload(schedule: schedule).alarms.first(where: { $0.stableId == "first" })!
   let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:00:00")
   let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
-  let expectedStart = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:10:00")
 
   let plan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
 
-  #expect(plan.scheduledStartAt == expectedStart)
-  #expect(plan.duration == 30 * 60)
-  #expect(plan.scheduledStartAt?.addingTimeInterval(plan.duration) == leaveAt)
+  #expect(plan.scheduledAlertAt == leaveAt)
+  #expect(plan.countdownWindow == 30 * 60)
 }
 
-@Test func alarmCountdownPlanStartsImmediatelyWhenSyncHappensInsideWindow() throws {
+@Test func alarmCountdownPlanShortensWindowWhenSyncHappensInsideWindow() throws {
   let schedule = countdownTestSchedule()
   let alarm = try NativeAlarmContract.payload(schedule: schedule).alarms.first(where: { $0.stableId == "first" })!
   let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:25:00")
@@ -25,9 +23,9 @@ import Testing
 
   let plan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
 
-  #expect(plan.scheduledStartAt == nil)
-  #expect(plan.duration == 15 * 60)
-  #expect(now.addingTimeInterval(plan.duration) == leaveAt)
+  #expect(plan.scheduledAlertAt == leaveAt)
+  #expect(plan.countdownWindow == 15 * 60)
+  #expect(now.addingTimeInterval(plan.countdownWindow) == leaveAt)
 }
 
 @Test func alarmCountdownPlanUsesPreviousEventEndForNextActivityWindow() throws {
@@ -35,16 +33,14 @@ import Testing
   let alarm = try NativeAlarmContract.payload(schedule: schedule).alarms.first(where: { $0.stableId == "next" })!
   let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T09:00:00")
   let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
-  let expectedStart = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T09:30:00")
 
   let plan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
 
-  #expect(plan.scheduledStartAt == expectedStart)
-  #expect(plan.duration == 10 * 60)
-  #expect(plan.scheduledStartAt?.addingTimeInterval(plan.duration) == leaveAt)
+  #expect(plan.scheduledAlertAt == leaveAt)
+  #expect(plan.countdownWindow == 10 * 60)
 }
 
-@Test func alarmCountdownPlanDoesNotShowNextCountdownBeforeBackToBackHandoff() throws {
+@Test func alarmCountdownPlanHasZeroWindowForBackToBackHandoffButStillAlertsAtLeaveAt() throws {
   let schedule = backToBackCountdownTestSchedule()
   let alarm = try NativeAlarmContract.payload(schedule: schedule).alarms.first(where: { $0.stableId == "next" })!
   let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T10:00:00")
@@ -52,8 +48,8 @@ import Testing
 
   let plan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
 
-  #expect(plan.scheduledStartAt == leaveAt)
-  #expect(plan.duration == 0)
+  #expect(plan.scheduledAlertAt == leaveAt)
+  #expect(plan.countdownWindow == 0)
 }
 
 private func countdownTestSchedule() -> Schedule {
