@@ -27,6 +27,11 @@ public enum AlarmCountdown {
     return maximumWindow
   }
 
+  /// Compatibility for existing Watch timeline code; new code should use countdownWindow.
+  public static func preAlertDuration(for alarm: NativeAlarm, in schedule: Schedule) throws -> TimeInterval {
+    try countdownWindow(for: alarm, in: schedule)
+  }
+
   public static func plan(for alarm: NativeAlarm, in schedule: Schedule, now: Date) throws -> AlarmCountdownPlan {
     let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
     let desiredWindow = try countdownWindow(for: alarm, in: schedule)
