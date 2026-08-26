@@ -92,6 +92,40 @@ public enum WatchScheduleTransportCodec {
   }
 }
 
+public struct WatchScheduleAcknowledgement: Codable, Equatable, Sendable {
+  public static let currentContractVersion = 1
+  public let contractVersion: Int
+  public let scheduleVersion: Int
+
+  public init(contractVersion: Int = currentContractVersion, scheduleVersion: Int) {
+    self.contractVersion = contractVersion
+    self.scheduleVersion = scheduleVersion
+  }
+}
+
+public enum WatchScheduleAcknowledgementCodec {
+  public static let applicationContextKey = "com.varnakonvice.lazenskycommander.watch-schedule-ack.v1"
+
+  public static func applicationContext(scheduleVersion: Int) throws -> [String: Any] {
+    guard scheduleVersion > 0 else { throw WatchScheduleTransportError.invalidSchedule }
+    let acknowledgement = WatchScheduleAcknowledgement(scheduleVersion: scheduleVersion)
+    return [applicationContextKey: try JSONEncoder().encode(acknowledgement)]
+  }
+
+  public static func decode(applicationContext: [String: Any]) throws -> WatchScheduleAcknowledgement {
+    guard let data = applicationContext[applicationContextKey] as? Data else {
+      throw WatchScheduleTransportError.missingApplicationContextPayload
+    }
+    guard let acknowledgement = try? JSONDecoder().decode(WatchScheduleAcknowledgement.self, from: data) else {
+      throw WatchScheduleTransportError.invalidPayload
+    }
+    guard acknowledgement.contractVersion == WatchScheduleAcknowledgement.currentContractVersion,
+          acknowledgement.scheduleVersion > 0
+    else { throw WatchScheduleTransportError.invalidPayload }
+    return acknowledgement
+  }
+}
+
 public enum WatchScheduleDeliveryDisposition: Equatable, Sendable {
   case queued
   case sent
@@ -99,6 +133,11 @@ public enum WatchScheduleDeliveryDisposition: Equatable, Sendable {
 
 public protocol WatchScheduleSnapshotDelivering: Sendable {
   func deliver(_ snapshot: WatchScheduleSnapshot) async throws -> WatchScheduleDeliveryDisposition
+  func verifiedScheduleVersion() async -> Int?
+}
+
+public extension WatchScheduleSnapshotDelivering {
+  func verifiedScheduleVersion() async -> Int? { nil }
 }
 
 public enum WatchScheduleDeliveryStatus: Equatable, Sendable {
@@ -106,5 +145,6 @@ public enum WatchScheduleDeliveryStatus: Equatable, Sendable {
   case notAttempted
   case queued
   case sent
+  case verified
   case failed(String)
 }
