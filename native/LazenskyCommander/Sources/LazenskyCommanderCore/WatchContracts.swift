@@ -24,7 +24,7 @@ public enum WatchScheduleCachePolicy {
   ) -> WatchScheduleCacheDecision {
     guard
       incoming.contractVersion == WatchScheduleSnapshot.currentContractVersion,
-      (try? NativeAlarmContract.validate(incoming.schedule)) != nil
+      (try? NativeAlarmContract.validateCanonical(incoming.schedule)) != nil
     else { return .rejectedInvalid }
     guard let existing else { return .stored }
     if incoming == existing { return .unchanged }
@@ -81,7 +81,7 @@ public struct WatchWidgetRelevanceWindow: Equatable, Sendable {
 
 public enum WatchScheduleExpiryPolicy {
   public static func expirationDate(for schedule: Schedule) throws -> Date? {
-    try NativeAlarmContract.validate(schedule)
+    try NativeAlarmContract.validateCanonical(schedule)
     let finalEnd = try schedule.events.map {
       try NativeAlarmContract.dateTime(date: $0.date, time: $0.end)
     }.max()
@@ -105,7 +105,7 @@ public enum WatchScheduleExpiryPolicy {
 
 public enum WatchTimelinePlanner {
   public static func points(schedule: Schedule, now: Date = Date(), overrides: LeadTimeOverrides? = nil) throws -> [WatchTimelinePoint] {
-    try NativeAlarmContract.validate(schedule)
+    try NativeAlarmContract.validateCanonical(schedule)
     guard !WatchScheduleExpiryPolicy.isExpired(schedule, at: now) else {
       return [WatchTimelinePoint(date: now, transition: .now, state: .noSchedule, stableId: nil)]
     }
@@ -127,7 +127,7 @@ public enum WatchTimelinePlanner {
       let end = try NativeAlarmContract.date(fromLocalISO: alarm.endAt)
       guard end >= now else { continue }
 
-      let countdownDuration = try AlarmCountdown.preAlertDuration(for: alarm, in: schedule)
+      let countdownDuration = try AlarmCountdown.countdownWindow(for: alarm, in: schedule)
       let countdownStart = leave.addingTimeInterval(-countdownDuration)
       candidates.append(contentsOf: [
         point(at: countdownStart, transition: .countdownStart, schedule: schedule, now: now, overrides: overrides),
@@ -146,14 +146,14 @@ public enum WatchTimelinePlanner {
   }
 
   public static func relevanceWindows(schedule: Schedule, now: Date = Date(), overrides: LeadTimeOverrides? = nil) throws -> [WatchWidgetRelevanceWindow] {
-    try NativeAlarmContract.validate(schedule)
+    try NativeAlarmContract.validateCanonical(schedule)
     guard !WatchScheduleExpiryPolicy.isExpired(schedule, at: now) else { return [] }
 
     return try NativeAlarmContract.payload(schedule: schedule, overrides: overrides).alarms.compactMap { alarm -> WatchWidgetRelevanceWindow? in
       let leave = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
       let end = try NativeAlarmContract.date(fromLocalISO: alarm.endAt)
       guard end > now else { return nil }
-      let countdownDuration = try AlarmCountdown.preAlertDuration(for: alarm, in: schedule)
+      let countdownDuration = try AlarmCountdown.countdownWindow(for: alarm, in: schedule)
       let countdownStart = leave.addingTimeInterval(-countdownDuration)
       return WatchWidgetRelevanceWindow(
         stableId: alarm.stableId,
