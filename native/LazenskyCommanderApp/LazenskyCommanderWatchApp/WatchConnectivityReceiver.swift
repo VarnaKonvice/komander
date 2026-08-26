@@ -84,13 +84,14 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
   ) {
     let errorDescription = error?.localizedDescription
     let payload = Self.payloadData(from: session.receivedApplicationContext)
+    let isActivated = activationState == .activated
     Task { @MainActor [weak self] in
       guard let self else { return }
       if let errorDescription {
         model?.recordTransportError(errorDescription)
       }
-      if activationState == .activated {
-        publishPendingAcknowledgement(using: session)
+      if isActivated, let activeSession = self.session {
+        publishPendingAcknowledgement(using: activeSession)
       }
       if let payload { receive(payload) }
     }
