@@ -32,7 +32,7 @@ import Testing
   }
 }
 
-@Test func countdownWindowNeverOccupiesMoreThanThirtyMinutes() throws {
+@Test func countdownWindowNeverOccupiesMoreThanThirtyMinutesAndAlertStaysAtLeaveAt() throws {
   let schedule = Schedule(
     schemaVersion: 1,
     scheduleVersion: 1,
@@ -52,8 +52,8 @@ import Testing
     now: try NativeAlarmContract.date(fromLocalISO: "2026-08-25T09:00:00")
   )
 
-  #expect(plan.duration == 30 * 60)
-  #expect(plan.scheduledStartAt == leaveAt.addingTimeInterval(-30 * 60))
+  #expect(plan.countdownWindow == 30 * 60)
+  #expect(plan.scheduledAlertAt == leaveAt)
 }
 
 @Test func recoverableAlarmFailureDoesNotRollBackAcceptedCanonicalSchedule() async throws {
@@ -81,6 +81,36 @@ import Testing
   #expect(result.schedule == incoming)
   #expect(await scheduleStore.load() == incoming)
   #expect(!result.alarmSummary.succeeded)
+  #expect(result.watchDeliveryStatus == .sent)
+  #expect(await watch.lastSnapshot()?.schedule == incoming)
+}
+
+@Test func deniedAlarmPermissionStillAcceptsCanonicalScheduleAndContinuesOtherProjection() async throws {
+  let previous = stabilitySchedule(version: 1, title: "Starý rozpis")
+  let incoming = stabilitySchedule(version: 2, title: "Nový rozpis")
+  let scheduleStore = InMemoryScheduleSnapshotStore(previous)
+  let source = StabilityStaticScheduleService(schedule: incoming)
+  let alarmService = AlarmSyncService(
+    scheduleService: source,
+    store: InMemoryAlarmStateStore(),
+    adapter: StabilityDeniedAlarmAdapter()
+  )
+  let watch = StabilityWatchDelivery()
+  let coordinator = CommanderScheduleSyncCoordinator(
+    scheduleService: source,
+    alarmSyncService: alarmService,
+    scheduleStore: scheduleStore,
+    watchDelivery: watch
+  )
+
+  let result = try await coordinator.synchronize(
+    now: try NativeAlarmContract.date(fromLocalISO: "2026-08-25T07:00:00")
+  )
+
+  #expect(result.schedule == incoming)
+  #expect(await scheduleStore.load() == incoming)
+  #expect(!result.alarmSummary.succeeded)
+  #expect(result.alarmSummary.errorMessage == AlarmAdapterError.authorizationDenied.localizedDescription)
   #expect(result.watchDeliveryStatus == .sent)
   #expect(await watch.lastSnapshot()?.schedule == incoming)
 }
@@ -132,6 +162,29 @@ import Testing
   #expect(await adapter.platformAlarmCount() == 1)
 }
 
+@Test func alarmVerificationRepairsWrongLeaveAtEvenWhenPlatformIDExists() async throws {
+  let schedule = stabilitySchedule(version: 5)
+  let source = StabilityStaticScheduleService(schedule: schedule)
+  let adapter = StabilityWrongTimeAlarmAdapter()
+  let service = AlarmSyncService(
+    scheduleService: source,
+    store: InMemoryAlarmStateStore(),
+    adapter: adapter
+  )
+
+  let summary = try await service.synchronize(
+    now: try NativeAlarmContract.date(fromLocalISO: "2026-08-25T07:00:00")
+  )
+
+  #expect(summary.succeeded)
+  #expect(summary.verified)
+  #expect(summary.repairAttempts == 1)
+  #expect(await adapter.scheduleCalls() == 2)
+  #expect(await adapter.fixedAlertDates().count == 1)
+  let expected = try NativeAlarmContract.date(fromLocalISO: "2026-08-25T09:45:00")
+  #expect(await adapter.fixedAlertDates().values.first == expected)
+}
+
 private func stabilitySchedule(version: Int, title: String = "Masáž") -> Schedule {
   Schedule(
     schemaVersion: 1,
@@ -176,6 +229,15 @@ private struct StabilityUnavailableAlarmAdapter: AlarmAdapting {
   func cancel(platformAlarmID: String) async throws {}
 }
 
+private struct StabilityDeniedAlarmAdapter: AlarmAdapting {
+  func availability() async -> AlarmKitAvailability { .available }
+  func authorizationStatus() async -> AlarmAuthorizationStatus { .denied }
+  func requestAuthorization() async throws { throw AlarmAdapterError.authorizationDenied }
+  func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) async throws -> String { throw AlarmAdapterError.authorizationDenied }
+  func cancel(platformAlarmID: String) async throws {}
+  func existingPlatformAlarmIDs() async throws -> Set<String>? { [] }
+}
+
 private actor StabilityRecordingAlarmAdapter: AlarmAdapting {
   private var ids = Set<String>()
 
@@ -217,6 +279,32 @@ private actor StabilityRepairingAlarmAdapter: AlarmAdapting {
   func existingPlatformAlarmIDs() -> Set<String>? { ids }
   func scheduleCalls() -> Int { calls }
   func platformAlarmCount() -> Int { ids.count }
+}
+
+private actor StabilityWrongTimeAlarmAdapter: AlarmAdapting {
+  private var dates: [String: Date] = [:]
+  private var calls = 0
+
+  func availability() -> AlarmKitAvailability { .available }
+  func authorizationStatus() -> AlarmAuthorizationStatus { .authorized }
+  func requestAuthorization() throws {}
+
+  func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) throws -> String {
+    calls += 1
+    let id = PlatformAlarmIdentifier.newPersistedValue()
+    let expected = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+    dates[id] = calls == 1 ? expected.addingTimeInterval(60) : expected
+    return id
+  }
+
+  func cancel(platformAlarmID: String) {
+    dates.removeValue(forKey: platformAlarmID)
+  }
+
+  func existingPlatformAlarmIDs() -> Set<String>? { Set(dates.keys) }
+  func existingPlatformFixedAlertDates() -> [String: Date]? { dates }
+  func scheduleCalls() -> Int { calls }
+  func fixedAlertDates() -> [String: Date] { dates }
 }
 
 private actor StabilityWatchDelivery: WatchScheduleSnapshotDelivering {
