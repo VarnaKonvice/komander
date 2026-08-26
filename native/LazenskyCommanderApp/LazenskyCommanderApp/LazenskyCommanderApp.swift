@@ -116,27 +116,35 @@ final class CommanderViewModel: ObservableObject {
         watchTransferStatus = result.watchDeliveryStatus.diagnosticText
 
         if result.alarmSummary.succeeded {
-          if await fallbackNotifications.clear() {
-            fallbackStatus = "Nevyužito"
+          guard await fallbackNotifications.clear() else {
+            fallbackStatus = "Automaticky uklízím zálohu"
+            recoveryStatus = "AlarmKit ověřen, dokončuji úklid zálohy"
+            shouldRetryLater = true
+            errorMessage = "Záložní upozornění se zatím nepodařilo ověřeně odstranit."
+            break
+          }
+
+          fallbackStatus = "Nevyužito"
+          requiresUserAction = false
+          userActionMessage = nil
+          errorMessage = nil
+
+          if result.succeeded {
             recoveryStatus = result.alarmSummary.repairAttempts > 0 ? "Opraveno a ověřeno" : "Ověřeno"
-            errorMessage = nil
-            requiresUserAction = false
-            userActionMessage = nil
             await refreshAccess()
             return
           }
 
-          fallbackStatus = "Automaticky uklízím zálohu"
-          recoveryStatus = "AlarmKit ověřen, dokončuji úklid zálohy"
+          // AlarmKit is safe, but the whole requested sync is not complete until Watch
+          // confirms the same production scheduleVersion from its accepted cache.
+          recoveryStatus = "Alarmy ověřeny, dokončuji Watch"
           shouldRetryLater = true
-          errorMessage = "Záložní upozornění se zatím nepodařilo ověřeně odstranit."
-          break
+        } else {
+          alarmProjectionFailed = true
+          shouldRetryLater = true
+          recoveryStatus = "Automaticky opravuji alarmy"
+          errorMessage = result.alarmSummary.errorMessage
         }
-
-        alarmProjectionFailed = true
-        shouldRetryLater = true
-        recoveryStatus = "Automaticky opravuji alarmy"
-        errorMessage = result.alarmSummary.errorMessage
       } catch AlarmAdapterError.authorizationDenied {
         // This remains for explicit authorization actions. Normal coordinated sync reports
         // a failed AlarmKit projection instead so the fallback notification path can take over.
@@ -321,7 +329,7 @@ private extension WatchScheduleDeliveryDisposition {
   var diagnosticText: String {
     switch self {
     case .queued: "Čeká na aktivaci"
-    case .sent: "Předáno"
+    case .sent: "Předáno, čeká na potvrzení"
     }
   }
 }
@@ -332,7 +340,8 @@ private extension WatchScheduleDeliveryStatus {
     case .notConfigured: "Není nakonfigurováno"
     case .notAttempted: "Neprovedeno"
     case .queued: "Čeká na aktivaci"
-    case .sent: "Předáno"
+    case .sent: "Předáno, čeká na potvrzení"
+    case .verified: "Ověřeno"
     case .failed: "Čeká na automatické předání"
     }
   }
