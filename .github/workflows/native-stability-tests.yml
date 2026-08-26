@@ -13,6 +13,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: native-stability-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   native:
     runs-on: macos-26
@@ -32,6 +36,17 @@ jobs:
           -scheme LazenskyCommanderApp
           -configuration Debug
           -destination 'generic/platform=iOS'
+          CODE_SIGNING_ALLOWED=NO
+          CODE_SIGNING_REQUIRED=NO
+          build
+
+      - name: Build watchOS app target
+        run: >-
+          xcodebuild
+          -project native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj
+          -target LazenskyCommanderWatchApp
+          -configuration Debug
+          -sdk watchos
           CODE_SIGNING_ALLOWED=NO
           CODE_SIGNING_REQUIRED=NO
           build
