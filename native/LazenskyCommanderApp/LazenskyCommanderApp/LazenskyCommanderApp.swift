@@ -116,14 +116,21 @@ final class CommanderViewModel: ObservableObject {
         watchTransferStatus = result.watchDeliveryStatus.diagnosticText
 
         if result.alarmSummary.succeeded {
-          await fallbackNotifications.clear()
-          fallbackStatus = "Nevyužito"
-          recoveryStatus = result.alarmSummary.repairAttempts > 0 ? "Opraveno a ověřeno" : "Ověřeno"
-          errorMessage = nil
-          requiresUserAction = false
-          userActionMessage = nil
-          await refreshAccess()
-          return
+          if await fallbackNotifications.clear() {
+            fallbackStatus = "Nevyužito"
+            recoveryStatus = result.alarmSummary.repairAttempts > 0 ? "Opraveno a ověřeno" : "Ověřeno"
+            errorMessage = nil
+            requiresUserAction = false
+            userActionMessage = nil
+            await refreshAccess()
+            return
+          }
+
+          fallbackStatus = "Automaticky uklízím zálohu"
+          recoveryStatus = "AlarmKit ověřen, dokončuji úklid zálohy"
+          shouldRetryLater = true
+          errorMessage = "Záložní upozornění se zatím nepodařilo ověřeně odstranit."
+          break
         }
 
         alarmProjectionFailed = true
@@ -131,12 +138,12 @@ final class CommanderViewModel: ObservableObject {
         recoveryStatus = "Automaticky opravuji alarmy"
         errorMessage = result.alarmSummary.errorMessage
       } catch AlarmAdapterError.authorizationDenied {
-        requiresUserAction = true
-        userActionMessage = "Povol alarmy, aby tě Commander mohl spolehlivě upozornit na odchod."
+        // This remains for explicit authorization actions. Normal coordinated sync reports
+        // a failed AlarmKit projection instead so the fallback notification path can take over.
+        alarmProjectionFailed = true
+        shouldRetryLater = true
+        recoveryStatus = "AlarmKit nemá oprávnění, zapínám zálohu"
         errorMessage = AlarmAdapterError.authorizationDenied.localizedDescription
-        recoveryStatus = "Čeká na povolení alarmů"
-        await refreshAccess()
-        return
       } catch {
         shouldRetryLater = true
         errorMessage = error.localizedDescription
@@ -152,7 +159,7 @@ final class CommanderViewModel: ObservableObject {
     if alarmProjectionFailed, let latestSchedule {
       do {
         if try await fallbackNotifications.arm(schedule: latestSchedule) {
-          fallbackStatus = "Aktivní bezpečnostní pojistka"
+          fallbackStatus = "Aktivní a ověřená bezpečnostní pojistka"
           requiresUserAction = false
           userActionMessage = nil
         } else {
@@ -161,7 +168,7 @@ final class CommanderViewModel: ObservableObject {
           userActionMessage = "Commander nemůže zajistit záložní upozornění. Povol oznámení pro Lázeňský Commander."
         }
       } catch {
-        fallbackStatus = "Nelze aktivovat"
+        fallbackStatus = "Nelze ověřit"
         requiresUserAction = true
         userActionMessage = "Commander nemůže zajistit záložní upozornění. Povol oznámení pro Lázeňský Commander."
         errorMessage = error.localizedDescription
@@ -191,12 +198,19 @@ private final class IPhoneFallbackNotificationService {
   private static let prague = TimeZone(identifier: "Europe/Prague")!
   private let center = UNUserNotificationCenter.current()
 
-  func clear() async {
-    let pending = await center.pendingNotificationRequests()
-    let identifiers = pending.map(\.identifier).filter { $0.hasPrefix(Self.identifierPrefix) }
-    if !identifiers.isEmpty {
+  func clear() async -> Bool {
+    for _ in 0..<2 {
+      let pending = await center.pendingNotificationRequests()
+      let identifiers = pending.map(\.identifier).filter { $0.hasPrefix(Self.identifierPrefix) }
+      if identifiers.isEmpty { return true }
       center.removePendingNotificationRequests(withIdentifiers: identifiers)
+      await Task.yield()
+      let remaining = await center.pendingNotificationRequests()
+      if !remaining.contains(where: { $0.identifier.hasPrefix(Self.identifierPrefix) }) {
+        return true
+      }
     }
+    return false
   }
 
   func arm(schedule: Schedule, now: Date = Date()) async throws -> Bool {
@@ -207,29 +221,63 @@ private final class IPhoneFallbackNotificationService {
       .sorted { $0.leaveAt < $1.leaveAt }
       .prefix(60)
 
-    await clear()
+    var desiredDates: [String: Date] = [:]
     for alarm in desired {
-      let content = UNMutableNotificationContent()
-      content.title = "Čas vyrazit"
-      content.body = alarm.location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        ? alarm.title
-        : "\(alarm.title) · \(alarm.location)"
-      content.sound = .default
-      content.interruptionLevel = .active
-      content.userInfo = ["stableId": alarm.stableId, "scheduleVersion": schedule.scheduleVersion]
+      desiredDates[Self.identifierPrefix + alarm.stableId] = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+    }
 
-      let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
-      var calendar = Calendar(identifier: .gregorian)
-      calendar.timeZone = Self.prague
-      var components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: leaveAt)
-      components.timeZone = Self.prague
-      let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-      let request = UNNotificationRequest(
-        identifier: Self.identifierPrefix + alarm.stableId,
-        content: content,
-        trigger: trigger
-      )
-      try await center.add(request)
+    var lastError: Error?
+    for _ in 0..<2 {
+      _ = await clear()
+      do {
+        for alarm in desired {
+          let content = UNMutableNotificationContent()
+          content.title = "Čas vyrazit"
+          content.body = alarm.location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? alarm.title
+            : "\(alarm.title) · \(alarm.location)"
+          content.sound = .default
+          content.interruptionLevel = .active
+          content.userInfo = ["stableId": alarm.stableId, "scheduleVersion": schedule.scheduleVersion]
+
+          let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+          var calendar = Calendar(identifier: .gregorian)
+          calendar.timeZone = Self.prague
+          var components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: leaveAt)
+          components.timeZone = Self.prague
+          let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+          let request = UNNotificationRequest(
+            identifier: Self.identifierPrefix + alarm.stableId,
+            content: content,
+            trigger: trigger
+          )
+          try await center.add(request)
+        }
+      } catch {
+        lastError = error
+        continue
+      }
+
+      if await verify(desiredDates: desiredDates) {
+        return true
+      }
+    }
+
+    if let lastError { throw lastError }
+    return false
+  }
+
+  private func verify(desiredDates: [String: Date]) async -> Bool {
+    let pending = await center.pendingNotificationRequests()
+    let fallback = pending.filter { $0.identifier.hasPrefix(Self.identifierPrefix) }
+    guard Set(fallback.map(\.identifier)) == Set(desiredDates.keys) else { return false }
+
+    for request in fallback {
+      guard let expected = desiredDates[request.identifier],
+            let trigger = request.trigger as? UNCalendarNotificationTrigger,
+            let actual = trigger.nextTriggerDate(),
+            abs(actual.timeIntervalSince(expected)) <= 1
+      else { return false }
     }
     return true
   }
