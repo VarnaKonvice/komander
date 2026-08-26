@@ -345,7 +345,7 @@ import Testing
   #expect(result.alarmSummary.appliedCreate == schedule.events.count)
 }
 
-@Test func failedAlarmSyncKeepsLastValidatedScheduleSnapshot() async throws {
+@Test func failedAlarmProjectionKeepsNewCanonicalScheduleAccepted() async throws {
   let previous = try liveSchedule(lead: 10)
   let incoming = try decodeSchedule(named: "data/schedule.json")
   let source = CountingScheduleService(schedule: incoming)
@@ -354,12 +354,12 @@ import Testing
   let alarmSync = AlarmSyncService(scheduleService: source, store: InMemoryAlarmStateStore(), adapter: adapter)
   let coordinator = CommanderScheduleSyncCoordinator(scheduleService: source, alarmSyncService: alarmSync, scheduleStore: scheduleStore)
 
-  var didThrow = false
-  do { _ = try await coordinator.synchronize(now: Date(timeIntervalSince1970: 1)) } catch { didThrow = true }
+  let result = try await coordinator.synchronize(now: Date(timeIntervalSince1970: 1))
 
-  #expect(didThrow)
+  #expect(!result.alarmSummary.succeeded)
   #expect(await source.fetchCount() == 1)
-  #expect(await scheduleStore.load() == previous)
+  #expect(await scheduleStore.load() == incoming)
+  #expect(result.schedule == incoming)
 }
 
 @Test func preAlertStartsAtPreviousEventEndOrThirtyMinutesBeforeLeave() throws {
@@ -422,8 +422,8 @@ import Testing
   let currentSnapshot = WatchScheduleSnapshot(schedule: current)
   #expect(try await cache.accept(currentSnapshot) == .stored)
 
-  let older = Schedule(schemaVersion: 1, scheduleVersion: 0, updatedAt: current.updatedAt, stay: current.stay, events: current.events, settings: current.settings)
-  #expect(try await cache.accept(WatchScheduleSnapshot(schedule: older)) == .rejectedVersion(current: 1, incoming: 0))
+  let invalidVersion = Schedule(schemaVersion: 1, scheduleVersion: 0, updatedAt: current.updatedAt, stay: current.stay, events: current.events, settings: current.settings)
+  #expect(try await cache.accept(WatchScheduleSnapshot(schedule: invalidVersion)) == .rejectedInvalid)
   let conflict = Schedule(schemaVersion: 1, scheduleVersion: 1, updatedAt: "2026-08-20T01:00:00Z", stay: current.stay, events: current.events, settings: current.settings)
   #expect(try await cache.accept(WatchScheduleSnapshot(schedule: conflict)) == .rejectedVersion(current: 1, incoming: 1))
   #expect(try await cache.load() == currentSnapshot)
@@ -497,22 +497,23 @@ import Testing
   let directory = temporaryWatchCacheDirectory()
   defer { try? FileManager.default.removeItem(at: directory) }
   let cache = FileWatchScheduleCache(directoryURL: directory)
-  let current = try liveSchedule(lead: 20)
+  let base = try liveSchedule(lead: 20)
+  let current = Schedule(schemaVersion: 1, scheduleVersion: 2, updatedAt: "2026-08-20T02:00:00Z", stay: base.stay, events: base.events, settings: base.settings)
   let currentSnapshot = try WatchScheduleTransportCodec.decode(WatchScheduleTransportCodec.encode(WatchScheduleSnapshot(schedule: current)))
   #expect(try await cache.accept(currentSnapshot) == .stored)
 
-  let older = Schedule(schemaVersion: 1, scheduleVersion: 0, updatedAt: current.updatedAt, stay: current.stay, events: current.events, settings: current.settings)
+  let older = Schedule(schemaVersion: 1, scheduleVersion: 1, updatedAt: base.updatedAt, stay: base.stay, events: base.events, settings: base.settings)
   let olderSnapshot = try WatchScheduleTransportCodec.decode(WatchScheduleTransportCodec.encode(WatchScheduleSnapshot(schedule: older)))
-  #expect(try await cache.accept(olderSnapshot) == .rejectedVersion(current: 1, incoming: 0))
+  #expect(try await cache.accept(olderSnapshot) == .rejectedVersion(current: 2, incoming: 1))
   #expect(try await cache.accept(currentSnapshot) == .unchanged)
 
-  let newer = Schedule(schemaVersion: 1, scheduleVersion: 2, updatedAt: "2026-08-20T02:00:00Z", stay: current.stay, events: current.events, settings: current.settings)
+  let newer = Schedule(schemaVersion: 1, scheduleVersion: 3, updatedAt: "2026-08-20T03:00:00Z", stay: base.stay, events: base.events, settings: base.settings)
   let newerSnapshot = try WatchScheduleTransportCodec.decode(WatchScheduleTransportCodec.encode(WatchScheduleSnapshot(schedule: newer)))
   #expect(try await cache.accept(newerSnapshot) == .stored)
   #expect(try await cache.load() == newerSnapshot)
 }
 
-@Test func watchTransportFailureDoesNotInvalidateSuccessfulCanonicalSync() async throws {
+@Test func watchTransportFailureKeepsCanonicalAcceptedButSyncUnverified() async throws {
   let schedule = try decodeSchedule(named: "data/schedule.json")
   let source = CountingScheduleService(schedule: schedule)
   let alarmStore = InMemoryAlarmStateStore()
@@ -524,13 +525,14 @@ import Testing
 
   let result = try await coordinator.synchronize(now: Date(timeIntervalSince1970: 1))
 
-  #expect(result.succeeded)
+  #expect(!result.succeeded)
+  #expect(result.alarmSummary.succeeded)
   #expect(await source.fetchCount() == 1)
   #expect(await scheduleStore.load() == schedule)
   #expect(await adapter.scheduledCount() == schedule.events.count)
   #expect(await watchDelivery.receivedSnapshot() == result.watchSnapshot)
   guard case .failed = result.watchDeliveryStatus else {
-    Issue.record("Watch transport failure must remain a secondary sync status")
+    Issue.record("Watch transport failure must keep the whole sync unverified without rolling back canonical data")
     return
   }
 }
