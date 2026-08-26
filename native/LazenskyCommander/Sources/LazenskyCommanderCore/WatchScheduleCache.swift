@@ -30,7 +30,7 @@ public actor FileWatchScheduleCache {
     guard
       let snapshot = try? JSONDecoder().decode(WatchScheduleSnapshot.self, from: data),
       snapshot.contractVersion == WatchScheduleSnapshot.currentContractVersion,
-      (try? NativeAlarmContract.validate(snapshot.schedule)) != nil
+      (try? NativeAlarmContract.validateCanonical(snapshot.schedule)) != nil
     else { return nil }
     return snapshot
   }
