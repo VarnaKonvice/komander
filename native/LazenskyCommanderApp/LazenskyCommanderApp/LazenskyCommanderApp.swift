@@ -14,12 +14,15 @@ final class CommanderViewModel: ObservableObject {
   @Published private(set) var fallbackStatus = "Nevyužito"
   @Published private(set) var requiresUserAction = false
   @Published private(set) var userActionMessage: String?
+  @Published private(set) var leadTimeOverrides = LeadTimeOverrides()
+  @Published private(set) var leadTimeProjectionRevision = 0
 
   private let adapter: AlarmKitAdapter
   private let service: AlarmSyncService
   private let scheduleSync: CommanderScheduleSyncCoordinator
   private let watchConnectivity: IPhoneWatchConnectivityCoordinator
   private let fallbackNotifications = IPhoneFallbackNotificationService()
+  private let leadTimePreferences: LeadTimePreferencesStore
   private let channel: ScheduleChannel
   private var lastAutomaticAttempt: Date?
   private var delayedRecoveryTask: Task<Void, Never>?
@@ -35,10 +38,18 @@ final class CommanderViewModel: ObservableObject {
       adapter: adapter
     )
     let watchConnectivity = IPhoneWatchConnectivityCoordinator()
+    let leadTimePreferences = LeadTimePreferencesStore(
+      key: "lazensky.commander.leadTimePreferences.\(namespace).v1"
+    )
+    let savedPreferences = leadTimePreferences.load()
+
     self.adapter = adapter
     self.service = service
     self.watchConnectivity = watchConnectivity
+    self.leadTimePreferences = leadTimePreferences
     self.channel = configuration.channel
+    self.leadTimeOverrides = savedPreferences.overrides
+    self.leadTimeProjectionRevision = savedPreferences.revision
     scheduleSync = CommanderScheduleSyncCoordinator(
       scheduleService: scheduleService,
       alarmSyncService: service,
@@ -48,7 +59,28 @@ final class CommanderViewModel: ObservableObject {
   }
 
   var watchScheduleSnapshot: WatchScheduleSnapshot? {
-    latestSchedule.map { WatchScheduleSnapshot(schedule: $0) }
+    latestSchedule.map {
+      WatchScheduleSnapshot(
+        schedule: $0,
+        leadTimeOverrides: leadTimeOverrides,
+        projectionRevision: leadTimeProjectionRevision
+      )
+    }
+  }
+
+  var defaultLeadTimeMinutes: Int {
+    leadTimeOverrides.defaultLeadTimeMinutes
+      ?? latestSchedule?.settings.defaultLeadTimeMinutes
+      ?? 20
+  }
+
+  func effectiveLeadTimeMinutes(for event: ScheduleEvent) -> Int {
+    guard let schedule = latestSchedule else { return defaultLeadTimeMinutes }
+    return (try? NativeAlarmContract.effectiveLeadTime(
+      event: event,
+      schedule: schedule,
+      overrides: leadTimeOverrides
+    )) ?? schedule.settings.defaultLeadTimeMinutes
   }
 
   func bootstrap() async {
@@ -97,6 +129,77 @@ final class CommanderViewModel: ObservableObject {
     Task { await synchronizeWithRecovery(maxAttempts: 3, automatic: false) }
   }
 
+  func setDefaultLeadTimeMinutes(_ minutes: Int) {
+    var updated = leadTimeOverrides
+    updated.defaultLeadTimeMinutes = Self.clampedLeadTime(minutes)
+    applyLeadTimeOverrides(updated)
+  }
+
+  func resetDefaultLeadTime() {
+    var updated = leadTimeOverrides
+    updated.defaultLeadTimeMinutes = nil
+    applyLeadTimeOverrides(updated)
+  }
+
+  func setProcedureLeadTimeMinutes(_ minutes: Int, procedureType: String) {
+    var updated = leadTimeOverrides
+    updated.procedureTypeOverrides[procedureType] = Self.clampedLeadTime(minutes)
+    applyLeadTimeOverrides(updated)
+  }
+
+  func resetProcedureLeadTime(procedureType: String) {
+    var updated = leadTimeOverrides
+    updated.procedureTypeOverrides.removeValue(forKey: procedureType)
+    applyLeadTimeOverrides(updated)
+  }
+
+  func setMealLeadTimeMinutes(_ minutes: Int, mealType: String) {
+    var updated = leadTimeOverrides
+    updated.mealOverrides[mealType] = Self.clampedLeadTime(minutes)
+    applyLeadTimeOverrides(updated)
+  }
+
+  func resetMealLeadTime(mealType: String) {
+    var updated = leadTimeOverrides
+    updated.mealOverrides.removeValue(forKey: mealType)
+    applyLeadTimeOverrides(updated)
+  }
+
+  func setEventLeadTimeMinutes(_ minutes: Int, stableId: String) {
+    var updated = leadTimeOverrides
+    updated.eventOverrides[stableId] = Self.clampedLeadTime(minutes)
+    applyLeadTimeOverrides(updated)
+  }
+
+  func resetEventLeadTime(stableId: String) {
+    var updated = leadTimeOverrides
+    updated.eventOverrides.removeValue(forKey: stableId)
+    applyLeadTimeOverrides(updated)
+  }
+
+  func resetAllLeadTimeOverrides() {
+    applyLeadTimeOverrides(LeadTimeOverrides())
+  }
+
+  private func applyLeadTimeOverrides(_ updated: LeadTimeOverrides) {
+    let normalized = LeadTimePreferencesStore.normalized(updated)
+    guard normalized != leadTimeOverrides else { return }
+    leadTimeOverrides = normalized
+    leadTimeProjectionRevision += 1
+    leadTimePreferences.save(
+      LeadTimePreferences(
+        overrides: normalized,
+        revision: leadTimeProjectionRevision
+      )
+    )
+    recoveryStatus = "Přepočítávám čas odchodu"
+    synchronize()
+  }
+
+  private static func clampedLeadTime(_ value: Int) -> Int {
+    min(180, max(0, value))
+  }
+
   private func synchronizeWithRecovery(maxAttempts: Int, automatic: Bool) async {
     guard !isSynchronizing else { return }
     if automatic { lastAutomaticAttempt = Date() }
@@ -110,7 +213,10 @@ final class CommanderViewModel: ObservableObject {
 
     for attempt in 0..<maxAttempts {
       do {
-        let result = try await scheduleSync.synchronize()
+        let result = try await scheduleSync.synchronize(
+          overrides: leadTimeOverrides,
+          projectionRevision: leadTimeProjectionRevision
+        )
         latestSchedule = result.schedule
         summary = result.alarmSummary
         watchTransferStatus = result.watchDeliveryStatus.diagnosticText
@@ -136,7 +242,7 @@ final class CommanderViewModel: ObservableObject {
           }
 
           // AlarmKit is safe, but the whole requested sync is not complete until Watch
-          // confirms the same production scheduleVersion from its accepted cache.
+          // confirms the exact production scheduleVersion + lead-time projection revision.
           recoveryStatus = "Alarmy ověřeny, dokončuji Watch"
           shouldRetryLater = true
         } else {
@@ -146,8 +252,6 @@ final class CommanderViewModel: ObservableObject {
           errorMessage = result.alarmSummary.errorMessage
         }
       } catch AlarmAdapterError.authorizationDenied {
-        // This remains for explicit authorization actions. Normal coordinated sync reports
-        // a failed AlarmKit projection instead so the fallback notification path can take over.
         alarmProjectionFailed = true
         shouldRetryLater = true
         recoveryStatus = "AlarmKit nemá oprávnění, zapínám zálohu"
@@ -166,7 +270,10 @@ final class CommanderViewModel: ObservableObject {
 
     if alarmProjectionFailed, let latestSchedule {
       do {
-        if try await fallbackNotifications.arm(schedule: latestSchedule) {
+        if try await fallbackNotifications.arm(
+          schedule: latestSchedule,
+          overrides: leadTimeOverrides
+        ) {
           fallbackStatus = "Aktivní a ověřená bezpečnostní pojistka"
           requiresUserAction = false
           userActionMessage = nil
@@ -200,6 +307,58 @@ final class CommanderViewModel: ObservableObject {
   }
 }
 
+private struct LeadTimePreferences: Codable {
+  let overrides: LeadTimeOverrides
+  let revision: Int
+}
+
+@MainActor
+private final class LeadTimePreferencesStore {
+  private let defaults: UserDefaults
+  private let key: String
+
+  init(defaults: UserDefaults = .standard, key: String) {
+    self.defaults = defaults
+    self.key = key
+  }
+
+  func load() -> LeadTimePreferences {
+    guard
+      let data = defaults.data(forKey: key),
+      let saved = try? JSONDecoder().decode(LeadTimePreferences.self, from: data)
+    else {
+      return LeadTimePreferences(overrides: LeadTimeOverrides(), revision: 0)
+    }
+    return LeadTimePreferences(
+      overrides: Self.normalized(saved.overrides),
+      revision: max(0, saved.revision)
+    )
+  }
+
+  func save(_ preferences: LeadTimePreferences) {
+    guard let data = try? JSONEncoder().encode(preferences) else { return }
+    defaults.set(data, forKey: key)
+  }
+
+  static func normalized(_ overrides: LeadTimeOverrides) -> LeadTimeOverrides {
+    LeadTimeOverrides(
+      defaultLeadTimeMinutes: valid(overrides.defaultLeadTimeMinutes),
+      procedureTypeOverrides: valid(overrides.procedureTypeOverrides),
+      mealOverrides: valid(overrides.mealOverrides),
+      eventOverrides: valid(overrides.eventOverrides)
+    )
+  }
+
+  private static func valid(_ value: Int?) -> Int? {
+    guard let value, (0...180).contains(value) else { return nil }
+    return value
+  }
+
+  private static func valid(_ values: [String: Int]) -> [String: Int] {
+    values.filter { !$0.key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (0...180).contains($0.value) }
+  }
+}
+
 @MainActor
 private final class IPhoneFallbackNotificationService {
   private static let identifierPrefix = "lazensky.commander.iphone.fallback."
@@ -221,9 +380,13 @@ private final class IPhoneFallbackNotificationService {
     return false
   }
 
-  func arm(schedule: Schedule, now: Date = Date()) async throws -> Bool {
+  func arm(
+    schedule: Schedule,
+    overrides: LeadTimeOverrides? = nil,
+    now: Date = Date()
+  ) async throws -> Bool {
     guard try await ensureAuthorization() else { return false }
-    let payload = try NativeAlarmContract.payload(schedule: schedule)
+    let payload = try NativeAlarmContract.payload(schedule: schedule, overrides: overrides)
     let desired = try payload.alarms
       .filter { try NativeAlarmContract.date(fromLocalISO: $0.leaveAt) > now }
       .sorted { $0.leaveAt < $1.leaveAt }
