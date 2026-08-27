@@ -40,7 +40,11 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     try await scheduleStore.load()
   }
 
-  public func synchronize(overrides: LeadTimeOverrides? = nil, now: Date = Date()) async throws -> CommanderScheduleSyncResult {
+  public func synchronize(
+    overrides: LeadTimeOverrides? = nil,
+    projectionRevision: Int = 0,
+    now: Date = Date()
+  ) async throws -> CommanderScheduleSyncResult {
     let fetchedSchedule = try await scheduleService.fetchSchedule()
 
     // Accept the validated canonical snapshot first. AlarmKit and Watch are independent
@@ -57,13 +61,22 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
       schedule = existing
     }
 
-    let summary = try await alarmSyncService.synchronizeValidated(schedule: schedule, overrides: overrides, now: now)
-    let watchSnapshot = WatchScheduleSnapshot(schedule: schedule)
+    let effectiveOverrides = overrides ?? LeadTimeOverrides()
+    let summary = try await alarmSyncService.synchronizeValidated(
+      schedule: schedule,
+      overrides: effectiveOverrides,
+      now: now
+    )
+    let watchSnapshot = WatchScheduleSnapshot(
+      schedule: schedule,
+      leadTimeOverrides: effectiveOverrides,
+      projectionRevision: projectionRevision
+    )
     let watchDeliveryStatus: WatchScheduleDeliveryStatus
     if let watchDelivery {
       do {
         let disposition = try await watchDelivery.deliver(watchSnapshot)
-        if await watchDelivery.verifiedScheduleVersion() == schedule.scheduleVersion {
+        if await watchDelivery.verifiedProjectionIdentity() == watchSnapshot.projectionIdentity {
           watchDeliveryStatus = .verified
         } else {
           switch disposition {
