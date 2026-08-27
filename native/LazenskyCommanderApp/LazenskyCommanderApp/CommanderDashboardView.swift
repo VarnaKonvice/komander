@@ -8,6 +8,7 @@ struct CommanderDashboardView: View {
     TimelineView(.periodic(from: .now, by: 1)) { context in
       CommanderDashboardContent(
         schedule: model.latestSchedule,
+        overrides: model.leadTimeOverrides,
         now: context.date,
         isSynchronizing: model.isSynchronizing,
         synchronize: model.synchronize
@@ -32,7 +33,7 @@ struct CommanderDashboardView: View {
               }
             }
         }
-        .accessibilityLabel("Stav systému")
+        .accessibilityLabel("Stav systému a čas odchodu")
       }
     }
   }
@@ -40,12 +41,17 @@ struct CommanderDashboardView: View {
 
 struct CommanderDashboardContent: View {
   let schedule: Schedule?
+  let overrides: LeadTimeOverrides
   let now: Date
   let isSynchronizing: Bool
   let synchronize: () -> Void
 
   private var presentation: CommanderDashboardPresentation {
-    CommanderDashboardPresentation.make(schedule: schedule, now: now)
+    CommanderDashboardPresentation.make(
+      schedule: schedule,
+      now: now,
+      overrides: overrides
+    )
   }
 
   var body: some View {
