@@ -1,12 +1,54 @@
 import Foundation
 
+public struct WatchScheduleProjectionIdentity: Codable, Equatable, Sendable {
+  public let scheduleVersion: Int
+  public let projectionRevision: Int
+
+  public init(scheduleVersion: Int, projectionRevision: Int) {
+    self.scheduleVersion = scheduleVersion
+    self.projectionRevision = projectionRevision
+  }
+}
+
 public struct WatchScheduleSnapshot: Codable, Equatable, Sendable {
   public static let currentContractVersion = 1
   public let contractVersion: Int
   public let schedule: Schedule
-  public init(contractVersion: Int = currentContractVersion, schedule: Schedule) {
+  public let leadTimeOverrides: LeadTimeOverrides
+  public let projectionRevision: Int
+
+  public init(
+    contractVersion: Int = currentContractVersion,
+    schedule: Schedule,
+    leadTimeOverrides: LeadTimeOverrides = LeadTimeOverrides(),
+    projectionRevision: Int = 0
+  ) {
     self.contractVersion = contractVersion
     self.schedule = schedule
+    self.leadTimeOverrides = leadTimeOverrides
+    self.projectionRevision = max(0, projectionRevision)
+  }
+
+  public var projectionIdentity: WatchScheduleProjectionIdentity {
+    WatchScheduleProjectionIdentity(
+      scheduleVersion: schedule.scheduleVersion,
+      projectionRevision: projectionRevision
+    )
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case contractVersion
+    case schedule
+    case leadTimeOverrides
+    case projectionRevision
+  }
+
+  public init(from decoder: Decoder) throws {
+    let values = try decoder.container(keyedBy: CodingKeys.self)
+    contractVersion = try values.decode(Int.self, forKey: .contractVersion)
+    schedule = try values.decode(Schedule.self, forKey: .schedule)
+    leadTimeOverrides = try values.decodeIfPresent(LeadTimeOverrides.self, forKey: .leadTimeOverrides) ?? LeadTimeOverrides()
+    projectionRevision = max(0, try values.decodeIfPresent(Int.self, forKey: .projectionRevision) ?? 0)
   }
 }
 
@@ -24,17 +66,23 @@ public enum WatchScheduleCachePolicy {
   ) -> WatchScheduleCacheDecision {
     guard
       incoming.contractVersion == WatchScheduleSnapshot.currentContractVersion,
+      incoming.projectionRevision >= 0,
       (try? NativeAlarmContract.validateCanonical(incoming.schedule)) != nil
     else { return .rejectedInvalid }
     guard let existing else { return .stored }
     if incoming == existing { return .unchanged }
-    guard incoming.schedule.scheduleVersion > existing.schedule.scheduleVersion else {
-      return .rejectedVersion(
-        current: existing.schedule.scheduleVersion,
-        incoming: incoming.schedule.scheduleVersion
-      )
+
+    let incomingVersion = incoming.schedule.scheduleVersion
+    let existingVersion = existing.schedule.scheduleVersion
+    if incomingVersion > existingVersion { return .stored }
+    if incomingVersion < existingVersion {
+      return .rejectedVersion(current: existingVersion, incoming: incomingVersion)
     }
-    return .stored
+
+    // A local lead-time edit intentionally keeps the canonical scheduleVersion unchanged.
+    // Only a strictly newer local projection revision may replace the cached projection.
+    if incoming.projectionRevision > existing.projectionRevision { return .stored }
+    return .rejectedVersion(current: existingVersion, incoming: incomingVersion)
   }
 
   public static func shouldAccept(incoming: Schedule, existing: Schedule?) -> Bool {
