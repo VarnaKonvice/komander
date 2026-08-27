@@ -47,6 +47,7 @@ actor WatchLocalNotificationService {
   func reconcile(
     schedule: Schedule?,
     enabled: Bool,
+    overrides: LeadTimeOverrides? = nil,
     now: Date = Date()
   ) async throws -> WatchNotificationPlan {
     let current = await managedPendingNotifications()
@@ -55,6 +56,7 @@ actor WatchLocalNotificationService {
       schedule: schedule,
       enabled: enabled,
       now: now,
+      overrides: overrides,
       lastReconciledScheduleVersion: preferences.lastReconciledScheduleVersion
     )
 
