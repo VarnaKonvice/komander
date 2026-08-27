@@ -3,19 +3,24 @@ import Foundation
 import Testing
 @testable import LazenskyCommanderCore
 
-@Test func watchAcknowledgementRoundTripsScheduleVersion() throws {
-  let context = try WatchScheduleAcknowledgementCodec.applicationContext(scheduleVersion: 42)
+@Test func watchAcknowledgementRoundTripsProjectionIdentity() throws {
+  let context = try WatchScheduleAcknowledgementCodec.applicationContext(
+    scheduleVersion: 42,
+    projectionRevision: 7
+  )
   let acknowledgement = try WatchScheduleAcknowledgementCodec.decode(applicationContext: context)
 
   #expect(acknowledgement.contractVersion == WatchScheduleAcknowledgement.currentContractVersion)
   #expect(acknowledgement.scheduleVersion == 42)
+  #expect(acknowledgement.projectionRevision == 7)
+  #expect(acknowledgement.projectionIdentity == WatchScheduleProjectionIdentity(scheduleVersion: 42, projectionRevision: 7))
 }
 
 @Test func watchDeliveryIsNotVerifiedWithoutMatchingAcknowledgement() async throws {
   let schedule = acknowledgementSchedule(version: 7)
   let result = try await acknowledgementCoordinator(
     schedule: schedule,
-    watch: AcknowledgementWatchDelivery(acknowledgedVersion: nil)
+    watch: AcknowledgementWatchDelivery(acknowledgedIdentity: nil)
   ).synchronize(now: try NativeAlarmContract.date(fromLocalISO: "2026-08-25T07:00:00"))
 
   #expect(result.alarmSummary.succeeded)
@@ -27,7 +32,9 @@ import Testing
   let schedule = acknowledgementSchedule(version: 8)
   let result = try await acknowledgementCoordinator(
     schedule: schedule,
-    watch: AcknowledgementWatchDelivery(acknowledgedVersion: 8)
+    watch: AcknowledgementWatchDelivery(
+      acknowledgedIdentity: WatchScheduleProjectionIdentity(scheduleVersion: 8, projectionRevision: 0)
+    )
   ).synchronize(now: try NativeAlarmContract.date(fromLocalISO: "2026-08-25T07:00:00"))
 
   #expect(result.alarmSummary.succeeded)
@@ -39,11 +46,65 @@ import Testing
   let schedule = acknowledgementSchedule(version: 9)
   let result = try await acknowledgementCoordinator(
     schedule: schedule,
-    watch: AcknowledgementWatchDelivery(acknowledgedVersion: 8)
+    watch: AcknowledgementWatchDelivery(
+      acknowledgedIdentity: WatchScheduleProjectionIdentity(scheduleVersion: 8, projectionRevision: 0)
+    )
   ).synchronize(now: try NativeAlarmContract.date(fromLocalISO: "2026-08-25T07:00:00"))
 
   #expect(result.watchDeliveryStatus == .sent)
   #expect(!result.succeeded)
+}
+
+@Test func watchDeliveryRejectsOldLeadTimeRevisionForSameSchedule() async throws {
+  let schedule = acknowledgementSchedule(version: 10)
+  let result = try await acknowledgementCoordinator(
+    schedule: schedule,
+    watch: AcknowledgementWatchDelivery(
+      acknowledgedIdentity: WatchScheduleProjectionIdentity(scheduleVersion: 10, projectionRevision: 2)
+    )
+  ).synchronize(
+    overrides: LeadTimeOverrides(defaultLeadTimeMinutes: 15),
+    projectionRevision: 3,
+    now: try NativeAlarmContract.date(fromLocalISO: "2026-08-25T07:00:00")
+  )
+
+  #expect(result.watchSnapshot.projectionRevision == 3)
+  #expect(result.watchDeliveryStatus == .sent)
+  #expect(!result.succeeded)
+}
+
+@Test func watchDeliveryVerifiesMatchingLeadTimeRevisionForSameSchedule() async throws {
+  let schedule = acknowledgementSchedule(version: 11)
+  let result = try await acknowledgementCoordinator(
+    schedule: schedule,
+    watch: AcknowledgementWatchDelivery(
+      acknowledgedIdentity: WatchScheduleProjectionIdentity(scheduleVersion: 11, projectionRevision: 4)
+    )
+  ).synchronize(
+    overrides: LeadTimeOverrides(defaultLeadTimeMinutes: 30),
+    projectionRevision: 4,
+    now: try NativeAlarmContract.date(fromLocalISO: "2026-08-25T07:00:00")
+  )
+
+  #expect(result.watchSnapshot.leadTimeOverrides.defaultLeadTimeMinutes == 30)
+  #expect(result.watchDeliveryStatus == .verified)
+  #expect(result.succeeded)
+}
+
+@Test func watchCacheAcceptsNewerLeadTimeRevisionWithoutNewCanonicalVersion() {
+  let schedule = acknowledgementSchedule(version: 12)
+  let existing = WatchScheduleSnapshot(
+    schedule: schedule,
+    leadTimeOverrides: LeadTimeOverrides(defaultLeadTimeMinutes: 20),
+    projectionRevision: 1
+  )
+  let incoming = WatchScheduleSnapshot(
+    schedule: schedule,
+    leadTimeOverrides: LeadTimeOverrides(defaultLeadTimeMinutes: 15),
+    projectionRevision: 2
+  )
+
+  #expect(WatchScheduleCachePolicy.decision(incoming: incoming, existing: existing) == .stored)
 }
 
 private func acknowledgementCoordinator(
@@ -114,13 +175,14 @@ private actor AcknowledgementAlarmAdapter: AlarmAdapting {
 }
 
 private actor AcknowledgementWatchDelivery: WatchScheduleSnapshotDelivering {
-  private let acknowledgedVersion: Int?
+  private let acknowledgedIdentity: WatchScheduleProjectionIdentity?
 
-  init(acknowledgedVersion: Int?) {
-    self.acknowledgedVersion = acknowledgedVersion
+  init(acknowledgedIdentity: WatchScheduleProjectionIdentity?) {
+    self.acknowledgedIdentity = acknowledgedIdentity
   }
 
   func deliver(_ snapshot: WatchScheduleSnapshot) -> WatchScheduleDeliveryDisposition { .sent }
-  func verifiedScheduleVersion() -> Int? { acknowledgedVersion }
+  func verifiedScheduleVersion() -> Int? { acknowledgedIdentity?.scheduleVersion }
+  func verifiedProjectionIdentity() -> WatchScheduleProjectionIdentity? { acknowledgedIdentity }
 }
 #endif
