@@ -52,6 +52,25 @@ import Testing
   #expect(plan.countdownWindow == 0)
 }
 
+@Test func editableLeadTimeMovesLeaveAtForFifteenTwentyAndThirtyMinutes() throws {
+  let schedule = countdownTestSchedule()
+
+  for (minutes, expectedLeaveAt) in [
+    (15, "2026-08-20T08:45:00"),
+    (20, "2026-08-20T08:40:00"),
+    (30, "2026-08-20T08:30:00")
+  ] {
+    let overrides = LeadTimeOverrides(defaultLeadTimeMinutes: minutes)
+    let alarm = try NativeAlarmContract.payload(
+      schedule: schedule,
+      overrides: overrides
+    ).alarms.first(where: { $0.stableId == "first" })!
+
+    #expect(alarm.effectiveLeadTimeMinutes == minutes)
+    #expect(alarm.leaveAt == expectedLeaveAt)
+  }
+}
+
 private func countdownTestSchedule() -> Schedule {
   Schedule(
     schemaVersion: 1,
