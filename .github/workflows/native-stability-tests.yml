@@ -46,7 +46,7 @@ jobs:
           -project native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj
           -target LazenskyCommanderWatchApp
           -configuration Debug
-          -sdk watchos
+          -destination 'generic/platform=watchOS'
           CODE_SIGNING_ALLOWED=NO
           CODE_SIGNING_REQUIRED=NO
           build
