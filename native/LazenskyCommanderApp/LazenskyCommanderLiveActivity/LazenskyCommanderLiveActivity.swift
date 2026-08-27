@@ -8,6 +8,7 @@ import WidgetKit
 struct LazenskyCommanderLiveActivityBundle: WidgetBundle {
   var body: some Widget {
     LazenskyCommanderAlarmLiveActivity()
+    LazenskyCommanderProcedureLiveActivity()
   }
 }
 
@@ -56,6 +57,136 @@ struct LazenskyCommanderAlarmLiveActivity: Widget {
         CommanderAlarmIcon(iconKey: context.attributes.metadata?.iconKey, size: 20)
       }
       .keylineTint(.teal)
+    }
+  }
+}
+
+struct LazenskyCommanderProcedureLiveActivity: Widget {
+  var body: some WidgetConfiguration {
+    ActivityConfiguration(for: CommanderProcedureLiveActivityAttributes.self) { context in
+      CommanderProcedureLockScreenView(context: context)
+        .activityBackgroundTint(Color(.systemBackground))
+        .activitySystemActionForegroundColor(.primary)
+    } dynamicIsland: { context in
+      DynamicIsland {
+        DynamicIslandExpandedRegion(.leading) {
+          CommanderAlarmIcon(iconKey: context.attributes.iconKey, size: 42)
+        }
+        DynamicIslandExpandedRegion(.center) {
+          VStack(alignment: .leading, spacing: 2) {
+            Text(context.isStale ? "Dokončeno" : "Právě probíhá")
+              .font(.caption.weight(.semibold))
+              .foregroundStyle(context.isStale ? .secondary : .teal)
+            Text(context.attributes.title)
+              .font(.headline)
+              .lineLimit(1)
+            if !context.attributes.location.isEmpty {
+              Text(context.attributes.location)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            }
+          }
+        }
+        DynamicIslandExpandedRegion(.trailing) {
+          CommanderProcedureTiming(
+            endAt: context.attributes.endAt,
+            isStale: context.isStale,
+            compact: false
+          )
+        }
+        DynamicIslandExpandedRegion(.bottom) {
+          if context.isStale {
+            Label("Procedura skončila", systemImage: "checkmark.circle.fill")
+              .font(.subheadline)
+          } else {
+            HStack {
+              Label("Konec", systemImage: "clock")
+                .foregroundStyle(.secondary)
+              Spacer()
+              Text(context.attributes.endAt, style: .time)
+                .fontWeight(.semibold)
+            }
+            .font(.subheadline)
+          }
+        }
+      } compactLeading: {
+        CommanderAlarmIcon(iconKey: context.attributes.iconKey, size: 22)
+      } compactTrailing: {
+        CommanderProcedureTiming(
+          endAt: context.attributes.endAt,
+          isStale: context.isStale,
+          compact: true
+        )
+      } minimal: {
+        Image(systemName: context.isStale ? "checkmark" : "waveform.path.ecg")
+          .foregroundStyle(.teal)
+      }
+      .keylineTint(.teal)
+    }
+  }
+}
+
+private struct CommanderProcedureLockScreenView: View {
+  let context: ActivityViewContext<CommanderProcedureLiveActivityAttributes>
+
+  var body: some View {
+    HStack(spacing: 14) {
+      CommanderAlarmIcon(iconKey: context.attributes.iconKey, size: 52)
+
+      VStack(alignment: .leading, spacing: 3) {
+        Text(context.isStale ? "Dokončeno" : "Právě probíhá")
+          .font(.caption.weight(.semibold))
+          .foregroundStyle(context.isStale ? .secondary : .teal)
+        Text(context.attributes.title)
+          .font(.headline)
+          .lineLimit(2)
+        if !context.attributes.location.isEmpty {
+          Text(context.attributes.location)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+        }
+        Text("Konec \(context.attributes.endAt.formatted(date: .omitted, time: .shortened))")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+
+      Spacer(minLength: 8)
+
+      CommanderProcedureTiming(
+        endAt: context.attributes.endAt,
+        isStale: context.isStale,
+        compact: false
+      )
+    }
+    .padding()
+  }
+}
+
+private struct CommanderProcedureTiming: View {
+  let endAt: Date
+  let isStale: Bool
+  let compact: Bool
+
+  var body: some View {
+    Group {
+      if isStale {
+        Image(systemName: "checkmark.circle.fill")
+          .foregroundStyle(.teal)
+      } else {
+        VStack(alignment: .trailing, spacing: 1) {
+          if !compact {
+            Text("Do konce")
+              .font(.caption2.weight(.semibold))
+              .foregroundStyle(.secondary)
+          }
+          Text(endAt, style: .timer)
+            .font(compact ? .caption2.monospacedDigit() : .headline.monospacedDigit())
+            .foregroundStyle(.teal)
+            .lineLimit(1)
+        }
+      }
     }
   }
 }
