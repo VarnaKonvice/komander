@@ -10,6 +10,7 @@ final class WatchCommanderModel {
   private let alarmPreferences: WatchStandaloneAlarmPreferences
   private let notificationService: WatchLocalNotificationService
 
+  private(set) var snapshot: WatchScheduleSnapshot?
   private(set) var schedule: Schedule?
   private(set) var cacheError: String?
   private(set) var transportError: String?
@@ -17,6 +18,14 @@ final class WatchCommanderModel {
   private(set) var notificationAuthorization: WatchNotificationAuthorizationState = .notDetermined
   private(set) var notificationError: String?
   private(set) var isUpdatingStandaloneAlarms = false
+
+  var leadTimeOverrides: LeadTimeOverrides {
+    snapshot?.leadTimeOverrides ?? LeadTimeOverrides()
+  }
+
+  var projectionIdentity: WatchScheduleProjectionIdentity? {
+    snapshot?.projectionIdentity
+  }
 
   init(
     cache: FileWatchScheduleCache? = nil,
@@ -34,27 +43,34 @@ final class WatchCommanderModel {
       guard preferences.isEnabled,
             await service.authorizationStatus() == .authorized
       else { return }
-      _ = try? await service.reconcile(schedule: snapshot.schedule, enabled: true)
+      _ = try? await service.reconcile(
+        schedule: snapshot.schedule,
+        enabled: true,
+        overrides: snapshot.leadTimeOverrides
+      )
     }
   }
 
   func bootstrap() async {
     do {
-      schedule = try await cache.load()?.schedule
+      snapshot = try await cache.load()
+      schedule = snapshot?.schedule
       cacheError = nil
       await reconcileStandaloneAlarms(requestAuthorization: false)
     } catch {
+      snapshot = nil
       schedule = nil
       cacheError = error.localizedDescription
     }
   }
 
   @discardableResult
-  func receive(_ snapshot: WatchScheduleSnapshot) async throws -> WatchScheduleCacheDecision {
-    let decision = try await cache.accept(snapshot)
+  func receive(_ incoming: WatchScheduleSnapshot) async throws -> WatchScheduleCacheDecision {
+    let decision = try await cache.accept(incoming)
     switch decision {
     case .stored, .unchanged:
-      schedule = try await cache.load()?.schedule
+      snapshot = try await cache.load()
+      schedule = snapshot?.schedule
       cacheError = nil
     case .rejectedInvalid, .rejectedVersion:
       break
@@ -97,7 +113,11 @@ final class WatchCommanderModel {
       notificationAuthorization = authorization
 
       if standaloneAlarmsEnabled, authorization == .authorized {
-        _ = try await notificationService.reconcile(schedule: schedule, enabled: true)
+        _ = try await notificationService.reconcile(
+          schedule: schedule,
+          enabled: true,
+          overrides: leadTimeOverrides
+        )
       } else {
         _ = try await notificationService.reconcile(schedule: nil, enabled: false)
       }
