@@ -7,7 +7,7 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
   private weak var model: WatchCommanderModel?
   private let session: WCSession?
   private var didStart = false
-  private var pendingAcknowledgementVersion: Int?
+  private var pendingAcknowledgement: WatchScheduleProjectionIdentity?
 
   init(model: WatchCommanderModel) {
     self.model = model
@@ -38,9 +38,10 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
 
         switch decision {
         case .stored, .unchanged, .rejectedVersion:
-          // ACK the version actually loaded from the atomic cache, never merely the incoming payload.
-          if let verifiedVersion = model.schedule?.scheduleVersion {
-            acknowledge(scheduleVersion: verifiedVersion)
+          // ACK the exact projection actually loaded from the atomic cache, never merely
+          // the incoming payload. This proves both canonical version and local lead-time revision.
+          if let identity = model.projectionIdentity {
+            acknowledge(identity)
           }
         case .rejectedInvalid:
           break
@@ -51,8 +52,8 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
     }
   }
 
-  private func acknowledge(scheduleVersion: Int) {
-    pendingAcknowledgementVersion = scheduleVersion
+  private func acknowledge(_ identity: WatchScheduleProjectionIdentity) {
+    pendingAcknowledgement = identity
     guard let session, session.activationState == .activated else {
       session?.activate()
       return
@@ -61,12 +62,15 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
   }
 
   private func publishPendingAcknowledgement(using session: WCSession) {
-    guard let scheduleVersion = pendingAcknowledgementVersion else { return }
+    guard let identity = pendingAcknowledgement else { return }
     do {
       try session.updateApplicationContext(
-        WatchScheduleAcknowledgementCodec.applicationContext(scheduleVersion: scheduleVersion)
+        WatchScheduleAcknowledgementCodec.applicationContext(
+          scheduleVersion: identity.scheduleVersion,
+          projectionRevision: identity.projectionRevision
+        )
       )
-      pendingAcknowledgementVersion = nil
+      pendingAcknowledgement = nil
       model?.recordTransportError(nil)
     } catch {
       model?.recordTransportError("Potvrzení rozpisu iPhonu selhalo: \(error.localizedDescription)")
