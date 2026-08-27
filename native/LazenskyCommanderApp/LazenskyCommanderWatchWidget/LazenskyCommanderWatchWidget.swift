@@ -37,17 +37,27 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
   func getTimeline(in context: Context, completion: @escaping @Sendable (Timeline<CommanderWatchWidgetEntry>) -> Void) {
     Task {
       let now = Date()
-      guard let schedule = await cachedSchedule() else {
+      guard let snapshot = await cachedSnapshot() else {
         completion(Timeline(entries: [noScheduleEntry(at: now)], policy: .never))
         return
       }
+      let schedule = snapshot.schedule
+      let overrides = snapshot.leadTimeOverrides
 
       do {
-        let entries = try WatchTimelinePlanner.points(schedule: schedule, now: now).map { point in
+        let entries = try WatchTimelinePlanner.points(
+          schedule: schedule,
+          now: now,
+          overrides: overrides
+        ).map { point in
           let activeSchedule = point.transition == .expired ? nil : schedule
           return CommanderWatchWidgetEntry(
             date: point.date,
-            liveState: CommanderLiveStateCalculator.compute(schedule: activeSchedule, now: point.date)
+            liveState: CommanderLiveStateCalculator.compute(
+              schedule: activeSchedule,
+              now: point.date,
+              overrides: overrides
+            )
           )
         }
         completion(Timeline(entries: entries, policy: .never))
@@ -58,9 +68,13 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
   }
 
   func relevance() async -> WidgetRelevance<Void> {
-    guard let schedule = await cachedSchedule() else { return WidgetRelevance([]) }
+    guard let snapshot = await cachedSnapshot() else { return WidgetRelevance([]) }
     let now = Date()
-    guard let windows = try? WatchTimelinePlanner.relevanceWindows(schedule: schedule, now: now) else {
+    guard let windows = try? WatchTimelinePlanner.relevanceWindows(
+      schedule: snapshot.schedule,
+      now: now,
+      overrides: snapshot.leadTimeOverrides
+    ) else {
       return WidgetRelevance([])
     }
     let attributes = windows.map {
@@ -72,16 +86,20 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
   }
 
   private func currentEntry(at date: Date) async -> CommanderWatchWidgetEntry {
-    guard let schedule = await cachedSchedule() else { return noScheduleEntry(at: date) }
-    let activeSchedule = WatchScheduleExpiryPolicy.activeSchedule(schedule, at: date)
+    guard let snapshot = await cachedSnapshot() else { return noScheduleEntry(at: date) }
+    let activeSchedule = WatchScheduleExpiryPolicy.activeSchedule(snapshot.schedule, at: date)
     return CommanderWatchWidgetEntry(
       date: date,
-      liveState: CommanderLiveStateCalculator.compute(schedule: activeSchedule, now: date)
+      liveState: CommanderLiveStateCalculator.compute(
+        schedule: activeSchedule,
+        now: date,
+        overrides: snapshot.leadTimeOverrides
+      )
     )
   }
 
-  private func cachedSchedule() async -> Schedule? {
-    try? await WatchCacheLocation.makeCache().load()?.schedule
+  private func cachedSnapshot() async -> WatchScheduleSnapshot? {
+    try? await WatchCacheLocation.makeCache().load()
   }
 
   private func noScheduleEntry(at date: Date) -> CommanderWatchWidgetEntry {
