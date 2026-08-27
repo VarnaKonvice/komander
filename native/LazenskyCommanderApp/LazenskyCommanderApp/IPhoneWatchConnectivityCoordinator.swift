@@ -16,7 +16,7 @@ enum IPhoneWatchConnectivityError: LocalizedError {
 final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotDelivering, WCSessionDelegate {
   private let session: WCSession?
   private var pendingApplicationContext: [String: Any]?
-  private var acknowledgedScheduleVersion: Int?
+  private var acknowledgedProjectionIdentity: WatchScheduleProjectionIdentity?
 
   private(set) var diagnostic = "Aktivuji WatchConnectivity…"
 
@@ -28,7 +28,7 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
       return
     }
     session.delegate = self
-    recordAcknowledgement(Self.acknowledgementVersion(from: session.receivedApplicationContext))
+    recordAcknowledgement(Self.acknowledgement(from: session.receivedApplicationContext))
     session.activate()
   }
 
@@ -46,7 +46,11 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
   }
 
   func verifiedScheduleVersion() async -> Int? {
-    acknowledgedScheduleVersion
+    acknowledgedProjectionIdentity?.scheduleVersion
+  }
+
+  func verifiedProjectionIdentity() async -> WatchScheduleProjectionIdentity? {
+    acknowledgedProjectionIdentity
   }
 
   private func publishPendingContext(using session: WCSession) throws -> WatchScheduleDeliveryDisposition {
@@ -57,27 +61,27 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
     return .sent
   }
 
-  private func recordAcknowledgement(_ scheduleVersion: Int?) {
-    guard let scheduleVersion else { return }
-    acknowledgedScheduleVersion = scheduleVersion
-    diagnostic = "Apple Watch ověřily rozpis v\(scheduleVersion)"
+  private func recordAcknowledgement(_ acknowledgement: WatchScheduleAcknowledgement?) {
+    guard let acknowledgement else { return }
+    acknowledgedProjectionIdentity = acknowledgement.projectionIdentity
+    diagnostic = "Apple Watch ověřily rozpis v\(acknowledgement.scheduleVersion)/r\(acknowledgement.projectionRevision)"
   }
 
-  nonisolated private static func acknowledgementVersion(from applicationContext: [String: Any]) -> Int? {
-    try? WatchScheduleAcknowledgementCodec.decode(applicationContext: applicationContext).scheduleVersion
+  nonisolated private static func acknowledgement(from applicationContext: [String: Any]) -> WatchScheduleAcknowledgement? {
+    try? WatchScheduleAcknowledgementCodec.decode(applicationContext: applicationContext)
   }
 
-  private func didActivate(errorDescription: String?, acknowledgedVersion: Int?) {
+  private func didActivate(errorDescription: String?, acknowledgement: WatchScheduleAcknowledgement?) {
     if let errorDescription {
       diagnostic = "Aktivace WatchConnectivity selhala: \(errorDescription)"
       return
     }
-    recordAcknowledgement(acknowledgedVersion)
+    recordAcknowledgement(acknowledgement)
     guard let session else { return }
     do {
       _ = try publishPendingContext(using: session)
       if pendingApplicationContext == nil,
-         acknowledgedScheduleVersion == nil,
+         acknowledgedProjectionIdentity == nil,
          diagnostic != "Rozpis odeslán, čekám na potvrzení Watch" {
         diagnostic = "WatchConnectivity aktivní"
       }
@@ -97,16 +101,16 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
     error: Error?
   ) {
     let errorDescription = error?.localizedDescription
-    let acknowledgedVersion = Self.acknowledgementVersion(from: session.receivedApplicationContext)
+    let acknowledgement = Self.acknowledgement(from: session.receivedApplicationContext)
     Task { @MainActor [weak self] in
-      self?.didActivate(errorDescription: errorDescription, acknowledgedVersion: acknowledgedVersion)
+      self?.didActivate(errorDescription: errorDescription, acknowledgement: acknowledgement)
     }
   }
 
   nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-    let acknowledgedVersion = Self.acknowledgementVersion(from: applicationContext)
+    let acknowledgement = Self.acknowledgement(from: applicationContext)
     Task { @MainActor [weak self] in
-      self?.recordAcknowledgement(acknowledgedVersion)
+      self?.recordAcknowledgement(acknowledgement)
     }
   }
 
