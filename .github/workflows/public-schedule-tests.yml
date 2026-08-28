@@ -39,3 +39,6 @@ jobs:
 
       - name: Run Google Calendar keyless auth suite
         run: node tests/google-calendar-auth-suite.mjs
+
+      - name: Run refresh launcher safety suite
+        run: node tests/refresh-launcher-suite.mjs

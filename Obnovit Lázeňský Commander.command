@@ -259,15 +259,16 @@ DEVICE_OS=""
 
 WATCH_SEEN=0
 WATCH_UNPAIRED_SEEN=0
-WATCH_DEV_MODE_DISABLED_SEEN=0
 WATCH_LOCKED_SEEN=0
 WATCH_UNREACHABLE_SEEN=0
 WATCH_READY_COUNT=0
+WATCH_LOCK_STATE_UNKNOWN=0
 WATCH_IDENTIFIER=""
 WATCH_UDID=""
 WATCH_NAME=""
 WATCH_MODEL=""
 WATCH_OS=""
+WATCH_DEVELOPER_MODE=""
 
 for ((index = 0; index < DEVICE_COUNT; index++)); do
   prefix="result.devices.$index"
@@ -320,24 +321,8 @@ for ((index = 0; index < DEVICE_COUNT; index++)); do
       WATCH_UNPAIRED_SEEN=1
       continue
     fi
-    if [[ "$developer_mode" != "enabled" ]]; then
-      WATCH_DEV_MODE_DISABLED_SEEN=1
-      continue
-    fi
     if [[ -z "$identifier" || -z "$udid" ]]; then
       WATCH_UNREACHABLE_SEEN=1
-      continue
-    fi
-
-    WATCH_LOCK_JSON="$TEMP_DIR/watch-lock-$index.json"
-    if ! "$DEVICECTL" device info lockState --device "$identifier" --quiet --timeout 15 --json-output "$WATCH_LOCK_JSON" >> "$LOG_FILE" 2>&1; then
-      WATCH_UNREACHABLE_SEEN=1
-      continue
-    fi
-    watch_passcode_required="$(plist_raw result.passcodeRequired "$WATCH_LOCK_JSON")"
-    watch_unlocked_since_boot="$(plist_raw result.unlockedSinceBoot "$WATCH_LOCK_JSON")"
-    if [[ "$watch_passcode_required" != "false" || "$watch_unlocked_since_boot" != "true" ]]; then
-      WATCH_LOCKED_SEEN=1
       continue
     fi
 
@@ -347,6 +332,18 @@ for ((index = 0; index < DEVICE_COUNT; index++)); do
     WATCH_NAME="$(plist_raw "$prefix.deviceProperties.name" "$DEVICES_JSON")"
     WATCH_MODEL="$(plist_raw "$prefix.hardwareProperties.marketingName" "$DEVICES_JSON")"
     WATCH_OS="$(plist_raw "$prefix.deviceProperties.osVersionNumber" "$DEVICES_JSON")"
+    WATCH_DEVELOPER_MODE="$developer_mode"
+
+    WATCH_LOCK_JSON="$TEMP_DIR/watch-lock-$index.json"
+    if ! "$DEVICECTL" device info lockState --device "$identifier" --quiet --timeout 15 --json-output "$WATCH_LOCK_JSON" >> "$LOG_FILE" 2>&1; then
+      WATCH_LOCK_STATE_UNKNOWN=1
+      continue
+    fi
+    watch_passcode_required="$(plist_raw result.passcodeRequired "$WATCH_LOCK_JSON")"
+    watch_unlocked_since_boot="$(plist_raw result.unlockedSinceBoot "$WATCH_LOCK_JSON")"
+    if [[ "$watch_passcode_required" != "false" || "$watch_unlocked_since_boot" != "true" ]]; then
+      WATCH_LOCKED_SEEN=1
+    fi
   fi
 done
 
@@ -375,14 +372,10 @@ if [[ "$WATCH_READY_COUNT" -eq 0 ]]; then
     fail "Xcode nevidí žádné fyzické Apple Watch. Nech hodinky poblíž odemčeného iPhonu a spusť obnovu znovu."
   elif [[ "$WATCH_UNPAIRED_SEEN" -eq 1 ]]; then
     fail "Apple Watch nejsou pro tento Mac spárované a důvěryhodné. Otevři jednou Xcode se spárovaným iPhonem."
-  elif [[ "$WATCH_DEV_MODE_DISABLED_SEEN" -eq 1 ]]; then
-    fail "Na Apple Watch zapni Režim vývojáře, hodinky restartuj podle pokynů a znovu je odemkni."
-  elif [[ "$WATCH_LOCKED_SEEN" -eq 1 ]]; then
-    fail "Nasaď a odemkni Apple Watch a spusť obnovu znovu."
   elif [[ "$WATCH_UNREACHABLE_SEEN" -eq 1 ]]; then
     fail "Apple Watch jsou evidované, ale Mac se k nim nedokáže připojit. Nech je odemčené poblíž iPhonu a Macu."
   else
-    fail "Apple Watch nejsou připravené k instalaci. Zkontroluj jejich odemčení a Režim vývojáře."
+    fail "Apple Watch nejsou připravené k instalaci. Zkontroluj jejich spárování a dostupnost."
   fi
 fi
 
@@ -402,10 +395,16 @@ fi
 
 WATCH_DESTINATIONS_FILE="$TEMP_DIR/watch-destinations.txt"
 if ! /usr/bin/xcodebuild -project "$PROJECT_PATH" -scheme "$WATCH_SCHEME" -showdestinations > "$WATCH_DESTINATIONS_FILE" 2>> "$LOG_FILE"; then
+  if /usr/bin/grep -Eqi 'developer mode|development mode' "$WATCH_DESTINATIONS_FILE" "$LOG_FILE" 2>/dev/null; then
+    fail "Xcode odmítl Apple Watch, protože pro ně není aktivní Režim vývojáře. Zapni ho na hodinkách, dokonči restart a spusť obnovu znovu."
+  fi
   fail "Xcode nedokázal ověřit Apple Watch pro sestavení."
 fi
 if ! /usr/bin/grep -Fq "platform:watchOS" "$WATCH_DESTINATIONS_FILE" || ! /usr/bin/grep -Fq "id:$WATCH_UDID" "$WATCH_DESTINATIONS_FILE"; then
-  fail "Apple Watch nejsou v Xcode dostupné jako fyzické cílové zařízení."
+  if /usr/bin/grep -Eqi 'developer mode|development mode' "$WATCH_DESTINATIONS_FILE" "$LOG_FILE" 2>/dev/null; then
+    fail "Xcode odmítl Apple Watch, protože pro ně není aktivní Režim vývojáře. Zapni ho na hodinkách, dokonči restart a spusť obnovu znovu."
+  fi
+  fail "Apple Watch nejsou v Xcode dostupné jako způsobilé fyzické cílové zařízení. Odemkni je a otevři jednou Xcode, aby dokončil jejich přípravu."
 fi
 WATCH_BUILD_SETTINGS_JSON="$TEMP_DIR/watch-build-settings.json"
 if ! /usr/bin/xcodebuild \
@@ -414,7 +413,20 @@ if ! /usr/bin/xcodebuild \
   -configuration "$CONFIGURATION" \
   -destination "platform=watchOS,id=$WATCH_UDID" \
   -showBuildSettings -json > "$WATCH_BUILD_SETTINGS_JSON" 2>> "$LOG_FILE"; then
+  if /usr/bin/grep -Eqi 'developer mode|development mode' "$WATCH_DESTINATIONS_FILE" "$LOG_FILE" 2>/dev/null; then
+    fail "Xcode odmítl Apple Watch, protože pro ně není aktivní Režim vývojáře. Zapni ho na hodinkách, dokonči restart a spusť obnovu znovu."
+  fi
   fail "Apple Watch jsou viditelné, ale Xcode je nepovažuje za způsobilé cílové zařízení. Odemkni je, ověř Režim vývojáře a otevři jednou Xcode."
+fi
+
+if [[ "$WATCH_DEVELOPER_MODE" != "enabled" ]]; then
+  log "WARNING: CoreDevice reported Apple Watch developerModeStatus=${WATCH_DEVELOPER_MODE:-unknown}, but Xcode accepted destination $WATCH_UDID; continuing."
+fi
+if [[ "$WATCH_LOCK_STATE_UNKNOWN" -eq 1 ]]; then
+  log "WARNING: CoreDevice could not confirm Apple Watch lock state, but Xcode accepted destination $WATCH_UDID; continuing."
+fi
+if [[ "$WATCH_LOCKED_SEEN" -eq 1 ]]; then
+  fail "Xcode Apple Watch rozpoznal, ale hodinky jsou zamčené. Nasaď je, odemkni a spusť obnovu znovu."
 fi
 
 if [[ "$MODE" == "check" ]]; then
@@ -476,7 +488,9 @@ if ! /usr/bin/xcodebuild \
   -allowProvisioningDeviceRegistration \
   build >> "$LOG_FILE" 2>&1; then
   log "Watch build result: failure"
-  if /usr/bin/grep -Eqi 'provisioning|no profiles|signing certificate|developer account|no accounts|communication with Apple' "$LOG_FILE"; then
+  if /usr/bin/grep -Eqi 'developer mode|development mode' "$LOG_FILE"; then
+    fail "Xcode nemohl sestavit aplikaci pro Apple Watch, protože hodinky odmítly vývojářské připojení. Odemkni je a ověř na nich Režim vývojáře."
+  elif /usr/bin/grep -Eqi 'provisioning|no profiles|signing certificate|developer account|no accounts|communication with Apple' "$LOG_FILE"; then
     fail "Apple provisioning pro Watch aplikaci se nepodařilo obnovit."
   else
     fail "Sestavení aplikace pro Apple Watch selhalo."
@@ -519,10 +533,16 @@ if ! "$DEVICECTL" device install app \
   --timeout 180 \
   --json-output "$WATCH_INSTALL_JSON" >> "$LOG_FILE" 2>&1; then
   log "Watch install result: failure"
+  if /usr/bin/grep -Eqi 'developer mode|development mode' "$WATCH_INSTALL_JSON" "$LOG_FILE" 2>/dev/null; then
+    fail "iPhone byl obnoven, ale Apple Watch odmítly instalaci kvůli Režimu vývojáře. Ověř ho na hodinkách, hodinky odemkni a spusť obnovu znovu."
+  fi
   fail "iPhone byl obnoven, ale instalace na Apple Watch selhala. Nech hodinky odemčené poblíž iPhonu a spusť obnovu znovu."
 fi
 if [[ "$(plist_raw info.outcome "$WATCH_INSTALL_JSON")" != "success" ]]; then
   log "Watch install result: unconfirmed"
+  if /usr/bin/grep -Eqi 'developer mode|development mode' "$WATCH_INSTALL_JSON" "$LOG_FILE" 2>/dev/null; then
+    fail "iPhone byl obnoven, ale Apple Watch odmítly instalaci kvůli Režimu vývojáře. Ověř ho na hodinkách, hodinky odemkni a spusť obnovu znovu."
+  fi
   fail "iPhone byl obnoven, ale Xcode nepotvrdil instalaci na Apple Watch."
 fi
 log "Watch install result: success"

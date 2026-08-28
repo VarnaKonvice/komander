@@ -19,6 +19,8 @@ Rozpis se aktualizuje odděleně z canonical `data/schedule.json` na GitHubu; ob
 
 Projekt obsahuje sdílená schémata `LazenskyCommanderApp` a `LazenskyCommanderWatchApp`. Launcher nejprve sestaví iPhone aplikaci se zabalenou Watch aplikací, potom samostatně sestaví a podepíše Watch target pro konkrétní fyzické hodinky. Po instalaci iPhone aplikace nainstaluje Watch aplikaci přímo přes `devicectl` a ověří na hodinkách bundle ID `com.varnakonvice.lazenskycommander.watchkitapp`.
 
+CoreDevice může u spárovaných Apple Watch vrátit zastaralý stav Režimu vývojáře. Launcher proto tento údaj používá jen pro diagnostiku. O skutečné způsobilosti hodinek rozhodne Xcode nad jejich konkrétním UDID a sdíleným schématem `LazenskyCommanderWatchApp`; skutečné odmítnutí destination, buildu nebo instalace zůstává blokující.
+
 ## Když se zobrazí CHYBA
 
 - Zkontroluj kabel a nech iPhone po celou dobu připojený.
