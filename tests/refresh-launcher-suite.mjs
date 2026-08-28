@@ -61,10 +61,46 @@ await test('Xcode destination and build settings are the Watch authority', async
   assert.match(launcher, /but Xcode accepted destination \$WATCH_UDID; continuing/);
 });
 
-await test('Watch build and install report real Developer Mode failures precisely', async () => {
-  assert.match(launcher, /Xcode nemohl sestavit aplikaci pro Apple Watch, protože hodinky odmítly vývojářské připojení/);
-  assert.match(launcher, /Apple Watch odmítly instalaci kvůli Režimu vývojáře/);
+await test('verified iPhone install precedes every optional Watch attempt', async () => {
+  const iphoneVerifiedIndex = launcher.indexOf('iPhone post-install verification: success');
+  const nextDateIndex = launcher.indexOf('NEXT_REFRESH_DATE="$(/bin/date -v+6d');
+  const watchAttemptIndex = launcher.lastIndexOf('\nattempt_watch_refresh\n');
+  assert.ok(iphoneVerifiedIndex >= 0);
+  assert.ok(nextDateIndex > iphoneVerifiedIndex);
+  assert.ok(watchAttemptIndex > nextDateIndex);
+});
+
+await test('all Watch deployment failures are non-blocking', async () => {
+  const watchAttempt = extractBetween('attempt_watch_refresh() {', '\n}\n\nattempt_watch_refresh');
+  assert.doesNotMatch(watchAttempt, /\bfail\s+"/);
+  assert.match(watchAttempt, /skip_watch "Watch build nebo provisioning selhal"/);
+  assert.match(watchAttempt, /skip_watch "instalace Watch aplikace selhala"/);
+  assert.match(watchAttempt, /skip_watch "instalaci Watch aplikace se nepodařilo ověřit"/);
   assert.match(launcher, /device install app[\s\S]*?--device "\$WATCH_IDENTIFIER"[\s\S]*?"\$WATCH_PRODUCT_PATH"/);
+  assert.match(launcher, /WATCH: přeskočeno – nativní Watch aplikace nebyla obnovena/);
+});
+
+await test('iPhone build install and verification failures remain blocking', async () => {
+  const iphoneRequired = extractBetween('DERIVED_DATA="$TEMP_DIR/DerivedData"', 'NEXT_REFRESH_DATE="$(/bin/date -v+6d');
+  assert.match(iphoneRequired, /fail "Sestavená aplikace nemá platný vývojářský podpis/);
+  assert.match(iphoneRequired, /fail "Instalace na iPhone selhala/);
+  assert.match(iphoneRequired, /fail "Instalace na iPhone proběhla, ale její výsledek se nepodařilo ověřit/);
+  assert.match(iphoneRequired, /fail "Po instalaci nebyl Lázeňský Commander na iPhonu nalezen/);
+});
+
+await test('next refresh is six calendar days after successful iPhone verification', async () => {
+  assert.match(launcher, /NEXT_REFRESH_DATE="\$\(\/bin\/date -v\+6d '\+%d\.%m\.%Y'/);
+  const fixture = new Date(Date.UTC(2026, 11, 29));
+  fixture.setUTCDate(fixture.getUTCDate() + 6);
+  assert.equal(fixture.toISOString().slice(0, 10), '2027-01-04');
+  assert.match(launcher, /DALŠÍ OBNOVA NEJPOZDĚJI: \$NEXT_REFRESH_DATE/);
+});
+
+await test('final summary makes iPhone success independent from Watch status', async () => {
+  assert.match(launcher, /HOTOVO – \$APP_NAME na iPhonu byl obnoven/);
+  assert.match(launcher, /Nainstalovaná větev \+ commit: \$TARGET_BRANCH @ \$GIT_COMMIT_SHORT/);
+  assert.match(launcher, /status "iPhone: OK"/);
+  assert.match(launcher, /WATCH: OK – nativní Watch aplikace byla obnovena/);
 });
 
 const failed = cases.filter(item => !item.ok);
