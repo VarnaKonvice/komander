@@ -50,14 +50,14 @@ jobs:
           fi
           exit "$status"
 
-      - name: Build watchOS app target
+      - name: Build watchOS app scheme
         shell: bash
         run: |
           set -o pipefail
           log_file="${RUNNER_TEMP}/watch-build.log"
           xcodebuild \
             -project native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj \
-            -target LazenskyCommanderWatchApp \
+            -scheme LazenskyCommanderWatchApp \
             -configuration Debug \
             -destination 'generic/platform=watchOS' \
             CODE_SIGNING_ALLOWED=NO \
