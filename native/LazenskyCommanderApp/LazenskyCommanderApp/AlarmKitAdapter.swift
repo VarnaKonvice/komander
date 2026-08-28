@@ -20,10 +20,16 @@ enum AlarmKitAdapterError: LocalizedError {
 
 actor AlarmKitAdapter: AlarmAdapting {
   private static let maximumPreparedProcedureActivities = 3
+  private let procedureLiveActivitiesEnabled: Bool
   private var scheduleContext: Schedule?
+
+  init(procedureLiveActivitiesEnabled: Bool = true) {
+    self.procedureLiveActivitiesEnabled = procedureLiveActivitiesEnabled
+  }
 
   func prepare(schedule: Schedule) async {
     scheduleContext = schedule
+    guard procedureLiveActivitiesEnabled else { return }
     // This projection is deliberately best-effort and independent from AlarmKit safety.
     // A Live Activity failure must never block alarm reconciliation.
     await reconcileProcedureLiveActivities(schedule: schedule)
