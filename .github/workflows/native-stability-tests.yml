@@ -70,3 +70,14 @@ jobs:
               | while IFS= read -r line; do printf '::error::%s\n' "$line"; done
           fi
           exit "$status"
+
+      - name: Upload failed native build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-build-logs
+          path: |
+            ${{ runner.temp }}/iphone-build.log
+            ${{ runner.temp }}/watch-build.log
+          if-no-files-found: error
+          retention-days: 1
