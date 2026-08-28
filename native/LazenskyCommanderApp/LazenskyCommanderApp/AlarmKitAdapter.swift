@@ -1,3 +1,4 @@
+import ActivityKit
 import AlarmKit
 import Foundation
 import SwiftUI
@@ -18,10 +19,14 @@ enum AlarmKitAdapterError: LocalizedError {
 }
 
 actor AlarmKitAdapter: AlarmAdapting {
+  private static let maximumPreparedProcedureActivities = 3
   private var scheduleContext: Schedule?
 
-  func prepare(schedule: Schedule) {
+  func prepare(schedule: Schedule) async {
     scheduleContext = schedule
+    // This projection is deliberately best-effort and independent from AlarmKit safety.
+    // A Live Activity failure must never block alarm reconciliation.
+    await reconcileProcedureLiveActivities(schedule: schedule)
   }
 
   func availability() async -> AlarmKitAvailability {
@@ -114,6 +119,102 @@ actor AlarmKitAdapter: AlarmAdapting {
       }
     }
     return result
+  }
+
+  private func reconcileProcedureLiveActivities(schedule: Schedule, now: Date = Date()) async {
+    guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+
+    let candidates: [(event: ScheduleEvent, startAt: Date, endAt: Date)] = schedule.events.compactMap { event in
+      guard event.kind == .procedure,
+            let startAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.start),
+            let endAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.end),
+            endAt > now
+      else { return nil }
+      return (event: event, startAt: startAt, endAt: endAt)
+    }.sorted {
+      if $0.startAt != $1.startAt { return $0.startAt < $1.startAt }
+      return $0.event.stableId < $1.event.stableId
+    }
+
+    let desired = Array(candidates.prefix(Self.maximumPreparedProcedureActivities))
+    let existing = Activity<CommanderProcedureLiveActivityAttributes>.activities
+
+    for activity in existing {
+      let match = desired.first { item in
+        activity.attributes.stableId == item.event.stableId
+          && activity.attributes.scheduleVersion == schedule.scheduleVersion
+          && activity.attributes.title == item.event.title
+          && activity.attributes.location == item.event.location
+          && abs(activity.attributes.startAt.timeIntervalSince(item.startAt)) <= 1
+          && abs(activity.attributes.endAt.timeIntervalSince(item.endAt)) <= 1
+      }
+      guard match == nil else { continue }
+      let finalContent = ActivityContent(
+        state: CommanderProcedureLiveActivityAttributes.ContentState(projectionRevision: 0),
+        staleDate: now
+      )
+      await activity.end(finalContent, dismissalPolicy: .immediate)
+    }
+
+    let remaining = Activity<CommanderProcedureLiveActivityAttributes>.activities
+    for item in desired {
+      let alreadyPrepared = remaining.contains { activity in
+        activity.attributes.stableId == item.event.stableId
+          && activity.attributes.scheduleVersion == schedule.scheduleVersion
+          && abs(activity.attributes.startAt.timeIntervalSince(item.startAt)) <= 1
+          && abs(activity.attributes.endAt.timeIntervalSince(item.endAt)) <= 1
+      }
+      if alreadyPrepared { continue }
+
+      let iconKey = CommanderVisualAssets.icon(for: item.event)?.key ?? ""
+      let attributes = CommanderProcedureLiveActivityAttributes(
+        stableId: item.event.stableId,
+        scheduleVersion: schedule.scheduleVersion,
+        iconKey: iconKey,
+        title: item.event.title,
+        location: item.event.location,
+        kind: item.event.kind,
+        startAt: item.startAt,
+        endAt: item.endAt
+      )
+      let content = ActivityContent(
+        state: CommanderProcedureLiveActivityAttributes.ContentState(projectionRevision: 0),
+        staleDate: item.endAt,
+        relevanceScore: 1
+      )
+
+      do {
+        if item.startAt <= now {
+          _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+            attributes: attributes,
+            content: content,
+            pushType: nil,
+            style: .standard
+          )
+        } else {
+          let alert = ActivityKit.AlertConfiguration(
+            title: LocalizedStringResource(stringLiteral: "Procedura začíná"),
+            body: LocalizedStringResource(stringLiteral: item.event.title),
+            sound: .default
+          )
+          _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+            attributes: attributes,
+            content: content,
+            pushType: nil,
+            style: .standard,
+            alertConfiguration: alert,
+            start: item.startAt
+          )
+        }
+      } catch {
+        // Alarm reconciliation must remain independent. A later foreground/sync pass retries.
+        continue
+      }
+    }
+
+    // Read after write. Missing activities are left for the next automatic reconciliation pass;
+    // they never downgrade or invalidate the already verified alarm projection.
+    _ = Activity<CommanderProcedureLiveActivityAttributes>.activities
   }
 
   static func map(_ state: AlarmManager.AuthorizationState) -> AlarmAuthorizationStatus {
