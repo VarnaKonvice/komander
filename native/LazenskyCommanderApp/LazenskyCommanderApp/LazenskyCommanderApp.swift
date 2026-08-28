@@ -29,7 +29,7 @@ final class CommanderViewModel: ObservableObject {
 
   init() {
     let configuration = AppConfiguration()
-    let adapter = AlarmKitAdapter()
+    let adapter = AlarmKitAdapter(procedureLiveActivitiesEnabled: configuration.channel == .production)
     let scheduleService = URLSessionScheduleService(configuration: configuration)
     let namespace = configuration.channel.rawValue
     let service = AlarmSyncService(
