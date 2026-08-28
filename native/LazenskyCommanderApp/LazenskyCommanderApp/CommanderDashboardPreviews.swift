@@ -44,6 +44,7 @@ private struct CommanderDashboardPreview: View {
     NavigationStack {
       CommanderDashboardContent(
         schedule: schedule,
+        overrides: LeadTimeOverrides(),
         now: now,
         isSynchronizing: false,
         synchronize: {}
