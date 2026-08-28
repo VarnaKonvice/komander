@@ -20,16 +20,17 @@ enum AlarmKitAdapterError: LocalizedError {
 
 actor AlarmKitAdapter: AlarmAdapting {
   private static let maximumPreparedProcedureActivities = 3
-  private let procedureLiveActivitiesEnabled: Bool
+  private static let e2eOwnershipKey = "lazensky.commander.alarmkitOwned.e2e.v1"
+  private let channel: ScheduleChannel
   private var scheduleContext: Schedule?
 
-  init(procedureLiveActivitiesEnabled: Bool = true) {
-    self.procedureLiveActivitiesEnabled = procedureLiveActivitiesEnabled
+  init(channel: ScheduleChannel = .production) {
+    self.channel = channel
   }
 
   func prepare(schedule: Schedule) async {
     scheduleContext = schedule
-    guard procedureLiveActivitiesEnabled else { return }
+    guard channel == .production else { return }
     // This projection is deliberately best-effort and independent from AlarmKit safety.
     // A Live Activity failure must never block alarm reconciliation.
     await reconcileProcedureLiveActivities(schedule: schedule)
@@ -101,7 +102,9 @@ actor AlarmKitAdapter: AlarmAdapting {
     }
 
     let scheduled = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
-    return scheduled.id.uuidString
+    let platformID = scheduled.id.uuidString
+    rememberE2EOwnership(platformID)
+    return platformID
   }
 
   func cancel(platformAlarmID: String) async throws {
@@ -109,22 +112,47 @@ actor AlarmKitAdapter: AlarmAdapting {
       throw AlarmKitAdapterError.invalidPlatformAlarmID(platformAlarmID)
     }
     try AlarmManager.shared.cancel(id: id)
+    forgetE2EOwnership(platformAlarmID)
   }
 
   func existingPlatformAlarmIDs() async throws -> Set<String>? {
     let alarms = try AlarmManager.shared.alarms
-    return Set(alarms.map { $0.id.uuidString })
+    let allIDs = Set(alarms.map { $0.id.uuidString })
+    guard channel == .e2e else { return allIDs }
+    return allIDs.intersection(e2eOwnedPlatformIDs())
   }
 
   func existingPlatformFixedAlertDates() async throws -> [String: Date]? {
     let alarms = try AlarmManager.shared.alarms
+    let visibleIDs = channel == .e2e ? e2eOwnedPlatformIDs() : nil
     var result: [String: Date] = [:]
     for alarm in alarms {
+      let platformID = alarm.id.uuidString
+      if let visibleIDs, !visibleIDs.contains(platformID) { continue }
       if case .fixed(let date)? = alarm.schedule {
-        result[alarm.id.uuidString] = date
+        result[platformID] = date
       }
     }
     return result
+  }
+
+  private func e2eOwnedPlatformIDs() -> Set<String> {
+    guard channel == .e2e else { return [] }
+    return Set(UserDefaults.standard.stringArray(forKey: Self.e2eOwnershipKey) ?? [])
+  }
+
+  private func rememberE2EOwnership(_ platformAlarmID: String) {
+    guard channel == .e2e else { return }
+    var ids = e2eOwnedPlatformIDs()
+    ids.insert(platformAlarmID)
+    UserDefaults.standard.set(ids.sorted(), forKey: Self.e2eOwnershipKey)
+  }
+
+  private func forgetE2EOwnership(_ platformAlarmID: String) {
+    guard channel == .e2e else { return }
+    var ids = e2eOwnedPlatformIDs()
+    ids.remove(platformAlarmID)
+    UserDefaults.standard.set(ids.sorted(), forKey: Self.e2eOwnershipKey)
   }
 
   private func reconcileProcedureLiveActivities(schedule: Schedule, now: Date = Date()) async {
