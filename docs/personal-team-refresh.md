@@ -1,6 +1,6 @@
 # Obnovení aplikace s Apple Personal Team
 
-Soubor `Obnovit Lázeňský Commander.command` obnoví vývojářský podpis a nainstaluje aktuální lokální verzi aplikace na vlastní iPhone. Používá pouze plný Xcode, Automatic Signing projektu a oficiální Apple nástroj `devicectl`.
+Soubor `Obnovit Lázeňský Commander.command` bezpečně načte aktuální ověřenou verzi větve `lc/stability-pass-v1` z GitHubu, obnoví vývojářský podpis a nainstaluje iPhone aplikaci včetně zabalené Watch aplikace. Používá pouze Git, plný Xcode, Automatic Signing projektu a oficiální Apple nástroj `devicectl`.
 
 ## Běžné obnovení
 
@@ -12,7 +12,9 @@ Soubor `Obnovit Lázeňský Commander.command` obnoví vývojářský podpis a n
 
 Bezplatné vývojářské podepsání přes Apple Personal Team má krátkou platnost, obvykle sedm dní. Obnovení přibližně každých šest dní ponechá rezervu před vypršením instalace.
 
-Launcher nestahuje zdrojový kód, nemění Git větev a neinstaluje automaticky novější verzi aplikace. Vždy zobrazí větev a commit, které jsou právě v lokálním repozitáři. Rozpis se aktualizuje odděleně z canonical `data/schedule.json` na GitHubu; obnovení podpisu tento datový tok nemění.
+Launcher nikdy neinstaluje náhodně checkoutnutou větev. Nejprve ověří, že `origin` ukazuje na `VarnaKonvice/komander` a pracovní strom je zcela čistý. Potom fetchne pouze `lc/stability-pass-v1`, odmítne lokální vlastní nebo odlišné commity, přepne na tuto větev a znovu ověří přesnou shodu s GitHub commitem. Pokud se na GitHubu změnil i samotný obnovovací launcher, pokračuje právě staženou verzí. Nepoužívá `git pull`, merge ani reset.
+
+Rozpis se aktualizuje odděleně z canonical `data/schedule.json` na GitHubu; obnova aplikace tento datový tok ani jeho source-of-truth pravidla nemění.
 
 ## Když se zobrazí CHYBA
 
@@ -20,6 +22,7 @@ Launcher nestahuje zdrojový kód, nemění Git větev a neinstaluje automaticky
 - Odemkni iPhone a případně potvrď `Důvěřovat tomuto počítači`.
 - Ověř, že je na iPhonu zapnutý Režim vývojáře.
 - Zkontroluj internet přes Wi-Fi, hotspot nebo USB tethering.
+- Pokud launcher hlásí neuložené změny nebo odlišné lokální commity, nic nemaž. Repozitář musí nejdřív zkontrolovat vývojář.
 - Pokud selže Apple provisioning, otevři jednou Xcode a zkontroluj, že je v Accounts přihlášený správný Apple účet Personal Team.
 - Technický log je uložen v `~/Library/Logs/LazenskyCommanderRefresh/`.
 
@@ -27,4 +30,4 @@ Launcher aplikaci před instalací neodinstalovává. Standardní upgrade instal
 
 ## Bezpečná kontrola
 
-Servisní režim `--check` provede preflight Macu, Xcode projektu, internetu a jednoho odemčeného fyzického iPhonu. Nic nesestaví, nepodepíše ani nenainstaluje.
+Servisní režim `--check` provede stejnou bezpečnou aktualizaci a kontrolu cílové Git větve a potom preflight Macu, Xcode projektu, internetu a jednoho odemčeného fyzického iPhonu. Nic nesestaví, nepodepíše ani nenainstaluje.

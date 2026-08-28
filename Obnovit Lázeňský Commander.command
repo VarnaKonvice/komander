@@ -7,11 +7,16 @@ umask 077
 APP_NAME="Lázeňský Commander"
 SCHEME="LazenskyCommanderApp"
 CONFIGURATION="Debug"
+TARGET_BRANCH="lc/stability-pass-v1"
+EXPECTED_REPOSITORY="VarnaKonvice/komander"
+LAUNCHER_FILENAME="Obnovit Lázeňský Commander.command"
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
 REPO_ROOT="$SCRIPT_DIR"
 PROJECT_PATH="$REPO_ROOT/native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj"
 MODE="refresh"
 TEMP_DIR=""
+RELAUNCH_COUNT="${LC_REFRESH_RELAUNCH_COUNT:-0}"
+START_LAUNCHER_HASH="$(/usr/bin/shasum -a 256 "$0" 2>/dev/null | /usr/bin/awk '{print $1}')"
 
 if [[ $# -gt 1 ]]; then
   printf 'Neplatné parametry. Použij pouze --check.\n'
@@ -91,10 +96,6 @@ if [[ "$(/usr/bin/uname -s 2>/dev/null)" != "Darwin" ]]; then
   fail "Tento spouštěč funguje pouze na Macu."
 fi
 
-if [[ ! -d "$PROJECT_PATH" ]]; then
-  fail "Spouštěč není u kompletního projektu Lázeňského Commanderu."
-fi
-
 if [[ ! -x /usr/bin/xcode-select || ! -x /usr/bin/xcrun || ! -x /usr/bin/xcodebuild ]]; then
   fail "Na Macu chybí plný Xcode. Nainstaluj nebo dokonči první spuštění Xcode."
 fi
@@ -116,6 +117,88 @@ fi
 DEVICECTL="$(/usr/bin/xcrun --find devicectl 2>/dev/null || true)"
 if [[ -z "$DEVICECTL" || ! -x "$DEVICECTL" ]]; then
   fail "Xcode neobsahuje nástroj pro bezpečnou instalaci na iPhone."
+fi
+
+if [[ ! -x /usr/bin/git || ! -d "$REPO_ROOT/.git" && ! -f "$REPO_ROOT/.git" ]]; then
+  fail "Spouštěč není v platném Git repozitáři Lázeňského Commanderu."
+fi
+
+ORIGIN_URL="$(/usr/bin/git -C "$REPO_ROOT" remote get-url origin 2>/dev/null || true)"
+case "$ORIGIN_URL" in
+  "https://github.com/$EXPECTED_REPOSITORY"|"https://github.com/$EXPECTED_REPOSITORY.git"|"git@github.com:$EXPECTED_REPOSITORY.git"|"ssh://git@github.com/$EXPECTED_REPOSITORY.git") ;;
+  *) fail "Git origin neukazuje na ověřený repozitář VarnaKonvice/komander. Nic nebylo změněno ani nainstalováno." ;;
+esac
+
+INITIAL_DIRTY="$(/usr/bin/git -C "$REPO_ROOT" status --porcelain=v1 --untracked-files=all 2>> "$LOG_FILE" || true)"
+if [[ -n "$INITIAL_DIRTY" ]]; then
+  fail "Pracovní složka obsahuje neuložené změny. Obnova je z bezpečnostních důvodů nepřepíše."
+fi
+
+status "Kontroluji aktuální ověřenou verzi $TARGET_BRANCH na GitHubu..."
+if ! /usr/bin/git -C "$REPO_ROOT" fetch --quiet --no-tags origin \
+  "+refs/heads/$TARGET_BRANCH:refs/remotes/origin/$TARGET_BRANCH" >> "$LOG_FILE" 2>&1; then
+  fail "Aktuální verzi se nepodařilo stáhnout z GitHubu. Zkontroluj internet a spusť obnovu znovu."
+fi
+
+REMOTE_COMMIT="$(/usr/bin/git -C "$REPO_ROOT" rev-parse --verify "refs/remotes/origin/$TARGET_BRANCH^{commit}" 2>/dev/null || true)"
+if [[ -z "$REMOTE_COMMIT" ]]; then
+  fail "Na GitHubu chybí cílová větev $TARGET_BRANCH. Nic nebylo nainstalováno."
+fi
+
+LOCAL_COMMIT="$(/usr/bin/git -C "$REPO_ROOT" rev-parse --verify "refs/heads/$TARGET_BRANCH^{commit}" 2>/dev/null || true)"
+if [[ -n "$LOCAL_COMMIT" && "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]]; then
+  if ! /usr/bin/git -C "$REPO_ROOT" merge-base --is-ancestor "$LOCAL_COMMIT" "$REMOTE_COMMIT"; then
+    fail "Lokální cílová větev obsahuje vlastní nebo odlišné commity. Obnova je nepřepíše; repozitář musí zkontrolovat vývojář."
+  fi
+fi
+
+CURRENT_BRANCH="$(/usr/bin/git -C "$REPO_ROOT" branch --show-current 2>/dev/null || true)"
+if [[ -z "$LOCAL_COMMIT" ]]; then
+  if ! /usr/bin/git -C "$REPO_ROOT" switch --quiet --create "$TARGET_BRANCH" --track "origin/$TARGET_BRANCH" >> "$LOG_FILE" 2>&1; then
+    fail "Nepodařilo se přepnout na ověřenou cílovou větev. Nic nebylo nainstalováno."
+  fi
+else
+  if [[ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]]; then
+    if [[ "$CURRENT_BRANCH" == "$TARGET_BRANCH" ]]; then
+      if ! /usr/bin/git -C "$REPO_ROOT" switch --quiet --detach >> "$LOG_FILE" 2>&1; then
+        fail "Příprava bezpečné aktualizace cílové větve selhala."
+      fi
+    fi
+    if ! /usr/bin/git -C "$REPO_ROOT" branch --force "$TARGET_BRANCH" "$REMOTE_COMMIT" >> "$LOG_FILE" 2>&1; then
+      fail "Cílovou větev nelze bezpečně posunout na aktuální GitHub verzi."
+    fi
+  fi
+  if ! /usr/bin/git -C "$REPO_ROOT" switch --quiet "$TARGET_BRANCH" >> "$LOG_FILE" 2>&1; then
+    fail "Nepodařilo se přepnout na ověřenou cílovou větev. Nic nebylo nainstalováno."
+  fi
+fi
+
+GIT_BRANCH="$(/usr/bin/git -C "$REPO_ROOT" branch --show-current 2>/dev/null || true)"
+GIT_COMMIT="$(/usr/bin/git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || true)"
+FINAL_DIRTY="$(/usr/bin/git -C "$REPO_ROOT" status --porcelain=v1 --untracked-files=all 2>> "$LOG_FILE" || true)"
+if [[ "$GIT_BRANCH" != "$TARGET_BRANCH" || "$GIT_COMMIT" != "$REMOTE_COMMIT" || -n "$FINAL_DIRTY" ]]; then
+  fail "Po aktualizaci nelze potvrdit čistou a přesnou GitHub verzi $TARGET_BRANCH. Nic nebylo nainstalováno."
+fi
+
+GIT_COMMIT_SHORT="$(/usr/bin/git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || true)"
+status "Ověřená zdrojová verze: $TARGET_BRANCH @ $GIT_COMMIT_SHORT"
+
+TARGET_LAUNCHER="$REPO_ROOT/$LAUNCHER_FILENAME"
+TARGET_LAUNCHER_HASH="$(/usr/bin/shasum -a 256 "$TARGET_LAUNCHER" 2>/dev/null | /usr/bin/awk '{print $1}')"
+if [[ -z "$START_LAUNCHER_HASH" || -z "$TARGET_LAUNCHER_HASH" || ! -x "$TARGET_LAUNCHER" ]]; then
+  fail "Cílová větev neobsahuje platný spouštěč obnovy. Nic nebylo nainstalováno."
+fi
+if [[ "$START_LAUNCHER_HASH" != "$TARGET_LAUNCHER_HASH" ]]; then
+  if [[ "$RELAUNCH_COUNT" -ge 1 ]]; then
+    fail "Cílová větev se během obnovy znovu změnila. Spusť obnovu ještě jednou."
+  fi
+  status "Spouštím právě staženou verzi obnovovacího nástroje..."
+  LC_REFRESH_RELAUNCH_COUNT=1 /usr/bin/env LC_REFRESH_NO_DIALOG="${LC_REFRESH_NO_DIALOG:-0}" "$TARGET_LAUNCHER" "$@"
+  exit $?
+fi
+
+if [[ ! -d "$PROJECT_PATH" ]]; then
+  fail "Cílová větev neobsahuje kompletní Xcode projekt Lázeňského Commanderu."
 fi
 
 TEMP_ROOT="${TMPDIR:-/tmp}"
@@ -142,20 +225,6 @@ fi
 if [[ "$SCHEME_FOUND" -ne 1 ]]; then
   fail "Projekt neobsahuje očekávané schéma LazenskyCommanderApp."
 fi
-
-if [[ ! -x /usr/bin/git || ! -d "$REPO_ROOT/.git" && ! -f "$REPO_ROOT/.git" ]]; then
-  fail "Nelze určit ověřenou verzi zdrojového kódu."
-fi
-
-GIT_BRANCH="$(/usr/bin/git -C "$REPO_ROOT" branch --show-current 2>/dev/null || true)"
-GIT_COMMIT="$(/usr/bin/git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || true)"
-if [[ -z "$GIT_COMMIT" ]]; then
-  fail "Nelze určit commit, ze kterého se má aplikace nainstalovat."
-fi
-if [[ -z "$GIT_BRANCH" ]]; then
-  GIT_BRANCH="detached HEAD"
-fi
-status "Instalovaná verze: $GIT_BRANCH @ $GIT_COMMIT"
 
 HTTP_CODE="$(/usr/bin/curl --head --location --silent --show-error --max-time 8 --output /dev/null --write-out '%{http_code}' https://developer.apple.com 2>> "$LOG_FILE" || true)"
 if [[ -z "$HTTP_CODE" || "$HTTP_CODE" == "000" ]]; then
@@ -294,9 +363,17 @@ APP_PATH="$DERIVED_DATA/Build/Products/$CONFIGURATION-iphoneos/LazenskyCommander
 if [[ ! -d "$APP_PATH" || ! -f "$APP_PATH/embedded.mobileprovision" ]]; then
   fail "Sestavená aplikace nemá platný vývojářský podpis."
 fi
+WATCH_APP_PATH="$APP_PATH/Watch/LazenskyCommanderWatchApp.app"
+if [[ ! -d "$WATCH_APP_PATH" ]]; then
+  fail "Sestavení neobsahuje zabalenou aplikaci pro Apple Watch. Nic nebylo nainstalováno."
+fi
 if ! /usr/bin/codesign --verify --deep --strict "$APP_PATH" >> "$LOG_FILE" 2>&1; then
   fail "Kontrola podpisu sestavené aplikace selhala."
 fi
+
+APP_VERSION="$(plist_raw CFBundleShortVersionString "$APP_PATH/Info.plist")"
+APP_BUILD="$(plist_raw CFBundleVersion "$APP_PATH/Info.plist")"
+status "Ověřená aplikace: verze ${APP_VERSION:-neuvedena} (${APP_BUILD:-bez čísla}), včetně Apple Watch."
 
 INSTALL_JSON="$TEMP_DIR/install.json"
 status "Instaluji aktualizovanou aplikaci na iPhone..."
@@ -317,6 +394,6 @@ fi
 log "Install result: success"
 
 status "HOTOVO – $APP_NAME byl obnoven."
-status "Zdrojová verze zůstala beze změny: $GIT_BRANCH @ $GIT_COMMIT"
+status "Nainstalovaná zdrojová verze: $TARGET_BRANCH @ $GIT_COMMIT_SHORT"
 status "Technický log: $LOG_FILE"
 show_dialog "1" "HOTOVO – Lázeňský Commander byl obnoven."
