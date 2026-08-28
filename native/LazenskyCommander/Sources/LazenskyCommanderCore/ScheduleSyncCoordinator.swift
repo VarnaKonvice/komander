@@ -65,6 +65,7 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     let summary = try await alarmSyncService.synchronizeValidated(
       schedule: schedule,
       overrides: effectiveOverrides,
+      projectionRevision: projectionRevision,
       now: now
     )
     let watchSnapshot = WatchScheduleSnapshot(

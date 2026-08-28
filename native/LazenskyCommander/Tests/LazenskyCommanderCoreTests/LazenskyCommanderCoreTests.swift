@@ -333,16 +333,36 @@ import Testing
   let alarmSync = AlarmSyncService(scheduleService: source, store: alarmStore, adapter: adapter)
   let coordinator = CommanderScheduleSyncCoordinator(scheduleService: source, alarmSyncService: alarmSync, scheduleStore: scheduleStore, watchDelivery: watchDelivery)
 
-  let result = try await coordinator.synchronize(now: Date(timeIntervalSince1970: 1))
+  let result = try await coordinator.synchronize(
+    projectionRevision: 7,
+    now: Date(timeIntervalSince1970: 1)
+  )
 
   #expect(await source.fetchCount() == 1)
   #expect(await adapter.preparedSchedule() == schedule)
+  #expect(await adapter.preparedProjectionRevision() == 7)
   #expect(await scheduleStore.load() == schedule)
   #expect(result.schedule == schedule)
   #expect(result.watchSnapshot.schedule == schedule)
   #expect(result.watchDeliveryStatus == .sent)
   #expect(await watchDelivery.receivedSnapshot() == result.watchSnapshot)
   #expect(result.alarmSummary.appliedCreate == schedule.events.count)
+}
+
+@Test func synchronizationQueueReplaysChangesThatArriveDuringCurrentPass() {
+  var queue = CommanderSynchronizationRequestQueue()
+
+  let first = queue.submit(maxAttempts: 2, automatic: true)
+  #expect(first == CommanderSynchronizationRequest(maxAttempts: 2, automatic: true))
+  #expect(queue.submit(maxAttempts: 3, automatic: false) == nil)
+  #expect(queue.submit(maxAttempts: 1, automatic: true) == nil)
+
+  let replay = queue.completeCurrentAndTakeNext()
+  #expect(replay == CommanderSynchronizationRequest(maxAttempts: 3, automatic: false))
+  #expect(queue.completeCurrentAndTakeNext() == nil)
+
+  let later = queue.submit(maxAttempts: 1, automatic: true)
+  #expect(later == CommanderSynchronizationRequest(maxAttempts: 1, automatic: true))
 }
 
 @Test func failedAlarmProjectionKeepsNewCanonicalScheduleAccepted() async throws {
@@ -1028,6 +1048,7 @@ private actor RecordingAlarmAdapter: AlarmAdapting {
   private var scheduled: [NativeAlarm] = []
   private var cancelled = 0
   private var prepared: Schedule?
+  private var preparedRevision: Int?
   private let authorization: AlarmAuthorizationStatus
   private let existingIDs: Set<String>?
 
@@ -1036,7 +1057,10 @@ private actor RecordingAlarmAdapter: AlarmAdapting {
     self.existingIDs = existingIDs
   }
 
-  func prepare(schedule: Schedule) { prepared = schedule }
+  func prepare(schedule: Schedule, projectionRevision: Int) {
+    prepared = schedule
+    preparedRevision = projectionRevision
+  }
   func availability() -> AlarmKitAvailability { .available }
   func authorizationStatus() -> AlarmAuthorizationStatus { authorization }
   func requestAuthorization() throws { if authorization != .authorized { throw AlarmAdapterError.authorizationDenied } }
@@ -1049,6 +1073,7 @@ private actor RecordingAlarmAdapter: AlarmAdapting {
   func scheduledStableIds() -> [String] { scheduled.map(\.stableId) }
   func cancelledCount() -> Int { cancelled }
   func preparedSchedule() -> Schedule? { prepared }
+  func preparedProjectionRevision() -> Int? { preparedRevision }
   func existingPlatformAlarmIDs() async throws -> Set<String>? { existingIDs }
 }
 

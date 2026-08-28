@@ -27,6 +27,7 @@ public enum AlarmAdapterError: LocalizedError, Equatable, Sendable {
 
 public protocol AlarmAdapting: Sendable {
   func prepare(schedule: Schedule) async
+  func prepare(schedule: Schedule, projectionRevision: Int) async
   func availability() async -> AlarmKitAvailability
   func authorizationStatus() async -> AlarmAuthorizationStatus
   func requestAuthorization() async throws
@@ -41,6 +42,9 @@ public protocol AlarmAdapting: Sendable {
 
 public extension AlarmAdapting {
   func prepare(schedule: Schedule) async {}
+  func prepare(schedule: Schedule, projectionRevision: Int) async {
+    await prepare(schedule: schedule)
+  }
 
   /// Returns nil when the backing platform cannot enumerate alarms.
   func existingPlatformAlarmIDs() async throws -> Set<String>? { nil }

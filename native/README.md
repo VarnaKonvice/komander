@@ -29,6 +29,8 @@ The iPhone and Watch stores are validated local caches, not alternative schedule
 
 `NativeAlarmContract` is the single source of effective lead time and `leaveAt` for native alarm, live-state, and Watch projections. AlarmKit reconciliation identifies events by `stableId`; it stores the local `stableId -> AlarmKit Alarm.ID` mapping outside the canonical schedule.
 
+Device-local lead-time edits carry a monotonically increasing `projectionRevision`. If another edit arrives while platform synchronization is in progress, Commander coalesces it into a required follow-up pass instead of dropping it. The latest revision is passed to AlarmKit preparation, procedure Live Activity content, and the exact Watch projection identity.
+
 For each sync, `AlarmSyncService` derives the AlarmKit desired set by retaining only canonical alarms with `leaveAt > now`. An alarm exactly at `now` is not newly scheduled. Past managed alarms still present in AlarmKit are cancelled, and stale mappings absent from the platform are pruned. This filter does not modify the complete `Schedule` used by the Live Card or Watch snapshot.
 
 Each AlarmKit alarm fires at canonical `leaveAt`. Its pre-alert starts at the previous event's `endAt` when that time is before `leaveAt`, otherwise no more than 30 minutes before `leaveAt`. `CommanderAlarmMetadata` is carried by `AlarmAttributes<CommanderAlarmMetadata>` into the Live Activity extension. The Lock Screen and Dynamic Island render AlarmKit countdown, paused, and alert states with system date/timer rendering and no polling timer.

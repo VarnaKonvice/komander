@@ -42,9 +42,18 @@ public struct AlarmSyncService: Sendable {
     await adapter.authorizationStatus()
   }
 
-  public func synchronize(overrides: LeadTimeOverrides? = nil, now: Date = Date()) async throws -> AlarmSyncSummary {
+  public func synchronize(
+    overrides: LeadTimeOverrides? = nil,
+    projectionRevision: Int = 0,
+    now: Date = Date()
+  ) async throws -> AlarmSyncSummary {
     let schedule = try await scheduleService.fetchSchedule()
-    let result = try await synchronizeValidated(schedule: schedule, overrides: overrides, now: now)
+    let result = try await synchronizeValidated(
+      schedule: schedule,
+      overrides: overrides,
+      projectionRevision: projectionRevision,
+      now: now
+    )
     // Preserve the standalone service API's historical permission signal. The Commander
     // coordinator intentionally uses synchronizeValidated so a denied AlarmKit projection
     // never blocks acceptance of the canonical schedule or the fallback path.
@@ -54,19 +63,47 @@ public struct AlarmSyncService: Sendable {
     return result
   }
 
-  public func synchronize(schedule: Schedule, overrides: LeadTimeOverrides? = nil, now: Date = Date()) async throws -> AlarmSyncSummary {
+  public func synchronize(
+    schedule: Schedule,
+    overrides: LeadTimeOverrides? = nil,
+    projectionRevision: Int = 0,
+    now: Date = Date()
+  ) async throws -> AlarmSyncSummary {
     let payload = try NativeAlarmContract.payload(schedule: schedule, overrides: overrides)
-    return try await synchronize(schedule: schedule, payload: payload, now: now)
+    return try await synchronize(
+      schedule: schedule,
+      payload: payload,
+      projectionRevision: projectionRevision,
+      now: now
+    )
   }
 
-  func synchronizeValidated(schedule: Schedule, overrides: LeadTimeOverrides? = nil, now: Date = Date()) async throws -> AlarmSyncSummary {
+  func synchronizeValidated(
+    schedule: Schedule,
+    overrides: LeadTimeOverrides? = nil,
+    projectionRevision: Int = 0,
+    now: Date = Date()
+  ) async throws -> AlarmSyncSummary {
     let payload = try NativeAlarmContract.payloadValidated(schedule: schedule, overrides: overrides)
-    return try await synchronize(schedule: schedule, payload: payload, now: now)
+    return try await synchronize(
+      schedule: schedule,
+      payload: payload,
+      projectionRevision: projectionRevision,
+      now: now
+    )
   }
 
-  private func synchronize(schedule: Schedule, payload: NativeAlarmPayload, now: Date) async throws -> AlarmSyncSummary {
+  private func synchronize(
+    schedule: Schedule,
+    payload: NativeAlarmPayload,
+    projectionRevision: Int,
+    now: Date
+  ) async throws -> AlarmSyncSummary {
     let desiredPayload = try desiredPayload(from: payload, now: now)
-    await adapter.prepare(schedule: schedule)
+    await adapter.prepare(
+      schedule: schedule,
+      projectionRevision: max(0, projectionRevision)
+    )
     var state = try await store.load()
 
     let availability = await adapter.availability()

@@ -32,12 +32,15 @@ actor AlarmKitAdapter: AlarmAdapting {
     self.channel = procedureLiveActivitiesEnabled ? .production : .e2e
   }
 
-  func prepare(schedule: Schedule) async {
+  func prepare(schedule: Schedule, projectionRevision: Int) async {
     scheduleContext = schedule
     guard channel == .production else { return }
     // This projection is deliberately best-effort and independent from AlarmKit safety.
     // A Live Activity failure must never block alarm reconciliation.
-    await reconcileProcedureLiveActivities(schedule: schedule)
+    await reconcileProcedureLiveActivities(
+      schedule: schedule,
+      projectionRevision: max(0, projectionRevision)
+    )
   }
 
   func availability() async -> AlarmKitAvailability {
@@ -159,7 +162,11 @@ actor AlarmKitAdapter: AlarmAdapting {
     UserDefaults.standard.set(ids.sorted(), forKey: Self.e2eOwnershipKey)
   }
 
-  private func reconcileProcedureLiveActivities(schedule: Schedule, now: Date = Date()) async {
+  private func reconcileProcedureLiveActivities(
+    schedule: Schedule,
+    projectionRevision: Int,
+    now: Date = Date()
+  ) async {
     guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
     let candidates: [(event: ScheduleEvent, startAt: Date, endAt: Date)] = schedule.events.compactMap { event in
@@ -186,9 +193,21 @@ actor AlarmKitAdapter: AlarmAdapting {
           && abs(activity.attributes.startAt.timeIntervalSince(item.startAt)) <= 1
           && abs(activity.attributes.endAt.timeIntervalSince(item.endAt)) <= 1
       }
-      guard match == nil else { continue }
+      if let match {
+        let updatedContent = ActivityContent(
+          state: CommanderProcedureLiveActivityAttributes.ContentState(
+            projectionRevision: projectionRevision
+          ),
+          staleDate: match.endAt,
+          relevanceScore: 1
+        )
+        await activity.update(updatedContent)
+        continue
+      }
       let finalContent = ActivityContent(
-        state: CommanderProcedureLiveActivityAttributes.ContentState(projectionRevision: 0),
+        state: CommanderProcedureLiveActivityAttributes.ContentState(
+          projectionRevision: projectionRevision
+        ),
         staleDate: now
       )
       await activity.end(finalContent, dismissalPolicy: .immediate)
@@ -216,7 +235,9 @@ actor AlarmKitAdapter: AlarmAdapting {
         endAt: item.endAt
       )
       let content = ActivityContent(
-        state: CommanderProcedureLiveActivityAttributes.ContentState(projectionRevision: 0),
+        state: CommanderProcedureLiveActivityAttributes.ContentState(
+          projectionRevision: projectionRevision
+        ),
         staleDate: item.endAt,
         relevanceScore: 1
       )

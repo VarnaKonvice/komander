@@ -26,6 +26,7 @@ final class CommanderViewModel: ObservableObject {
   private let channel: ScheduleChannel
   private var lastAutomaticAttempt: Date?
   private var delayedRecoveryTask: Task<Void, Never>?
+  private var synchronizationRequests = CommanderSynchronizationRequestQueue()
 
   init() {
     let configuration = AppConfiguration()
@@ -201,12 +202,30 @@ final class CommanderViewModel: ObservableObject {
   }
 
   private func synchronizeWithRecovery(maxAttempts: Int, automatic: Bool) async {
-    guard !isSynchronizing else { return }
-    if automatic { lastAutomaticAttempt = Date() }
+    guard var request = synchronizationRequests.submit(
+      maxAttempts: maxAttempts,
+      automatic: automatic
+    ) else { return }
+
     isSynchronizing = true
+    defer { isSynchronizing = false }
+
+    while true {
+      await performSynchronizationWithRecovery(
+        maxAttempts: request.maxAttempts,
+        automatic: request.automatic
+      )
+      guard let next = synchronizationRequests.completeCurrentAndTakeNext() else {
+        return
+      }
+      request = next
+    }
+  }
+
+  private func performSynchronizationWithRecovery(maxAttempts: Int, automatic: Bool) async {
+    if automatic { lastAutomaticAttempt = Date() }
     delayedRecoveryTask?.cancel()
     delayedRecoveryTask = nil
-    defer { isSynchronizing = false }
 
     var alarmProjectionFailed = false
     var shouldRetryLater = false
