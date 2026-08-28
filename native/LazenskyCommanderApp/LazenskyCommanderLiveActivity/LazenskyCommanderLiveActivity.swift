@@ -76,7 +76,7 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
           VStack(alignment: .leading, spacing: 2) {
             Text(context.isStale ? "Dokončeno" : "Právě probíhá")
               .font(.caption.weight(.semibold))
-              .foregroundStyle(context.isStale ? .secondary : .teal)
+              .foregroundStyle(context.isStale ? Color.secondary : Color.teal)
             Text(context.attributes.title)
               .font(.headline)
               .lineLimit(1)
@@ -137,7 +137,7 @@ private struct CommanderProcedureLockScreenView: View {
       VStack(alignment: .leading, spacing: 3) {
         Text(context.isStale ? "Dokončeno" : "Právě probíhá")
           .font(.caption.weight(.semibold))
-          .foregroundStyle(context.isStale ? .secondary : .teal)
+          .foregroundStyle(context.isStale ? Color.secondary : Color.teal)
         Text(context.attributes.title)
           .font(.headline)
           .lineLimit(2)
