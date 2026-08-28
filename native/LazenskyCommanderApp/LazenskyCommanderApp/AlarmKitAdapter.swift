@@ -24,8 +24,12 @@ actor AlarmKitAdapter: AlarmAdapting {
   private let channel: ScheduleChannel
   private var scheduleContext: Schedule?
 
-  init(channel: ScheduleChannel = .production) {
+  init(channel: ScheduleChannel) {
     self.channel = channel
+  }
+
+  init(procedureLiveActivitiesEnabled: Bool = true) {
+    self.channel = procedureLiveActivitiesEnabled ? .production : .e2e
   }
 
   func prepare(schedule: Schedule) async {
