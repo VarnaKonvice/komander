@@ -6,6 +6,8 @@ umask 077
 
 APP_NAME="Lázeňský Commander"
 SCHEME="LazenskyCommanderApp"
+WATCH_SCHEME="LazenskyCommanderWatchApp"
+WATCH_BUNDLE_ID="com.varnakonvice.lazenskycommander.watchkitapp"
 CONFIGURATION="Debug"
 TARGET_BRANCH="lc/stability-pass-v1"
 EXPECTED_REPOSITORY="VarnaKonvice/komander"
@@ -214,16 +216,19 @@ fi
 
 SCHEME_COUNT="$(plist_raw project.schemes "$SCHEMES_JSON")"
 SCHEME_FOUND=0
+WATCH_SCHEME_FOUND=0
 if [[ "$SCHEME_COUNT" =~ ^[0-9]+$ ]]; then
   for ((index = 0; index < SCHEME_COUNT; index++)); do
-    if [[ "$(plist_raw "project.schemes.$index" "$SCHEMES_JSON")" == "$SCHEME" ]]; then
-      SCHEME_FOUND=1
-      break
-    fi
+    scheme_name="$(plist_raw "project.schemes.$index" "$SCHEMES_JSON")"
+    [[ "$scheme_name" == "$SCHEME" ]] && SCHEME_FOUND=1
+    [[ "$scheme_name" == "$WATCH_SCHEME" ]] && WATCH_SCHEME_FOUND=1
   done
 fi
 if [[ "$SCHEME_FOUND" -ne 1 ]]; then
-  fail "Projekt neobsahuje očekávané schéma LazenskyCommanderApp."
+  fail "Projekt neobsahuje sdílené schéma LazenskyCommanderApp."
+fi
+if [[ "$WATCH_SCHEME_FOUND" -ne 1 ]]; then
+  fail "Projekt neobsahuje sdílené schéma LazenskyCommanderWatchApp. Nic nebylo nainstalováno."
 fi
 
 HTTP_CODE="$(/usr/bin/curl --head --location --silent --show-error --max-time 8 --output /dev/null --write-out '%{http_code}' https://developer.apple.com 2>> "$LOG_FILE" || true)"
@@ -252,52 +257,97 @@ DEVICE_NAME=""
 DEVICE_MODEL=""
 DEVICE_OS=""
 
+WATCH_SEEN=0
+WATCH_UNPAIRED_SEEN=0
+WATCH_DEV_MODE_DISABLED_SEEN=0
+WATCH_LOCKED_SEEN=0
+WATCH_UNREACHABLE_SEEN=0
+WATCH_READY_COUNT=0
+WATCH_IDENTIFIER=""
+WATCH_UDID=""
+WATCH_NAME=""
+WATCH_MODEL=""
+WATCH_OS=""
+
 for ((index = 0; index < DEVICE_COUNT; index++)); do
   prefix="result.devices.$index"
   platform="$(plist_raw "$prefix.hardwareProperties.platform" "$DEVICES_JSON")"
   reality="$(plist_raw "$prefix.hardwareProperties.reality" "$DEVICES_JSON")"
   device_type="$(plist_raw "$prefix.hardwareProperties.deviceType" "$DEVICES_JSON")"
-  if [[ "$platform" != "iOS" || "$reality" != "physical" || "$device_type" != "iPhone" ]]; then
+  if [[ "$reality" != "physical" ]]; then
     continue
   fi
 
-  IPHONE_SEEN=$((IPHONE_SEEN + 1))
   pairing_state="$(plist_raw "$prefix.connectionProperties.pairingState" "$DEVICES_JSON")"
-  if [[ "$pairing_state" != "paired" ]]; then
-    UNPAIRED_SEEN=1
-    continue
-  fi
-
   developer_mode="$(plist_raw "$prefix.deviceProperties.developerModeStatus" "$DEVICES_JSON")"
-  if [[ "$developer_mode" != "enabled" ]]; then
-    DEV_MODE_DISABLED_SEEN=1
-    continue
-  fi
-
   identifier="$(plist_raw "$prefix.identifier" "$DEVICES_JSON")"
   udid="$(plist_raw "$prefix.hardwareProperties.udid" "$DEVICES_JSON")"
-  if [[ -z "$identifier" || -z "$udid" ]]; then
-    continue
-  fi
 
-  LOCK_JSON="$TEMP_DIR/lock-$index.json"
-  if ! "$DEVICECTL" device info lockState --device "$identifier" --quiet --timeout 15 --json-output "$LOCK_JSON" >> "$LOG_FILE" 2>&1; then
-    continue
-  fi
+  if [[ "$platform" == "iOS" && "$device_type" == "iPhone" ]]; then
+    IPHONE_SEEN=$((IPHONE_SEEN + 1))
+    if [[ "$pairing_state" != "paired" ]]; then
+      UNPAIRED_SEEN=1
+      continue
+    fi
+    if [[ "$developer_mode" != "enabled" ]]; then
+      DEV_MODE_DISABLED_SEEN=1
+      continue
+    fi
+    if [[ -z "$identifier" || -z "$udid" ]]; then
+      continue
+    fi
 
-  passcode_required="$(plist_raw result.passcodeRequired "$LOCK_JSON")"
-  unlocked_since_boot="$(plist_raw result.unlockedSinceBoot "$LOCK_JSON")"
-  if [[ "$passcode_required" != "false" || "$unlocked_since_boot" != "true" ]]; then
-    LOCKED_SEEN=1
-    continue
-  fi
+    LOCK_JSON="$TEMP_DIR/iphone-lock-$index.json"
+    if ! "$DEVICECTL" device info lockState --device "$identifier" --quiet --timeout 15 --json-output "$LOCK_JSON" >> "$LOG_FILE" 2>&1; then
+      continue
+    fi
+    passcode_required="$(plist_raw result.passcodeRequired "$LOCK_JSON")"
+    unlocked_since_boot="$(plist_raw result.unlockedSinceBoot "$LOCK_JSON")"
+    if [[ "$passcode_required" != "false" || "$unlocked_since_boot" != "true" ]]; then
+      LOCKED_SEEN=1
+      continue
+    fi
 
-  READY_COUNT=$((READY_COUNT + 1))
-  DEVICE_IDENTIFIER="$identifier"
-  DEVICE_UDID="$udid"
-  DEVICE_NAME="$(plist_raw "$prefix.deviceProperties.name" "$DEVICES_JSON")"
-  DEVICE_MODEL="$(plist_raw "$prefix.hardwareProperties.marketingName" "$DEVICES_JSON")"
-  DEVICE_OS="$(plist_raw "$prefix.deviceProperties.osVersionNumber" "$DEVICES_JSON")"
+    READY_COUNT=$((READY_COUNT + 1))
+    DEVICE_IDENTIFIER="$identifier"
+    DEVICE_UDID="$udid"
+    DEVICE_NAME="$(plist_raw "$prefix.deviceProperties.name" "$DEVICES_JSON")"
+    DEVICE_MODEL="$(plist_raw "$prefix.hardwareProperties.marketingName" "$DEVICES_JSON")"
+    DEVICE_OS="$(plist_raw "$prefix.deviceProperties.osVersionNumber" "$DEVICES_JSON")"
+  elif [[ "$platform" == "watchOS" && "$device_type" == "appleWatch" ]]; then
+    WATCH_SEEN=$((WATCH_SEEN + 1))
+    if [[ "$pairing_state" != "paired" ]]; then
+      WATCH_UNPAIRED_SEEN=1
+      continue
+    fi
+    if [[ "$developer_mode" != "enabled" ]]; then
+      WATCH_DEV_MODE_DISABLED_SEEN=1
+      continue
+    fi
+    if [[ -z "$identifier" || -z "$udid" ]]; then
+      WATCH_UNREACHABLE_SEEN=1
+      continue
+    fi
+
+    WATCH_LOCK_JSON="$TEMP_DIR/watch-lock-$index.json"
+    if ! "$DEVICECTL" device info lockState --device "$identifier" --quiet --timeout 15 --json-output "$WATCH_LOCK_JSON" >> "$LOG_FILE" 2>&1; then
+      WATCH_UNREACHABLE_SEEN=1
+      continue
+    fi
+    watch_passcode_required="$(plist_raw result.passcodeRequired "$WATCH_LOCK_JSON")"
+    watch_unlocked_since_boot="$(plist_raw result.unlockedSinceBoot "$WATCH_LOCK_JSON")"
+    if [[ "$watch_passcode_required" != "false" || "$watch_unlocked_since_boot" != "true" ]]; then
+      WATCH_LOCKED_SEEN=1
+      continue
+    fi
+
+    WATCH_READY_COUNT=$((WATCH_READY_COUNT + 1))
+    WATCH_IDENTIFIER="$identifier"
+    WATCH_UDID="$udid"
+    WATCH_NAME="$(plist_raw "$prefix.deviceProperties.name" "$DEVICES_JSON")"
+    WATCH_MODEL="$(plist_raw "$prefix.hardwareProperties.marketingName" "$DEVICES_JSON")"
+    WATCH_OS="$(plist_raw "$prefix.deviceProperties.osVersionNumber" "$DEVICES_JSON")"
+  fi
 done
 
 if [[ "$READY_COUNT" -eq 0 ]]; then
@@ -320,6 +370,28 @@ fi
 
 status "Nalezen iPhone: ${DEVICE_NAME:-iPhone} (${DEVICE_MODEL:-model neuveden}, iOS ${DEVICE_OS:-neuvedeno})"
 
+if [[ "$WATCH_READY_COUNT" -eq 0 ]]; then
+  if [[ "$WATCH_SEEN" -eq 0 ]]; then
+    fail "Xcode nevidí žádné fyzické Apple Watch. Nech hodinky poblíž odemčeného iPhonu a spusť obnovu znovu."
+  elif [[ "$WATCH_UNPAIRED_SEEN" -eq 1 ]]; then
+    fail "Apple Watch nejsou pro tento Mac spárované a důvěryhodné. Otevři jednou Xcode se spárovaným iPhonem."
+  elif [[ "$WATCH_DEV_MODE_DISABLED_SEEN" -eq 1 ]]; then
+    fail "Na Apple Watch zapni Režim vývojáře, hodinky restartuj podle pokynů a znovu je odemkni."
+  elif [[ "$WATCH_LOCKED_SEEN" -eq 1 ]]; then
+    fail "Nasaď a odemkni Apple Watch a spusť obnovu znovu."
+  elif [[ "$WATCH_UNREACHABLE_SEEN" -eq 1 ]]; then
+    fail "Apple Watch jsou evidované, ale Mac se k nim nedokáže připojit. Nech je odemčené poblíž iPhonu a Macu."
+  else
+    fail "Apple Watch nejsou připravené k instalaci. Zkontroluj jejich odemčení a Režim vývojáře."
+  fi
+fi
+
+if [[ "$WATCH_READY_COUNT" -gt 1 ]]; then
+  fail "Je dostupných více Apple Watch. Nech aktivní pouze hodinky, na které chceš Commander nainstalovat."
+fi
+
+status "Nalezeny Apple Watch: ${WATCH_NAME:-Apple Watch} (${WATCH_MODEL:-model neuveden}, watchOS ${WATCH_OS:-neuvedeno})"
+
 DESTINATIONS_FILE="$TEMP_DIR/destinations.txt"
 if ! /usr/bin/xcodebuild -project "$PROJECT_PATH" -scheme "$SCHEME" -showdestinations > "$DESTINATIONS_FILE" 2>> "$LOG_FILE"; then
   fail "Xcode nedokázal ověřit připojený iPhone pro sestavení."
@@ -328,16 +400,33 @@ if ! /usr/bin/grep -Fq "platform:iOS" "$DESTINATIONS_FILE" || ! /usr/bin/grep -F
   fail "Připojený iPhone není v Xcode dostupný jako fyzické cílové zařízení."
 fi
 
+WATCH_DESTINATIONS_FILE="$TEMP_DIR/watch-destinations.txt"
+if ! /usr/bin/xcodebuild -project "$PROJECT_PATH" -scheme "$WATCH_SCHEME" -showdestinations > "$WATCH_DESTINATIONS_FILE" 2>> "$LOG_FILE"; then
+  fail "Xcode nedokázal ověřit Apple Watch pro sestavení."
+fi
+if ! /usr/bin/grep -Fq "platform:watchOS" "$WATCH_DESTINATIONS_FILE" || ! /usr/bin/grep -Fq "id:$WATCH_UDID" "$WATCH_DESTINATIONS_FILE"; then
+  fail "Apple Watch nejsou v Xcode dostupné jako fyzické cílové zařízení."
+fi
+WATCH_BUILD_SETTINGS_JSON="$TEMP_DIR/watch-build-settings.json"
+if ! /usr/bin/xcodebuild \
+  -project "$PROJECT_PATH" \
+  -scheme "$WATCH_SCHEME" \
+  -configuration "$CONFIGURATION" \
+  -destination "platform=watchOS,id=$WATCH_UDID" \
+  -showBuildSettings -json > "$WATCH_BUILD_SETTINGS_JSON" 2>> "$LOG_FILE"; then
+  fail "Apple Watch jsou viditelné, ale Xcode je nepovažuje za způsobilé cílové zařízení. Odemkni je, ověř Režim vývojáře a otevři jednou Xcode."
+fi
+
 if [[ "$MODE" == "check" ]]; then
-  status "PŘIPRAVENO – Mac a iPhone jsou připravené k obnově."
+  status "PŘIPRAVENO – Mac, iPhone a Apple Watch jsou připravené k obnově."
   status "Kontrolní režim nic nesestavil, nepodepsal ani nenainstaloval."
   status "Technický log: $LOG_FILE"
-  show_dialog "1" "PŘIPRAVENO – Mac a iPhone jsou připravené k obnově.\n\nKontrolní režim nic nenainstaloval."
+  show_dialog "1" "PŘIPRAVENO – Mac, iPhone a Apple Watch jsou připravené k obnově.\n\nKontrolní režim nic nenainstaloval."
   exit 0
 fi
 
 DERIVED_DATA="$TEMP_DIR/DerivedData"
-status "Obnovuji podpis a sestavuji aplikaci. Může to několik minut trvat..."
+status "Obnovuji podpis a sestavuji iPhone aplikaci. Může to několik minut trvat..."
 if ! /usr/bin/xcodebuild \
   -quiet \
   -project "$PROJECT_PATH" \
@@ -348,7 +437,7 @@ if ! /usr/bin/xcodebuild \
   -allowProvisioningUpdates \
   -allowProvisioningDeviceRegistration \
   build >> "$LOG_FILE" 2>&1; then
-  log "Build result: failure"
+  log "iPhone build result: failure"
   if /usr/bin/grep -Eqi 'internet connection|network connection|could not resolve host|offline|NSURLError' "$LOG_FILE"; then
     fail "Mac nemá přístup k internetu potřebný pro podpis."
   elif /usr/bin/grep -Eqi 'provisioning|no profiles|signing certificate|developer account|no accounts|communication with Apple' "$LOG_FILE"; then
@@ -357,14 +446,14 @@ if ! /usr/bin/xcodebuild \
     fail "Sestavení Commanderu selhalo."
   fi
 fi
-log "Build result: success"
+log "iPhone build result: success"
 
 APP_PATH="$DERIVED_DATA/Build/Products/$CONFIGURATION-iphoneos/LazenskyCommanderApp.app"
 if [[ ! -d "$APP_PATH" || ! -f "$APP_PATH/embedded.mobileprovision" ]]; then
   fail "Sestavená aplikace nemá platný vývojářský podpis."
 fi
-WATCH_APP_PATH="$APP_PATH/Watch/LazenskyCommanderWatchApp.app"
-if [[ ! -d "$WATCH_APP_PATH" ]]; then
+EMBEDDED_WATCH_APP_PATH="$APP_PATH/Watch/LazenskyCommanderWatchApp.app"
+if [[ ! -d "$EMBEDDED_WATCH_APP_PATH" ]]; then
   fail "Sestavení neobsahuje zabalenou aplikaci pro Apple Watch. Nic nebylo nainstalováno."
 fi
 if ! /usr/bin/codesign --verify --deep --strict "$APP_PATH" >> "$LOG_FILE" 2>&1; then
@@ -375,7 +464,35 @@ APP_VERSION="$(plist_raw CFBundleShortVersionString "$APP_PATH/Info.plist")"
 APP_BUILD="$(plist_raw CFBundleVersion "$APP_PATH/Info.plist")"
 status "Ověřená aplikace: verze ${APP_VERSION:-neuvedena} (${APP_BUILD:-bez čísla}), včetně Apple Watch."
 
-INSTALL_JSON="$TEMP_DIR/install.json"
+status "Obnovuji podpis a sestavuji aplikaci přímo pro Apple Watch..."
+if ! /usr/bin/xcodebuild \
+  -quiet \
+  -project "$PROJECT_PATH" \
+  -scheme "$WATCH_SCHEME" \
+  -configuration "$CONFIGURATION" \
+  -destination "platform=watchOS,id=$WATCH_UDID" \
+  -derivedDataPath "$DERIVED_DATA" \
+  -allowProvisioningUpdates \
+  -allowProvisioningDeviceRegistration \
+  build >> "$LOG_FILE" 2>&1; then
+  log "Watch build result: failure"
+  if /usr/bin/grep -Eqi 'provisioning|no profiles|signing certificate|developer account|no accounts|communication with Apple' "$LOG_FILE"; then
+    fail "Apple provisioning pro Watch aplikaci se nepodařilo obnovit."
+  else
+    fail "Sestavení aplikace pro Apple Watch selhalo."
+  fi
+fi
+log "Watch build result: success"
+
+WATCH_PRODUCT_PATH="$DERIVED_DATA/Build/Products/$CONFIGURATION-watchos/LazenskyCommanderWatchApp.app"
+if [[ ! -d "$WATCH_PRODUCT_PATH" || ! -f "$WATCH_PRODUCT_PATH/embedded.mobileprovision" ]]; then
+  fail "Samostatná Watch aplikace nemá platný vývojářský podpis."
+fi
+if ! /usr/bin/codesign --verify --deep --strict "$WATCH_PRODUCT_PATH" >> "$LOG_FILE" 2>&1; then
+  fail "Kontrola podpisu Watch aplikace selhala."
+fi
+
+INSTALL_JSON="$TEMP_DIR/iphone-install.json"
 status "Instaluji aktualizovanou aplikaci na iPhone..."
 if ! "$DEVICECTL" device install app \
   --device "$DEVICE_IDENTIFIER" \
@@ -383,17 +500,49 @@ if ! "$DEVICECTL" device install app \
   --quiet \
   --timeout 180 \
   --json-output "$INSTALL_JSON" >> "$LOG_FILE" 2>&1; then
-  log "Install result: failure"
+  log "iPhone install result: failure"
   fail "Instalace na iPhone selhala. Odemkni iPhone, nech ho připojený a spusť obnovu znovu."
 fi
 
 if [[ "$(plist_raw info.outcome "$INSTALL_JSON")" != "success" ]]; then
-  log "Install result: unconfirmed"
+  log "iPhone install result: unconfirmed"
   fail "Xcode nepotvrdil úspěšnou instalaci na iPhone."
 fi
-log "Install result: success"
+log "iPhone install result: success"
 
-status "HOTOVO – $APP_NAME byl obnoven."
+WATCH_INSTALL_JSON="$TEMP_DIR/watch-install.json"
+status "Instaluji Commander přímo na Apple Watch..."
+if ! "$DEVICECTL" device install app \
+  --device "$WATCH_IDENTIFIER" \
+  "$WATCH_PRODUCT_PATH" \
+  --quiet \
+  --timeout 180 \
+  --json-output "$WATCH_INSTALL_JSON" >> "$LOG_FILE" 2>&1; then
+  log "Watch install result: failure"
+  fail "iPhone byl obnoven, ale instalace na Apple Watch selhala. Nech hodinky odemčené poblíž iPhonu a spusť obnovu znovu."
+fi
+if [[ "$(plist_raw info.outcome "$WATCH_INSTALL_JSON")" != "success" ]]; then
+  log "Watch install result: unconfirmed"
+  fail "iPhone byl obnoven, ale Xcode nepotvrdil instalaci na Apple Watch."
+fi
+log "Watch install result: success"
+
+WATCH_APPS_JSON="$TEMP_DIR/watch-apps.json"
+if ! "$DEVICECTL" device info apps \
+  --device "$WATCH_IDENTIFIER" \
+  --bundle-id "$WATCH_BUNDLE_ID" \
+  --quiet \
+  --timeout 30 \
+  --json-output "$WATCH_APPS_JSON" >> "$LOG_FILE" 2>&1; then
+  fail "Instalace na Apple Watch proběhla, ale její výsledek se nepodařilo ověřit."
+fi
+WATCH_APP_COUNT="$(plist_raw result.apps "$WATCH_APPS_JSON")"
+if [[ ! "$WATCH_APP_COUNT" =~ ^[0-9]+$ || "$WATCH_APP_COUNT" -lt 1 ]]; then
+  fail "Po instalaci nebyla aplikace Lázeňský Commander na Apple Watch nalezena."
+fi
+log "Watch post-install verification: success; bundleID=$WATCH_BUNDLE_ID"
+
+status "HOTOVO – $APP_NAME byl obnoven na iPhonu i Apple Watch."
 status "Nainstalovaná zdrojová verze: $TARGET_BRANCH @ $GIT_COMMIT_SHORT"
 status "Technický log: $LOG_FILE"
-show_dialog "1" "HOTOVO – Lázeňský Commander byl obnoven."
+show_dialog "1" "HOTOVO – Lázeňský Commander byl obnoven na iPhonu i Apple Watch."
