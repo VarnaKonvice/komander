@@ -91,7 +91,6 @@ final class CommanderViewModel: ObservableObject {
         watchTransferStatus = try await watchConnectivity.deliver(watchScheduleSnapshot).diagnosticText
       } catch {
         watchTransferStatus = "Čeká na automatické předání"
-        errorMessage = error.localizedDescription
       }
     } else if channel == .e2e {
       watchTransferStatus = "Testovací kanál je od Watch oddělený"
@@ -194,17 +193,22 @@ final class CommanderViewModel: ObservableObject {
       )
     )
     recoveryStatus = "Přepočítávám čas odchodu"
-    synchronize()
+    Task { await synchronizeWithRecovery(maxAttempts: 3, automatic: false, source: .cached) }
   }
 
   private static func clampedLeadTime(_ value: Int) -> Int {
     min(180, max(0, value))
   }
 
-  private func synchronizeWithRecovery(maxAttempts: Int, automatic: Bool) async {
+  private func synchronizeWithRecovery(
+    maxAttempts: Int,
+    automatic: Bool,
+    source: CommanderScheduleSource = .remote
+  ) async {
     guard var request = synchronizationRequests.submit(
       maxAttempts: maxAttempts,
-      automatic: automatic
+      automatic: automatic,
+      source: source
     ) else { return }
 
     isSynchronizing = true
@@ -213,7 +217,8 @@ final class CommanderViewModel: ObservableObject {
     while true {
       await performSynchronizationWithRecovery(
         maxAttempts: request.maxAttempts,
-        automatic: request.automatic
+        automatic: request.automatic,
+        source: request.source
       )
       guard let next = synchronizationRequests.completeCurrentAndTakeNext() else {
         return
@@ -222,29 +227,34 @@ final class CommanderViewModel: ObservableObject {
     }
   }
 
-  private func performSynchronizationWithRecovery(maxAttempts: Int, automatic: Bool) async {
+  private func performSynchronizationWithRecovery(
+    maxAttempts: Int,
+    automatic: Bool,
+    source: CommanderScheduleSource
+  ) async {
     if automatic { lastAutomaticAttempt = Date() }
     delayedRecoveryTask?.cancel()
     delayedRecoveryTask = nil
 
-    var alarmProjectionFailed = false
-    var shouldRetryLater = false
+    var recovery = CommanderSynchronizationRecovery()
 
     for attempt in 0..<maxAttempts {
       do {
         let result = try await scheduleSync.synchronize(
+          source: source,
           overrides: leadTimeOverrides,
           projectionRevision: leadTimeProjectionRevision
         )
         latestSchedule = result.schedule
         summary = result.alarmSummary
         watchTransferStatus = result.watchDeliveryStatus.diagnosticText
+        recovery.recordAlarmVerification(succeeded: result.alarmSummary.succeeded)
 
         if result.alarmSummary.succeeded {
           guard await fallbackNotifications.clear() else {
             fallbackStatus = "Automaticky uklízím zálohu"
             recoveryStatus = "AlarmKit ověřen, dokončuji úklid zálohy"
-            shouldRetryLater = true
+            recovery.requestRetry()
             errorMessage = "Záložní upozornění se zatím nepodařilo ověřeně odstranit."
             break
           }
@@ -254,32 +264,26 @@ final class CommanderViewModel: ObservableObject {
           userActionMessage = nil
           errorMessage = nil
 
-          if result.succeeded {
-            recoveryStatus = result.alarmSummary.repairAttempts > 0 ? "Opraveno a ověřeno" : "Ověřeno"
-            await refreshAccess()
-            return
-          }
-
-          // AlarmKit is safe, but the whole requested sync is not complete until Watch
-          // confirms the exact production scheduleVersion + lead-time projection revision.
-          recoveryStatus = "Alarmy ověřeny, dokončuji Watch"
-          shouldRetryLater = true
+          recoveryStatus = result.alarmSummary.repairAttempts > 0 ? "Opraveno a ověřeno"
+            : source == .cached ? "Ověřeno z uloženého rozpisu" : "Ověřeno"
+          await refreshAccess()
+          return
         } else {
-          alarmProjectionFailed = true
-          shouldRetryLater = true
           recoveryStatus = "Automaticky opravuji alarmy"
           errorMessage = result.alarmSummary.errorMessage
         }
       } catch AlarmAdapterError.authorizationDenied {
-        alarmProjectionFailed = true
-        shouldRetryLater = true
+        recovery.recordAlarmVerification(succeeded: false)
         recoveryStatus = "AlarmKit nemá oprávnění, zapínám zálohu"
         errorMessage = AlarmAdapterError.authorizationDenied.localizedDescription
       } catch {
-        shouldRetryLater = true
+        recovery.requestRetry()
         errorMessage = error.localizedDescription
         recoveryStatus = latestSchedule == nil ? "Čekám na platný rozpis" : "Automatická kontrola se zopakuje"
       }
+
+      // A local edit queued during a fetch must not wait for more network retry attempts.
+      if synchronizationRequests.hasPendingCachedProjection { return }
 
       if attempt + 1 < maxAttempts {
         let delay = UInt64(attempt + 1) * 1_000_000_000
@@ -287,7 +291,7 @@ final class CommanderViewModel: ObservableObject {
       }
     }
 
-    if alarmProjectionFailed, let latestSchedule {
+    if recovery.needsFallback, let latestSchedule {
       do {
         if try await fallbackNotifications.arm(
           schedule: latestSchedule,
@@ -309,19 +313,19 @@ final class CommanderViewModel: ObservableObject {
       }
     }
 
-    if shouldRetryLater {
-      scheduleDelayedRecovery()
+    if recovery.shouldRetry {
+      scheduleDelayedRecovery(source: source)
     }
     await refreshAccess()
   }
 
-  private func scheduleDelayedRecovery() {
+  private func scheduleDelayedRecovery(source: CommanderScheduleSource) {
     guard delayedRecoveryTask == nil else { return }
     delayedRecoveryTask = Task { [weak self] in
       try? await Task.sleep(nanoseconds: 15_000_000_000)
       guard !Task.isCancelled, let self else { return }
       self.delayedRecoveryTask = nil
-      await self.synchronizeWithRecovery(maxAttempts: 2, automatic: true)
+      await self.synchronizeWithRecovery(maxAttempts: 2, automatic: true, source: source)
     }
   }
 }

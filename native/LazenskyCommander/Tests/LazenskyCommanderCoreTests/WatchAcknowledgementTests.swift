@@ -25,7 +25,7 @@ import Testing
 
   #expect(result.alarmSummary.succeeded)
   #expect(result.watchDeliveryStatus == .sent)
-  #expect(!result.succeeded)
+  #expect(result.succeeded)
 }
 
 @Test func watchDeliveryBecomesVerifiedOnlyForMatchingScheduleVersion() async throws {
@@ -52,7 +52,7 @@ import Testing
   ).synchronize(now: try NativeAlarmContract.date(fromLocalISO: "2026-08-25T07:00:00"))
 
   #expect(result.watchDeliveryStatus == .sent)
-  #expect(!result.succeeded)
+  #expect(result.succeeded)
 }
 
 @Test func watchDeliveryRejectsOldLeadTimeRevisionForSameSchedule() async throws {
@@ -70,7 +70,7 @@ import Testing
 
   #expect(result.watchSnapshot.projectionRevision == 3)
   #expect(result.watchDeliveryStatus == .sent)
-  #expect(!result.succeeded)
+  #expect(result.succeeded)
 }
 
 @Test func watchDeliveryVerifiesMatchingLeadTimeRevisionForSameSchedule() async throws {

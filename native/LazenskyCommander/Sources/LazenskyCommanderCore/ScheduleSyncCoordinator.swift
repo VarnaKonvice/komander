@@ -1,5 +1,18 @@
 import Foundation
 
+public enum CommanderScheduleSource: Equatable, Sendable {
+  case remote
+  case cached
+}
+
+public enum CommanderScheduleSyncError: LocalizedError {
+  case noValidatedSnapshot
+
+  public var errorDescription: String? {
+    "Nejdřív načti platný rozpis. Bez uloženého rozpisu nelze přepočítat alarmy."
+  }
+}
+
 public struct CommanderScheduleSyncResult: Equatable, Sendable {
   public let schedule: Schedule
   public let scheduleDecision: ScheduleSnapshotDecision
@@ -8,13 +21,8 @@ public struct CommanderScheduleSyncResult: Equatable, Sendable {
   public let watchDeliveryStatus: WatchScheduleDeliveryStatus
 
   public var succeeded: Bool {
-    guard alarmSummary.succeeded else { return false }
-    switch watchDeliveryStatus {
-    case .notConfigured, .verified:
-      return true
-    case .notAttempted, .queued, .sent, .failed:
-      return false
-    }
+    // Watch acknowledgement is diagnostic, not a prerequisite for iPhone operation.
+    alarmSummary.succeeded
   }
 }
 
@@ -41,24 +49,34 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
   }
 
   public func synchronize(
+    source: CommanderScheduleSource = .remote,
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
     now: Date = Date()
   ) async throws -> CommanderScheduleSyncResult {
-    let fetchedSchedule = try await scheduleService.fetchSchedule()
-
-    // Accept the validated canonical snapshot first. AlarmKit and Watch are independent
-    // projections: losing one projection must never roll the dashboard back to an older version.
-    let decision = try await scheduleStore.accept(fetchedSchedule)
+    let decision: ScheduleSnapshotDecision
     let schedule: Schedule
-    switch decision {
-    case .stored, .unchanged:
-      schedule = fetchedSchedule
-    case .rejectedVersion:
-      guard let existing = try await scheduleStore.load() else {
-        throw ScheduleValidationError.invalidScheduleVersion
+    switch source {
+    case .cached:
+      guard let cached = try await scheduleStore.load() else {
+        throw CommanderScheduleSyncError.noValidatedSnapshot
       }
-      schedule = existing
+      try NativeAlarmContract.validateCanonical(cached)
+      schedule = cached
+      decision = .unchanged
+    case .remote:
+      let fetchedSchedule = try await scheduleService.fetchSchedule()
+      // Accept canonical data before projecting it. Local preferences never write this store.
+      decision = try await scheduleStore.accept(fetchedSchedule)
+      switch decision {
+      case .stored, .unchanged:
+        schedule = fetchedSchedule
+      case .rejectedVersion:
+        guard let existing = try await scheduleStore.load() else {
+          throw ScheduleValidationError.invalidScheduleVersion
+        }
+        schedule = existing
+      }
     }
 
     let effectiveOverrides = overrides ?? LeadTimeOverrides()

@@ -533,7 +533,7 @@ import Testing
   #expect(try await cache.load() == newerSnapshot)
 }
 
-@Test func watchTransportFailureKeepsCanonicalAcceptedButSyncUnverified() async throws {
+@Test func watchTransportFailureKeepsCanonicalAcceptedAndIPhoneSyncVerified() async throws {
   let schedule = try decodeSchedule(named: "data/schedule.json")
   let source = CountingScheduleService(schedule: schedule)
   let alarmStore = InMemoryAlarmStateStore()
@@ -545,14 +545,14 @@ import Testing
 
   let result = try await coordinator.synchronize(now: Date(timeIntervalSince1970: 1))
 
-  #expect(!result.succeeded)
+  #expect(result.succeeded)
   #expect(result.alarmSummary.succeeded)
   #expect(await source.fetchCount() == 1)
   #expect(await scheduleStore.load() == schedule)
   #expect(await adapter.scheduledCount() == schedule.events.count)
   #expect(await watchDelivery.receivedSnapshot() == result.watchSnapshot)
   guard case .failed = result.watchDeliveryStatus else {
-    Issue.record("Watch transport failure must keep the whole sync unverified without rolling back canonical data")
+    Issue.record("Watch transport failure must remain diagnostic without blocking iPhone success")
     return
   }
 }
