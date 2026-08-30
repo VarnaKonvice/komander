@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "scheduleVersion": 9007,
-  "updatedAt": "2026-08-30T11:45:34.279Z",
+  "scheduleVersion": 2026083101,
+  "updatedAt": "2026-08-30T18:00:51Z",
   "stay": {
-    "spa": "E2E test Lázeňského Commanderu",
+    "spa": "TEST A/B - vzdálená změna rozpisu",
     "dateFrom": "2026-08-30",
     "dateTo": "2026-08-30",
     "room": "TEST",
@@ -12,33 +12,42 @@
   },
   "events": [
     {
-      "stableId": "e2e-20260830-v9007-lunch",
+      "stableId": "e2e-remote-20260830-keep-meal",
       "date": "2026-08-30",
-      "start": "13:55",
-      "end": "13:56",
-      "title": "TEST – Oběd FIX v9007",
-      "location": "Jídelna – E2E",
+      "start": "22:30",
+      "end": "22:45",
+      "title": "TEST A/B - Večeře BEZE ZMĚNY",
+      "location": "Jídelna TEST",
       "kind": "meal",
-      "mealType": "Oběd"
+      "mealType": "Večeře",
+      "leadTimeMinutes": 10
     },
     {
-      "stableId": "e2e-20260830-v9007-magnet",
+      "stableId": "e2e-remote-20260830-change-procedure",
       "date": "2026-08-30",
-      "start": "13:59",
-      "end": "14:00",
-      "title": "TEST – Magnetoterapie FIX v9007",
-      "location": "LDB – E2E",
+      "start": "23:00",
+      "end": "23:15",
+      "title": "TEST A - Magnetoterapie PŮVODNÍ",
+      "location": "Elektroléčba TEST",
       "kind": "procedure",
-      "procedureType": "Magnetoterapie"
+      "procedureType": "Magnetoterapie",
+      "leadTimeMinutes": 10
+    },
+    {
+      "stableId": "e2e-remote-20260830-remove-procedure",
+      "date": "2026-08-30",
+      "start": "23:30",
+      "end": "23:40",
+      "title": "TEST A - Koupel ODSTRANIT",
+      "location": "Balneo TEST",
+      "kind": "procedure",
+      "procedureType": "Jodobromová koupel",
+      "leadTimeMinutes": 10
     }
   ],
   "settings": {
     "defaultLeadTimeMinutes": 10,
-    "procedureTypeOverrides": {
-      "Magnetoterapie": 2
-    },
-    "mealOverrides": {
-      "Oběd": 2
-    }
+    "procedureTypeOverrides": {},
+    "mealOverrides": {}
   }
 }
