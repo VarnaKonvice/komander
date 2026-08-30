@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "scheduleVersion": 9004,
-  "updatedAt": "2026-08-30T07:13:00.000Z",
+  "scheduleVersion": 9005,
+  "updatedAt": "2026-08-30T11:19:45.887Z",
   "stay": {
     "spa": "E2E test Lázeňského Commanderu",
     "dateFrom": "2026-08-30",
@@ -12,42 +12,33 @@
   },
   "events": [
     {
-      "stableId": "e2e-20260830-breakfast-v1",
+      "stableId": "e2e-20260830-fix-meal-1324",
       "date": "2026-08-30",
-      "start": "10:10",
-      "end": "10:15",
-      "title": "TEST – Snídaně",
-      "location": "Jídelna – E2E test",
+      "start": "13:24",
+      "end": "13:25",
+      "title": "TEST – Oběd FIX",
+      "location": "Jídelna – E2E fix",
       "kind": "meal",
-      "mealType": "Snídaně",
-      "leadTimeMinutes": 10
+      "mealType": "Oběd"
     },
     {
-      "stableId": "e2e-20260830-magnet-v1",
+      "stableId": "e2e-20260830-fix-magnet-1327",
       "date": "2026-08-30",
-      "start": "10:30",
-      "end": "10:35",
-      "title": "TEST – Magnetoterapie",
-      "location": "LDB – Elektroléčba – E2E test",
+      "start": "13:27",
+      "end": "13:28",
+      "title": "TEST – Magnetoterapie FIX",
+      "location": "LDB – E2E fix",
       "kind": "procedure",
-      "procedureType": "Magnetoterapie",
-      "leadTimeMinutes": 10
-    },
-    {
-      "stableId": "e2e-20260830-lunch-v1",
-      "date": "2026-08-30",
-      "start": "10:50",
-      "end": "10:55",
-      "title": "TEST – Oběd",
-      "location": "Jídelna – E2E test",
-      "kind": "meal",
-      "mealType": "Oběd",
-      "leadTimeMinutes": 10
+      "procedureType": "Magnetoterapie"
     }
   ],
   "settings": {
     "defaultLeadTimeMinutes": 10,
-    "procedureTypeOverrides": {},
-    "mealOverrides": {}
+    "procedureTypeOverrides": {
+      "Magnetoterapie": 1
+    },
+    "mealOverrides": {
+      "Oběd": 0
+    }
   }
 }
