@@ -60,7 +60,27 @@ The native client owns its local mapping from `stableId` to `AlarmKit.Alarm.ID` 
 
 Canonical native payload nadále obsahuje všechny události. `AlarmSyncService` z něj pro konkrétní synchronizaci vytvoří pouze AlarmKit desired set s `leaveAt > now`; `leaveAt == now` se již neplánuje. Minulý managed alarm, který v AlarmKitu stále existuje, se cancelne, zatímco chybějící platformní alarm se pouze odstraní z lokálního mapování. Uložený `ManagedAlarmState` po úspěšném syncu obsahuje jen spravované budoucí AlarmKit alarmy. Tento filtr nemění `Schedule`, Live Card ani celý `WatchScheduleSnapshot`.
 
-Každý AlarmKit alarm je naplánovaný na canonical `leaveAt`. `AlarmCountdown.preAlertDuration` zahájí pre-alert na konci předchozí události, pokud tento konec leží před `leaveAt`; jinak nejvýše 30 minut před `leaveAt`. `AlarmAttributes<CommanderAlarmMetadata>` předává `stableId`, `scheduleVersion`, `iconKey`, `title`, `location`, `kind`, `startAt` a `leaveAt` skutečné Live Activity extension. Lock Screen a Dynamic Island používají AlarmKit stav a systémový timer rendering bez polling timeru.
+Cílový čas zazvonění je canonical `leaveAt`. `AlarmCountdown` zachovává okno od konce předchozí události, nejvýše 30 minut; při nulovém okně používá přímý alarm bez countdownu. `AlarmAttributes<CommanderAlarmMetadata>` předává `stableId`, `scheduleVersion`, `iconKey`, `title`, `location`, `kind`, `startAt` a `leaveAt` skutečné Live Activity extension. Lock Screen i Dynamic Island vykreslují stejný systémový `AlarmPresentationState.Mode.Countdown.fireDate`, nikoli vlastní odpočet.
+
+### AlarmKit countdown scheduling and read-back
+
+Physical E2E on 2026-08-30 demonstrated that `.fixed(10:20)` with `preAlert = 300` starts the countdown at 10:20 and alerts at 10:25. The adapter must therefore distinguish countdown start from the canonical alert deadline:
+
+- Before the countdown window: `schedule = .fixed(leaveAt - countdownWindow)`, `preAlert = countdownWindow`.
+- At or inside the window: `schedule = nil`, `preAlert = leaveAt - now`, starting the remaining countdown immediately.
+- Zero window: `.alarm(schedule: .fixed(leaveAt), ...)`, without a pre-alert duration.
+
+`scheduledAlertAt` remains the canonical target, not the fixed schedule argument for a countdown. The native payload and lead-time priorities do not change.
+
+Read-back verifies the effective endpoint against canonical `leaveAt` (existing one-second tolerance): observed AlarmKit activity `fireDate` keyed by platform `alarmID`, or fixed countdown start plus stored `preAlert` when no active countdown is exposed. An immediate timer with no fixed schedule requires the observed `fireDate`; desired metadata is never evidence of the actual endpoint. If this read-back is not available yet, verification reports a recoverable error, preserves the managed IDs, and the existing retry reads them again without cancelling/recreating them. Timing inspection is limited to managed future alarms so expired alarms and orphans can still be removed by existing ID reconciliation.
+
+This repairs the regression introduced by `260730f` / `c574e86` and the raw-fixed-date verification in `7d6acf4`; it does not roll back production/E2E isolation, ownership, self-recovery, or canonical synchronization. A signed physical confirmation remains necessary; generic builds and simulated runtime tests alone cannot prove an audible alarm deadline.
+
+Before reconciliation writes, only retained unchanged alarms require old timing read-back. Explicit updates and cancellations must not depend on an obsolete timer's activity being available; all replacements still undergo strict post-write verification.
+
+### Local physical acceptance
+
+The [physical acceptance app](physical-alarm-acceptance.md) uses this same contract and adapter with a locally generated two-event Schedule, explicit empty device overrides, fresh in-memory state and a unique run namespace. Its bundle and ownership ledger are separate from production and remote E2E. `resolvedLeadTime` exposes provenance from the existing priority resolver without changing payload shape or priority. Production ActivityKit behavior is enabled in this isolated mode; Watch delivery and network schedule fetching are absent. READY requires actual platform read-back, and never implies a physically confirmed PASS.
 
 ## Implementovaná Watch adaptace
 

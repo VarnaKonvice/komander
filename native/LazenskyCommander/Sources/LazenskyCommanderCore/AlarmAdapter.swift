@@ -15,12 +15,14 @@ public enum AlarmAdapterError: LocalizedError, Equatable, Sendable {
   case unavailable(String)
   case authorizationDenied
   case verificationFailed
+  case timingReadbackUnavailable
 
   public var errorDescription: String? {
     switch self {
     case .unavailable(let message): return message
     case .authorizationDenied: return "Alarm authorization was denied."
     case .verificationFailed: return "AlarmKit verification did not match the desired alarm set."
+    case .timingReadbackUnavailable: return "AlarmKit zatím neposkytl čas konce countdownu. Alarm zůstává beze změny; ověření zopakujeme."
     }
   }
 }
@@ -35,9 +37,10 @@ public protocol AlarmAdapting: Sendable {
   func cancel(platformAlarmID: String) async throws
   func existingPlatformAlarmIDs() async throws -> Set<String>?
 
-  /// Returns the real fixed alert date for each AlarmKit alarm when the platform adapter
-  /// can inspect it. nil means this verification capability is unavailable in that adapter.
+  /// Returns effective alert deadlines (fixed countdown start + preAlert, or observed fireDate),
+  /// not raw fixed schedule dates. nil means this capability is unavailable in that adapter.
   func existingPlatformFixedAlertDates() async throws -> [String: Date]?
+  func existingPlatformFixedAlertDates(for platformAlarmIDs: Set<String>) async throws -> [String: Date]?
 }
 
 public extension AlarmAdapting {
@@ -51,6 +54,11 @@ public extension AlarmAdapting {
 
   /// Non-iOS/test adapters may not expose schedule details. The real AlarmKit adapter does.
   func existingPlatformFixedAlertDates() async throws -> [String: Date]? { nil }
+
+  /// Limit timing inspection to managed future alarms; expired/orphan alarms still reconcile by ID.
+  func existingPlatformFixedAlertDates(for platformAlarmIDs: Set<String>) async throws -> [String: Date]? {
+    try await existingPlatformFixedAlertDates()?.filter { platformAlarmIDs.contains($0.key) }
+  }
 }
 
 public enum PlatformAlarmIdentifier {

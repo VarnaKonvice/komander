@@ -35,6 +35,8 @@ For each sync, `AlarmSyncService` derives the AlarmKit desired set by retaining 
 
 Each AlarmKit alarm fires at canonical `leaveAt`. Its pre-alert starts at the previous event's `endAt` when that time is before `leaveAt`, otherwise no more than 30 minutes before `leaveAt`. `CommanderAlarmMetadata` is carried by `AlarmAttributes<CommanderAlarmMetadata>` into the Live Activity extension. The Lock Screen and Dynamic Island render AlarmKit countdown, paused, and alert states with system date/timer rendering and no polling timer.
 
+For a countdown, the adapter schedules its **start**, not `leaveAt`: fixed window start plus `preAlert`, or `schedule = nil` and the remaining duration when already inside the window. A zero-window alarm stays fixed at `leaveAt` without a countdown. Read-back checks the effective endpoint (system countdown `fireDate` or fixed start plus stored duration), never raw `.fixed` alone or desired metadata. Missing timer read-back is recoverable and does not trigger destructive repair. See [the native contract](../docs/native-alarm-contract.md#alarmkit-countdown-scheduling-and-read-back).
+
 The Commander Live Card reads the last validated iPhone snapshot and evaluates presentation transitions through `CommanderLiveStateCalculator`; countdown changes do not trigger another network fetch.
 
 ## Watch transport, cache, and offline behavior
@@ -56,6 +58,8 @@ At most the nearest 60 future requests are pending because of the platform limit
 `../assets/icons/lazensky-v1/icon-map.json` and `colors.json` are the shared visual contract. The PWA uses approved 256px PNGs, the iPhone app uses 512px assets, and Live Activity/Watch surfaces use 128px assets. Unknown procedures retain their source text, receive no fabricated category icon, and use neutral Commander purple.
 
 ## Verification
+
+For an isolated, offline physical AlarmKit acceptance run, use the shared `LazenskyCommanderPhysicalAcceptance` scheme. It installs a separate **Commander Test** app with the real shared adapter/Live Activity sources, its own bundle IDs and per-run state. Its only start button generates local relative times; it never reads production preferences or a GitHub feed. See [physical acceptance](../docs/physical-alarm-acceptance.md) for preflight, storage boundaries, and PASS/FAIL rules.
 
 Run the platform-neutral checks from the repository root:
 

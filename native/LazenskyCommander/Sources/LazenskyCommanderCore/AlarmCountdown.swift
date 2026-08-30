@@ -3,10 +3,13 @@ import Foundation
 public struct AlarmCountdownPlan: Equatable, Sendable {
   /// The instant at which AlarmKit must actually alert. A countdown window never changes this value.
   public let scheduledAlertAt: Date
+  /// AlarmKit's fixed date starts preAlert. nil starts the remaining countdown immediately.
+  public let scheduledStartAt: Date?
   public let countdownWindow: TimeInterval
 
-  public init(scheduledAlertAt: Date, countdownWindow: TimeInterval) {
+  public init(scheduledAlertAt: Date, scheduledStartAt: Date?, countdownWindow: TimeInterval) {
     self.scheduledAlertAt = scheduledAlertAt
+    self.scheduledStartAt = scheduledStartAt
     self.countdownWindow = countdownWindow
   }
 }
@@ -35,11 +38,29 @@ public enum AlarmCountdown {
   public static func plan(for alarm: NativeAlarm, in schedule: Schedule, now: Date) throws -> AlarmCountdownPlan {
     let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
     let desiredWindow = try countdownWindow(for: alarm, in: schedule)
+    return plan(leaveAt: leaveAt, countdownWindow: desiredWindow, now: now)
+  }
+
+  public static func plan(leaveAt: Date, countdownWindow: TimeInterval, now: Date) -> AlarmCountdownPlan {
+    let desiredWindow = min(maximumWindow, max(0, countdownWindow))
     let remaining = max(0, leaveAt.timeIntervalSince(now))
+    let startAt = leaveAt.addingTimeInterval(-desiredWindow)
 
     return AlarmCountdownPlan(
       scheduledAlertAt: leaveAt,
+      scheduledStartAt: desiredWindow > 0 && startAt > now ? startAt : nil,
       countdownWindow: min(desiredWindow, remaining)
     )
+  }
+
+  /// Read-back uses platform values, never metadata or the desired canonical deadline.
+  public static func effectiveAlertDate(
+    fixedScheduleAt: Date?, preAlert: TimeInterval?, countdownFireDate: Date?
+  ) -> Date? {
+    if let countdownFireDate { return countdownFireDate }
+    guard let fixedScheduleAt else { return nil }
+    let duration = preAlert ?? 0
+    guard duration.isFinite, duration >= 0 else { return nil }
+    return fixedScheduleAt.addingTimeInterval(duration)
   }
 }

@@ -130,21 +130,26 @@ public struct AlarmSyncService: Sendable {
     }
 
     var repairs = 0
+    // Updates/cancellations do not need the old timer's endpoint; verify their replacements below.
+    let retainedStableIDs = Set(AlarmReconciler.reconcile(
+      current: state.records.values.map(\.alarm), next: desiredPayload
+    ).unchanged.map(\.stableId))
+    let futurePlatformIDs = Set(state.records.values.filter { retainedStableIDs.contains($0.stableId) }.map(\.platformAlarmID))
     let platformIDs: Set<String>?
     let fixedAlertDates: [String: Date]?
     do {
       platformIDs = try await adapter.existingPlatformAlarmIDs()
-      fixedAlertDates = platformIDs == nil ? nil : try await adapter.existingPlatformFixedAlertDates()
+      fixedAlertDates = platformIDs == nil ? nil : try await adapter.existingPlatformFixedAlertDates(for: futurePlatformIDs)
     } catch {
       let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
       return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0)
     }
 
-    // Real AlarmKit exposes its daemon state, so production verifies persisted IDs and fixed
-    // alert dates here. Minimal non-platform test adapters may return nil to opt out of this
+    // Real AlarmKit exposes its daemon state, so production verifies persisted IDs and effective
+    // alert deadlines here. Minimal non-platform test adapters may return nil to opt out of this
     // platform-specific observation; their unit tests then exercise reconciliation only.
     if let platformIDs {
-      let invalidBeforeWrite = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates)
+      let invalidBeforeWrite = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates, timingIDs: futurePlatformIDs)
       if !invalidBeforeWrite.isEmpty {
         repairs += 1
         for stableID in invalidBeforeWrite {
@@ -243,7 +248,8 @@ public struct AlarmSyncService: Sendable {
   private func invalidStableIDs(
     in state: ManagedAlarmState,
     platformIDs: Set<String>,
-    fixedAlertDates: [String: Date]?
+    fixedAlertDates: [String: Date]?,
+    timingIDs: Set<String>? = nil
   ) throws -> Set<String> {
     var invalid = Set<String>()
     for record in state.records.values {
@@ -252,6 +258,7 @@ public struct AlarmSyncService: Sendable {
         continue
       }
       guard let fixedAlertDates else { continue }
+      if let timingIDs, !timingIDs.contains(record.platformAlarmID) { continue }
       let expected = try NativeAlarmContract.date(fromLocalISO: record.alarm.leaveAt)
       guard let actual = fixedAlertDates[record.platformAlarmID], abs(actual.timeIntervalSince(expected)) <= 1 else {
         invalid.insert(record.stableId)
@@ -267,9 +274,9 @@ public struct AlarmSyncService: Sendable {
     orphanPlatformIDs: Set<String>
   )? {
     guard let platformIDs = try await adapter.existingPlatformAlarmIDs() else { return nil }
-    let fixedAlertDates = try await adapter.existingPlatformFixedAlertDates()
-    let invalid = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates)
     let expectedIDs = Set(state.records.values.map(\.platformAlarmID))
+    let fixedAlertDates = try await adapter.existingPlatformFixedAlertDates(for: expectedIDs)
+    let invalid = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates)
     let orphanIDs = platformIDs.subtracting(expectedIDs)
     return (platformIDs, invalid, orphanIDs)
   }

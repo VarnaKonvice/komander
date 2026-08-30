@@ -23,6 +23,9 @@ actor AlarmKitAdapter: AlarmAdapting {
   private static let e2eOwnershipKey = "lazensky.commander.alarmkitOwned.e2e.v1"
   private let channel: ScheduleChannel
   private var scheduleContext: Schedule?
+  private var physicalRunID: UUID?
+  private var physicalOwnership: PhysicalAcceptanceOwnershipStore?
+  private var physicalAttempts: [String: (stableID: String, configuredAt: Date)] = [:]
 
   init(channel: ScheduleChannel) {
     self.channel = channel
@@ -32,9 +35,18 @@ actor AlarmKitAdapter: AlarmAdapting {
     self.channel = procedureLiveActivitiesEnabled ? .production : .e2e
   }
 
+  init(physicalAcceptanceRunID: UUID, ownership: PhysicalAcceptanceOwnershipStore) throws {
+    guard Bundle.main.bundleIdentifier == PhysicalAcceptanceRun.bundleID else {
+      throw PhysicalAcceptanceError.wrongApplication
+    }
+    channel = .e2e
+    physicalRunID = physicalAcceptanceRunID
+    physicalOwnership = ownership
+  }
+
   func prepare(schedule: Schedule, projectionRevision: Int) async {
     scheduleContext = schedule
-    guard channel == .production else { return }
+    guard channel == .production || physicalRunID != nil else { return }
     // This projection is deliberately best-effort and independent from AlarmKit safety.
     // A Live Activity failure must never block alarm reconciliation.
     await reconcileProcedureLiveActivities(
@@ -86,9 +98,10 @@ actor AlarmKitAdapter: AlarmAdapting {
     if let schedule {
       countdownPlan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
     } else {
-      countdownPlan = AlarmCountdownPlan(
-        scheduledAlertAt: leaveAt,
-        countdownWindow: min(AlarmCountdown.maximumWindow, max(0, leaveAt.timeIntervalSince(now)))
+      countdownPlan = AlarmCountdown.plan(
+        leaveAt: leaveAt,
+        countdownWindow: AlarmCountdown.maximumWindow,
+        now: now
       )
     }
 
@@ -96,7 +109,7 @@ actor AlarmKitAdapter: AlarmAdapting {
     if countdownPlan.countdownWindow > 0 {
       configuration = AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>(
         countdownDuration: Alarm.CountdownDuration(preAlert: countdownPlan.countdownWindow, postAlert: nil),
-        schedule: .fixed(countdownPlan.scheduledAlertAt),
+        schedule: countdownPlan.scheduledStartAt.map { .fixed($0) },
         attributes: attributes,
         sound: .default
       )
@@ -108,37 +121,84 @@ actor AlarmKitAdapter: AlarmAdapting {
       )
     }
 
+    if let physicalRunID, let physicalOwnership {
+      // Reserve ownership before SDK I/O, so interrupted scheduling remains recoverable.
+      await physicalOwnership.remember(id.uuidString, runID: physicalRunID)
+    }
     let scheduled = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
     let platformID = scheduled.id.uuidString
-    rememberE2EOwnership(platformID)
+    if physicalRunID != nil {
+      physicalAttempts[platformID] = (alarm.stableId, now)
+    } else {
+      rememberE2EOwnership(platformID)
+    }
     return platformID
   }
 
   func cancel(platformAlarmID: String) async throws {
+    if let physicalRunID, let physicalOwnership,
+       !(await physicalOwnership.ids(runID: physicalRunID)).contains(platformAlarmID) {
+      throw AlarmAdapterError.unavailable("Alarm nepatří aktuálnímu fyzickému testu.")
+    }
     guard let id = PlatformAlarmIdentifier.uuid(from: platformAlarmID) else {
       throw AlarmKitAdapterError.invalidPlatformAlarmID(platformAlarmID)
     }
     try AlarmManager.shared.cancel(id: id)
-    forgetE2EOwnership(platformAlarmID)
+    if let physicalOwnership {
+      await physicalOwnership.forget(platformAlarmID)
+      physicalAttempts.removeValue(forKey: platformAlarmID)
+    } else {
+      forgetE2EOwnership(platformAlarmID)
+    }
   }
 
   func existingPlatformAlarmIDs() async throws -> Set<String>? {
     let alarms = try AlarmManager.shared.alarms
     let allIDs = Set(alarms.map { $0.id.uuidString })
+    if let physicalRunID, let physicalOwnership {
+      return allIDs.intersection(await physicalOwnership.ids(runID: physicalRunID))
+    }
     guard channel == .e2e else { return allIDs }
     return allIDs.intersection(e2eOwnedPlatformIDs())
   }
 
   func existingPlatformFixedAlertDates() async throws -> [String: Date]? {
+    try await existingPlatformFixedAlertDates(for: existingPlatformAlarmIDs() ?? [])
+  }
+
+  func existingPlatformFixedAlertDates(for platformAlarmIDs: Set<String>) async throws -> [String: Date]? {
     let alarms = try AlarmManager.shared.alarms
-    let visibleIDs = channel == .e2e ? e2eOwnedPlatformIDs() : nil
+    let visibleIDs: Set<String>?
+    if let physicalRunID, let physicalOwnership {
+      visibleIDs = await physicalOwnership.ids(runID: physicalRunID)
+    } else {
+      visibleIDs = channel == .e2e ? e2eOwnedPlatformIDs() : nil
+    }
+    var countdownDeadlines: [String: Date] = [:]
+    for activity in Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities {
+      guard activity.activityState == .active || activity.activityState == .stale,
+            case .countdown(let countdown) = activity.content.state.mode else { continue }
+      countdownDeadlines[activity.content.state.alarmID.uuidString] = countdown.fireDate
+    }
     var result: [String: Date] = [:]
     for alarm in alarms {
       let platformID = alarm.id.uuidString
+      guard platformAlarmIDs.contains(platformID) else { continue }
       if let visibleIDs, !visibleIDs.contains(platformID) { continue }
+      var fixedStartAt: Date?
       if case .fixed(let date)? = alarm.schedule {
-        result[platformID] = date
+        fixedStartAt = date
       }
+      guard let deadline = AlarmCountdown.effectiveAlertDate(
+        fixedScheduleAt: fixedStartAt,
+        preAlert: alarm.countdownDuration?.preAlert,
+        countdownFireDate: countdownDeadlines[platformID]
+      ) else {
+        // A timer's activity may arrive after schedule() returns. Do not cancel it or
+        // claim verification from desired metadata; the existing retry will re-read it.
+        throw AlarmAdapterError.timingReadbackUnavailable
+      }
+      result[platformID] = deadline
     }
     return result
   }
@@ -146,6 +206,64 @@ actor AlarmKitAdapter: AlarmAdapting {
   private func e2eOwnedPlatformIDs() -> Set<String> {
     guard channel == .e2e else { return [] }
     return Set(UserDefaults.standard.stringArray(forKey: Self.e2eOwnershipKey) ?? [])
+  }
+
+  /// Read-only observation includes unexpected IDs so preflight rejects rather than hides them.
+  func physicalObservations() throws -> [PhysicalAlarmObservation] {
+    guard physicalRunID != nil, Bundle.main.bundleIdentifier == PhysicalAcceptanceRun.bundleID else {
+      throw PhysicalAcceptanceError.wrongApplication
+    }
+    var fireDates: [String: Date] = [:]
+    for activity in Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities {
+      if (activity.activityState == .active || activity.activityState == .stale),
+         case .countdown(let countdown) = activity.content.state.mode {
+        fireDates[activity.content.state.alarmID.uuidString] = countdown.fireDate
+      }
+    }
+    return try AlarmManager.shared.alarms.map { alarm in
+      let id = alarm.id.uuidString
+      let kind: String
+      let fixed: Date?
+      switch alarm.schedule {
+      case .fixed(let date)?: kind = "fixed"; fixed = date
+      case nil: kind = "none"; fixed = nil
+      default: kind = "relative"; fixed = nil
+      }
+      return PhysicalAlarmObservation(platformID: id, stableID: physicalAttempts[id]?.stableID, configuredAt: physicalAttempts[id]?.configuredAt, scheduleKind: kind, fixedScheduleAt: fixed, preAlert: alarm.countdownDuration?.preAlert, postAlert: alarm.countdownDuration?.postAlert, state: String(describing: alarm.state), fireDate: fireDates[id])
+    }
+  }
+
+  func physicalProcedureActivityPrepared(run: PhysicalAcceptanceRun) -> Bool {
+    guard physicalRunID == run.id,
+          let procedure = run.schedule.events.first(where: { $0.kind == .procedure }),
+          let start = try? NativeAlarmContract.dateTime(date: procedure.date, time: procedure.start)
+    else { return false }
+    return Activity<CommanderProcedureLiveActivityAttributes>.activities.contains {
+      $0.attributes.stableId == procedure.stableId
+        && $0.attributes.startAt == start
+        && $0.content.state.projectionRevision == run.projectionRevision
+        && ($0.activityState == .pending || $0.activityState == .active)
+    }
+  }
+
+  static func clearPreviousPhysicalAcceptance(ownership: PhysicalAcceptanceOwnershipStore) async throws {
+    guard Bundle.main.bundleIdentifier == PhysicalAcceptanceRun.bundleID else {
+      throw PhysicalAcceptanceError.wrongApplication
+    }
+    let ownedIDs = await ownership.allIDs()
+    let alarms = try AlarmManager.shared.alarms
+    let cleanup = PhysicalAcceptanceCleanupPlan(ownedIDs: ownedIDs, platformIDs: Set(alarms.map { $0.id.uuidString }))
+    guard cleanup.unknownIDs.isEmpty else { throw PhysicalAcceptanceError.cleanupIncomplete }
+    for alarm in alarms where cleanup.cancelIDs.contains(alarm.id.uuidString) {
+      try AlarmManager.shared.cancel(id: alarm.id)
+    }
+    // Unknown IDs are never cancelled. They prevent a clean preflight instead.
+    guard try AlarmManager.shared.alarms.isEmpty else { throw PhysicalAcceptanceError.cleanupIncomplete }
+    for id in ownedIDs { await ownership.forget(id) }
+    for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
+      where activity.attributes.stableId.hasPrefix(PhysicalAcceptanceRun.stableIDPrefix) {
+      await activity.end(nil, dismissalPolicy: .immediate)
+    }
   }
 
   private func rememberE2EOwnership(_ platformAlarmID: String) {

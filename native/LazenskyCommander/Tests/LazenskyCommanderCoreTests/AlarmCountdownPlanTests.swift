@@ -13,6 +13,8 @@ import Testing
 
   #expect(plan.scheduledAlertAt == leaveAt)
   #expect(plan.countdownWindow == 30 * 60)
+  #expect(plan.scheduledStartAt == leaveAt.addingTimeInterval(-30 * 60))
+  #expect(plan.scheduledStartAt?.addingTimeInterval(plan.countdownWindow) == leaveAt)
 }
 
 @Test func alarmCountdownPlanShortensWindowWhenSyncHappensInsideWindow() throws {
@@ -25,6 +27,7 @@ import Testing
 
   #expect(plan.scheduledAlertAt == leaveAt)
   #expect(plan.countdownWindow == 15 * 60)
+  #expect(plan.scheduledStartAt == nil)
   #expect(now.addingTimeInterval(plan.countdownWindow) == leaveAt)
 }
 
@@ -38,6 +41,7 @@ import Testing
 
   #expect(plan.scheduledAlertAt == leaveAt)
   #expect(plan.countdownWindow == 10 * 60)
+  #expect(plan.scheduledStartAt == leaveAt.addingTimeInterval(-10 * 60))
 }
 
 @Test func alarmCountdownPlanHasZeroWindowForBackToBackHandoffButStillAlertsAtLeaveAt() throws {
@@ -50,6 +54,30 @@ import Testing
 
   #expect(plan.scheduledAlertAt == leaveAt)
   #expect(plan.countdownWindow == 0)
+  #expect(plan.scheduledStartAt == nil)
+}
+
+@Test func countdownWindowBoundaryStartsImmediatelyAndExpiredDeadlineHasNoCountdown() {
+  let leaveAt = Date(timeIntervalSince1970: 10_000)
+  for remaining in [300.0, 1.0, 0.0, -1.0] {
+    let now = leaveAt.addingTimeInterval(-remaining)
+    let plan = AlarmCountdown.plan(leaveAt: leaveAt, countdownWindow: 300, now: now)
+    #expect(plan.scheduledStartAt == nil)
+    #expect(plan.countdownWindow == max(0, remaining))
+    #expect(plan.scheduledAlertAt == leaveAt)
+  }
+}
+
+@Test func readbackUsesCountdownEndpointNotRawFixedScheduleOrDesiredMetadata() {
+  let start = Date(timeIntervalSince1970: 10_000)
+  let observed = start.addingTimeInterval(301)
+  #expect(AlarmCountdown.effectiveAlertDate(fixedScheduleAt: start, preAlert: 300, countdownFireDate: nil) == start.addingTimeInterval(300))
+  #expect(AlarmCountdown.effectiveAlertDate(fixedScheduleAt: start, preAlert: nil, countdownFireDate: nil) == start)
+  #expect(AlarmCountdown.effectiveAlertDate(fixedScheduleAt: start, preAlert: 0, countdownFireDate: nil) == start)
+  #expect(AlarmCountdown.effectiveAlertDate(fixedScheduleAt: start, preAlert: 300, countdownFireDate: observed) == observed)
+  #expect(AlarmCountdown.effectiveAlertDate(fixedScheduleAt: nil, preAlert: 300, countdownFireDate: observed) == observed)
+  #expect(AlarmCountdown.effectiveAlertDate(fixedScheduleAt: nil, preAlert: 300, countdownFireDate: nil) == nil)
+  #expect(AlarmCountdown.effectiveAlertDate(fixedScheduleAt: start, preAlert: -1, countdownFireDate: nil) == nil)
 }
 
 @Test func editableLeadTimeMovesLeaveAtForFifteenTwentyAndThirtyMinutes() throws {

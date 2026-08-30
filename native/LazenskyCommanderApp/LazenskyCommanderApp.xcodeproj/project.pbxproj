@@ -110,6 +110,171 @@
 		I90000000000000000000006 /* CommanderDayTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000016 /* CommanderDayTimelineView.swift */; };
 		I90000000000000000000007 /* CommanderSystemStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000017 /* CommanderSystemStatusView.swift */; };
 		I90000000000000000000008 /* CommanderDashboardPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000018 /* CommanderDashboardPreviews.swift */; };
+		CA0000000000000000000006 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			productRef = "CA0000000000000000000005";
+		};
+		CA0000000000000000000008 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "A10000000000000000000012";
+		};
+		CA0000000000000000000009 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000012";
+		};
+		CA000000000000000000000A /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000011";
+		};
+		CA000000000000000000000B /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "H80000000000000000000011";
+		};
+		CA000000000000000000000D /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "CA0000000000000000000001";
+		};
+		CA000000000000000000000E /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "H80000000000000000000012";
+		};
+		CA000000000000000000000F /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "H80000000000000000000014";
+		};
+		CA0000000000000000000010 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000013";
+		};
+		CA0000000000000000000011 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000014";
+		};
+		CA0000000000000000000012 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000020";
+		};
+		CA0000000000000000000013 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000021";
+		};
+		CA0000000000000000000014 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000022";
+		};
+		CA0000000000000000000015 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000023";
+		};
+		CA0000000000000000000016 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000024";
+		};
+		CA0000000000000000000017 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000025";
+		};
+		CA0000000000000000000018 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000026";
+		};
+		CA0000000000000000000019 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000027";
+		};
+		CA000000000000000000001A /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000028";
+		};
+		CA000000000000000000001B /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000029";
+		};
+		CA000000000000000000001C /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C3000000000000000000002A";
+		};
+		CA000000000000000000001D /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C3000000000000000000002B";
+		};
+		CA0000000000000000000025 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			productRef = "CA0000000000000000000024";
+		};
+		CA0000000000000000000027 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000011";
+		};
+		CA0000000000000000000028 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000012";
+		};
+		CA0000000000000000000029 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "H80000000000000000000011";
+		};
+		CA000000000000000000002B /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "H80000000000000000000014";
+		};
+		CA000000000000000000002C /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000020";
+		};
+		CA000000000000000000002D /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000021";
+		};
+		CA000000000000000000002E /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000022";
+		};
+		CA000000000000000000002F /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000023";
+		};
+		CA0000000000000000000030 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000024";
+		};
+		CA0000000000000000000031 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000025";
+		};
+		CA0000000000000000000032 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000026";
+		};
+		CA0000000000000000000033 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000027";
+		};
+		CA0000000000000000000034 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000028";
+		};
+		CA0000000000000000000035 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000029";
+		};
+		CA0000000000000000000036 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B2000000000000000000002A";
+		};
+		CA0000000000000000000037 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B2000000000000000000002B";
+		};
+		CA000000000000000000003D /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "CA0000000000000000000023";
+			settings = {
+				ATTRIBUTES = (
+					"RemoveHeadersOnCopy",
+				);
+			};
+		};
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -133,6 +298,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = F60000000000000000000050;
 			remoteInfo = LazenskyCommanderWatchWidget;
+		};
+		CA000000000000000000003F /* physicalAcceptance PBXContainerItemProxy */ = {
+			isa = "PBXContainerItemProxy";
+			containerPortal = "A10000000000000000000060";
+			proxyType = "1";
+			remoteGlobalIDString = "CA000000000000000000003C";
+			remoteInfo = "LazenskyCommanderPhysicalLiveActivity";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -169,6 +341,17 @@
 			);
 			name = "Embed App Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA000000000000000000003E /* physicalAcceptance Embed App Extensions */ = {
+			isa = "PBXCopyFilesBuildPhase";
+			buildActionMask = "2147483647";
+			dstPath = "";
+			dstSubfolderSpec = "13";
+			files = (
+				"CA000000000000000000003D",
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = "0";
 		};
 /* End PBXCopyFilesBuildPhase section */
 
@@ -240,6 +423,32 @@
 		I90000000000000000000016 /* CommanderDayTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDayTimelineView.swift; sourceTree = "<group>"; };
 		I90000000000000000000017 /* CommanderSystemStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderSystemStatusView.swift; sourceTree = "<group>"; };
 		I90000000000000000000018 /* CommanderDashboardPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDashboardPreviews.swift; sourceTree = "<group>"; };
+		CA0000000000000000000001 /* physicalAcceptance PhysicalAcceptanceApp.swift */ = {
+			isa = "PBXFileReference";
+			lastKnownFileType = "sourcecode.swift";
+			path = "PhysicalAcceptanceApp.swift";
+			sourceTree = "<group>";
+		};
+		CA0000000000000000000002 /* physicalAcceptance Info.plist */ = {
+			isa = "PBXFileReference";
+			lastKnownFileType = "text.plist.xml";
+			path = "Info.plist";
+			sourceTree = "<group>";
+		};
+		CA0000000000000000000004 /* physicalAcceptance LazenskyCommanderPhysicalAcceptance.app */ = {
+			path = "LazenskyCommanderPhysicalAcceptance.app";
+			isa = "PBXFileReference";
+			includeInIndex = "0";
+			explicitFileType = "wrapper.application";
+			sourceTree = "BUILT_PRODUCTS_DIR";
+		};
+		CA0000000000000000000023 /* physicalAcceptance LazenskyCommanderPhysicalLiveActivity.appex */ = {
+			path = "LazenskyCommanderPhysicalLiveActivity.appex";
+			isa = "PBXFileReference";
+			includeInIndex = "0";
+			explicitFileType = "wrapper.app-extension";
+			sourceTree = "BUILT_PRODUCTS_DIR";
+		};
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -280,6 +489,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CA0000000000000000000007 /* physicalAcceptance PBXFrameworksBuildPhase */ = {
+			isa = "PBXFrameworksBuildPhase";
+			buildActionMask = "2147483647";
+			files = (
+				"CA0000000000000000000006",
+			);
+			runOnlyForDeploymentPostprocessing = "0";
+		};
+		CA0000000000000000000026 /* physicalAcceptance PBXFrameworksBuildPhase */ = {
+			isa = "PBXFrameworksBuildPhase";
+			buildActionMask = "2147483647";
+			files = (
+				"CA0000000000000000000025",
+			);
+			runOnlyForDeploymentPostprocessing = "0";
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -309,6 +534,8 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000010 /* LazenskyCommanderApp.app */,
+				CA0000000000000000000004 /* LazenskyCommanderPhysicalAcceptance.app */,
+				CA0000000000000000000023 /* LazenskyCommanderPhysicalLiveActivity.appex */,
 				B20000000000000000000010 /* LazenskyCommanderLiveActivity.appex */,
 				D40000000000000000000020 /* LazenskyCommanderWatchApp.app */,
 				F60000000000000000000020 /* LazenskyCommanderWatchWidget.appex */,
@@ -327,6 +554,7 @@
 				D40000000000000000000040 /* LazenskyCommanderWatchApp */,
 				F60000000000000000000040 /* LazenskyCommanderWatchWidget */,
 				A10000000000000000000041 /* Products */,
+				CA0000000000000000000003 /* PhysicalAcceptance */,
 			);
 			sourceTree = "<group>";
 		};
@@ -427,6 +655,15 @@
 			path = LazenskyCommanderWatchWidget;
 			sourceTree = "<group>";
 		};
+		CA0000000000000000000003 /* physicalAcceptance PhysicalAcceptance */ = {
+			isa = "PBXGroup";
+			children = (
+				"CA0000000000000000000001",
+				"CA0000000000000000000002",
+			);
+			path = "PhysicalAcceptance";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -516,6 +753,51 @@
 			productReference = F60000000000000000000020 /* LazenskyCommanderWatchWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		CA0000000000000000000022 /* physicalAcceptance LazenskyCommanderPhysicalAcceptance */ = {
+			buildConfigurationList = "CA0000000000000000000021";
+			productReference = "CA0000000000000000000004";
+			productType = "com.apple.product-type.application";
+			packageProductDependencies = (
+				"CA0000000000000000000005",
+			);
+			productName = "LazenskyCommanderPhysicalAcceptance";
+			isa = "PBXNativeTarget";
+			buildPhases = (
+				"CA000000000000000000000C",
+				"CA0000000000000000000007",
+				"CA000000000000000000001E",
+				"CA000000000000000000003E",
+			);
+			dependencies = (
+				"CA0000000000000000000040",
+			);
+			name = "LazenskyCommanderPhysicalAcceptance";
+			buildRules = (
+
+			);
+		};
+		CA000000000000000000003C /* physicalAcceptance LazenskyCommanderPhysicalLiveActivity */ = {
+			buildConfigurationList = "CA000000000000000000003B";
+			productReference = "CA0000000000000000000023";
+			productType = "com.apple.product-type.app-extension";
+			packageProductDependencies = (
+				"CA0000000000000000000024",
+			);
+			productName = "LazenskyCommanderPhysicalLiveActivity";
+			isa = "PBXNativeTarget";
+			buildPhases = (
+				"CA000000000000000000002A",
+				"CA0000000000000000000026",
+				"CA0000000000000000000038",
+			);
+			dependencies = (
+
+			);
+			name = "LazenskyCommanderPhysicalLiveActivity";
+			buildRules = (
+
+			);
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -568,6 +850,8 @@
 			projectRoot = "";
 				targets = (
 					A10000000000000000000050 /* LazenskyCommanderApp */,
+					CA0000000000000000000022 /* LazenskyCommanderPhysicalAcceptance */,
+					CA000000000000000000003C /* LazenskyCommanderPhysicalLiveActivity */,
 					B20000000000000000000050 /* LazenskyCommanderLiveActivity */,
 					D40000000000000000000050 /* LazenskyCommanderWatchApp */,
 					F60000000000000000000050 /* LazenskyCommanderWatchWidget */,
@@ -664,6 +948,49 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CA000000000000000000001E /* physicalAcceptance PBXResourcesBuildPhase */ = {
+			isa = "PBXResourcesBuildPhase";
+			buildActionMask = "2147483647";
+			files = (
+				"CA000000000000000000000E",
+				"CA000000000000000000000F",
+				"CA0000000000000000000010",
+				"CA0000000000000000000011",
+				"CA0000000000000000000012",
+				"CA0000000000000000000013",
+				"CA0000000000000000000014",
+				"CA0000000000000000000015",
+				"CA0000000000000000000016",
+				"CA0000000000000000000017",
+				"CA0000000000000000000018",
+				"CA0000000000000000000019",
+				"CA000000000000000000001A",
+				"CA000000000000000000001B",
+				"CA000000000000000000001C",
+				"CA000000000000000000001D",
+			);
+			runOnlyForDeploymentPostprocessing = "0";
+		};
+		CA0000000000000000000038 /* physicalAcceptance PBXResourcesBuildPhase */ = {
+			isa = "PBXResourcesBuildPhase";
+			buildActionMask = "2147483647";
+			files = (
+				"CA000000000000000000002B",
+				"CA000000000000000000002C",
+				"CA000000000000000000002D",
+				"CA000000000000000000002E",
+				"CA000000000000000000002F",
+				"CA0000000000000000000030",
+				"CA0000000000000000000031",
+				"CA0000000000000000000032",
+				"CA0000000000000000000033",
+				"CA0000000000000000000034",
+				"CA0000000000000000000035",
+				"CA0000000000000000000036",
+				"CA0000000000000000000037",
+			);
+			runOnlyForDeploymentPostprocessing = "0";
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -726,6 +1053,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CA000000000000000000000C /* physicalAcceptance PBXSourcesBuildPhase */ = {
+			isa = "PBXSourcesBuildPhase";
+			buildActionMask = "2147483647";
+			files = (
+				"CA000000000000000000000D",
+				"CA0000000000000000000008",
+				"CA0000000000000000000009",
+				"CA000000000000000000000A",
+				"CA000000000000000000000B",
+			);
+			runOnlyForDeploymentPostprocessing = "0";
+		};
+		CA000000000000000000002A /* physicalAcceptance PBXSourcesBuildPhase */ = {
+			isa = "PBXSourcesBuildPhase";
+			buildActionMask = "2147483647";
+			files = (
+				"CA0000000000000000000027",
+				"CA0000000000000000000028",
+				"CA0000000000000000000029",
+			);
+			runOnlyForDeploymentPostprocessing = "0";
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -743,6 +1092,11 @@
 			isa = PBXTargetDependency;
 			target = F60000000000000000000050 /* LazenskyCommanderWatchWidget */;
 			targetProxy = F60000000000000000000090 /* PBXContainerItemProxy */;
+		};
+		CA0000000000000000000040 /* physicalAcceptance PBXTargetDependency */ = {
+			isa = "PBXTargetDependency";
+			target = "CA000000000000000000003C";
+			targetProxy = "CA000000000000000000003F";
 		};
 /* End PBXTargetDependency section */
 
@@ -961,6 +1315,102 @@
 			};
 			name = Release;
 		};
+		CA000000000000000000001F /* physicalAcceptance Debug */ = {
+			isa = "XCBuildConfiguration";
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = "1";
+				SWIFT_VERSION = "6.0";
+				DEVELOPMENT_TEAM = "2CCL69T42P";
+				MARKETING_VERSION = "1.0";
+				INFOPLIST_FILE = "PhysicalAcceptance/Info.plist";
+				TARGETED_DEVICE_FAMILY = "1";
+				GENERATE_INFOPLIST_FILE = "NO";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				CODE_SIGN_STYLE = "Automatic";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon";
+				SDKROOT = "iphoneos";
+				DEVELOPMENT_ASSET_PATHS = "";
+				IPHONEOS_DEPLOYMENT_TARGET = "26.1";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.varnakonvice.lazenskycommander.physicalacceptance";
+			};
+			name = "Debug";
+		};
+		CA0000000000000000000020 /* physicalAcceptance Release */ = {
+			isa = "XCBuildConfiguration";
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = "1";
+				SWIFT_VERSION = "6.0";
+				DEVELOPMENT_TEAM = "2CCL69T42P";
+				MARKETING_VERSION = "1.0";
+				INFOPLIST_FILE = "PhysicalAcceptance/Info.plist";
+				TARGETED_DEVICE_FAMILY = "1";
+				GENERATE_INFOPLIST_FILE = "NO";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				CODE_SIGN_STYLE = "Automatic";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon";
+				SDKROOT = "iphoneos";
+				DEVELOPMENT_ASSET_PATHS = "";
+				IPHONEOS_DEPLOYMENT_TARGET = "26.1";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.varnakonvice.lazenskycommander.physicalacceptance";
+			};
+			name = "Release";
+		};
+		CA0000000000000000000039 /* physicalAcceptance Debug */ = {
+			isa = "XCBuildConfiguration";
+			buildSettings = {
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				APPLICATION_EXTENSION_API_ONLY = "YES";
+				DEVELOPMENT_TEAM = "2CCL69T42P";
+				SWIFT_VERSION = "6.0";
+				MARKETING_VERSION = "1.0";
+				INFOPLIST_FILE = "LazenskyCommanderLiveActivity/Info.plist";
+				SKIP_INSTALL = "YES";
+				TARGETED_DEVICE_FAMILY = "1";
+				GENERATE_INFOPLIST_FILE = "NO";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				CODE_SIGN_STYLE = "Automatic";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = "iphoneos";
+				SWIFT_EMIT_LOC_STRINGS = "YES";
+				IPHONEOS_DEPLOYMENT_TARGET = "26.1";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.varnakonvice.lazenskycommander.physicalacceptance.liveactivity";
+				CURRENT_PROJECT_VERSION = "1";
+			};
+			name = "Debug";
+		};
+		CA000000000000000000003A /* physicalAcceptance Release */ = {
+			isa = "XCBuildConfiguration";
+			buildSettings = {
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				APPLICATION_EXTENSION_API_ONLY = "YES";
+				DEVELOPMENT_TEAM = "2CCL69T42P";
+				SWIFT_VERSION = "6.0";
+				MARKETING_VERSION = "1.0";
+				INFOPLIST_FILE = "LazenskyCommanderLiveActivity/Info.plist";
+				SKIP_INSTALL = "YES";
+				TARGETED_DEVICE_FAMILY = "1";
+				GENERATE_INFOPLIST_FILE = "NO";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				CODE_SIGN_STYLE = "Automatic";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = "iphoneos";
+				SWIFT_EMIT_LOC_STRINGS = "YES";
+				IPHONEOS_DEPLOYMENT_TARGET = "26.1";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.varnakonvice.lazenskycommander.physicalacceptance.liveactivity";
+				CURRENT_PROJECT_VERSION = "1";
+			};
+			name = "Release";
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1009,6 +1459,24 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		CA0000000000000000000021 /* physicalAcceptance XCConfigurationList */ = {
+			isa = "XCConfigurationList";
+			defaultConfigurationIsVisible = "0";
+			defaultConfigurationName = "Release";
+			buildConfigurations = (
+				"CA000000000000000000001F",
+				"CA0000000000000000000020",
+			);
+		};
+		CA000000000000000000003B /* physicalAcceptance XCConfigurationList */ = {
+			isa = "XCConfigurationList";
+			defaultConfigurationIsVisible = "0";
+			defaultConfigurationName = "Release";
+			buildConfigurations = (
+				"CA0000000000000000000039",
+				"CA000000000000000000003A",
+			);
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -1038,6 +1506,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A10000000000000000000030 /* XCLocalSwiftPackageReference "../LazenskyCommander" */;
 			productName = LazenskyCommanderCore;
+		};
+		CA0000000000000000000005 /* physicalAcceptance XCSwiftPackageProductDependency */ = {
+			isa = "XCSwiftPackageProductDependency";
+			package = "A10000000000000000000030";
+			productName = "LazenskyCommanderCore";
+		};
+		CA0000000000000000000024 /* physicalAcceptance XCSwiftPackageProductDependency */ = {
+			isa = "XCSwiftPackageProductDependency";
+			package = "A10000000000000000000030";
+			productName = "LazenskyCommanderCore";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
