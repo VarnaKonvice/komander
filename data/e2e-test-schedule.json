@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "scheduleVersion": 2026083101,
+  "scheduleVersion": 2026083102,
   "updatedAt": "2026-08-30T18:00:51Z",
   "stay": {
     "spa": "TEST A/B - vzdálená změna rozpisu",
@@ -25,23 +25,23 @@
     {
       "stableId": "e2e-remote-20260830-change-procedure",
       "date": "2026-08-30",
-      "start": "23:00",
-      "end": "23:15",
-      "title": "TEST A - Magnetoterapie PŮVODNÍ",
+      "start": "23:20",
+      "end": "23:35",
+      "title": "TEST B - Magnetoterapie ZMĚNĚNÁ",
       "location": "Elektroléčba TEST",
       "kind": "procedure",
       "procedureType": "Magnetoterapie",
       "leadTimeMinutes": 10
     },
     {
-      "stableId": "e2e-remote-20260830-remove-procedure",
+      "stableId": "e2e-remote-20260830-add-procedure",
       "date": "2026-08-30",
-      "start": "23:30",
-      "end": "23:40",
-      "title": "TEST A - Koupel ODSTRANIT",
-      "location": "Balneo TEST",
+      "start": "23:40",
+      "end": "23:55",
+      "title": "TEST B - Masáž NOVÁ",
+      "location": "Rehabilitace TEST",
       "kind": "procedure",
-      "procedureType": "Jodobromová koupel",
+      "procedureType": "Masáž",
       "leadTimeMinutes": 10
     }
   ],
