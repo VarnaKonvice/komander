@@ -15,6 +15,16 @@ Open `LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj` in Xcode 26.6 or newe
 
 The Watch app and widget share `group.com.varnakonvice.lazenskycommander.watch`. The iPhone app embeds the Live Activity extension and Watch app; the Watch app embeds its widget extension.
 
+## iPhone navigation
+
+The iPhone app has five tabs: **Dnes**, **Týden**, **Pobyt**, **Info**, and **Nastavení**. They share one `CommanderViewModel` and its existing validated `latestSchedule`; changing tabs never fetches a second schedule or starts another sync lifecycle.
+
+- **Dnes** keeps the existing live-state hero and full chronological timeline. `CommanderDashboardPresentation` adds up to two following future events and a `CommanderDaySummary`: procedure count (never meals), first/last event times, latest procedure end, dinner and the uninterrupted free interval before dinner. Departure times still come from `NativeAlarmContract` with local overrides. After procedures end, the summary shows the remaining time to dinner; a meals-only day has no invented procedure end and uses the current time for the remaining free interval. Dinner context clears when dinner starts, while the hero continues following `CommanderLiveStateCalculator`. Ended means scheduled `endAt` has passed, not confirmed attendance; no completion state is stored.
+- **Týden** lists every day containing schedule events, not just the next seven days. `CommanderWeekPresentation` uses `NativeAlarmContract.payload` with the current local overrides for all departure times, including departures on the preceding day.
+- **Pobyt** counts only procedures. Completed means the scheduled `endAt` has passed, not confirmed attendance. Inclusive stay length and current day use valid `stay.dateFrom` / `stay.dateTo` in Europe/Prague, including DST; missing or invalid boundaries are never inferred from event dates.
+- **Info** displays nonempty `Schedule.stay` metadata, including additional source keys. Missing values are omitted.
+- **Nastavení** contains the existing default/type/meal/event lead-time controls and a separate **Diagnostika** navigation destination for platform/recovery details. The controls continue calling the existing view-model methods; synchronization, persistence and platform behavior are unchanged.
+
 ## Canonical schedule and one-fetch sync
 
 `data/schedule.json` is the only schedule source of truth. `AppConfiguration.scheduleURL` points to its production raw GitHub URL. One manual iPhone sync downloads and validates the complete `Schedule` once through `CommanderScheduleSyncCoordinator`. The same validated value is then used by:

@@ -42,6 +42,8 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
   public let liveState: CommanderLiveStateResult
   public let currentEvent: CommanderDashboardEvent?
   public let nextEvent: CommanderDashboardEvent?
+  public let thenEvent: CommanderDashboardEvent?
+  public let daySummary: CommanderDaySummary
   public let timeline: [CommanderDashboardEvent]
   public let meals: [CommanderDashboardEvent]
   public let now: Date
@@ -62,6 +64,8 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
         liveState: liveState,
         currentEvent: nil,
         nextEvent: nil,
+        thenEvent: nil,
+        daySummary: CommanderDaySummary.make(timeline: [], now: now),
         timeline: [],
         meals: [],
         now: now
@@ -73,19 +77,19 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
     let currentEvent = liveState.event.flatMap { liveEvent in
       timeline.first { $0.event.stableId == liveEvent.stableId }
     }
-    let nextEvent = currentEvent.flatMap { item -> CommanderDashboardEvent? in
-      guard let index = timeline.firstIndex(where: { $0.event.stableId == item.event.stableId }) else {
-        return nil
-      }
-      let nextIndex = timeline.index(after: index)
-      return nextIndex < timeline.endIndex ? timeline[nextIndex] : nil
-    }
+    let following = currentEvent.map { current in
+      Array(timeline.filter {
+        $0.phase == .future && $0.event.stableId != current.event.stableId
+      }.prefix(2))
+    } ?? []
 
     return CommanderDashboardPresentation(
       mode: mode,
       liveState: liveState,
       currentEvent: currentEvent,
-      nextEvent: nextEvent,
+      nextEvent: following.first,
+      thenEvent: following.count > 1 ? following[1] : nil,
+      daySummary: CommanderDaySummary.make(timeline: timeline, now: now),
       timeline: timeline,
       meals: timeline.filter { $0.event.kind == .meal },
       now: now

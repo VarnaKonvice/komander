@@ -4,6 +4,7 @@ import SwiftUI
 struct CommanderNextEventView: View {
   let item: CommanderDashboardEvent
   let now: Date
+  var title = "Co následuje"
 
   private var detail: String {
     let target = item.leaveAt > now ? item.leaveAt : item.startAt
@@ -14,7 +15,7 @@ struct CommanderNextEventView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
-      CommanderSectionTitle(title: "Co následuje", systemImage: "arrow.right.circle")
+      CommanderSectionTitle(title: title, systemImage: "arrow.right.circle")
       HStack(alignment: .center, spacing: 12) {
         CommanderEventIconView(event: item.event, size: 48)
         VStack(alignment: .leading, spacing: 3) {

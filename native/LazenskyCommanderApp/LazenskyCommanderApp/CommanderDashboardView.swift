@@ -21,7 +21,7 @@ struct CommanderDashboardView: View {
     .toolbar {
       ToolbarItem(placement: .topBarTrailing) {
         NavigationLink {
-          CommanderSystemStatusView(model: model)
+          CommanderSettingsView(model: model)
         } label: {
           Image(systemName: "gearshape")
             .overlay(alignment: .topTrailing) {
@@ -33,7 +33,7 @@ struct CommanderDashboardView: View {
               }
             }
         }
-        .accessibilityLabel("Stav systému a čas odchodu")
+        .accessibilityLabel("Nastavení")
       }
     }
   }
@@ -69,6 +69,10 @@ struct CommanderDashboardContent: View {
           if let next = presentation.nextEvent {
             CommanderNextEventView(item: next, now: now)
           }
+          if let then = presentation.thenEvent {
+            CommanderNextEventView(item: then, now: now, title: "Potom")
+          }
+          CommanderDaySummaryView(summary: presentation.daySummary)
           if !presentation.meals.isEmpty {
             CommanderMealSummaryView(meals: presentation.meals)
           }
