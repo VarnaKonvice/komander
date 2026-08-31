@@ -95,7 +95,7 @@ struct CommanderProvisioningSection: View {
   }
 
   func replaceReminder(_ request: ProvisioningReminderRequest) async throws {
-    await clearReminder()
+    await clearPendingReminder()
     let content = UNMutableNotificationContent()
     content.title = ProvisioningReminderRequest.title
     content.body = ProvisioningReminderRequest.body
@@ -112,8 +112,11 @@ struct CommanderProvisioningSection: View {
     try await center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
   }
 
-  func clearReminder() async {
+  func clearPendingReminder() async {
     center.removePendingNotificationRequests(withIdentifiers: [identifier])
+  }
+
+  func clearDeliveredReminder() async {
     center.removeDeliveredNotifications(withIdentifiers: [identifier])
   }
 }

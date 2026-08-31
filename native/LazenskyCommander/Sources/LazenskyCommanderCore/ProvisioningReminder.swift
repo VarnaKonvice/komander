@@ -29,7 +29,8 @@ public enum ProvisioningReminderStatus: Equatable, Sendable {
   func requestPermission() async throws -> Bool
   func pendingReminder() async -> ProvisioningReminderRequest?
   func replaceReminder(_ request: ProvisioningReminderRequest) async throws
-  func clearReminder() async
+  func clearPendingReminder() async
+  func clearDeliveredReminder() async
 }
 
 @available(macOS 10.15, *)
@@ -58,17 +59,19 @@ public enum ProvisioningReminderStatus: Equatable, Sendable {
     profile: ProvisioningProfileMetadata?, now: Date, requestPermission: Bool
   ) async -> ProvisioningReminderStatus {
     guard let profile, profile.creationDate <= now else {
-      await notifications.clearReminder()
+      await notifications.clearPendingReminder()
       return .unavailable
     }
     guard profile.expirationDate > now else {
-      await notifications.clearReminder()
+      await notifications.clearPendingReminder()
       return .expired
     }
     guard profile.recommendedRefreshAt > now else {
-      await notifications.clearReminder()
+      await notifications.clearPendingReminder()
       return .due
     }
+
+    await notifications.clearDeliveredReminder()
 
     var permission = await notifications.permission()
     if case .notRequested = permission, requestPermission {
@@ -80,10 +83,10 @@ public enum ProvisioningReminderStatus: Equatable, Sendable {
     }
     switch permission {
     case .notRequested:
-      await notifications.clearReminder()
+      await notifications.clearPendingReminder()
       return .permissionRequired
     case .denied:
-      await notifications.clearReminder()
+      await notifications.clearPendingReminder()
       return .denied
     case .allowed:
       break

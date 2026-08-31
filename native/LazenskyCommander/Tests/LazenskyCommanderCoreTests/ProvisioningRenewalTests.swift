@@ -93,7 +93,7 @@ func localSignedProfileMatchesSecurityCMSDecodedMetadata() throws {
   #expect(notifications.pending[ProvisioningReminderRequest.identifier]?.fireAt == new.recommendedRefreshAt)
   #expect(notifications.pending["lazensky.commander.iphone.fallback.procedure"] == notifications.foreign)
   #expect(notifications.replacements == 2)
-  #expect(notifications.removed == [ProvisioningReminderRequest.identifier, ProvisioningReminderRequest.identifier])
+  #expect(notifications.removedPending == [ProvisioningReminderRequest.identifier, ProvisioningReminderRequest.identifier])
 }
 
 @Test @MainActor func sameProfileNeverMovesDeadlineToTodayPlusSixOrDuplicatesReminder() async {
@@ -104,6 +104,52 @@ func localSignedProfileMatchesSecurityCMSDecodedMetadata() throws {
   #expect(await service.refresh(profile: profile, now: provisioningDate("2026-09-04T10:00:00Z")) == .scheduled(profile.recommendedRefreshAt))
   #expect(notifications.replacements == 1)
   #expect(notifications.pending[ProvisioningReminderRequest.identifier]?.fireAt == provisioningDate("2026-09-06T10:00:00Z"))
+}
+
+@Test @MainActor func dueProfileKeepsAlreadyDeliveredProvisioningReminder() async {
+  let notifications = ProvisioningNotificationsFake()
+  let service = ProvisioningReminderCoordinator(notifications: notifications)
+  let profile = provisioningProfile()
+  notifications.pending[ProvisioningReminderRequest.identifier] = ProvisioningReminderRequest(
+    fireAt: profile.recommendedRefreshAt,
+    profileCreatedAt: profile.creationDate,
+    profileExpiresAt: profile.expirationDate
+  )
+  notifications.delivered.insert(ProvisioningReminderRequest.identifier)
+
+  #expect(await service.refresh(profile: profile, now: profile.recommendedRefreshAt) == .due)
+  #expect(notifications.pending[ProvisioningReminderRequest.identifier] == nil)
+  #expect(notifications.delivered.contains(ProvisioningReminderRequest.identifier))
+  #expect(notifications.pending["lazensky.commander.iphone.fallback.procedure"] == notifications.foreign)
+  #expect(notifications.delivered.contains("lazensky.commander.iphone.fallback.procedure"))
+}
+
+@Test @MainActor func newValidProvisioningProfileClearsOldDeliveredReminder() async {
+  let notifications = ProvisioningNotificationsFake()
+  let service = ProvisioningReminderCoordinator(notifications: notifications)
+  let renewed = provisioningProfile(creation: "2026-09-02T10:00:00Z", expiration: "2026-09-09T10:00:00Z")
+  notifications.delivered.insert(ProvisioningReminderRequest.identifier)
+
+  #expect(await service.refresh(profile: renewed, now: renewed.creationDate) == .scheduled(renewed.recommendedRefreshAt))
+  #expect(notifications.pending[ProvisioningReminderRequest.identifier]?.fireAt == renewed.recommendedRefreshAt)
+  #expect(!notifications.delivered.contains(ProvisioningReminderRequest.identifier))
+  #expect(notifications.delivered.contains("lazensky.commander.iphone.fallback.procedure"))
+}
+
+@Test @MainActor func pendingProvisioningReminderCanBeReplacedAndCancelledSeparately() async {
+  let notifications = ProvisioningNotificationsFake()
+  let service = ProvisioningReminderCoordinator(notifications: notifications)
+  let old = provisioningProfile()
+  let renewed = provisioningProfile(creation: "2026-09-02T10:00:00Z", expiration: "2026-09-09T10:00:00Z")
+
+  #expect(await service.refresh(profile: old, now: old.creationDate) == .scheduled(old.recommendedRefreshAt))
+  #expect(await service.refresh(profile: renewed, now: renewed.creationDate) == .scheduled(renewed.recommendedRefreshAt))
+  #expect(notifications.pending[ProvisioningReminderRequest.identifier]?.fireAt == renewed.recommendedRefreshAt)
+  #expect(notifications.replacements == 2)
+
+  #expect(await service.refresh(profile: renewed, now: renewed.recommendedRefreshAt) == .due)
+  #expect(notifications.pending[ProvisioningReminderRequest.identifier] == nil)
+  #expect(notifications.pending["lazensky.commander.iphone.fallback.procedure"] == notifications.foreign)
 }
 
 @Test @MainActor func provisioningPermissionIsOnlyRequestedByAnExplicitUserAction() async {
@@ -135,6 +181,7 @@ func localSignedProfileMatchesSecurityCMSDecodedMetadata() throws {
   }
   #expect(notifications.replacements == 1)
   #expect(notifications.pending == ["lazensky.commander.iphone.fallback.procedure": notifications.foreign])
+  #expect(notifications.delivered.contains("lazensky.commander.iphone.fallback.procedure"))
 }
 
 @Test @MainActor func provisioningSchedulingFailureAndReadbackMismatchNeverReportScheduled() async {
@@ -168,6 +215,8 @@ func localSignedProfileMatchesSecurityCMSDecodedMetadata() throws {
   let app = root.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp")
   let service = try String(contentsOf: app.appendingPathComponent("CommanderProvisioningRenewal.swift"), encoding: .utf8)
   #expect(service.contains("withIdentifiers: [identifier]"))
+  #expect(service.contains("removePendingNotificationRequests(withIdentifiers: [identifier])"))
+  #expect(service.contains("removeDeliveredNotifications(withIdentifiers: [identifier])"))
   #expect(service.contains("options: [.alert, .sound]"))
   #expect(service.contains("AppConfiguration().channel == .production"))
   for forbidden in ["removeAllPending", "AlarmKit", "NativeAlarmContract", "UserDefaults", "fetchSchedule", "synchronize(", "timeSensitive"] {
@@ -213,13 +262,18 @@ private func der(_ tag: UInt8, _ body: Data) -> Data {
 @MainActor private final class ProvisioningNotificationsFake: ProvisioningReminderNotifications {
   let foreign = ProvisioningReminderRequest(fireAt: provisioningDate("2026-09-01T09:00:00Z"), profileCreatedAt: Date(), profileExpiresAt: Date())
   var pending: [String: ProvisioningReminderRequest] = [:]
+  var delivered: Set<String> = []
   var authorization: ProvisioningNotificationPermission = .allowed
   var replacements = 0
   var permissionRequests = 0
-  var removed: [String] = []
+  var removedPending: [String] = []
+  var removedDelivered: [String] = []
   var failAdd = false
   var dropAdd = false
-  init() { pending["lazensky.commander.iphone.fallback.procedure"] = foreign }
+  init() {
+    pending["lazensky.commander.iphone.fallback.procedure"] = foreign
+    delivered.insert("lazensky.commander.iphone.fallback.procedure")
+  }
   func permission() async -> ProvisioningNotificationPermission { authorization }
   func requestPermission() async throws -> Bool { permissionRequests += 1; authorization = .allowed; return true }
   func pendingReminder() async -> ProvisioningReminderRequest? {
@@ -227,14 +281,18 @@ private func der(_ tag: UInt8, _ body: Data) -> Data {
     return pending[ProvisioningReminderRequest.identifier]
   }
   func replaceReminder(_ request: ProvisioningReminderRequest) async throws {
-    await clearReminder()
+    await clearPendingReminder()
     if failAdd { throw CocoaError(.fileWriteUnknown) }
     replacements += 1
     if !dropAdd { pending[ProvisioningReminderRequest.identifier] = request }
   }
-  func clearReminder() async {
-    removed.append(ProvisioningReminderRequest.identifier)
+  func clearPendingReminder() async {
+    removedPending.append(ProvisioningReminderRequest.identifier)
     pending.removeValue(forKey: ProvisioningReminderRequest.identifier)
+  }
+  func clearDeliveredReminder() async {
+    removedDelivered.append(ProvisioningReminderRequest.identifier)
+    delivered.remove(ProvisioningReminderRequest.identifier)
   }
 }
 #endif
