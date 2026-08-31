@@ -18,6 +18,8 @@ struct CommanderSettingsView: View {
         }
       }
 
+      CommanderProvisioningSection()
+
       Section("Rozpis") {
         Button {
           model.synchronize()

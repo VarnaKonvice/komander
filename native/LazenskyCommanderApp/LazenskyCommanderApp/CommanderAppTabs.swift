@@ -2,6 +2,8 @@ import SwiftUI
 
 struct CommanderAppTabs: View {
   @ObservedObject var model: CommanderViewModel
+  @StateObject private var renewal = CommanderProvisioningRenewal()
+  @Environment(\.scenePhase) private var scenePhase
 
   var body: some View {
     TabView {
@@ -17,6 +19,11 @@ struct CommanderAppTabs: View {
         .tabItem { Label("Nastavení", systemImage: "gearshape") }
     }
     .tint(CommanderDashboardPalette.commanderPurpleLight)
+    .environmentObject(renewal)
+    .task { await renewal.refresh() }
+    .onChange(of: scenePhase) { _, phase in
+      if phase == .active { Task { await renewal.refresh() } }
+    }
   }
 }
 

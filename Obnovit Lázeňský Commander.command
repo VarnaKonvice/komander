@@ -10,7 +10,7 @@ APP_BUNDLE_ID="com.varnakonvice.lazenskycommander"
 WATCH_SCHEME="LazenskyCommanderWatchApp"
 WATCH_BUNDLE_ID="com.varnakonvice.lazenskycommander.watchkitapp"
 CONFIGURATION="Debug"
-TARGET_BRANCH="lc/stability-pass-v1"
+TARGET_BRANCH="${LC_REFRESH_TARGET_BRANCH:-main}"
 EXPECTED_REPOSITORY="VarnaKonvice/komander"
 LAUNCHER_FILENAME="Obnovit Lázeňský Commander.command"
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
@@ -93,6 +93,42 @@ plist_raw() {
   /usr/bin/plutil -extract "$keypath" raw -n "$file" 2>/dev/null || true
 }
 
+read_profile_refresh_dates() {
+  local profile="$1"
+  local decoded="$2"
+  local creation expiration creation_epoch expiration_epoch
+  /usr/bin/security cms -D -i "$profile" -o "$decoded" >> "$LOG_FILE" 2>&1 || return 1
+  creation="$(plist_raw CreationDate "$decoded")"
+  expiration="$(plist_raw ExpirationDate "$decoded")"
+  [[ "$creation" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || return 1
+  [[ "$expiration" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || return 1
+  creation_epoch="$(LC_ALL=C /bin/date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$creation" '+%s' 2>> "$LOG_FILE")" || return 1
+  expiration_epoch="$(LC_ALL=C /bin/date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$expiration" '+%s' 2>> "$LOG_FILE")" || return 1
+  [[ "$(/bin/date -u -r "$creation_epoch" '+%Y-%m-%dT%H:%M:%SZ')" == "$creation" ]] || return 1
+  [[ "$(/bin/date -u -r "$expiration_epoch" '+%Y-%m-%dT%H:%M:%SZ')" == "$expiration" ]] || return 1
+  [[ "$creation_epoch" -lt "$expiration_epoch" ]] || return 1
+  PROFILE_EXPIRATION_EPOCH="$expiration_epoch"
+  PROFILE_EXPIRATION_DATE="$(TZ=Europe/Prague /bin/date -r "$expiration_epoch" '+%d.%m.%Y %H:%M')" || return 1
+  NEXT_REFRESH_DATE="$(TZ=Europe/Prague /bin/date -r "$expiration_epoch" -v-1d '+%d.%m.%Y')" || return 1
+  log "Provisioning dates: creation=$creation; expiration=$expiration; next=$NEXT_REFRESH_DATE; source=embedded.mobileprovision"
+  return 0
+}
+
+set_refresh_deadline_after_install() {
+  if [[ "$PROFILE_DATES_AVAILABLE" == "1" ]]; then
+    REFRESH_PROFILE_SUMMARY="Platnost iPhone aplikace do: $PROFILE_EXPIRATION_DATE"
+  else
+    NEXT_REFRESH_DATE="$(TZ=Europe/Prague /bin/date -v+6d '+%d.%m.%Y' 2>> "$LOG_FILE" || true)"
+    log "WARNING: provisioning dates unavailable; next refresh uses installation +6 calendar days."
+    REFRESH_PROFILE_SUMMARY="Termín obnovy je pouze odhad; platnost profilu se nepodařilo přečíst."
+  fi
+  status "$REFRESH_PROFILE_SUMMARY"
+  if [[ -z "$NEXT_REFRESH_DATE" ]]; then
+    NEXT_REFRESH_DATE="nelze určit"
+    log "WARNING: recommended next refresh date could not be calculated."
+  fi
+}
+
 WATCH_STATUS="přeskočeno"
 WATCH_REASON="nativní Watch aplikace nebyla obnovena"
 WATCH_ELIGIBLE=0
@@ -141,6 +177,10 @@ case "$ORIGIN_URL" in
   "https://github.com/$EXPECTED_REPOSITORY"|"https://github.com/$EXPECTED_REPOSITORY.git"|"git@github.com:$EXPECTED_REPOSITORY.git"|"ssh://git@github.com/$EXPECTED_REPOSITORY.git") ;;
   *) fail "Git origin neukazuje na ověřený repozitář VarnaKonvice/komander. Nic nebylo změněno ani nainstalováno." ;;
 esac
+
+if ! /usr/bin/git check-ref-format "refs/heads/$TARGET_BRANCH" >/dev/null 2>&1; then
+  fail "Cílová větev obnovy má neplatný název."
+fi
 
 INITIAL_DIRTY="$(/usr/bin/git -C "$REPO_ROOT" status --porcelain=v1 --untracked-files=all 2>> "$LOG_FILE" || true)"
 if [[ -n "$INITIAL_DIRTY" ]]; then
@@ -206,7 +246,7 @@ if [[ "$START_LAUNCHER_HASH" != "$TARGET_LAUNCHER_HASH" ]]; then
     fail "Cílová větev se během obnovy znovu změnila. Spusť obnovu ještě jednou."
   fi
   status "Spouštím právě staženou verzi obnovovacího nástroje..."
-  LC_REFRESH_RELAUNCH_COUNT=1 /usr/bin/env LC_REFRESH_NO_DIALOG="${LC_REFRESH_NO_DIALOG:-0}" "$TARGET_LAUNCHER" "$@"
+  LC_REFRESH_RELAUNCH_COUNT=1 /usr/bin/env LC_REFRESH_TARGET_BRANCH="$TARGET_BRANCH" LC_REFRESH_NO_DIALOG="${LC_REFRESH_NO_DIALOG:-0}" "$TARGET_LAUNCHER" "$@"
   exit $?
 fi
 
@@ -495,6 +535,17 @@ if ! /usr/bin/codesign --verify --strict "$APP_PATH" >> "$LOG_FILE" 2>&1; then
   fail "Kontrola podpisu sestavené iPhone aplikace selhala."
 fi
 
+PROFILE_DATES_AVAILABLE=0
+PROFILE_EXPIRATION_EPOCH=""
+PROFILE_EXPIRATION_DATE=""
+NEXT_REFRESH_DATE=""
+if read_profile_refresh_dates "$APP_PATH/embedded.mobileprovision" "$TEMP_DIR/iphone-profile.plist"; then
+  PROFILE_DATES_AVAILABLE=1
+  if [[ "$PROFILE_EXPIRATION_EPOCH" -le "$(/bin/date '+%s')" ]]; then
+    fail "Xcode vytvořil aplikaci s již prošlým provisioning profilem. Ověř Personal Team v Xcode."
+  fi
+fi
+
 APP_VERSION="$(plist_raw CFBundleShortVersionString "$APP_PATH/Info.plist")"
 APP_BUILD="$(plist_raw CFBundleVersion "$APP_PATH/Info.plist")"
 status "Ověřená iPhone aplikace: verze ${APP_VERSION:-neuvedena} (${APP_BUILD:-bez čísla})."
@@ -532,11 +583,20 @@ if [[ ! "$IPHONE_APP_COUNT" =~ ^[0-9]+$ || "$IPHONE_APP_COUNT" -lt 1 ]]; then
 fi
 log "iPhone post-install verification: success; bundleID=$APP_BUNDLE_ID"
 
-NEXT_REFRESH_DATE="$(/bin/date -v+6d '+%d.%m.%Y' 2>> "$LOG_FILE" || true)"
-if [[ -z "$NEXT_REFRESH_DATE" ]]; then
-  NEXT_REFRESH_DATE="nelze určit"
-  log "WARNING: recommended next refresh date could not be calculated."
+set_refresh_deadline_after_install
+
+IPHONE_LAUNCH_JSON="$TEMP_DIR/iphone-launch.json"
+status "Otevírám Commander pro automatickou aktualizaci připomenutí obnovy..."
+if ! "$DEVICECTL" device process launch \
+  --device "$DEVICE_IDENTIFIER" \
+  --quiet --timeout 30 --json-output "$IPHONE_LAUNCH_JSON" \
+  "$APP_BUNDLE_ID" >> "$LOG_FILE" 2>&1; then
+  fail "Aplikace je nainstalovaná, ale nejde otevřít. Odemkni iPhone a otevři Commander, aby se aktualizovalo připomenutí obnovy."
 fi
+if [[ "$(plist_raw info.outcome "$IPHONE_LAUNCH_JSON")" != "success" ]]; then
+  fail "Instalace je ověřená, ale spuštění Commanderu nebylo potvrzeno. Otevři jej na iPhonu pro aktualizaci připomenutí."
+fi
+log "iPhone post-install launch: success"
 
 attempt_watch_refresh() {
   probe_watch_eligibility
@@ -620,4 +680,4 @@ fi
 status "$WATCH_SUMMARY"
 status "DALŠÍ OBNOVA NEJPOZDĚJI: $NEXT_REFRESH_DATE"
 status "Technický log: $LOG_FILE"
-show_dialog "1" "HOTOVO – Lázeňský Commander na iPhonu byl obnoven.\n\nVětev + commit: $TARGET_BRANCH @ $GIT_COMMIT_SHORT\niPhone: OK\n$WATCH_SUMMARY\nDALŠÍ OBNOVA NEJPOZDĚJI: $NEXT_REFRESH_DATE\n\nTechnický log:\n$LOG_FILE"
+show_dialog "1" "HOTOVO – Lázeňský Commander na iPhonu byl obnoven.\n\nVětev + commit: $TARGET_BRANCH @ $GIT_COMMIT_SHORT\niPhone: OK\n$WATCH_SUMMARY\n$REFRESH_PROFILE_SUMMARY\nDALŠÍ OBNOVA NEJPOZDĚJI: $NEXT_REFRESH_DATE\n\nTechnický log:\n$LOG_FILE"
