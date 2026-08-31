@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
   name: "LazenskyCommander",
-  platforms: [.iOS(.v26)],
+  platforms: [.iOS(.v26), .watchOS(.v26)],
   products: [
     .library(name: "LazenskyCommanderCore", targets: ["LazenskyCommanderCore"]),
     .executable(name: "LazenskyCommanderCoreCheck", targets: ["LazenskyCommanderCoreCheck"])

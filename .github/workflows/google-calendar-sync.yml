@@ -1,0 +1,51 @@
+name: Google Calendar sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - data/schedule.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: google-calendar-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: calendar-sync/package-lock.json
+
+      - name: Install calendar sync dependencies
+        run: npm ci --prefix calendar-sync --ignore-scripts
+
+      - name: Validate canonical schedule and build dry-run plan
+        run: node calendar-sync/sync-google-calendar.mjs --dry-run
+
+      - name: Authenticate to Google Cloud with GitHub OIDC
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: lazensky-commander
+          workload_identity_provider: projects/217549425263/locations/global/workloadIdentityPools/github-actions/providers/github-actions
+          service_account: lazensky-commander-calendar-sy@lazensky-commander.iam.gserviceaccount.com
+          create_credentials_file: true
+          export_environment_variables: true
+
+      - name: Reconcile Google Calendars
+        env:
+          LC_GOOGLE_CALENDAR_PROCEDURES_ID: db2404031f09c22434d9bdd742fc36923f883dd7ce74e226eede91eff7251e52@group.calendar.google.com
+          LC_GOOGLE_CALENDAR_MEALS_ID: 9cff5505c1e7952468ba2655da0bb69a7a06d35e80afe6787f7b9785f99a1fb9@group.calendar.google.com
+        run: node calendar-sync/sync-google-calendar.mjs --write

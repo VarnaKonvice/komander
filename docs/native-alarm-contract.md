@@ -53,3 +53,39 @@ Every alarm entry is derived through `LazenskySchedule.alarmContract(schedule, o
 - A higher `scheduleVersion` alone never produces `update`.
 
 The native client owns its local mapping from `stableId` to `AlarmKit.Alarm.ID` (or another platform identifier). Neither `data/schedule.json` nor this payload contains a platform UUID. The mapping is local implementation state and can be recreated from the canonical payload and reconciliation plan.
+
+## Implementovaná iPhone adaptace
+
+`LazenskyCommanderApp` načte a validuje schedule jednou. Stejný `Schedule` používá `AlarmSyncService`, Commander Live Card a `WatchScheduleSnapshot`. AlarmKit reconciliation ukládá lokální mapování `stableId -> AlarmKit Alarm.ID`; změněné alarmově relevantní pole vede k update, odstraněná událost k cancel a samotné zvýšení `scheduleVersion` update nevytváří.
+
+Canonical native payload nadále obsahuje všechny události. `AlarmSyncService` z něj pro konkrétní synchronizaci vytvoří pouze AlarmKit desired set s `leaveAt > now`; `leaveAt == now` se již neplánuje. Minulý managed alarm, který v AlarmKitu stále existuje, se cancelne, zatímco chybějící platformní alarm se pouze odstraní z lokálního mapování. Uložený `ManagedAlarmState` po úspěšném syncu obsahuje jen spravované budoucí AlarmKit alarmy. Tento filtr nemění `Schedule`, Live Card ani celý `WatchScheduleSnapshot`.
+
+Cílový čas zazvonění je canonical `leaveAt`. `AlarmCountdown` zachovává okno od konce předchozí události, nejvýše 30 minut; při nulovém okně používá přímý alarm bez countdownu. `AlarmAttributes<CommanderAlarmMetadata>` předává `stableId`, `scheduleVersion`, `iconKey`, `title`, `location`, `kind`, `startAt` a `leaveAt` skutečné Live Activity extension. Lock Screen i Dynamic Island vykreslují stejný systémový `AlarmPresentationState.Mode.Countdown.fireDate`, nikoli vlastní odpočet.
+
+### AlarmKit countdown scheduling and read-back
+
+Physical E2E on 2026-08-30 demonstrated that `.fixed(10:20)` with `preAlert = 300` starts the countdown at 10:20 and alerts at 10:25. The adapter must therefore distinguish countdown start from the canonical alert deadline:
+
+- Before the countdown window: `schedule = .fixed(leaveAt - countdownWindow)`, `preAlert = countdownWindow`.
+- At or inside the window: `schedule = nil`, `preAlert = leaveAt - now`, starting the remaining countdown immediately.
+- Zero window: `.alarm(schedule: .fixed(leaveAt), ...)`, without a pre-alert duration.
+
+`scheduledAlertAt` remains the canonical target, not the fixed schedule argument for a countdown. The native payload and lead-time priorities do not change.
+
+Read-back verifies the effective endpoint against canonical `leaveAt` (existing one-second tolerance): observed AlarmKit activity `fireDate` keyed by platform `alarmID`, or fixed countdown start plus stored `preAlert` when no active countdown is exposed. An immediate timer with no fixed schedule requires the observed `fireDate`; desired metadata is never evidence of the actual endpoint. If this read-back is not available yet, verification reports a recoverable error, preserves the managed IDs, and the existing retry reads them again without cancelling/recreating them. Timing inspection is limited to managed future alarms so expired alarms and orphans can still be removed by existing ID reconciliation.
+
+This repairs the regression introduced by `260730f` / `c574e86` and the raw-fixed-date verification in `7d6acf4`; it does not roll back production/E2E isolation, ownership, self-recovery, or canonical synchronization. A signed physical confirmation remains necessary; generic builds and simulated runtime tests alone cannot prove an audible alarm deadline.
+
+Before reconciliation writes, only retained unchanged alarms require old timing read-back. Explicit updates and cancellations must not depend on an obsolete timer's activity being available; all replacements still undergo strict post-write verification.
+
+### Local physical acceptance
+
+The [physical acceptance app](physical-alarm-acceptance.md) uses this same contract and adapter with a locally generated two-event Schedule, explicit empty device overrides, fresh in-memory state and a unique run namespace. Its bundle and ownership ledger are separate from production and remote E2E. `resolvedLeadTime` exposes provenance from the existing priority resolver without changing payload shape or priority. Production ActivityKit behavior is enabled in this isolated mode; Watch delivery and network schedule fetching are absent. READY requires actual platform read-back, and never implies a physically confirmed PASS.
+
+## Implementovaná Watch adaptace
+
+iPhone předává celý `WatchScheduleSnapshot` přes `WCSession.updateApplicationContext`. Watch envelope i schedule se znovu validují a vyšší verze se atomicky uloží do App Group `group.com.varnakonvice.lazenskycommander.watch`. Watch app a WidgetKit extension čtou pouze tuto cache; přímý Watch internet fetch není implementovaný ani potřebný.
+
+Widget timeline a RelevanceKit intervaly se odvozují z celého cached pobytu a společného live-state/alarm contractu. Cache je platná do poslední události plus 24 hodin. Neobsahuje GPS, location relevance ani cellular podmínky.
+
+Volitelný persistentní režim **Samostatné alarmy Watch** používá `UNUserNotificationCenter` přímo na watchOS. Požadavky jsou standardní active lokální notifikace se systémovým zvukem a respektují systémová nastavení notifikací a režimů soustředění na Watch. Budoucí notifikace se odvozují ze stejného native payloadu a mají deterministický identifikátor `lazensky.commander.watch.leave.<stableId>`, titul `Čas vyrazit` a tělo `<procedura> · <místo>`. Reconciliation spravuje pouze tento namespace, podporuje create/update/cancel/unchanged a plánuje nejbližších nejvýše 60 pending požadavků. Rolling limit neomezuje data uložená v cache. Vypnutí režimu odstraní pouze tyto Watch leave notifikace; cizí požadavky zůstávají nedotčené.

@@ -1,5 +1,15 @@
 import Foundation
 
+public enum LeadTimeSource: String, Codable, Sendable {
+  case localEventOverride, localTypeOverride, localDefault
+  case eventOverride, scheduleTypeOverride, scheduleDefault
+}
+
+public struct ResolvedLeadTime: Equatable, Sendable {
+  public let minutes: Int
+  public let source: LeadTimeSource
+}
+
 public enum NativeAlarmContract {
   public static let contractVersion = 1
   private static let prague = TimeZone(identifier: "Europe/Prague")!
@@ -23,28 +33,51 @@ public enum NativeAlarmContract {
     }
   }
 
+  public static func validateCanonical(_ schedule: Schedule) throws {
+    try validate(schedule)
+    guard schedule.scheduleVersion > 0 else { throw ScheduleValidationError.invalidScheduleVersion }
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    let fallback = ISO8601DateFormatter()
+    guard formatter.date(from: schedule.updatedAt) != nil || fallback.date(from: schedule.updatedAt) != nil else {
+      throw ScheduleValidationError.invalidUpdatedAt(schedule.updatedAt)
+    }
+  }
+
   public static func payload(schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> NativeAlarmPayload {
     try validate(schedule)
-    let alarms = try schedule.events.map { event in
-      let startAt = try dateTime(date: event.date, time: event.start)
-      let endAt = try dateTime(date: event.date, time: event.end)
-      let leadTime = try effectiveLeadTime(event: event, schedule: schedule, overrides: overrides)
-      let leaveAt = startAt.addingTimeInterval(TimeInterval(-leadTime * 60))
-      return NativeAlarm(stableId: event.stableId, kind: event.kind, title: event.title, location: event.location, startAt: format(startAt), endAt: format(endAt), effectiveLeadTimeMinutes: leadTime, leaveAt: format(leaveAt))
+    return try payloadValidated(schedule: schedule, overrides: overrides)
+  }
+
+  static func payloadValidated(schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> NativeAlarmPayload {
+    let alarms = try schedule.events.map {
+      try alarm(event: $0, schedule: schedule, overrides: overrides)
     }.sorted { [$0.startAt, $0.endAt, $0.stableId].joined(separator: "|") < [$1.startAt, $1.endAt, $1.stableId].joined(separator: "|") }
     return NativeAlarmPayload(contractVersion: contractVersion, scheduleVersion: schedule.scheduleVersion, alarms: alarms)
   }
 
+  static func alarm(event: ScheduleEvent, schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> NativeAlarm {
+    let startAt = try dateTime(date: event.date, time: event.start)
+    let endAt = try dateTime(date: event.date, time: event.end)
+    let leadTime = try effectiveLeadTime(event: event, schedule: schedule, overrides: overrides)
+    let leaveAt = startAt.addingTimeInterval(TimeInterval(-leadTime * 60))
+    return NativeAlarm(stableId: event.stableId, kind: event.kind, title: event.title, location: event.location, startAt: format(startAt), endAt: format(endAt), effectiveLeadTimeMinutes: leadTime, leaveAt: format(leaveAt))
+  }
+
   public static func effectiveLeadTime(event: ScheduleEvent, schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> Int {
+    try resolvedLeadTime(event: event, schedule: schedule, overrides: overrides).minutes
+  }
+
+  public static func resolvedLeadTime(event: ScheduleEvent, schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> ResolvedLeadTime {
     let type = normalized(event.kind == .meal ? (event.mealType ?? event.title) : (event.procedureType ?? event.title))
-    if let value = overrides?.eventOverrides[event.stableId] { try validateLeadTime(value, field: "overrides.eventOverrides.\(event.stableId)"); return value }
+    if let value = overrides?.eventOverrides[event.stableId] { try validateLeadTime(value, field: "overrides.eventOverrides.\(event.stableId)"); return .init(minutes: value, source: .localEventOverride) }
     let localType = event.kind == .meal ? overrides?.mealOverrides : overrides?.procedureTypeOverrides
-    if let value = value(for: type, in: localType) { try validateLeadTime(value, field: "overrides.type"); return value }
-    if let value = overrides?.defaultLeadTimeMinutes { try validateLeadTime(value, field: "overrides.defaultLeadTimeMinutes"); return value }
-    if let value = event.leadTimeMinutes { return value }
+    if let value = value(for: type, in: localType) { try validateLeadTime(value, field: "overrides.type"); return .init(minutes: value, source: .localTypeOverride) }
+    if let value = overrides?.defaultLeadTimeMinutes { try validateLeadTime(value, field: "overrides.defaultLeadTimeMinutes"); return .init(minutes: value, source: .localDefault) }
+    if let value = event.leadTimeMinutes { return .init(minutes: value, source: .eventOverride) }
     let sourceType = event.kind == .meal ? schedule.settings.mealOverrides : schedule.settings.procedureTypeOverrides
-    if let value = value(for: type, in: sourceType) { return value }
-    return schedule.settings.defaultLeadTimeMinutes
+    if let value = value(for: type, in: sourceType) { return .init(minutes: value, source: .scheduleTypeOverride) }
+    return .init(minutes: schedule.settings.defaultLeadTimeMinutes, source: .scheduleDefault)
   }
 
   public static func dateTime(date: String, time: String) throws -> Date {

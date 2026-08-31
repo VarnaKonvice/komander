@@ -38,6 +38,13 @@ enum LazenskyCommanderCoreCheck {
       try require(first.appliedCreate == schedule.events.count, "First sync did not create every alarm.")
       try require(second.appliedCreate == 0 && second.appliedUpdate == 0 && second.plan.unchanged.count == schedule.events.count, "Second sync is not idempotent.")
 
+      let pastAdapter = CheckAdapter()
+      let pastSync = AlarmSyncService(scheduleService: StaticSchedule(schedule: schedule), store: InMemoryAlarmStateStore(), adapter: pastAdapter)
+      let pastSummary = try await pastSync.synchronize(now: NativeAlarmContract.date(fromLocalISO: "2026-08-22T12:00:00"))
+      try require(pastSummary.desiredAlarmCount == 0 && pastSummary.succeeded, "Past canonical alarms were not filtered from the AlarmKit desired set.")
+      let pastActiveAlarmCount = await pastAdapter.activeAlarmCount()
+      try require(pastActiveAlarmCount == 0, "Past canonical alarms reached the platform adapter.")
+
       let parsedID = PlatformAlarmIdentifier.newPersistedValue()
       try require(PlatformAlarmIdentifier.uuid(from: parsedID) != nil && PlatformAlarmIdentifier.uuid(from: "invalid") == nil, "Platform alarm UUID conversion failed.")
       let leaveAt = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T09:30:00")
@@ -50,33 +57,34 @@ enum LazenskyCommanderCoreCheck {
       let stateStore = InMemoryAlarmStateStore()
       let system = CheckAdapter()
       let orchestrator = AlarmSyncService(scheduleService: mutableSource, store: stateStore, adapter: system)
-      _ = try await orchestrator.synchronize()
+      let orchestrationNow = Date(timeIntervalSince1970: 1)
+      _ = try await orchestrator.synchronize(now: orchestrationNow)
       let createdState = await stateStore.load()
       try require(createdState.records.count == schedule.events.count && createdState.records.values.allSatisfy { PlatformAlarmIdentifier.uuid(from: $0.platformAlarmID) != nil }, "Create did not persist generated platform IDs.")
       let corrected = try scheduleChangingFirstEvent(schedule, start: "07:35", version: schedule.scheduleVersion + 1)
       await mutableSource.replace(corrected)
-      let updated = try await orchestrator.synchronize()
+      let updated = try await orchestrator.synchronize(now: orchestrationNow)
       try require(updated.appliedUpdate == 1, "Time correction did not produce an update.")
       let removed = try scheduleRemovingLastEvent(corrected, version: corrected.scheduleVersion + 1)
       await mutableSource.replace(removed)
-      let cancelled = try await orchestrator.synchronize()
+      let cancelled = try await orchestrator.synchronize(now: orchestrationNow)
       try require(cancelled.appliedCancel == 1, "Removed event did not produce a cancel.")
 
       let staleAlarm = NativeAlarm(stableId: "stale", kind: .procedure, title: "Stale", location: "Room", startAt: "2026-08-20T10:00:00", endAt: "2026-08-20T10:30:00", effectiveLeadTimeMinutes: 0, leaveAt: "2026-08-20T10:00:00")
       let staleStore = InMemoryAlarmStateStore(ManagedAlarmState(records: ["stale": ManagedAlarmRecord(stableId: "stale", platformAlarmID: PlatformAlarmIdentifier.newPersistedValue(), alarm: staleAlarm)]))
       let staleService = AlarmSyncService(scheduleService: StaticSchedule(schedule: schedule), store: staleStore, adapter: CheckAdapter())
-      _ = try await staleService.synchronize()
+      _ = try await staleService.synchronize(now: Date(timeIntervalSince1970: 1))
       let staleState = await staleStore.load()
       try require(staleState.records["stale"] == nil, "Missing system alarm left a stale mapping.")
 
       let deniedStore = InMemoryAlarmStateStore()
       let deniedService = AlarmSyncService(scheduleService: StaticSchedule(schedule: schedule), store: deniedStore, adapter: CheckAdapter(authorization: .denied))
       var denied = false
-      do { _ = try await deniedService.synchronize() } catch { denied = true }
+      do { _ = try await deniedService.synchronize(now: Date(timeIntervalSince1970: 1)) } catch { denied = true }
       let deniedState = await deniedStore.load()
       try require(denied && deniedState.records.isEmpty, "Denied authorization persisted a false success.")
 
-      print("Swift core check passed: contract parity, local ISO, UUID, titles, create/update/cancel, stale mapping, denied authorization, and AlarmKit usage description.")
+      print("Swift core check passed: contract parity, future-only AlarmKit desired set, local ISO, UUID, titles, create/update/cancel, stale mapping, denied authorization, and AlarmKit usage description.")
     } catch {
       fputs("Swift core check failed: \(error.localizedDescription)\n", stderr)
       Foundation.exit(1)
@@ -188,6 +196,7 @@ private actor CheckAdapter: AlarmAdapting {
   }
   func cancel(platformAlarmID: String) throws { activeIDs.remove(platformAlarmID) }
   func existingPlatformAlarmIDs() async throws -> Set<String>? { activeIDs }
+  func activeAlarmCount() -> Int { activeIDs.count }
 }
 
 private actor MutableSchedule: ScheduleServing {

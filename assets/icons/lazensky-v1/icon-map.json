@@ -1,0 +1,203 @@
+{
+  "version": 1,
+  "design": "Lazensky Commander Icon Set v1 Full — approved",
+  "rules": {
+    "singleVisualLanguage": true,
+    "sameArtworkAcrossPwaIphoneLiveWatch": true,
+    "smallSurfacesUseScaledSameAsset": true,
+    "canonicalScheduleSource": "data/schedule.json"
+  },
+  "icons": [
+    {
+      "key": "meal_breakfast",
+      "label": "Snídaně",
+      "watchLabel": "Snídaně",
+      "accent": "#F59E0B",
+      "googleCalendarColorId": "6",
+      "priority": 300,
+      "keywords": [
+        "snídaně",
+        "snidane"
+      ]
+    },
+    {
+      "key": "meal_lunch",
+      "label": "Oběd",
+      "watchLabel": "Oběd",
+      "accent": "#F59E0B",
+      "googleCalendarColorId": "6",
+      "priority": 300,
+      "keywords": [
+        "oběd",
+        "obed"
+      ]
+    },
+    {
+      "key": "meal_dinner",
+      "label": "Večeře",
+      "watchLabel": "Večeře",
+      "accent": "#F59E0B",
+      "googleCalendarColorId": "6",
+      "priority": 300,
+      "keywords": [
+        "večeře",
+        "vecere"
+      ]
+    },
+    {
+      "key": "pool",
+      "label": "Bazén",
+      "watchLabel": "Bazén",
+      "accent": "#0EA5B7",
+      "googleCalendarColorId": "7",
+      "priority": 100,
+      "keywords": [
+        "bazén",
+        "bazen",
+        "plavání",
+        "plavani"
+      ]
+    },
+    {
+      "key": "iodobrom",
+      "label": "Jodobrom",
+      "watchLabel": "Jodobrom",
+      "accent": "#B27A2C",
+      "googleCalendarColorId": "5",
+      "priority": 220,
+      "keywords": [
+        "jodobrom",
+        "jodobromová koupel",
+        "jodobromova koupel",
+        "jodobromový bazén",
+        "jodobromovy bazen",
+        "solanka"
+      ]
+    },
+    {
+      "key": "whirlpool",
+      "label": "Vířivka",
+      "watchLabel": "Vířivka",
+      "accent": "#38BDF8",
+      "googleCalendarColorId": "7",
+      "priority": 220,
+      "keywords": [
+        "vířivka",
+        "virivka",
+        "vířivá vana",
+        "viriva vana",
+        "vířivá lázeň",
+        "viriva lazen",
+        "whirlpool"
+      ]
+    },
+    {
+      "key": "peat_wrap",
+      "label": "Rašelina / slatina / zábal",
+      "watchLabel": "Rašelina",
+      "accent": "#5B3A29",
+      "googleCalendarColorId": "11",
+      "priority": 220,
+      "keywords": [
+        "rašelina",
+        "raselina",
+        "rašelinový",
+        "raselinovy",
+        "slatina",
+        "slatinný",
+        "slatinny",
+        "zábal",
+        "zabal",
+        "parafín",
+        "parafin"
+      ]
+    },
+    {
+      "key": "imoove",
+      "label": "iMoove",
+      "watchLabel": "iMoove",
+      "accent": "#149B91",
+      "googleCalendarColorId": "2",
+      "priority": 240,
+      "keywords": [
+        "imoove",
+        "i-moove"
+      ]
+    },
+    {
+      "key": "massage",
+      "label": "Masáž",
+      "watchLabel": "Masáž",
+      "accent": "#65A30D",
+      "googleCalendarColorId": "10",
+      "priority": 10,
+      "keywords": [
+        "masáž",
+        "masaz",
+        "klasická masáž",
+        "klasicka masaz"
+      ]
+    },
+    {
+      "key": "hydrojet",
+      "label": "Hydrojet",
+      "watchLabel": "Hydrojet",
+      "accent": "#0EA5E9",
+      "googleCalendarColorId": "9",
+      "priority": 240,
+      "keywords": [
+        "hydrojet",
+        "hydro jet"
+      ]
+    },
+    {
+      "key": "electro_therapy",
+      "label": "Elektro / magneto / ultrazvuk",
+      "watchLabel": "Elektro",
+      "accent": "#6D5BD0",
+      "googleCalendarColorId": "3",
+      "priority": 220,
+      "keywords": [
+        "elektro",
+        "magnet",
+        "magnetoterapie",
+        "ultrazvuk",
+        "galvan",
+        "galvanická",
+        "galvanicka",
+        "čtyřkomor",
+        "ctyrkomor",
+        "laser"
+      ]
+    },
+    {
+      "key": "individual_rehab",
+      "label": "Individuální rehab",
+      "watchLabel": "Rehab",
+      "accent": "#22A06B",
+      "googleCalendarColorId": "10",
+      "priority": 100,
+      "keywords": [
+        "ltv",
+        "individuální ltv",
+        "individualni ltv",
+        "ergoterapie",
+        "ergoter",
+        "rehabilitace",
+        "rehab",
+        "chůze",
+        "chuze",
+        "chodicí pás",
+        "chodici pas",
+        "walking pás",
+        "walking pas"
+      ]
+    }
+  ],
+  "fallback": {
+    "key": null,
+    "label": "Neznámá procedura",
+    "accent": "#6E56CF",
+    "strategy": "Preserve the source text and use neutral Commander presentation without assigning a category icon."
+  }
+}

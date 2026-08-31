@@ -10,13 +10,445 @@
 		A10000000000000000000001 /* LazenskyCommanderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* LazenskyCommanderApp.swift */; };
 		A10000000000000000000002 /* AlarmKitAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* AlarmKitAdapter.swift */; };
 		A10000000000000000000003 /* LazenskyCommanderCore in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000031 /* LazenskyCommanderCore */; };
+		B20000000000000000000001 /* CommanderAlarmMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000011 /* CommanderAlarmMetadata.swift */; };
+		B20000000000000000000002 /* CommanderAlarmMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000011 /* CommanderAlarmMetadata.swift */; };
+		B20000000000000000000003 /* LazenskyCommanderLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000012 /* LazenskyCommanderLiveActivity.swift */; };
+		B20000000000000000000004 /* LazenskyCommanderCore in Frameworks */ = {isa = PBXBuildFile; productRef = B20000000000000000000080 /* LazenskyCommanderCore */; };
+		B20000000000000000000005 /* LazenskyCommanderLiveActivity.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B20000000000000000000010 /* LazenskyCommanderLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B20000000000000000000006 /* electro_therapy.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000020 /* electro_therapy.png */; };
+		B20000000000000000000007 /* hydrojet.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000021 /* hydrojet.png */; };
+		B20000000000000000000008 /* imoove.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000022 /* imoove.png */; };
+		B20000000000000000000009 /* individual_rehab.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000023 /* individual_rehab.png */; };
+		B2000000000000000000000A /* iodobrom.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000024 /* iodobrom.png */; };
+		B2000000000000000000000B /* massage.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000025 /* massage.png */; };
+		B2000000000000000000000C /* meal_breakfast.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000026 /* meal_breakfast.png */; };
+		B2000000000000000000000D /* meal_dinner.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000027 /* meal_dinner.png */; };
+		B2000000000000000000000E /* meal_lunch.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000028 /* meal_lunch.png */; };
+		B2000000000000000000000F /* peat_wrap.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000029 /* peat_wrap.png */; };
+		B20000000000000000000016 /* pool.png in Resources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000002A /* pool.png */; };
+		B20000000000000000000017 /* whirlpool.png in Resources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000002B /* whirlpool.png */; };
+		C30000000000000000000001 /* CommanderLiveCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000011 /* CommanderLiveCard.swift */; };
+		C30000000000000000000002 /* CommanderVisualAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000012 /* CommanderVisualAssets.swift */; };
+		C30000000000000000000003 /* icon-map.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000013 /* icon-map.json */; };
+		C30000000000000000000004 /* colors.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000014 /* colors.json */; };
+		C30000000000000000000005 /* electro_therapy.png in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000020 /* electro_therapy.png */; };
+		C30000000000000000000006 /* hydrojet.png in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000021 /* hydrojet.png */; };
+		C30000000000000000000007 /* imoove.png in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000022 /* imoove.png */; };
+		C30000000000000000000008 /* individual_rehab.png in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000023 /* individual_rehab.png */; };
+		C30000000000000000000009 /* iodobrom.png in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000024 /* iodobrom.png */; };
+		C3000000000000000000000A /* massage.png in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000025 /* massage.png */; };
+		C3000000000000000000000B /* meal_breakfast.png in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000026 /* meal_breakfast.png */; };
+		C3000000000000000000000C /* meal_dinner.png in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000027 /* meal_dinner.png */; };
+		C3000000000000000000000D /* meal_lunch.png in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000028 /* meal_lunch.png */; };
+		C3000000000000000000000E /* peat_wrap.png in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000029 /* peat_wrap.png */; };
+		C3000000000000000000000F /* pool.png in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000002A /* pool.png */; };
+		C30000000000000000000010 /* whirlpool.png in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000002B /* whirlpool.png */; };
+		D40000000000000000000001 /* LazenskyCommanderWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000021 /* LazenskyCommanderWatchApp.swift */; };
+		D40000000000000000000002 /* WatchCommanderModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000022 /* WatchCommanderModel.swift */; };
+		D40000000000000000000003 /* WatchCommanderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000023 /* WatchCommanderView.swift */; };
+		D40000000000000000000004 /* WatchVisualAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000024 /* WatchVisualAssets.swift */; };
+		D40000000000000000000005 /* LazenskyCommanderCore in Frameworks */ = {isa = PBXBuildFile; productRef = D40000000000000000000080 /* LazenskyCommanderCore */; };
+		D40000000000000000000006 /* icon-map.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000013 /* icon-map.json */; };
+		D40000000000000000000007 /* colors.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000014 /* colors.json */; };
+		D40000000000000000000008 /* electro_therapy.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000020 /* electro_therapy.png */; };
+		D40000000000000000000009 /* hydrojet.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000021 /* hydrojet.png */; };
+		D4000000000000000000000A /* imoove.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000022 /* imoove.png */; };
+		D4000000000000000000000B /* individual_rehab.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000023 /* individual_rehab.png */; };
+		D4000000000000000000000C /* iodobrom.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000024 /* iodobrom.png */; };
+		D4000000000000000000000D /* massage.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000025 /* massage.png */; };
+		D4000000000000000000000E /* meal_breakfast.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000026 /* meal_breakfast.png */; };
+		D4000000000000000000000F /* meal_dinner.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000027 /* meal_dinner.png */; };
+		D40000000000000000000010 /* meal_lunch.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000028 /* meal_lunch.png */; };
+		D40000000000000000000011 /* peat_wrap.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000029 /* peat_wrap.png */; };
+		D40000000000000000000012 /* pool.png in Resources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000002A /* pool.png */; };
+		D40000000000000000000013 /* whirlpool.png in Resources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000002B /* whirlpool.png */; };
+		D40000000000000000000014 /* LazenskyCommanderWatchApp.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = D40000000000000000000020 /* LazenskyCommanderWatchApp.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		E50000000000000000000001 /* IPhoneWatchConnectivityCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50000000000000000000011 /* IPhoneWatchConnectivityCoordinator.swift */; };
+		E50000000000000000000002 /* WatchConnectivityReceiver.swift in Sources */ = {isa = PBXBuildFile; fileRef = E50000000000000000000012 /* WatchConnectivityReceiver.swift */; };
+		E50000000000000000000003 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E50000000000000000000013 /* WatchConnectivity.framework */; };
+		E50000000000000000000004 /* WatchConnectivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E50000000000000000000013 /* WatchConnectivity.framework */; };
+		F60000000000000000000001 /* LazenskyCommanderWatchWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60000000000000000000021 /* LazenskyCommanderWatchWidget.swift */; };
+		F60000000000000000000002 /* WatchCacheLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60000000000000000000024 /* WatchCacheLocation.swift */; };
+		F60000000000000000000003 /* WatchCacheLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F60000000000000000000024 /* WatchCacheLocation.swift */; };
+		F60000000000000000000004 /* WatchVisualAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000024 /* WatchVisualAssets.swift */; };
+		F60000000000000000000005 /* LazenskyCommanderCore in Frameworks */ = {isa = PBXBuildFile; productRef = F60000000000000000000080 /* LazenskyCommanderCore */; };
+		F60000000000000000000006 /* LazenskyCommanderWatchWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F60000000000000000000020 /* LazenskyCommanderWatchWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		F60000000000000000000007 /* icon-map.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000013 /* icon-map.json */; };
+		F60000000000000000000008 /* colors.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000014 /* colors.json */; };
+		F60000000000000000000009 /* electro_therapy.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000020 /* electro_therapy.png */; };
+		F6000000000000000000000A /* hydrojet.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000021 /* hydrojet.png */; };
+		F6000000000000000000000B /* imoove.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000022 /* imoove.png */; };
+		F6000000000000000000000C /* individual_rehab.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000023 /* individual_rehab.png */; };
+		F6000000000000000000000D /* iodobrom.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000024 /* iodobrom.png */; };
+		F6000000000000000000000E /* massage.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000025 /* massage.png */; };
+		F6000000000000000000000F /* meal_breakfast.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000026 /* meal_breakfast.png */; };
+		F60000000000000000000010 /* meal_dinner.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000027 /* meal_dinner.png */; };
+		F60000000000000000000011 /* meal_lunch.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000028 /* meal_lunch.png */; };
+		F60000000000000000000012 /* peat_wrap.png in Resources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000029 /* peat_wrap.png */; };
+		F60000000000000000000013 /* pool.png in Resources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000002A /* pool.png */; };
+		F60000000000000000000014 /* whirlpool.png in Resources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000002B /* whirlpool.png */; };
+		F60000000000000000000015 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F60000000000000000000030 /* WidgetKit.framework */; };
+		F60000000000000000000016 /* RelevanceKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F60000000000000000000031 /* RelevanceKit.framework */; };
+		G70000000000000000000001 /* WatchStandaloneAlarmPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = G70000000000000000000011 /* WatchStandaloneAlarmPreferences.swift */; };
+		G70000000000000000000002 /* WatchLocalNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = G70000000000000000000012 /* WatchLocalNotificationService.swift */; };
+		G70000000000000000000003 /* UserNotifications.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = G70000000000000000000013 /* UserNotifications.framework */; };
+		H80000000000000000000001 /* CommanderBrandAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000011 /* CommanderBrandAssets.swift */; };
+		H80000000000000000000002 /* CommanderBrandAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000011 /* CommanderBrandAssets.swift */; };
+		H80000000000000000000003 /* CommanderBrandAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000011 /* CommanderBrandAssets.swift */; };
+		H80000000000000000000004 /* CommanderBrandAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000011 /* CommanderBrandAssets.swift */; };
+		H80000000000000000000005 /* AppAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000012 /* AppAssets.xcassets */; };
+		H80000000000000000000006 /* WatchAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000013 /* WatchAssets.xcassets */; };
+		H80000000000000000000007 /* BrandAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000014 /* BrandAssets.xcassets */; };
+		H80000000000000000000008 /* BrandAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000014 /* BrandAssets.xcassets */; };
+		H80000000000000000000009 /* BrandAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000014 /* BrandAssets.xcassets */; };
+		H8000000000000000000000A /* BrandAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000014 /* BrandAssets.xcassets */; };
+		I90000000000000000000001 /* CommanderDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000011 /* CommanderDashboardView.swift */; };
+		I90000000000000000000002 /* CommanderDashboardStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000012 /* CommanderDashboardStyle.swift */; };
+		I90000000000000000000003 /* CommanderHeroView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000013 /* CommanderHeroView.swift */; };
+		I90000000000000000000004 /* CommanderNextEventView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000014 /* CommanderNextEventView.swift */; };
+		I90000000000000000000005 /* CommanderMealSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000015 /* CommanderMealSummaryView.swift */; };
+		I90000000000000000000006 /* CommanderDayTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000016 /* CommanderDayTimelineView.swift */; };
+		I90000000000000000000007 /* CommanderSystemStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000017 /* CommanderSystemStatusView.swift */; };
+		I90000000000000000000008 /* CommanderDashboardPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = I90000000000000000000018 /* CommanderDashboardPreviews.swift */; };
+		CA0000000000000000000006 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			productRef = "CA0000000000000000000005";
+		};
+		CA0000000000000000000008 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "A10000000000000000000012";
+		};
+		CA0000000000000000000009 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000012";
+		};
+		CA000000000000000000000A /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000011";
+		};
+		CA000000000000000000000B /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "H80000000000000000000011";
+		};
+		CA000000000000000000000D /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "CA0000000000000000000001";
+		};
+		CA000000000000000000000E /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "H80000000000000000000012";
+		};
+		CA000000000000000000000F /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "H80000000000000000000014";
+		};
+		CA0000000000000000000010 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000013";
+		};
+		CA0000000000000000000011 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000014";
+		};
+		CA0000000000000000000012 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000020";
+		};
+		CA0000000000000000000013 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000021";
+		};
+		CA0000000000000000000014 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000022";
+		};
+		CA0000000000000000000015 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000023";
+		};
+		CA0000000000000000000016 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000024";
+		};
+		CA0000000000000000000017 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000025";
+		};
+		CA0000000000000000000018 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000026";
+		};
+		CA0000000000000000000019 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000027";
+		};
+		CA000000000000000000001A /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000028";
+		};
+		CA000000000000000000001B /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C30000000000000000000029";
+		};
+		CA000000000000000000001C /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C3000000000000000000002A";
+		};
+		CA000000000000000000001D /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "C3000000000000000000002B";
+		};
+		CA0000000000000000000025 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			productRef = "CA0000000000000000000024";
+		};
+		CA0000000000000000000027 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000011";
+		};
+		CA0000000000000000000028 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000012";
+		};
+		CA0000000000000000000029 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "H80000000000000000000011";
+		};
+		CA000000000000000000002B /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "H80000000000000000000014";
+		};
+		CA000000000000000000002C /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000020";
+		};
+		CA000000000000000000002D /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000021";
+		};
+		CA000000000000000000002E /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000022";
+		};
+		CA000000000000000000002F /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000023";
+		};
+		CA0000000000000000000030 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000024";
+		};
+		CA0000000000000000000031 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000025";
+		};
+		CA0000000000000000000032 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000026";
+		};
+		CA0000000000000000000033 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000027";
+		};
+		CA0000000000000000000034 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000028";
+		};
+		CA0000000000000000000035 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B20000000000000000000029";
+		};
+		CA0000000000000000000036 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B2000000000000000000002A";
+		};
+		CA0000000000000000000037 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "B2000000000000000000002B";
+		};
+		CA000000000000000000003D /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "CA0000000000000000000023";
+			settings = {
+				ATTRIBUTES = (
+					"RemoveHeadersOnCopy",
+				);
+			};
+		};
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B20000000000000000000090 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000060 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B20000000000000000000050;
+			remoteInfo = LazenskyCommanderLiveActivity;
+		};
+		D40000000000000000000090 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000060 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D40000000000000000000050;
+			remoteInfo = LazenskyCommanderWatchApp;
+		};
+		F60000000000000000000090 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000060 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F60000000000000000000050;
+			remoteInfo = LazenskyCommanderWatchWidget;
+		};
+		CA000000000000000000003F /* physicalAcceptance PBXContainerItemProxy */ = {
+			isa = "PBXContainerItemProxy";
+			containerPortal = "A10000000000000000000060";
+			proxyType = "1";
+			remoteGlobalIDString = "CA000000000000000000003C";
+			remoteInfo = "LazenskyCommanderPhysicalLiveActivity";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B20000000000000000000033 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B20000000000000000000005 /* LazenskyCommanderLiveActivity.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D40000000000000000000033 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				D40000000000000000000014 /* LazenskyCommanderWatchApp.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F60000000000000000000033 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				F60000000000000000000006 /* LazenskyCommanderWatchWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA000000000000000000003E /* physicalAcceptance Embed App Extensions */ = {
+			isa = "PBXCopyFilesBuildPhase";
+			buildActionMask = "2147483647";
+			dstPath = "";
+			dstSubfolderSpec = "13";
+			files = (
+				"CA000000000000000000003D",
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = "0";
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		A10000000000000000000010 /* LazenskyCommanderApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LazenskyCommanderApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000011 /* LazenskyCommanderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazenskyCommanderApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000012 /* AlarmKitAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitAdapter.swift; sourceTree = "<group>"; };
 		A10000000000000000000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B20000000000000000000010 /* LazenskyCommanderLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LazenskyCommanderLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B20000000000000000000011 /* CommanderAlarmMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderAlarmMetadata.swift; sourceTree = "<group>"; };
+		B20000000000000000000012 /* LazenskyCommanderLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazenskyCommanderLiveActivity.swift; sourceTree = "<group>"; };
+		B20000000000000000000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B20000000000000000000020 /* electro_therapy.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = electro_therapy.png; sourceTree = "<group>"; };
+		B20000000000000000000021 /* hydrojet.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = hydrojet.png; sourceTree = "<group>"; };
+		B20000000000000000000022 /* imoove.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = imoove.png; sourceTree = "<group>"; };
+		B20000000000000000000023 /* individual_rehab.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = individual_rehab.png; sourceTree = "<group>"; };
+		B20000000000000000000024 /* iodobrom.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = iodobrom.png; sourceTree = "<group>"; };
+		B20000000000000000000025 /* massage.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = massage.png; sourceTree = "<group>"; };
+		B20000000000000000000026 /* meal_breakfast.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = meal_breakfast.png; sourceTree = "<group>"; };
+		B20000000000000000000027 /* meal_dinner.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = meal_dinner.png; sourceTree = "<group>"; };
+		B20000000000000000000028 /* meal_lunch.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = meal_lunch.png; sourceTree = "<group>"; };
+		B20000000000000000000029 /* peat_wrap.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = peat_wrap.png; sourceTree = "<group>"; };
+		B2000000000000000000002A /* pool.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pool.png; sourceTree = "<group>"; };
+		B2000000000000000000002B /* whirlpool.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = whirlpool.png; sourceTree = "<group>"; };
+		C30000000000000000000011 /* CommanderLiveCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderLiveCard.swift; sourceTree = "<group>"; };
+		C30000000000000000000012 /* CommanderVisualAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderVisualAssets.swift; sourceTree = "<group>"; };
+		C30000000000000000000013 /* icon-map.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = icon-map.json; sourceTree = "<group>"; };
+		C30000000000000000000014 /* colors.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = colors.json; sourceTree = "<group>"; };
+		C30000000000000000000020 /* electro_therapy.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = electro_therapy.png; sourceTree = "<group>"; };
+		C30000000000000000000021 /* hydrojet.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = hydrojet.png; sourceTree = "<group>"; };
+		C30000000000000000000022 /* imoove.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = imoove.png; sourceTree = "<group>"; };
+		C30000000000000000000023 /* individual_rehab.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = individual_rehab.png; sourceTree = "<group>"; };
+		C30000000000000000000024 /* iodobrom.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = iodobrom.png; sourceTree = "<group>"; };
+		C30000000000000000000025 /* massage.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = massage.png; sourceTree = "<group>"; };
+		C30000000000000000000026 /* meal_breakfast.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = meal_breakfast.png; sourceTree = "<group>"; };
+		C30000000000000000000027 /* meal_dinner.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = meal_dinner.png; sourceTree = "<group>"; };
+		C30000000000000000000028 /* meal_lunch.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = meal_lunch.png; sourceTree = "<group>"; };
+		C30000000000000000000029 /* peat_wrap.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = peat_wrap.png; sourceTree = "<group>"; };
+		C3000000000000000000002A /* pool.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = pool.png; sourceTree = "<group>"; };
+		C3000000000000000000002B /* whirlpool.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = whirlpool.png; sourceTree = "<group>"; };
+		D40000000000000000000020 /* LazenskyCommanderWatchApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LazenskyCommanderWatchApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D40000000000000000000021 /* LazenskyCommanderWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazenskyCommanderWatchApp.swift; sourceTree = "<group>"; };
+		D40000000000000000000022 /* WatchCommanderModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCommanderModel.swift; sourceTree = "<group>"; };
+		D40000000000000000000023 /* WatchCommanderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCommanderView.swift; sourceTree = "<group>"; };
+		D40000000000000000000024 /* WatchVisualAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchVisualAssets.swift; sourceTree = "<group>"; };
+		D40000000000000000000025 /* LazenskyCommanderWatchApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LazenskyCommanderWatchApp.entitlements; sourceTree = "<group>"; };
+		E50000000000000000000011 /* IPhoneWatchConnectivityCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IPhoneWatchConnectivityCoordinator.swift; sourceTree = "<group>"; };
+		E50000000000000000000012 /* WatchConnectivityReceiver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityReceiver.swift; sourceTree = "<group>"; };
+		E50000000000000000000013 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
+		F60000000000000000000020 /* LazenskyCommanderWatchWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LazenskyCommanderWatchWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F60000000000000000000021 /* LazenskyCommanderWatchWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazenskyCommanderWatchWidget.swift; sourceTree = "<group>"; };
+		F60000000000000000000022 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		F60000000000000000000023 /* LazenskyCommanderWatchWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LazenskyCommanderWatchWidget.entitlements; sourceTree = "<group>"; };
+		F60000000000000000000024 /* WatchCacheLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCacheLocation.swift; sourceTree = "<group>"; };
+		F60000000000000000000030 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		F60000000000000000000031 /* RelevanceKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = RelevanceKit.framework; path = System/Library/Frameworks/RelevanceKit.framework; sourceTree = SDKROOT; };
+		G70000000000000000000011 /* WatchStandaloneAlarmPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchStandaloneAlarmPreferences.swift; sourceTree = "<group>"; };
+		G70000000000000000000012 /* WatchLocalNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLocalNotificationService.swift; sourceTree = "<group>"; };
+		G70000000000000000000013 /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
+		H80000000000000000000011 /* CommanderBrandAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderBrandAssets.swift; sourceTree = "<group>"; };
+		H80000000000000000000012 /* AppAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AppAssets.xcassets; sourceTree = "<group>"; };
+		H80000000000000000000013 /* WatchAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WatchAssets.xcassets; sourceTree = "<group>"; };
+		H80000000000000000000014 /* BrandAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = BrandAssets.xcassets; sourceTree = "<group>"; };
+		I90000000000000000000011 /* CommanderDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDashboardView.swift; sourceTree = "<group>"; };
+		I90000000000000000000012 /* CommanderDashboardStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDashboardStyle.swift; sourceTree = "<group>"; };
+		I90000000000000000000013 /* CommanderHeroView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderHeroView.swift; sourceTree = "<group>"; };
+		I90000000000000000000014 /* CommanderNextEventView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderNextEventView.swift; sourceTree = "<group>"; };
+		I90000000000000000000015 /* CommanderMealSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderMealSummaryView.swift; sourceTree = "<group>"; };
+		I90000000000000000000016 /* CommanderDayTimelineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDayTimelineView.swift; sourceTree = "<group>"; };
+		I90000000000000000000017 /* CommanderSystemStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderSystemStatusView.swift; sourceTree = "<group>"; };
+		I90000000000000000000018 /* CommanderDashboardPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDashboardPreviews.swift; sourceTree = "<group>"; };
+		CA0000000000000000000001 /* physicalAcceptance PhysicalAcceptanceApp.swift */ = {
+			isa = "PBXFileReference";
+			lastKnownFileType = "sourcecode.swift";
+			path = "PhysicalAcceptanceApp.swift";
+			sourceTree = "<group>";
+		};
+		CA0000000000000000000002 /* physicalAcceptance Info.plist */ = {
+			isa = "PBXFileReference";
+			lastKnownFileType = "text.plist.xml";
+			path = "Info.plist";
+			sourceTree = "<group>";
+		};
+		CA0000000000000000000004 /* physicalAcceptance LazenskyCommanderPhysicalAcceptance.app */ = {
+			path = "LazenskyCommanderPhysicalAcceptance.app";
+			isa = "PBXFileReference";
+			includeInIndex = "0";
+			explicitFileType = "wrapper.application";
+			sourceTree = "BUILT_PRODUCTS_DIR";
+		};
+		CA0000000000000000000023 /* physicalAcceptance LazenskyCommanderPhysicalLiveActivity.appex */ = {
+			path = "LazenskyCommanderPhysicalLiveActivity.appex";
+			isa = "PBXFileReference";
+			includeInIndex = "0";
+			explicitFileType = "wrapper.app-extension";
+			sourceTree = "BUILT_PRODUCTS_DIR";
+		};
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -25,8 +457,53 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000003 /* LazenskyCommanderCore in Frameworks */,
+				E50000000000000000000003 /* WatchConnectivity.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B20000000000000000000031 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B20000000000000000000004 /* LazenskyCommanderCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D40000000000000000000030 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D40000000000000000000005 /* LazenskyCommanderCore in Frameworks */,
+				E50000000000000000000004 /* WatchConnectivity.framework in Frameworks */,
+				G70000000000000000000003 /* UserNotifications.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F600000000000000000000A0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F60000000000000000000005 /* LazenskyCommanderCore in Frameworks */,
+				F60000000000000000000015 /* WidgetKit.framework in Frameworks */,
+				F60000000000000000000016 /* RelevanceKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA0000000000000000000007 /* physicalAcceptance PBXFrameworksBuildPhase */ = {
+			isa = "PBXFrameworksBuildPhase";
+			buildActionMask = "2147483647";
+			files = (
+				"CA0000000000000000000006",
+			);
+			runOnlyForDeploymentPostprocessing = "0";
+		};
+		CA0000000000000000000026 /* physicalAcceptance PBXFrameworksBuildPhase */ = {
+			isa = "PBXFrameworksBuildPhase";
+			buildActionMask = "2147483647";
+			files = (
+				"CA0000000000000000000025",
+			);
+			runOnlyForDeploymentPostprocessing = "0";
 		};
 /* End PBXFrameworksBuildPhase section */
 
@@ -36,6 +513,18 @@
 			children = (
 				A10000000000000000000011 /* LazenskyCommanderApp.swift */,
 				A10000000000000000000012 /* AlarmKitAdapter.swift */,
+				E50000000000000000000011 /* IPhoneWatchConnectivityCoordinator.swift */,
+				C30000000000000000000011 /* CommanderLiveCard.swift */,
+				C30000000000000000000012 /* CommanderVisualAssets.swift */,
+				I90000000000000000000011 /* CommanderDashboardView.swift */,
+				I90000000000000000000012 /* CommanderDashboardStyle.swift */,
+				I90000000000000000000013 /* CommanderHeroView.swift */,
+				I90000000000000000000014 /* CommanderNextEventView.swift */,
+				I90000000000000000000015 /* CommanderMealSummaryView.swift */,
+				I90000000000000000000016 /* CommanderDayTimelineView.swift */,
+				I90000000000000000000017 /* CommanderSystemStatusView.swift */,
+				I90000000000000000000018 /* CommanderDashboardPreviews.swift */,
+				H80000000000000000000012 /* AppAssets.xcassets */,
 				A10000000000000000000013 /* Info.plist */,
 			);
 			path = LazenskyCommanderApp;
@@ -45,6 +534,11 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000010 /* LazenskyCommanderApp.app */,
+				CA0000000000000000000004 /* LazenskyCommanderPhysicalAcceptance.app */,
+				CA0000000000000000000023 /* LazenskyCommanderPhysicalLiveActivity.appex */,
+				B20000000000000000000010 /* LazenskyCommanderLiveActivity.appex */,
+				D40000000000000000000020 /* LazenskyCommanderWatchApp.app */,
+				F60000000000000000000020 /* LazenskyCommanderWatchWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -53,8 +547,121 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000040 /* LazenskyCommanderApp */,
+				B20000000000000000000040 /* Shared */,
+				B20000000000000000000041 /* LazenskyCommanderLiveActivity */,
+				B20000000000000000000042 /* LazenskyIcons */,
+				C30000000000000000000040 /* iPhone Visual Contract */,
+				D40000000000000000000040 /* LazenskyCommanderWatchApp */,
+				F60000000000000000000040 /* LazenskyCommanderWatchWidget */,
 				A10000000000000000000041 /* Products */,
+				CA0000000000000000000003 /* PhysicalAcceptance */,
 			);
+			sourceTree = "<group>";
+		};
+		B20000000000000000000040 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				B20000000000000000000011 /* CommanderAlarmMetadata.swift */,
+				H80000000000000000000011 /* CommanderBrandAssets.swift */,
+				F60000000000000000000024 /* WatchCacheLocation.swift */,
+				H80000000000000000000014 /* BrandAssets.xcassets */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		B20000000000000000000041 /* LazenskyCommanderLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				B20000000000000000000012 /* LazenskyCommanderLiveActivity.swift */,
+				B20000000000000000000013 /* Info.plist */,
+			);
+			path = LazenskyCommanderLiveActivity;
+			sourceTree = "<group>";
+		};
+		B20000000000000000000042 /* LazenskyIcons */ = {
+			isa = PBXGroup;
+			children = (
+				B20000000000000000000020 /* electro_therapy.png */,
+				B20000000000000000000021 /* hydrojet.png */,
+				B20000000000000000000022 /* imoove.png */,
+				B20000000000000000000023 /* individual_rehab.png */,
+				B20000000000000000000024 /* iodobrom.png */,
+				B20000000000000000000025 /* massage.png */,
+				B20000000000000000000026 /* meal_breakfast.png */,
+				B20000000000000000000027 /* meal_dinner.png */,
+				B20000000000000000000028 /* meal_lunch.png */,
+				B20000000000000000000029 /* peat_wrap.png */,
+				B2000000000000000000002A /* pool.png */,
+				B2000000000000000000002B /* whirlpool.png */,
+			);
+			name = LazenskyIcons;
+			path = ../../assets/icons/lazensky-v1/icons/128;
+			sourceTree = "<group>";
+		};
+		C30000000000000000000040 /* iPhone Visual Contract */ = {
+			isa = PBXGroup;
+			children = (
+				C30000000000000000000013 /* icon-map.json */,
+				C30000000000000000000014 /* colors.json */,
+				C30000000000000000000041 /* iPhone Icons */,
+			);
+			name = "iPhone Visual Contract";
+			path = ../../assets/icons/lazensky-v1;
+			sourceTree = "<group>";
+		};
+		C30000000000000000000041 /* iPhone Icons */ = {
+			isa = PBXGroup;
+			children = (
+				C30000000000000000000020 /* electro_therapy.png */,
+				C30000000000000000000021 /* hydrojet.png */,
+				C30000000000000000000022 /* imoove.png */,
+				C30000000000000000000023 /* individual_rehab.png */,
+				C30000000000000000000024 /* iodobrom.png */,
+				C30000000000000000000025 /* massage.png */,
+				C30000000000000000000026 /* meal_breakfast.png */,
+				C30000000000000000000027 /* meal_dinner.png */,
+				C30000000000000000000028 /* meal_lunch.png */,
+				C30000000000000000000029 /* peat_wrap.png */,
+				C3000000000000000000002A /* pool.png */,
+				C3000000000000000000002B /* whirlpool.png */,
+			);
+			name = "iPhone Icons";
+			path = icons/512;
+			sourceTree = "<group>";
+		};
+		D40000000000000000000040 /* LazenskyCommanderWatchApp */ = {
+			isa = PBXGroup;
+			children = (
+				D40000000000000000000021 /* LazenskyCommanderWatchApp.swift */,
+				D40000000000000000000022 /* WatchCommanderModel.swift */,
+				D40000000000000000000023 /* WatchCommanderView.swift */,
+				D40000000000000000000024 /* WatchVisualAssets.swift */,
+				E50000000000000000000012 /* WatchConnectivityReceiver.swift */,
+				G70000000000000000000011 /* WatchStandaloneAlarmPreferences.swift */,
+				G70000000000000000000012 /* WatchLocalNotificationService.swift */,
+				H80000000000000000000013 /* WatchAssets.xcassets */,
+				D40000000000000000000025 /* LazenskyCommanderWatchApp.entitlements */,
+			);
+			path = LazenskyCommanderWatchApp;
+			sourceTree = "<group>";
+		};
+		F60000000000000000000040 /* LazenskyCommanderWatchWidget */ = {
+			isa = PBXGroup;
+			children = (
+				F60000000000000000000021 /* LazenskyCommanderWatchWidget.swift */,
+				F60000000000000000000022 /* Info.plist */,
+				F60000000000000000000023 /* LazenskyCommanderWatchWidget.entitlements */,
+			);
+			path = LazenskyCommanderWatchWidget;
+			sourceTree = "<group>";
+		};
+		CA0000000000000000000003 /* physicalAcceptance PhysicalAcceptance */ = {
+			isa = "PBXGroup";
+			children = (
+				"CA0000000000000000000001",
+				"CA0000000000000000000002",
+			);
+			path = "PhysicalAcceptance";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -67,10 +674,14 @@
 				A10000000000000000000021 /* Sources */,
 				A10000000000000000000020 /* Frameworks */,
 				A10000000000000000000022 /* Resources */,
+				B20000000000000000000033 /* Embed App Extensions */,
+				D40000000000000000000033 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B20000000000000000000091 /* PBXTargetDependency */,
+				D40000000000000000000091 /* PBXTargetDependency */,
 			);
 			name = LazenskyCommanderApp;
 			packageProductDependencies = (
@@ -79,6 +690,113 @@
 			productName = LazenskyCommanderApp;
 			productReference = A10000000000000000000010 /* LazenskyCommanderApp.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B20000000000000000000050 /* LazenskyCommanderLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B20000000000000000000061 /* Build configuration list for PBXNativeTarget "LazenskyCommanderLiveActivity" */;
+			buildPhases = (
+				B20000000000000000000030 /* Sources */,
+				B20000000000000000000031 /* Frameworks */,
+				B20000000000000000000032 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LazenskyCommanderLiveActivity;
+			packageProductDependencies = (
+				B20000000000000000000080 /* LazenskyCommanderCore */,
+			);
+			productName = LazenskyCommanderLiveActivity;
+			productReference = B20000000000000000000010 /* LazenskyCommanderLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		D40000000000000000000050 /* LazenskyCommanderWatchApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D40000000000000000000061 /* Build configuration list for PBXNativeTarget "LazenskyCommanderWatchApp" */;
+			buildPhases = (
+				D40000000000000000000031 /* Sources */,
+				D40000000000000000000030 /* Frameworks */,
+				D40000000000000000000032 /* Resources */,
+				F60000000000000000000033 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F60000000000000000000091 /* PBXTargetDependency */,
+			);
+			name = LazenskyCommanderWatchApp;
+			packageProductDependencies = (
+				D40000000000000000000080 /* LazenskyCommanderCore */,
+			);
+			productName = LazenskyCommanderWatchApp;
+			productReference = D40000000000000000000020 /* LazenskyCommanderWatchApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		F60000000000000000000050 /* LazenskyCommanderWatchWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F60000000000000000000061 /* Build configuration list for PBXNativeTarget "LazenskyCommanderWatchWidget" */;
+			buildPhases = (
+				F600000000000000000000A1 /* Sources */,
+				F600000000000000000000A0 /* Frameworks */,
+				F600000000000000000000A2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LazenskyCommanderWatchWidget;
+			packageProductDependencies = (
+				F60000000000000000000080 /* LazenskyCommanderCore */,
+			);
+			productName = LazenskyCommanderWatchWidget;
+			productReference = F60000000000000000000020 /* LazenskyCommanderWatchWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		CA0000000000000000000022 /* physicalAcceptance LazenskyCommanderPhysicalAcceptance */ = {
+			buildConfigurationList = "CA0000000000000000000021";
+			productReference = "CA0000000000000000000004";
+			productType = "com.apple.product-type.application";
+			packageProductDependencies = (
+				"CA0000000000000000000005",
+			);
+			productName = "LazenskyCommanderPhysicalAcceptance";
+			isa = "PBXNativeTarget";
+			buildPhases = (
+				"CA000000000000000000000C",
+				"CA0000000000000000000007",
+				"CA000000000000000000001E",
+				"CA000000000000000000003E",
+			);
+			dependencies = (
+				"CA0000000000000000000040",
+			);
+			name = "LazenskyCommanderPhysicalAcceptance";
+			buildRules = (
+
+			);
+		};
+		CA000000000000000000003C /* physicalAcceptance LazenskyCommanderPhysicalLiveActivity */ = {
+			buildConfigurationList = "CA000000000000000000003B";
+			productReference = "CA0000000000000000000023";
+			productType = "com.apple.product-type.app-extension";
+			packageProductDependencies = (
+				"CA0000000000000000000024",
+			);
+			productName = "LazenskyCommanderPhysicalLiveActivity";
+			isa = "PBXNativeTarget";
+			buildPhases = (
+				"CA000000000000000000002A",
+				"CA0000000000000000000026",
+				"CA0000000000000000000038",
+			);
+			dependencies = (
+
+			);
+			name = "LazenskyCommanderPhysicalLiveActivity";
+			buildRules = (
+
+			);
 		};
 /* End PBXNativeTarget section */
 
@@ -92,6 +810,25 @@
 				TargetAttributes = {
 					A10000000000000000000050 = {
 						CreatedOnToolsVersion = 26.0;
+					};
+					B20000000000000000000050 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					D40000000000000000000050 = {
+						CreatedOnToolsVersion = 26.6;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+						};
+					};
+					F60000000000000000000050 = {
+						CreatedOnToolsVersion = 26.6;
+						SystemCapabilities = {
+							com.apple.ApplicationGroups.iOS = {
+								enabled = 1;
+							};
+						};
 					};
 				};
 			};
@@ -111,8 +848,13 @@
 			productRefGroup = A10000000000000000000041 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
-			targets = (
-				A10000000000000000000050 /* LazenskyCommanderApp */,
+				targets = (
+					A10000000000000000000050 /* LazenskyCommanderApp */,
+					CA0000000000000000000022 /* LazenskyCommanderPhysicalAcceptance */,
+					CA000000000000000000003C /* LazenskyCommanderPhysicalLiveActivity */,
+					B20000000000000000000050 /* LazenskyCommanderLiveActivity */,
+					D40000000000000000000050 /* LazenskyCommanderWatchApp */,
+					F60000000000000000000050 /* LazenskyCommanderWatchWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -122,8 +864,132 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				H80000000000000000000005 /* AppAssets.xcassets in Resources */,
+				H80000000000000000000007 /* BrandAssets.xcassets in Resources */,
+				C30000000000000000000003 /* icon-map.json in Resources */,
+				C30000000000000000000004 /* colors.json in Resources */,
+				C30000000000000000000005 /* electro_therapy.png in Resources */,
+				C30000000000000000000006 /* hydrojet.png in Resources */,
+				C30000000000000000000007 /* imoove.png in Resources */,
+				C30000000000000000000008 /* individual_rehab.png in Resources */,
+				C30000000000000000000009 /* iodobrom.png in Resources */,
+				C3000000000000000000000A /* massage.png in Resources */,
+				C3000000000000000000000B /* meal_breakfast.png in Resources */,
+				C3000000000000000000000C /* meal_dinner.png in Resources */,
+				C3000000000000000000000D /* meal_lunch.png in Resources */,
+				C3000000000000000000000E /* peat_wrap.png in Resources */,
+				C3000000000000000000000F /* pool.png in Resources */,
+				C30000000000000000000010 /* whirlpool.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B20000000000000000000032 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				H80000000000000000000008 /* BrandAssets.xcassets in Resources */,
+				B20000000000000000000006 /* electro_therapy.png in Resources */,
+				B20000000000000000000007 /* hydrojet.png in Resources */,
+				B20000000000000000000008 /* imoove.png in Resources */,
+				B20000000000000000000009 /* individual_rehab.png in Resources */,
+				B2000000000000000000000A /* iodobrom.png in Resources */,
+				B2000000000000000000000B /* massage.png in Resources */,
+				B2000000000000000000000C /* meal_breakfast.png in Resources */,
+				B2000000000000000000000D /* meal_dinner.png in Resources */,
+				B2000000000000000000000E /* meal_lunch.png in Resources */,
+				B2000000000000000000000F /* peat_wrap.png in Resources */,
+				B20000000000000000000016 /* pool.png in Resources */,
+				B20000000000000000000017 /* whirlpool.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D40000000000000000000032 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				H80000000000000000000006 /* WatchAssets.xcassets in Resources */,
+				H80000000000000000000009 /* BrandAssets.xcassets in Resources */,
+				D40000000000000000000006 /* icon-map.json in Resources */,
+				D40000000000000000000007 /* colors.json in Resources */,
+				D40000000000000000000008 /* electro_therapy.png in Resources */,
+				D40000000000000000000009 /* hydrojet.png in Resources */,
+				D4000000000000000000000A /* imoove.png in Resources */,
+				D4000000000000000000000B /* individual_rehab.png in Resources */,
+				D4000000000000000000000C /* iodobrom.png in Resources */,
+				D4000000000000000000000D /* massage.png in Resources */,
+				D4000000000000000000000E /* meal_breakfast.png in Resources */,
+				D4000000000000000000000F /* meal_dinner.png in Resources */,
+				D40000000000000000000010 /* meal_lunch.png in Resources */,
+				D40000000000000000000011 /* peat_wrap.png in Resources */,
+				D40000000000000000000012 /* pool.png in Resources */,
+				D40000000000000000000013 /* whirlpool.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F600000000000000000000A2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				H8000000000000000000000A /* BrandAssets.xcassets in Resources */,
+				F60000000000000000000007 /* icon-map.json in Resources */,
+				F60000000000000000000008 /* colors.json in Resources */,
+				F60000000000000000000009 /* electro_therapy.png in Resources */,
+				F6000000000000000000000A /* hydrojet.png in Resources */,
+				F6000000000000000000000B /* imoove.png in Resources */,
+				F6000000000000000000000C /* individual_rehab.png in Resources */,
+				F6000000000000000000000D /* iodobrom.png in Resources */,
+				F6000000000000000000000E /* massage.png in Resources */,
+				F6000000000000000000000F /* meal_breakfast.png in Resources */,
+				F60000000000000000000010 /* meal_dinner.png in Resources */,
+				F60000000000000000000011 /* meal_lunch.png in Resources */,
+				F60000000000000000000012 /* peat_wrap.png in Resources */,
+				F60000000000000000000013 /* pool.png in Resources */,
+				F60000000000000000000014 /* whirlpool.png in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA000000000000000000001E /* physicalAcceptance PBXResourcesBuildPhase */ = {
+			isa = "PBXResourcesBuildPhase";
+			buildActionMask = "2147483647";
+			files = (
+				"CA000000000000000000000E",
+				"CA000000000000000000000F",
+				"CA0000000000000000000010",
+				"CA0000000000000000000011",
+				"CA0000000000000000000012",
+				"CA0000000000000000000013",
+				"CA0000000000000000000014",
+				"CA0000000000000000000015",
+				"CA0000000000000000000016",
+				"CA0000000000000000000017",
+				"CA0000000000000000000018",
+				"CA0000000000000000000019",
+				"CA000000000000000000001A",
+				"CA000000000000000000001B",
+				"CA000000000000000000001C",
+				"CA000000000000000000001D",
+			);
+			runOnlyForDeploymentPostprocessing = "0";
+		};
+		CA0000000000000000000038 /* physicalAcceptance PBXResourcesBuildPhase */ = {
+			isa = "PBXResourcesBuildPhase";
+			buildActionMask = "2147483647";
+			files = (
+				"CA000000000000000000002B",
+				"CA000000000000000000002C",
+				"CA000000000000000000002D",
+				"CA000000000000000000002E",
+				"CA000000000000000000002F",
+				"CA0000000000000000000030",
+				"CA0000000000000000000031",
+				"CA0000000000000000000032",
+				"CA0000000000000000000033",
+				"CA0000000000000000000034",
+				"CA0000000000000000000035",
+				"CA0000000000000000000036",
+				"CA0000000000000000000037",
+			);
+			runOnlyForDeploymentPostprocessing = "0";
 		};
 /* End PBXResourcesBuildPhase section */
 
@@ -134,10 +1000,105 @@
 			files = (
 				A10000000000000000000001 /* LazenskyCommanderApp.swift in Sources */,
 				A10000000000000000000002 /* AlarmKitAdapter.swift in Sources */,
+				E50000000000000000000001 /* IPhoneWatchConnectivityCoordinator.swift in Sources */,
+				C30000000000000000000001 /* CommanderLiveCard.swift in Sources */,
+				C30000000000000000000002 /* CommanderVisualAssets.swift in Sources */,
+				I90000000000000000000001 /* CommanderDashboardView.swift in Sources */,
+				I90000000000000000000002 /* CommanderDashboardStyle.swift in Sources */,
+				I90000000000000000000003 /* CommanderHeroView.swift in Sources */,
+				I90000000000000000000004 /* CommanderNextEventView.swift in Sources */,
+				I90000000000000000000005 /* CommanderMealSummaryView.swift in Sources */,
+				I90000000000000000000006 /* CommanderDayTimelineView.swift in Sources */,
+				I90000000000000000000007 /* CommanderSystemStatusView.swift in Sources */,
+				I90000000000000000000008 /* CommanderDashboardPreviews.swift in Sources */,
+				B20000000000000000000001 /* CommanderAlarmMetadata.swift in Sources */,
+				H80000000000000000000001 /* CommanderBrandAssets.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B20000000000000000000030 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B20000000000000000000002 /* CommanderAlarmMetadata.swift in Sources */,
+				B20000000000000000000003 /* LazenskyCommanderLiveActivity.swift in Sources */,
+				H80000000000000000000002 /* CommanderBrandAssets.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D40000000000000000000031 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D40000000000000000000001 /* LazenskyCommanderWatchApp.swift in Sources */,
+				D40000000000000000000002 /* WatchCommanderModel.swift in Sources */,
+				D40000000000000000000003 /* WatchCommanderView.swift in Sources */,
+				D40000000000000000000004 /* WatchVisualAssets.swift in Sources */,
+				E50000000000000000000002 /* WatchConnectivityReceiver.swift in Sources */,
+				F60000000000000000000003 /* WatchCacheLocation.swift in Sources */,
+				G70000000000000000000001 /* WatchStandaloneAlarmPreferences.swift in Sources */,
+				G70000000000000000000002 /* WatchLocalNotificationService.swift in Sources */,
+				H80000000000000000000003 /* CommanderBrandAssets.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F600000000000000000000A1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F60000000000000000000001 /* LazenskyCommanderWatchWidget.swift in Sources */,
+				F60000000000000000000002 /* WatchCacheLocation.swift in Sources */,
+				F60000000000000000000004 /* WatchVisualAssets.swift in Sources */,
+				H80000000000000000000004 /* CommanderBrandAssets.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA000000000000000000000C /* physicalAcceptance PBXSourcesBuildPhase */ = {
+			isa = "PBXSourcesBuildPhase";
+			buildActionMask = "2147483647";
+			files = (
+				"CA000000000000000000000D",
+				"CA0000000000000000000008",
+				"CA0000000000000000000009",
+				"CA000000000000000000000A",
+				"CA000000000000000000000B",
+			);
+			runOnlyForDeploymentPostprocessing = "0";
+		};
+		CA000000000000000000002A /* physicalAcceptance PBXSourcesBuildPhase */ = {
+			isa = "PBXSourcesBuildPhase";
+			buildActionMask = "2147483647";
+			files = (
+				"CA0000000000000000000027",
+				"CA0000000000000000000028",
+				"CA0000000000000000000029",
+			);
+			runOnlyForDeploymentPostprocessing = "0";
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B20000000000000000000091 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B20000000000000000000050 /* LazenskyCommanderLiveActivity */;
+			targetProxy = B20000000000000000000090 /* PBXContainerItemProxy */;
+		};
+		D40000000000000000000091 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D40000000000000000000050 /* LazenskyCommanderWatchApp */;
+			targetProxy = D40000000000000000000090 /* PBXContainerItemProxy */;
+		};
+		F60000000000000000000091 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F60000000000000000000050 /* LazenskyCommanderWatchWidget */;
+			targetProxy = F60000000000000000000090 /* PBXContainerItemProxy */;
+		};
+		CA0000000000000000000040 /* physicalAcceptance PBXTargetDependency */ = {
+			isa = "PBXTargetDependency";
+			target = "CA000000000000000000003C";
+			targetProxy = "CA000000000000000000003F";
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A10000000000000000000070 /* Debug */ = {
@@ -198,6 +1159,258 @@
 			};
 			name = Release;
 		};
+		B20000000000000000000072 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2CCL69T42P;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LazenskyCommanderLiveActivity/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.varnakonvice.lazenskycommander.liveactivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B20000000000000000000073 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2CCL69T42P;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LazenskyCommanderLiveActivity/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.varnakonvice.lazenskycommander.liveactivity;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		D40000000000000000000072 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = WatchAppIcon;
+				CODE_SIGN_ENTITLEMENTS = LazenskyCommanderWatchApp/LazenskyCommanderWatchApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2CCL69T42P;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Lázeňský Commander";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.varnakonvice.lazenskycommander;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.varnakonvice.lazenskycommander.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		D40000000000000000000073 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = WatchAppIcon;
+				CODE_SIGN_ENTITLEMENTS = LazenskyCommanderWatchApp/LazenskyCommanderWatchApp.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2CCL69T42P;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Lázeňský Commander";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.varnakonvice.lazenskycommander;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.varnakonvice.lazenskycommander.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		F60000000000000000000072 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LazenskyCommanderWatchWidget/LazenskyCommanderWatchWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2CCL69T42P;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LazenskyCommanderWatchWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.varnakonvice.lazenskycommander.watchkitapp.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Debug;
+		};
+		F60000000000000000000073 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = LazenskyCommanderWatchWidget/LazenskyCommanderWatchWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2CCL69T42P;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LazenskyCommanderWatchWidget/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.varnakonvice.lazenskycommander.watchkitapp.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		CA000000000000000000001F /* physicalAcceptance Debug */ = {
+			isa = "XCBuildConfiguration";
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = "1";
+				SWIFT_VERSION = "6.0";
+				DEVELOPMENT_TEAM = "2CCL69T42P";
+				MARKETING_VERSION = "1.0";
+				INFOPLIST_FILE = "PhysicalAcceptance/Info.plist";
+				TARGETED_DEVICE_FAMILY = "1";
+				GENERATE_INFOPLIST_FILE = "NO";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				CODE_SIGN_STYLE = "Automatic";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon";
+				SDKROOT = "iphoneos";
+				DEVELOPMENT_ASSET_PATHS = "";
+				IPHONEOS_DEPLOYMENT_TARGET = "26.1";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.varnakonvice.lazenskycommander.physicalacceptance";
+			};
+			name = "Debug";
+		};
+		CA0000000000000000000020 /* physicalAcceptance Release */ = {
+			isa = "XCBuildConfiguration";
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = "1";
+				SWIFT_VERSION = "6.0";
+				DEVELOPMENT_TEAM = "2CCL69T42P";
+				MARKETING_VERSION = "1.0";
+				INFOPLIST_FILE = "PhysicalAcceptance/Info.plist";
+				TARGETED_DEVICE_FAMILY = "1";
+				GENERATE_INFOPLIST_FILE = "NO";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				CODE_SIGN_STYLE = "Automatic";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon";
+				SDKROOT = "iphoneos";
+				DEVELOPMENT_ASSET_PATHS = "";
+				IPHONEOS_DEPLOYMENT_TARGET = "26.1";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.varnakonvice.lazenskycommander.physicalacceptance";
+			};
+			name = "Release";
+		};
+		CA0000000000000000000039 /* physicalAcceptance Debug */ = {
+			isa = "XCBuildConfiguration";
+			buildSettings = {
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				APPLICATION_EXTENSION_API_ONLY = "YES";
+				DEVELOPMENT_TEAM = "2CCL69T42P";
+				SWIFT_VERSION = "6.0";
+				MARKETING_VERSION = "1.0";
+				INFOPLIST_FILE = "LazenskyCommanderLiveActivity/Info.plist";
+				SKIP_INSTALL = "YES";
+				TARGETED_DEVICE_FAMILY = "1";
+				GENERATE_INFOPLIST_FILE = "NO";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				CODE_SIGN_STYLE = "Automatic";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = "iphoneos";
+				SWIFT_EMIT_LOC_STRINGS = "YES";
+				IPHONEOS_DEPLOYMENT_TARGET = "26.1";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.varnakonvice.lazenskycommander.physicalacceptance.liveactivity";
+				CURRENT_PROJECT_VERSION = "1";
+			};
+			name = "Debug";
+		};
+		CA000000000000000000003A /* physicalAcceptance Release */ = {
+			isa = "XCBuildConfiguration";
+			buildSettings = {
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				APPLICATION_EXTENSION_API_ONLY = "YES";
+				DEVELOPMENT_TEAM = "2CCL69T42P";
+				SWIFT_VERSION = "6.0";
+				MARKETING_VERSION = "1.0";
+				INFOPLIST_FILE = "LazenskyCommanderLiveActivity/Info.plist";
+				SKIP_INSTALL = "YES";
+				TARGETED_DEVICE_FAMILY = "1";
+				GENERATE_INFOPLIST_FILE = "NO";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				CODE_SIGN_STYLE = "Automatic";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = "iphoneos";
+				SWIFT_EMIT_LOC_STRINGS = "YES";
+				IPHONEOS_DEPLOYMENT_TARGET = "26.1";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.varnakonvice.lazenskycommander.physicalacceptance.liveactivity";
+				CURRENT_PROJECT_VERSION = "1";
+			};
+			name = "Release";
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -219,6 +1432,51 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		B20000000000000000000061 /* Build configuration list for PBXNativeTarget "LazenskyCommanderLiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B20000000000000000000072 /* Debug */,
+				B20000000000000000000073 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D40000000000000000000061 /* Build configuration list for PBXNativeTarget "LazenskyCommanderWatchApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D40000000000000000000072 /* Debug */,
+				D40000000000000000000073 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F60000000000000000000061 /* Build configuration list for PBXNativeTarget "LazenskyCommanderWatchWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F60000000000000000000072 /* Debug */,
+				F60000000000000000000073 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CA0000000000000000000021 /* physicalAcceptance XCConfigurationList */ = {
+			isa = "XCConfigurationList";
+			defaultConfigurationIsVisible = "0";
+			defaultConfigurationName = "Release";
+			buildConfigurations = (
+				"CA000000000000000000001F",
+				"CA0000000000000000000020",
+			);
+		};
+		CA000000000000000000003B /* physicalAcceptance XCConfigurationList */ = {
+			isa = "XCConfigurationList";
+			defaultConfigurationIsVisible = "0";
+			defaultConfigurationName = "Release";
+			buildConfigurations = (
+				"CA0000000000000000000039",
+				"CA000000000000000000003A",
+			);
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -233,6 +1491,31 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A10000000000000000000030 /* XCLocalSwiftPackageReference "../LazenskyCommander" */;
 			productName = LazenskyCommanderCore;
+		};
+		B20000000000000000000080 /* LazenskyCommanderCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000030 /* XCLocalSwiftPackageReference "../LazenskyCommander" */;
+			productName = LazenskyCommanderCore;
+		};
+		D40000000000000000000080 /* LazenskyCommanderCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000030 /* XCLocalSwiftPackageReference "../LazenskyCommander" */;
+			productName = LazenskyCommanderCore;
+		};
+		F60000000000000000000080 /* LazenskyCommanderCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A10000000000000000000030 /* XCLocalSwiftPackageReference "../LazenskyCommander" */;
+			productName = LazenskyCommanderCore;
+		};
+		CA0000000000000000000005 /* physicalAcceptance XCSwiftPackageProductDependency */ = {
+			isa = "XCSwiftPackageProductDependency";
+			package = "A10000000000000000000030";
+			productName = "LazenskyCommanderCore";
+		};
+		CA0000000000000000000024 /* physicalAcceptance XCSwiftPackageProductDependency */ = {
+			isa = "XCSwiftPackageProductDependency";
+			package = "A10000000000000000000030";
+			productName = "LazenskyCommanderCore";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

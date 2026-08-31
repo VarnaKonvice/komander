@@ -1,0 +1,83 @@
+name: Native stability tests
+
+on:
+  push:
+    paths:
+      - 'native/**'
+      - '.github/workflows/native-stability-tests.yml'
+  pull_request:
+    paths:
+      - 'native/**'
+      - '.github/workflows/native-stability-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-stability-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode toolchain
+        run: xcodebuild -version
+
+      - name: Run Swift contract tests
+        run: swift test --package-path native/LazenskyCommander
+
+      - name: Build iPhone app and embedded extensions
+        shell: bash
+        run: |
+          set -o pipefail
+          log_file="${RUNNER_TEMP}/iphone-build.log"
+          xcodebuild \
+            -project native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj \
+            -scheme LazenskyCommanderApp \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build 2>&1 | tee "$log_file"
+          status=${PIPESTATUS[0]}
+          if [[ $status -ne 0 ]]; then
+            grep -E '(^|[[:space:]])error:|BUILD FAILED|The following build commands failed' "$log_file" \
+              | tail -n 40 \
+              | while IFS= read -r line; do printf '::error::%s\n' "$line"; done
+          fi
+          exit "$status"
+
+      - name: Build watchOS app scheme
+        shell: bash
+        run: |
+          set -o pipefail
+          log_file="${RUNNER_TEMP}/watch-build.log"
+          xcodebuild \
+            -project native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj \
+            -scheme LazenskyCommanderWatchApp \
+            -configuration Debug \
+            -destination 'generic/platform=watchOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build 2>&1 | tee "$log_file"
+          status=${PIPESTATUS[0]}
+          if [[ $status -ne 0 ]]; then
+            grep -E '(^|[[:space:]])error:|BUILD FAILED|The following build commands failed' "$log_file" \
+              | tail -n 40 \
+              | while IFS= read -r line; do printf '::error::%s\n' "$line"; done
+          fi
+          exit "$status"
+
+      - name: Upload failed native build logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-build-logs
+          path: |
+            ${{ runner.temp }}/iphone-build.log
+            ${{ runner.temp }}/watch-build.log
+          if-no-files-found: error
+          retention-days: 1

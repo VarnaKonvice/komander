@@ -16,6 +16,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: calendar-sync/package-lock.json
+
+      - name: Install calendar sync dependencies
+        run: npm ci --prefix calendar-sync --ignore-scripts
 
       - name: Run public schedule suite
         run: >-
@@ -25,3 +30,15 @@ jobs:
           console.log(JSON.stringify(result, null, 2));
           if (result.failed) process.exit(1);
           })"
+
+      - name: Run brand assets suite
+        run: node tests/brand-assets-suite.mjs
+
+      - name: Run Google Calendar sync suite
+        run: node tests/calendar-sync-suite.mjs
+
+      - name: Run Google Calendar keyless auth suite
+        run: node tests/google-calendar-auth-suite.mjs
+
+      - name: Run refresh launcher safety suite
+        run: node tests/refresh-launcher-suite.mjs

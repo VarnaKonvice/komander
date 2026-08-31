@@ -19,7 +19,7 @@ function createLocalStorage() {
   };
 }
 
-function createRuntime(source, shared) {
+function createRuntime(calendarSource, source, shared) {
   const listeners = {};
   const location = { pathname: '/', search: '', hash: '' };
   const window = {
@@ -37,15 +37,19 @@ function createRuntime(source, shared) {
     URL, TextEncoder, Event: class Event { constructor(type) { this.type = type; } },
     console, setTimeout, clearTimeout
   };
+  vm.runInNewContext(calendarSource, sandbox, { filename: 'calendar-contract.js' });
   vm.runInNewContext(source, sandbox, { filename: 'public-schedule-feed.js' });
   return { api: window.LazenskySchedule, sandbox, listeners };
 }
 
 export async function runPublicScheduleSuite(options) {
   const root = options.repoRoot;
+  const calendarSource = await fs.readFile(path.join(root, 'calendar-contract.js'), 'utf8');
   const source = await fs.readFile(path.join(root, 'public-schedule-feed.js'), 'utf8');
   const productionSchedule = JSON.parse(await fs.readFile(path.join(root, 'data/schedule.json'), 'utf8'));
   const nativeAlarmFixtures = JSON.parse(await fs.readFile(path.join(root, 'tests/fixtures/native-alarm-reconciliation-v1.json'), 'utf8'));
+  const iconMap = JSON.parse(await fs.readFile(path.join(root, 'assets/icons/lazensky-v1/icon-map.json'), 'utf8'));
+  const iconColors = JSON.parse(await fs.readFile(path.join(root, 'assets/icons/lazensky-v1/colors.json'), 'utf8'));
   const cases = [];
   async function test(name, run) {
     try { await run(); cases.push({ name, ok: true }); }
@@ -55,13 +59,76 @@ export async function runPublicScheduleSuite(options) {
   const shared = { localStorage: createLocalStorage(), fetch: null };
   let activeSchedule = clone(productionSchedule);
   shared.fetch = async function() { return { ok: true, status: 200, json: async function() { return clone(activeSchedule); } }; };
-  const runtime = createRuntime(source, shared);
+  const runtime = createRuntime(calendarSource, source, shared);
 
   await test('public feed: production schedule validates', async function() {
     runtime.api.validateSchedule(runtime.api.normalizeSchedule(productionSchedule));
     assert(productionSchedule.scheduleVersion === 4, 'Unexpected production scheduleVersion');
     assert(productionSchedule.events.some(function(event) { return event.kind === 'meal'; }), 'Meals are missing');
     assert(productionSchedule.events.some(function(event) { return event.kind === 'procedure'; }), 'Procedures are missing');
+  });
+  await test('visual contract: all approved categories and specialized precedence classify consistently', async function() {
+    const mappings = [
+      ['Snídaně', 'meal', 'meal_breakfast'], ['Oběd', 'meal', 'meal_lunch'], ['Večeře', 'meal', 'meal_dinner'],
+      ['Plavání v bazénu', 'procedure', 'pool'], ['Jodobromový bazén', 'procedure', 'iodobrom'],
+      ['Vířivá vana', 'procedure', 'whirlpool'], ['Whirlpool', 'procedure', 'whirlpool'],
+      ['Rašelinový zábal', 'procedure', 'peat_wrap'], ['Slatina', 'procedure', 'peat_wrap'], ['Parafín', 'procedure', 'peat_wrap'],
+      ['iMoove', 'procedure', 'imoove'], ['Hydrojet masáž', 'procedure', 'hydrojet'],
+      ['Magnetoterapie', 'procedure', 'electro_therapy'], ['Elektroterapie', 'procedure', 'electro_therapy'],
+      ['Ultrazvuková masáž', 'procedure', 'electro_therapy'], ['Galvanická lázeň', 'procedure', 'electro_therapy'], ['Čtyřkomorová lázeň', 'procedure', 'electro_therapy'],
+      ['Individuální LTV', 'procedure', 'individual_rehab'], ['Ergoterapie', 'procedure', 'individual_rehab'],
+      ['Rehabilitace', 'procedure', 'individual_rehab'], ['Chodicí pás', 'procedure', 'individual_rehab'],
+      ['Klasická masáž', 'procedure', 'massage']
+    ];
+    mappings.forEach(function(item) {
+      const event = { title: item[0], kind: item[1], procedureType: item[1] === 'procedure' ? item[0] : '', mealType: item[1] === 'meal' ? item[0] : '' };
+      const icon = runtime.api.classifyEventIcon(event, iconMap);
+      assert(icon && icon.key === item[2], item[0]+' was classified as '+(icon && icon.key));
+    });
+    iconMap.icons.forEach(function(icon) {
+      const colorKey = icon.key.startsWith('meal_') ? 'meal' : icon.key;
+      assert(icon.accent === iconColors.procedures[colorKey], icon.key+' accent differs from colors.json');
+    });
+  });
+  await test('visual contract: unknown procedures preserve a neutral no-category fallback', async function() {
+    const unknown = runtime.api.classifyEventIcon({ title: 'Neznámá péče XYZ', kind: 'procedure', procedureType: 'Neznámá péče XYZ' }, iconMap);
+    assert(unknown === null, 'Unknown procedure received a concrete category');
+    assert(iconMap.fallback.key === null, 'Fallback still points to a concrete icon');
+    assert(iconMap.fallback.accent === iconColors.brand.commanderPurple, 'Fallback is not neutral Commander purple');
+  });
+  await test('visual contract: PWA loads icon-map and colors through the shared schedule API', async function() {
+    const requests = [];
+    const visualShared = { localStorage: createLocalStorage(), fetch: async function(url) {
+      requests.push(String(url));
+      if(String(url).endsWith('/icon-map.json')) return { ok: true, status: 200, json: async function() { return clone(iconMap); } };
+      if(String(url).endsWith('/colors.json')) return { ok: true, status: 200, json: async function() { return clone(iconColors); } };
+      throw new Error('Unexpected visual contract URL: '+url);
+    } };
+    const visualRuntime = createRuntime(calendarSource, source, visualShared);
+    const contract = await visualRuntime.api.loadVisualContract();
+    const electro = visualRuntime.api.getEventVisual({ title: 'Ultrazvuková masáž', kind: 'procedure', procedureType: 'Ultrazvuková masáž' });
+    const unknown = visualRuntime.api.getEventVisual({ title: 'Neznámá péče XYZ', kind: 'procedure' });
+    assert(contract.iconMap.version === 1 && contract.colors.brand.commanderPurple === '#6E56CF', 'Loaded visual contract is incomplete');
+    assert(requests.length === 2 && requests.some(function(url) { return url.endsWith('/icon-map.json'); }) && requests.some(function(url) { return url.endsWith('/colors.json'); }), 'Shared API did not load both canonical visual files');
+    assert(electro.key === 'electro_therapy' && electro.iconUrl.endsWith('/icons/256/electro_therapy.png'), 'Known PWA visual is incorrect');
+    assert(electro.accent === iconColors.procedures.electro_therapy, 'PWA accent is not sourced from colors.json');
+    assert(unknown.known === false && unknown.key === null && unknown.iconUrl === null, 'Unknown PWA visual uses a fake icon');
+    assert(visualRuntime.api.visualAssetUrls(256).length === iconMap.icons.length + 2, 'Visual asset list is incomplete');
+  });
+  await test('visual contract: current cards render approved PNGs and offline cache contains every dependency', async function() {
+    const overview = await fs.readFile(path.join(root, 'day-overview-v1.js'), 'utf8');
+    const css = await fs.readFile(path.join(root, 'day-overview-v1.css'), 'utf8');
+    const worker = await fs.readFile(path.join(root, 'sw.js'), 'utf8');
+    assert(overview.includes('window.LazenskySchedule.getEventVisual') && overview.includes('lkEventIcon'), 'PWA cards do not use the shared visual API');
+    assert(overview.includes("window.addEventListener('lazensky-visual-contract-ready'"), 'PWA does not refresh after the visual contract loads');
+    assert(!overview.includes("return item.type === 'meal' ? '♨︎' : '⌖'"), 'Legacy generic symbols remain as the visual category source');
+    assert(css.includes('border-left-color:var(--lk-category-accent)') && css.includes('.lkEventIcon'), 'Category accent or icon styling is missing');
+    assert(worker.includes("const CACHE_NAME = 'komander-pwa-v8'"), 'PWA cache version was not advanced');
+    assert(worker.includes("'./calendar-contract.js?v=1'"), 'Shared calendar contract is missing from the offline cache');
+    ['icon-map.json','colors.json'].forEach(function(file) { assert(worker.includes('assets/icons/lazensky-v1/'+file), file+' is missing from offline cache'); });
+    iconMap.icons.forEach(function(icon) {
+      assert(worker.includes('assets/icons/lazensky-v1/icons/256/'+icon.key+'.png'), icon.key+' is missing from offline cache');
+    });
   });
   await test('public feed: first launch downloads and persists the schedule', async function() {
     const result = await runtime.api.refreshPublicSchedule();
@@ -94,7 +161,7 @@ export async function runPublicScheduleSuite(options) {
     assert(runtime.api.getSchedule().scheduleVersion === 5, 'Offline refresh removed local schedule');
   });
   await test('public feed: reload uses the locally persisted schedule', async function() {
-    const reloaded = createRuntime(source, shared);
+    const reloaded = createRuntime(calendarSource, source, shared);
     assert(reloaded.api.getSchedule().scheduleVersion === 5, 'Public schedule did not survive reload');
   });
   await test('public feed: legacy storage is a derived compatibility projection', async function() {
@@ -107,11 +174,12 @@ export async function runPublicScheduleSuite(options) {
   await test('public feed: legacy storage is never accepted as the canonical schedule', async function() {
     const legacyOnly = { localStorage: createLocalStorage(), fetch: async function() { throw new Error('offline'); } };
     legacyOnly.localStorage.setItem('lazensky_commander_schedule_v10', JSON.stringify(runtime.api.toLegacySchedule(productionSchedule)));
-    const legacyRuntime = createRuntime(source, legacyOnly);
+    const legacyRuntime = createRuntime(calendarSource, source, legacyOnly);
     assert(legacyRuntime.api.getSchedule() === null, 'Legacy storage became a canonical schedule source');
   });
   await test('legacy inline Commander starts and refreshes from the canonical API', async function() {
     const index = await fs.readFile(path.join(root, 'index.html'), 'utf8');
+    assert(index.indexOf('calendar-contract.js?v=1') < index.indexOf('public-schedule-feed.js?v=4'), 'Shared calendar contract is not loaded before the public schedule feed');
     assert(index.indexOf('public-schedule-feed.js') < index.indexOf("var VERSION='"), 'Public schedule API is not available before inline Commander startup');
     assert(index.includes('api&&api.getSchedule&&api.toLegacySchedule'), 'Inline Commander does not read the canonical schedule API');
     assert(index.includes("window.addEventListener('lazensky-schedule-change'"), 'Inline Commander does not refresh after a canonical schedule update');
@@ -131,6 +199,8 @@ export async function runPublicScheduleSuite(options) {
     assert(bath.effectiveLeadTimeMinutes === 30 && bath.leaveAt === '2026-08-15T09:30:00', 'Procedure alarm leave time is incorrect');
     assert(breakfast.kind === 'meal' && breakfast.effectiveLeadTimeMinutes === 15 && breakfast.leaveAt === '2026-08-15T07:15:00', 'Meal alarm leave time is incorrect');
     assert(runtime.api.computeLiveState(productionSchedule, '2026-08-15T09:20:00').leaveAt === bath.leaveAt, 'Alarm and live state have different leaveAt values');
+    assert(source.includes('var alarm = alarmForEvent(event,schedule,effectiveOverrides)'), 'Live state does not consume the shared alarm event contract');
+    assert(!/function computeLiveState[\s\S]*?startAt\.getTime\(\)-leadTimeMinutes\*60000/.test(source), 'Live state still contains a second leaveAt calculation');
   });
   await test('alarm contract: lead-time priority and zero remain intact', async function() {
     const schedule = clone(productionSchedule);
@@ -348,8 +418,10 @@ export async function runPublicScheduleSuite(options) {
     const contract = runtime.api.calendarContract(schedule);
     const bath = schedule.events.find(function(event) { return event.stableId === 'synthetic-0815-bath'; });
     const bathContract = contract.find(function(event) { return event.stableId === bath.stableId; });
+    const bathAlarm = runtime.api.alarmContract(schedule).find(function(event) { return event.stableId === bath.stableId; });
     assert(contract.every(function(event) { return event.timezone === 'Europe/Prague'; }), 'Timezone is not Europe/Prague');
     assert(bathContract.leadTimeMinutes === runtime.api.getEffectiveLeadTime(bath, schedule), 'Effective lead time changed');
+    assert(bathContract.leaveAt === bathAlarm.leaveAt && bathContract.start === bathAlarm.startAt, 'Calendar contract does not reuse canonical alarm times');
     assert(JSON.stringify(schedule) === before, 'calendarContract mutated the source schedule');
   });
   await test('public feed: no private pairing system remains', async function() {

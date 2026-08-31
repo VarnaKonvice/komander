@@ -60,7 +60,20 @@
   function itemStart(item){ return timeToMinutes(item.start); }
   function itemEnd(item){ return Math.max(itemStart(item), timeToMinutes(item.end || item.start)); }
   function itemKindLabel(item){ return item.type === 'meal' ? 'jídlo' : 'procedura'; }
-  function itemIcon(item){ return item.type === 'meal' ? '♨︎' : '⌖'; }
+  function eventVisual(event){
+    try{ return window.LazenskySchedule && window.LazenskySchedule.getEventVisual ? window.LazenskySchedule.getEventVisual(event) : null; }
+    catch(e){ return null; }
+  }
+  function visualDecoration(event){
+    var visual = eventVisual(event);
+    if(!visual || !visual.known || !visual.key || !visual.iconUrl) return { className:'', attributes:'', icon:'' };
+    var accent = /^#[0-9a-f]{6}$/i.test(String(visual.accent || '')) ? visual.accent : '';
+    return {
+      className:' lkHasCategoryIcon',
+      attributes:' data-lk-icon-key="' + escapeHtml(visual.key) + '"' + (accent ? ' style="--lk-category-accent:' + escapeHtml(accent) + '"' : ''),
+      icon:'<mark class="lkEventIconFrame"><img class="lkEventIcon" src="' + escapeHtml(visual.iconUrl) + '" alt="" width="34" height="34" decoding="async"></mark>'
+    };
+  }
   function itemShortLabel(item){
     if(item.type !== 'meal') return item.title;
     if(/snídan/i.test(item.title)) return 'snídaně';
@@ -77,9 +90,12 @@
       var schedule = window.LazenskySchedule.getSchedule();
       if(!schedule) return null;
       stored = window.LazenskySchedule.toLegacySchedule(schedule);
+      var canonicalById = {};
+      schedule.events.forEach(function(event){ canonicalById[event.stableId] = event; });
     }catch(e){ return null; }
     if(!stored || !Array.isArray(stored.items)) return null;
     var items = stored.items.map(function(item, index){
+      var canonical = canonicalById[item.id] || {};
       return {
         id: item.id || 'lk-' + index,
         type: item.type === 'meal' ? 'meal' : 'procedure',
@@ -87,7 +103,9 @@
         start: String(item.start || ''),
         end: String(item.end || item.start || ''),
         title: String(item.title || item.name || 'Událost'),
-        place: String(item.place || item.location || '')
+        place: String(item.place || item.location || ''),
+        procedureType: String(canonical.procedureType || ''),
+        mealType: String(canonical.mealType || '')
       };
     }).filter(function(item){ return item.date && item.start; })
       .sort(function(a, b){ return (a.date + a.start + a.end).localeCompare(b.date + b.start + b.end); });
@@ -220,9 +238,10 @@
     if(!item) return '';
     var tomorrow = addDaysIso(todayIso(), 1);
     var when = item.date === tomorrow ? 'zítra' : dateLabel(item.date);
-    return '<section class="lkNext lkNextProcedureCard"><div class="lkNextTop"><span>Další procedura</span><i class="lkBadge">Procedury</i></div>' +
+    var visual = visualDecoration(item);
+    return '<section class="lkNext lkNextProcedureCard' + visual.className + '"' + visual.attributes + '><div class="lkNextTop"><span>Další procedura</span><i class="lkBadge">Procedury</i></div>' +
       '<b><strong>' + escapeHtml(when) + '</strong><em> ' + escapeHtml(item.start) + '</em></b><div class="lkNextTitle">' +
-      escapeHtml(item.title) + '</div><small><mark>' + itemIcon(item) + '</mark>' + escapeHtml(item.place || 'Místo bude upřesněno') +
+      escapeHtml(item.title) + '</div><small>' + visual.icon + '<span class="lkEventLocation">' + escapeHtml(item.place || 'Místo bude upřesněno') + '</span>' +
       '</small></section>';
   }
   function liveState(data, now){
@@ -234,28 +253,30 @@
   }
   function liveClock(iso){ return iso ? iso.slice(11, 16) : ''; }
   function liveKind(event){ return event && event.kind === 'meal' ? 'meal' : 'procedure'; }
-  function liveIcon(event){ return liveKind(event) === 'meal' ? '♨︎' : '⌖'; }
   function liveCountdown(minutes){ return durationLabel(Math.max(0, minutes || 0)); }
   function renderLiveCard(data, day){
     if(day !== todayIso()) return '';
     var live = liveState(data);
     if(!live || live.state === 'NO_SCHEDULE') return '';
     if(live.state === 'UPCOMING'){
-      return '<section class="lkNext lkLiveBlock lkLiveUpcoming ' + liveKind(live.event) + '" data-lk-live-state="UPCOMING"><div class="lkNextTop"><span>Live · následuje</span><i class="lkBadge">' +
+      var upcomingVisual = visualDecoration(live.event);
+      return '<section class="lkNext lkLiveBlock lkLiveUpcoming ' + liveKind(live.event) + upcomingVisual.className + '" data-lk-live-state="UPCOMING"' + upcomingVisual.attributes + '><div class="lkNextTop"><span>Live · následuje</span><i class="lkBadge">' +
         escapeHtml(liveKind(live.event) === 'meal' ? 'Jídlo' : 'Procedura') + '</i></div><b><strong>' + escapeHtml(liveClock(live.startAt)) +
-        '</strong></b><div class="lkNextTitle">' + escapeHtml(live.event.title) + '</div><small><mark>' + liveIcon(live.event) + '</mark>' +
+        '</strong></b><div class="lkNextTitle">' + escapeHtml(live.event.title) + '</div><small>' + upcomingVisual.icon +
         '<span class="lkLiveLocation">' + escapeHtml(live.event.location || 'Místo bude upřesněno') + '</span></small><p>Vyrazit v ' + escapeHtml(liveClock(live.leaveAt)) + '</p><p class="lkLiveCountdown" data-lk-live-countdown="1">Vyrazit za ' +
         escapeHtml(liveCountdown(live.minutesUntilLeave)) + '</p></section>';
     }
     if(live.state === 'LEAVE_NOW'){
-      return '<section class="lkNext lkLiveBlock lkLiveLeave" data-lk-live-state="LEAVE_NOW"><div class="lkNextTop"><span>VYRAZIT TEĎ</span><i class="lkBadge">Live</i></div><b><strong>' +
-        escapeHtml(liveClock(live.startAt)) + '</strong></b><div class="lkNextTitle">' + escapeHtml(live.event.title) + '</div><small><mark>' +
-        liveIcon(live.event) + '</mark><span class="lkLiveLocation">' + escapeHtml(live.event.location || 'Místo bude upřesněno') + '</span></small></section>';
+      var leaveVisual = visualDecoration(live.event);
+      return '<section class="lkNext lkLiveBlock lkLiveLeave' + leaveVisual.className + '" data-lk-live-state="LEAVE_NOW"' + leaveVisual.attributes + '><div class="lkNextTop"><span>VYRAZIT TEĎ</span><i class="lkBadge">Live</i></div><b><strong>' +
+        escapeHtml(liveClock(live.startAt)) + '</strong></b><div class="lkNextTitle">' + escapeHtml(live.event.title) + '</div><small>' +
+        leaveVisual.icon + '<span class="lkLiveLocation">' + escapeHtml(live.event.location || 'Místo bude upřesněno') + '</span></small></section>';
     }
     if(live.state === 'IN_PROGRESS'){
-      return '<section class="lkNext lkLiveBlock lkLiveProgress ' + liveKind(live.event) + '" data-lk-live-state="IN_PROGRESS"><div class="lkNextTop"><span>PRÁVĚ PROBÍHÁ</span><i class="lkBadge">Live</i></div><b><strong>' +
-        escapeHtml(liveClock(live.endAt)) + '</strong><em> konec</em></b><div class="lkNextTitle">' + escapeHtml(live.event.title) + '</div><small><mark>' +
-        liveIcon(live.event) + '</mark><span class="lkLiveLocation">' + escapeHtml(live.event.location || 'Místo bude upřesněno') + '</span></small></section>';
+      var progressVisual = visualDecoration(live.event);
+      return '<section class="lkNext lkLiveBlock lkLiveProgress ' + liveKind(live.event) + progressVisual.className + '" data-lk-live-state="IN_PROGRESS"' + progressVisual.attributes + '><div class="lkNextTop"><span>PRÁVĚ PROBÍHÁ</span><i class="lkBadge">Live</i></div><b><strong>' +
+        escapeHtml(liveClock(live.endAt)) + '</strong><em> konec</em></b><div class="lkNextTitle">' + escapeHtml(live.event.title) + '</div><small>' +
+        progressVisual.icon + '<span class="lkLiveLocation">' + escapeHtml(live.event.location || 'Místo bude upřesněno') + '</span></small></section>';
     }
     var next = live.nextEvent;
     return '<section class="lkNext lkLiveBlock lkLiveStatus" data-lk-live-state="DAY_DONE"><div class="lkNextTop"><span>DNEŠNÍ PROGRAM HOTOVÝ</span><i class="lkBadge">Live</i></div>' +
@@ -265,11 +286,11 @@
   function renderTimelineItem(item, summary){
     var isPast = summary.isToday && itemEnd(item) <= summary.reference;
     var isCurrent = summary.current && summary.current.id === item.id;
+    var visual = visualDecoration(item);
     return '<article class="lkTimelineRow lkTileCard ' + item.type + (isPast ? ' isPast' : '') + (isCurrent ? ' isCurrent' : '') +
-      '"><div class="lkTimelineMain"><div class="lkTimelineTime"><strong>' + escapeHtml(item.start) +
+      visual.className + '"' + visual.attributes + '><div class="lkTimelineMain"><div class="lkTimelineTime"><strong>' + escapeHtml(item.start) +
       '</strong><span> - ' + escapeHtml(item.end) + '</span></div><div class="lkTimelineTitle">' +
-      escapeHtml(item.title) + '</div><div class="lkTimelinePlace"><mark>' +
-      itemIcon(item) + '</mark>' + escapeHtml(item.place) +
+      escapeHtml(item.title) + '</div><div class="lkTimelinePlace">' + visual.icon + '<span class="lkEventLocation">' + escapeHtml(item.place) + '</span>' +
       '</div></div><span class="lkBadge">' + itemKindLabel(item).toUpperCase() + '</span></article>';
   }
   function renderProgramTimeline(items, summary){
@@ -572,6 +593,11 @@
     .observe(document.body, { childList: true, subtree: true });
   window.addEventListener('storage', sync);
   window.addEventListener('lazensky-schedule-change', function(){
+    lastUiState = '';
+    lastStaticState = '';
+    sync();
+  });
+  window.addEventListener('lazensky-visual-contract-ready', function(){
     lastUiState = '';
     lastStaticState = '';
     sync();

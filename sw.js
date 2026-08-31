@@ -1,16 +1,33 @@
-const CACHE_NAME = 'komander-pwa-v5';
+const CACHE_NAME = 'komander-pwa-v8';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './landscape-fix.css?v=45',
-  './day-overview-v1.css?v=19',
-  './day-overview-v1.js?v=17',
-  './public-schedule-feed.js?v=2',
+  './day-overview-v1.css?v=20',
+  './day-overview-v1.js?v=18',
+  './calendar-contract.js?v=1',
+  './public-schedule-feed.js?v=4',
   './pwa-install.js',
-  './icon-180.png',
-  './icon-192.png',
-  './icon-512.png'
+  './assets/icons/lazensky-v1/icon-map.json',
+  './assets/icons/lazensky-v1/colors.json',
+  './assets/icons/lazensky-v1/icons/256/electro_therapy.png',
+  './assets/icons/lazensky-v1/icons/256/hydrojet.png',
+  './assets/icons/lazensky-v1/icons/256/imoove.png',
+  './assets/icons/lazensky-v1/icons/256/individual_rehab.png',
+  './assets/icons/lazensky-v1/icons/256/iodobrom.png',
+  './assets/icons/lazensky-v1/icons/256/massage.png',
+  './assets/icons/lazensky-v1/icons/256/meal_breakfast.png',
+  './assets/icons/lazensky-v1/icons/256/meal_dinner.png',
+  './assets/icons/lazensky-v1/icons/256/meal_lunch.png',
+  './assets/icons/lazensky-v1/icons/256/peat_wrap.png',
+  './assets/icons/lazensky-v1/icons/256/pool.png',
+  './assets/icons/lazensky-v1/icons/256/whirlpool.png',
+  './assets/brand/lazensky-commander-v1/pwa/launcher-192.png',
+  './assets/brand/lazensky-commander-v1/pwa/launcher-512.png',
+  './assets/brand/lazensky-commander-v1/pwa/apple-touch-icon-180.png',
+  './assets/brand/lazensky-commander-v1/pwa/favicon-32.png',
+  './assets/brand/lazensky-commander-v1/pwa/header-mark-180.png'
 ];
 const APP_SHELL_URLS = new Set(APP_SHELL.map(path => new URL(path, self.registration.scope).href));
 
