@@ -197,18 +197,22 @@ private struct CommanderLeadTimeSettingsView: View {
   }
 
   private func procedureLeadTime(_ type: String) -> Int {
-    if let value = model.leadTimeOverrides.procedureTypeOverrides[type] { return value }
-    guard let event = model.latestSchedule?.events.first(where: {
-      $0.kind == .procedure && ($0.procedureType ?? $0.title) == type
-    }) else { return model.defaultLeadTimeMinutes }
-    return model.effectiveLeadTimeMinutes(for: event)
+    guard let schedule = model.latestSchedule else { return model.defaultLeadTimeMinutes }
+    return (try? NativeAlarmContract.typeLeadTime(
+      kind: .procedure,
+      type: type,
+      schedule: schedule,
+      overrides: model.leadTimeOverrides
+    )) ?? model.defaultLeadTimeMinutes
   }
 
   private func mealLeadTime(_ type: String) -> Int {
-    if let value = model.leadTimeOverrides.mealOverrides[type] { return value }
-    guard let event = model.latestSchedule?.events.first(where: {
-      $0.kind == .meal && ($0.mealType ?? $0.title) == type
-    }) else { return model.defaultLeadTimeMinutes }
-    return model.effectiveLeadTimeMinutes(for: event)
+    guard let schedule = model.latestSchedule else { return model.defaultLeadTimeMinutes }
+    return (try? NativeAlarmContract.typeLeadTime(
+      kind: .meal,
+      type: type,
+      schedule: schedule,
+      overrides: model.leadTimeOverrides
+    )) ?? model.defaultLeadTimeMinutes
   }
 }

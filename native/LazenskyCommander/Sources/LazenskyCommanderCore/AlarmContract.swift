@@ -68,6 +68,20 @@ public enum NativeAlarmContract {
     try resolvedLeadTime(event: event, schedule: schedule, overrides: overrides).minutes
   }
 
+  public static func typeLeadTime(kind: ScheduleKind, type: String, schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> Int {
+    try resolvedTypeLeadTime(kind: kind, type: type, schedule: schedule, overrides: overrides).minutes
+  }
+
+  public static func resolvedTypeLeadTime(kind: ScheduleKind, type: String, schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> ResolvedLeadTime {
+    let type = normalized(type)
+    let localType = kind == .meal ? overrides?.mealOverrides : overrides?.procedureTypeOverrides
+    if let value = value(for: type, in: localType) { try validateLeadTime(value, field: "overrides.type"); return .init(minutes: value, source: .localTypeOverride) }
+    if let value = overrides?.defaultLeadTimeMinutes { try validateLeadTime(value, field: "overrides.defaultLeadTimeMinutes"); return .init(minutes: value, source: .localDefault) }
+    let sourceType = kind == .meal ? schedule.settings.mealOverrides : schedule.settings.procedureTypeOverrides
+    if let value = value(for: type, in: sourceType) { return .init(minutes: value, source: .scheduleTypeOverride) }
+    return .init(minutes: schedule.settings.defaultLeadTimeMinutes, source: .scheduleDefault)
+  }
+
   public static func resolvedLeadTime(event: ScheduleEvent, schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> ResolvedLeadTime {
     let type = normalized(event.kind == .meal ? (event.mealType ?? event.title) : (event.procedureType ?? event.title))
     if let value = overrides?.eventOverrides[event.stableId] { try validateLeadTime(value, field: "overrides.eventOverrides.\(event.stableId)"); return .init(minutes: value, source: .localEventOverride) }
