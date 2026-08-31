@@ -498,9 +498,7 @@ struct LazenskyCommanderApp: App {
 
   var body: some Scene {
     WindowGroup {
-      NavigationStack {
-        CommanderDashboardView(model: model)
-      }
+      CommanderAppTabs(model: model)
       .preferredColorScheme(.dark)
       .task { await model.bootstrap() }
       .onChange(of: scenePhase) { _, phase in

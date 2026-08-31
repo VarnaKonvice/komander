@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CB1000000000000000000001 /* CommanderAppTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000011 /* CommanderAppTabs.swift */; };
+		CB1000000000000000000002 /* CommanderWeekView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000012 /* CommanderWeekView.swift */; };
+		CB1000000000000000000003 /* CommanderStayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000013 /* CommanderStayView.swift */; };
+		CB1000000000000000000004 /* CommanderInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000014 /* CommanderInfoView.swift */; };
+		CB1000000000000000000005 /* CommanderSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000015 /* CommanderSettingsView.swift */; };
 		A10000000000000000000001 /* LazenskyCommanderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* LazenskyCommanderApp.swift */; };
 		A10000000000000000000002 /* AlarmKitAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* AlarmKitAdapter.swift */; };
 		A10000000000000000000003 /* LazenskyCommanderCore in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000031 /* LazenskyCommanderCore */; };
@@ -356,6 +361,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		CB1000000000000000000011 /* CommanderAppTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderAppTabs.swift; sourceTree = "<group>"; };
+		CB1000000000000000000012 /* CommanderWeekView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderWeekView.swift; sourceTree = "<group>"; };
+		CB1000000000000000000013 /* CommanderStayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderStayView.swift; sourceTree = "<group>"; };
+		CB1000000000000000000014 /* CommanderInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderInfoView.swift; sourceTree = "<group>"; };
+		CB1000000000000000000015 /* CommanderSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderSettingsView.swift; sourceTree = "<group>"; };
 		A10000000000000000000010 /* LazenskyCommanderApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LazenskyCommanderApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000011 /* LazenskyCommanderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazenskyCommanderApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000012 /* AlarmKitAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitAdapter.swift; sourceTree = "<group>"; };
@@ -524,6 +534,11 @@
 				I90000000000000000000016 /* CommanderDayTimelineView.swift */,
 				I90000000000000000000017 /* CommanderSystemStatusView.swift */,
 				I90000000000000000000018 /* CommanderDashboardPreviews.swift */,
+				CB1000000000000000000011 /* CommanderAppTabs.swift */,
+				CB1000000000000000000012 /* CommanderWeekView.swift */,
+				CB1000000000000000000013 /* CommanderStayView.swift */,
+				CB1000000000000000000014 /* CommanderInfoView.swift */,
+				CB1000000000000000000015 /* CommanderSettingsView.swift */,
 				H80000000000000000000012 /* AppAssets.xcassets */,
 				A10000000000000000000013 /* Info.plist */,
 			);
@@ -1010,6 +1025,11 @@
 				I90000000000000000000005 /* CommanderMealSummaryView.swift in Sources */,
 				I90000000000000000000006 /* CommanderDayTimelineView.swift in Sources */,
 				I90000000000000000000007 /* CommanderSystemStatusView.swift in Sources */,
+				CB1000000000000000000001 /* CommanderAppTabs.swift in Sources */,
+				CB1000000000000000000002 /* CommanderWeekView.swift in Sources */,
+				CB1000000000000000000003 /* CommanderStayView.swift in Sources */,
+				CB1000000000000000000004 /* CommanderInfoView.swift in Sources */,
+				CB1000000000000000000005 /* CommanderSettingsView.swift in Sources */,
 				I90000000000000000000008 /* CommanderDashboardPreviews.swift in Sources */,
 				B20000000000000000000001 /* CommanderAlarmMetadata.swift in Sources */,
 				H80000000000000000000001 /* CommanderBrandAssets.swift in Sources */,

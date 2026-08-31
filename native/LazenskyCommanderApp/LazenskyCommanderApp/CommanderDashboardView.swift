@@ -21,7 +21,7 @@ struct CommanderDashboardView: View {
     .toolbar {
       ToolbarItem(placement: .topBarTrailing) {
         NavigationLink {
-          CommanderSystemStatusView(model: model)
+          CommanderSettingsView(model: model)
         } label: {
           Image(systemName: "gearshape")
             .overlay(alignment: .topTrailing) {
@@ -33,7 +33,7 @@ struct CommanderDashboardView: View {
               }
             }
         }
-        .accessibilityLabel("Stav systému a čas odchodu")
+        .accessibilityLabel("Nastavení")
       }
     }
   }
