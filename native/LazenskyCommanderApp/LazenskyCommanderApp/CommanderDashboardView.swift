@@ -69,6 +69,10 @@ struct CommanderDashboardContent: View {
           if let next = presentation.nextEvent {
             CommanderNextEventView(item: next, now: now)
           }
+          if let then = presentation.thenEvent {
+            CommanderNextEventView(item: then, now: now, title: "Potom")
+          }
+          CommanderDaySummaryView(summary: presentation.daySummary)
           if !presentation.meals.isEmpty {
             CommanderMealSummaryView(meals: presentation.meals)
           }
