@@ -669,7 +669,24 @@ attempt_watch_refresh() {
 
 attempt_watch_refresh
 
-status "HOTOVO – $APP_NAME na iPhonu byl obnoven."
+REFRESH_RESULT="HOTOVO – $APP_NAME na iPhonu byl obnoven."
+REFRESH_DIALOG_ICON=1
+REFRESH_EXIT_CODE=0
+if [[ "$PROFILE_DATES_AVAILABLE" == "1" ]]; then
+  PROFILE_REFRESH_DAY="$(TZ=Europe/Prague /bin/date -r "$PROFILE_EXPIRATION_EPOCH" -v-1d '+%Y%m%d' 2>> "$LOG_FILE" || true)"
+  CURRENT_REFRESH_DAY="$(TZ=Europe/Prague /bin/date '+%Y%m%d' 2>> "$LOG_FILE" || true)"
+  if [[ ! "$PROFILE_REFRESH_DAY" =~ ^[0-9]{8}$ || ! "$CURRENT_REFRESH_DAY" =~ ^[0-9]{8}$ ]]; then
+    REFRESH_RESULT="NAINSTALOVÁNO – $APP_NAME je na iPhonu nainstalován, ale termín obnovy nelze bezpečně ověřit. Obnova není potvrzena."
+    REFRESH_DIALOG_ICON=2
+    REFRESH_EXIT_CODE=2
+  elif [[ "$PROFILE_REFRESH_DAY" -le "$CURRENT_REFRESH_DAY" ]]; then
+    REFRESH_RESULT="NAINSTALOVÁNO – $APP_NAME je na iPhonu nainstalován, ale provisioning platnost se neprodloužila. Obnova je stále nutná."
+    REFRESH_DIALOG_ICON=2
+    REFRESH_EXIT_CODE=2
+  fi
+fi
+
+status "$REFRESH_RESULT"
 status "Nainstalovaná větev + commit: $TARGET_BRANCH @ $GIT_COMMIT_SHORT"
 status "iPhone: OK"
 if [[ "$WATCH_STATUS" == "OK" ]]; then
@@ -680,4 +697,5 @@ fi
 status "$WATCH_SUMMARY"
 status "DALŠÍ OBNOVA NEJPOZDĚJI: $NEXT_REFRESH_DATE"
 status "Technický log: $LOG_FILE"
-show_dialog "1" "HOTOVO – Lázeňský Commander na iPhonu byl obnoven.\n\nVětev + commit: $TARGET_BRANCH @ $GIT_COMMIT_SHORT\niPhone: OK\n$WATCH_SUMMARY\n$REFRESH_PROFILE_SUMMARY\nDALŠÍ OBNOVA NEJPOZDĚJI: $NEXT_REFRESH_DATE\n\nTechnický log:\n$LOG_FILE"
+show_dialog "$REFRESH_DIALOG_ICON" "$REFRESH_RESULT\n\nVětev + commit: $TARGET_BRANCH @ $GIT_COMMIT_SHORT\niPhone: OK\n$WATCH_SUMMARY\n$REFRESH_PROFILE_SUMMARY\nDALŠÍ OBNOVA NEJPOZDĚJI: $NEXT_REFRESH_DATE\n\nTechnický log:\n$LOG_FILE"
+exit "$REFRESH_EXIT_CODE"

@@ -182,6 +182,102 @@ await test('final summary makes iPhone success independent from Watch status', a
   assert.match(launcher, /WATCH: OK – nativní Watch aplikace byla obnovena/);
 });
 
+function runProfileOutcome({ expirationEpoch = '1788868800', refreshDay = '20260907', nextDate = '07.09.2026', readable = '1', today = '20260831' } = {}) {
+  const profileCheck = extractBetween('PROFILE_DATES_AVAILABLE=0\n', '\nAPP_VERSION=');
+  const deadline = extractBetween('set_refresh_deadline_after_install() {', '\n}\n\nWATCH_STATUS') + '\n}';
+  const reportStart = launcher.lastIndexOf('\nattempt_watch_refresh\n');
+  assert.notEqual(reportStart, -1);
+  const report = launcher.slice(reportStart + '\nattempt_watch_refresh\n'.length);
+  // Execute only profile checks and the final report. No Git, Xcode or device commands.
+  const script = `
+    status() { printf '%s\\n' "$*"; }
+    log() { :; }
+    fail() { printf 'CHYBA: %s\\n' "$1"; exit 1; }
+    show_dialog() { printf 'DIALOG_ICON=%s\\n%s\\n' "$1" "$2"; }
+    clock_date() {
+      case "$*" in
+        '+%s') printf '1788177600';;
+        '+%Y%m%d') printf '%s' "$FIXTURE_TODAY";;
+        '-r '*" -v-1d +%Y%m%d") printf '%s' "$FIXTURE_REFRESH_DAY";;
+        '-v+6d +%d.%m.%Y') printf 'FALLBACK_CALLED\\n' >&3; printf '06.09.2026';;
+        *) printf 'Unexpected date arguments: %s' "$*" >&2; return 1;;
+      esac
+    }
+    read_profile_refresh_dates() {
+      [[ "$FIXTURE_READABLE" == 1 ]] || return 1
+      PROFILE_EXPIRATION_EPOCH="$FIXTURE_EXPIRATION_EPOCH"
+      PROFILE_EXPIRATION_DATE='skutečná expirace profilu'
+      NEXT_REFRESH_DATE="$FIXTURE_NEXT_DATE"
+    }
+    exec 3>&1
+    ${deadline}
+    ${profileCheck}
+    printf 'INSTALL_VERIFIED\\n'
+    set_refresh_deadline_after_install
+    ${report}
+  `.replaceAll('/bin/date', 'clock_date');
+  return spawnSync('bash', ['-u', '-c', script], {
+    encoding: 'utf8',
+    env: { ...process.env, FIXTURE_READABLE: readable, FIXTURE_EXPIRATION_EPOCH: expirationEpoch,
+      FIXTURE_REFRESH_DAY: refreshDay, FIXTURE_NEXT_DATE: nextDate, FIXTURE_TODAY: today,
+      LOG_FILE: '/dev/null', APP_PATH: '/unused/app', TEMP_DIR: '/unused', APP_NAME: 'Lázeňský Commander',
+      TARGET_BRANCH: 'main', GIT_COMMIT_SHORT: 'fixture', WATCH_STATUS: 'přeskočeno', WATCH_REASON: 'volitelné' }
+  });
+}
+
+await test('new profile with a future renewal day reports normal success', async () => {
+  const result = runProfileOutcome();
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /INSTALL_VERIFIED/);
+  assert.match(result.stdout, /HOTOVO – Lázeňský Commander na iPhonu byl obnoven/);
+  assert.match(result.stdout, /DIALOG_ICON=1/);
+  assert.match(result.stdout, /DALŠÍ OBNOVA NEJPOZDĚJI: 07\.09\.2026/);
+  assert.doesNotMatch(result.stdout, /FALLBACK_CALLED/);
+});
+
+await test('reused profile due today or earlier reports installation but never successful renewal', async () => {
+  for (const [expirationEpoch, refreshDay, nextDate] of [
+    ['1788292800', '20260831', '31.08.2026'],
+    ['1788206400', '20260830', '30.08.2026']
+  ]) {
+    const result = runProfileOutcome({ expirationEpoch, refreshDay, nextDate });
+    assert.equal(result.status, 2, result.stderr);
+    assert.match(result.stdout, /INSTALL_VERIFIED/);
+    assert.match(result.stdout, /nainstalován, ale provisioning platnost se neprodloužila/);
+    assert.match(result.stdout, /Obnova je stále nutná/);
+    assert.match(result.stdout, /DIALOG_ICON=2/);
+    assert.ok(result.stdout.includes(`DALŠÍ OBNOVA NEJPOZDĚJI: ${nextDate}`));
+    assert.match(result.stdout, /skutečná expirace profilu/);
+    assert.doesNotMatch(result.stdout, /HOTOVO|byl obnoven|FALLBACK_CALLED|06\.09\.2026/);
+  }
+});
+
+await test('expired profile remains a hard error before installation', async () => {
+  for (const expirationEpoch of ['1788177599', '1788177600']) {
+    const result = runProfileOutcome({ expirationEpoch });
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stdout, /CHYBA: Xcode vytvořil aplikaci s již prošlým provisioning profilem/);
+    assert.doesNotMatch(result.stdout, /INSTALL_VERIFIED|HOTOVO|DIALOG_ICON|FALLBACK_CALLED/);
+  }
+});
+
+await test('unreadable profile retains explicitly labelled installation-plus-six fallback', async () => {
+  const result = runProfileOutcome({ readable: '0' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /INSTALL_VERIFIED/);
+  assert.match(result.stdout, /HOTOVO/);
+  assert.match(result.stdout, /FALLBACK_CALLED/);
+  assert.match(result.stdout, /Termín obnovy je pouze odhad/);
+  assert.match(result.stdout, /DALŠÍ OBNOVA NEJPOZDĚJI: 06\.09\.2026/);
+});
+
+await test('an uncheckable current day cannot turn a known profile into a fabricated renewal', async () => {
+  const result = runProfileOutcome({ today: '' });
+  assert.equal(result.status, 2, result.stderr);
+  assert.match(result.stdout, /Obnova není potvrzena/);
+  assert.doesNotMatch(result.stdout, /HOTOVO|FALLBACK_CALLED/);
+});
+
 const failed = cases.filter(item => !item.ok);
 for (const item of cases) {
   console.log(`${item.ok ? 'PASS' : 'FAIL'} ${item.name}${item.error ? `: ${item.error}` : ''}`);
