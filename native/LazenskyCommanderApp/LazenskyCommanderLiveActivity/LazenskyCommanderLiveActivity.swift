@@ -379,7 +379,7 @@ private struct CommanderProcedureHero: View {
           isStale: isStale,
           accent: accent
         )
-        .frame(width: 72, alignment: .trailing)
+        .frame(width: 72, alignment: .center)
       }
     }
     .frame(minHeight: 72)
@@ -401,8 +401,9 @@ private struct CommanderProcedureSideStatus: View {
           .font(.system(size: 11, weight: .semibold))
           .foregroundStyle(CommanderActivityTokens.textSecondary)
       }
+      .frame(width: 72, alignment: .center)
     } else {
-      VStack(spacing: 0) {
+      VStack(alignment: .center, spacing: 0) {
         Text("Do konce")
           .font(.system(size: 11, weight: .semibold))
           .foregroundStyle(CommanderActivityTokens.textSecondary)
@@ -413,6 +414,8 @@ private struct CommanderProcedureSideStatus: View {
           .lineLimit(1)
           .minimumScaleFactor(0.8)
       }
+      .frame(width: 72, alignment: .center)
+      .multilineTextAlignment(.center)
     }
   }
 }
