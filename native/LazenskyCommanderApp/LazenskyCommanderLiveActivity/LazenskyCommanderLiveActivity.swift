@@ -21,8 +21,8 @@ private enum CommanderActivityTokens {
   static let runningGreen = mealGreen
 
   static let insetRadius: CGFloat = 12
-  static let cardRadius: CGFloat = 22
-  static let lockScreenMinHeight: CGFloat = 138
+  static let cardRadius: CGFloat = 24
+  static let lockScreenMinHeight: CGFloat = 154
 
   static var backgroundGradient: LinearGradient {
     LinearGradient(colors: [panel, background], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -207,7 +207,7 @@ private struct CommanderAlarmLockScreenView: View {
   }
 
   var body: some View {
-    VStack(spacing: 8) {
+    VStack(spacing: 9) {
       CommanderAlarmHero(
         mode: context.state.mode,
         startAt: metadata?.startAt
@@ -247,7 +247,7 @@ private struct CommanderProcedureLockScreenView: View {
   }
 
   var body: some View {
-    VStack(spacing: 8) {
+    VStack(spacing: 9) {
       CommanderProcedureHero(
         kind: context.attributes.kind,
         endAt: context.attributes.endAt,
@@ -281,45 +281,39 @@ private struct CommanderAlarmHero: View {
     ZStack {
       VStack(spacing: 0) {
         Text(mode.isAlert ? "VYRAZIT TEĎ" : "Odchod za")
-          .font(.system(size: mode.isAlert ? 17 : 14, weight: .bold, design: .rounded))
+          .font(.system(size: mode.isAlert ? 19 : 16, weight: .bold, design: .rounded))
           .foregroundStyle(accent)
           .lineLimit(1)
 
         if mode.isAlert {
-          if let startDate = CommanderAlarmTime.startDate(from: startAt) {
-            Text(startDate, style: .timer)
-              .font(.system(size: 44, weight: .heavy, design: .rounded).monospacedDigit())
-              .foregroundStyle(accent)
-              .lineLimit(1)
-              .minimumScaleFactor(0.74)
-          } else {
-            Text("TEĎ")
-              .font(.system(size: 38, weight: .heavy, design: .rounded))
-              .foregroundStyle(accent)
-          }
+          Text(CommanderAlarmTime.minutesUntilStart(from: startAt))
+            .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
+            .foregroundStyle(accent)
+            .lineLimit(1)
+            .minimumScaleFactor(0.78)
         } else {
           CommanderAlarmCountdown(mode: mode)
-            .font(.system(size: 44, weight: .heavy, design: .rounded).monospacedDigit())
+            .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
             .foregroundStyle(accent)
             .lineLimit(1)
             .minimumScaleFactor(0.74)
         }
       }
-      .frame(width: 160, alignment: .center)
+      .frame(width: 180, alignment: .center)
       .multilineTextAlignment(.center)
       .frame(maxWidth: .infinity)
 
       HStack(spacing: 0) {
-        CommanderActivityBrandMark(size: 66)
-          .frame(width: 74, alignment: .leading)
+        CommanderActivityBrandMark(size: 74)
+          .frame(width: 82, alignment: .leading)
 
         Spacer(minLength: 0)
 
         CommanderAlarmSideStatus(mode: mode, accent: accent)
-          .frame(width: 64, alignment: .trailing)
+          .frame(width: 72, alignment: .trailing)
       }
     }
-    .frame(minHeight: 64)
+    .frame(minHeight: 72)
   }
 }
 
@@ -330,12 +324,12 @@ private struct CommanderAlarmSideStatus: View {
   var body: some View {
     VStack(spacing: 2) {
       Image(systemName: "figure.walk")
-        .font(.system(size: 24, weight: .semibold))
+        .font(.system(size: 27, weight: .semibold))
         .foregroundStyle(accent)
-        .frame(height: 28)
+        .frame(height: 31)
 
       Text(mode.isAlert ? "Je čas\nvyrazit" : "Odchod\nza")
-        .font(.system(size: 10, weight: .semibold))
+        .font(.system(size: 11, weight: .semibold))
         .foregroundStyle(CommanderActivityTokens.textSecondary)
         .multilineTextAlignment(.center)
         .lineLimit(2)
@@ -353,30 +347,30 @@ private struct CommanderProcedureHero: View {
     ZStack {
       VStack(spacing: 0) {
         Text(CommanderProcedureText.status(kind: kind, isStale: isStale))
-          .font(.system(size: 14, weight: .bold, design: .rounded))
+          .font(.system(size: 16, weight: .bold, design: .rounded))
           .foregroundStyle(accent)
           .lineLimit(1)
 
         if isStale {
           Text("Skončilo")
-            .font(.system(size: 34, weight: .heavy, design: .rounded))
+            .font(.system(size: 38, weight: .heavy, design: .rounded))
             .foregroundStyle(CommanderActivityTokens.textPrimary)
             .lineLimit(1)
         } else {
           Text(endAt, style: .timer)
-            .font(.system(size: 44, weight: .heavy, design: .rounded).monospacedDigit())
+            .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
             .foregroundStyle(accent)
             .lineLimit(1)
             .minimumScaleFactor(0.74)
         }
       }
-      .frame(width: 160, alignment: .center)
+      .frame(width: 180, alignment: .center)
       .multilineTextAlignment(.center)
       .frame(maxWidth: .infinity)
 
       HStack(spacing: 0) {
-        CommanderActivityBrandMark(size: 66)
-          .frame(width: 74, alignment: .leading)
+        CommanderActivityBrandMark(size: 74)
+          .frame(width: 82, alignment: .leading)
 
         Spacer(minLength: 0)
 
@@ -385,10 +379,10 @@ private struct CommanderProcedureHero: View {
           isStale: isStale,
           accent: accent
         )
-        .frame(width: 64, alignment: .trailing)
+        .frame(width: 72, alignment: .trailing)
       }
     }
-    .frame(minHeight: 64)
+    .frame(minHeight: 72)
   }
 }
 
@@ -401,20 +395,20 @@ private struct CommanderProcedureSideStatus: View {
     if isStale {
       VStack(spacing: 2) {
         Image(systemName: "checkmark.circle.fill")
-          .font(.system(size: 22, weight: .semibold))
+          .font(.system(size: 24, weight: .semibold))
           .foregroundStyle(accent)
         Text("Skončilo")
-          .font(.system(size: 10, weight: .semibold))
+          .font(.system(size: 11, weight: .semibold))
           .foregroundStyle(CommanderActivityTokens.textSecondary)
       }
     } else {
       VStack(spacing: 0) {
         Text("Do konce")
-          .font(.system(size: 10, weight: .semibold))
+          .font(.system(size: 11, weight: .semibold))
           .foregroundStyle(CommanderActivityTokens.textSecondary)
           .lineLimit(1)
         Text(endAt, style: .timer)
-          .font(.system(size: 16, weight: .bold).monospacedDigit())
+          .font(.system(size: 18, weight: .bold).monospacedDigit())
           .foregroundStyle(accent)
           .lineLimit(1)
           .minimumScaleFactor(0.8)
@@ -449,21 +443,21 @@ private struct CommanderActivityEventFooter: View {
   let timeAccent: Color
 
   var body: some View {
-    HStack(alignment: .center, spacing: 9) {
-      CommanderActivityEventBadge(symbol: symbol, accent: eventAccent, size: 32)
+    HStack(alignment: .center, spacing: 10) {
+      CommanderActivityEventBadge(symbol: symbol, accent: eventAccent, size: 36)
 
       VStack(alignment: .leading, spacing: 1) {
         Text(title)
-          .font(.system(size: 19, weight: .bold))
+          .font(.system(size: 21, weight: .bold))
           .foregroundStyle(CommanderActivityTokens.textPrimary)
           .lineLimit(1)
           .minimumScaleFactor(0.84)
         if let location, !location.isEmpty {
           Label(location, systemImage: "mappin.circle.fill")
-            .font(.system(size: 14, weight: .semibold))
+            .font(.system(size: 16, weight: .semibold))
             .foregroundStyle(CommanderActivityTokens.locationBlue)
             .lineLimit(1)
-            .minimumScaleFactor(0.78)
+            .minimumScaleFactor(0.72)
         }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
@@ -475,7 +469,7 @@ private struct CommanderActivityEventFooter: View {
         accent: timeAccent
       )
     }
-    .frame(minHeight: 42)
+    .frame(minHeight: 48)
   }
 }
 
@@ -485,19 +479,19 @@ private struct CommanderActivityTimeBlock: View {
   let accent: Color
 
   var body: some View {
-    HStack(spacing: 5) {
+    HStack(spacing: 6) {
       Image(systemName: "clock.fill")
-        .font(.system(size: 12, weight: .semibold))
+        .font(.system(size: 13, weight: .semibold))
         .foregroundStyle(accent)
       Text(label)
-        .font(.system(size: 11, weight: .medium))
+        .font(.system(size: 12, weight: .medium))
         .foregroundStyle(CommanderActivityTokens.textSecondary)
       Text(value)
-        .font(.system(size: 13, weight: .bold).monospacedDigit())
+        .font(.system(size: 15, weight: .bold).monospacedDigit())
         .foregroundStyle(CommanderActivityTokens.textPrimary)
     }
     .lineLimit(1)
-    .minimumScaleFactor(0.8)
+    .minimumScaleFactor(0.78)
     .fixedSize(horizontal: true, vertical: false)
   }
 }
@@ -571,8 +565,8 @@ private struct CommanderActivityCardStyle: ViewModifier {
 
   func body(content: Content) -> some View {
     content
-      .padding(.horizontal, 14)
-      .padding(.vertical, 11)
+      .padding(.horizontal, 15)
+      .padding(.vertical, 12)
       .frame(
         maxWidth: .infinity,
         minHeight: CommanderActivityTokens.lockScreenMinHeight,
@@ -772,6 +766,13 @@ private enum CommanderAlarmTime {
     return formatter.date(from: localISO)
   }
 
+  static func minutesUntilStart(from localISO: String?, now: Date = Date()) -> String {
+    guard let startDate = startDate(from: localISO) else { return "-- min" }
+    let remaining = max(0, startDate.timeIntervalSince(now))
+    let minutes = Int(ceil(remaining / 60))
+    return "\(minutes) min"
+  }
+
   static func duration(_ seconds: TimeInterval) -> String {
     let remaining = max(0, Int(seconds.rounded(.up)))
     return String(format: "%02d:%02d", remaining / 60, remaining % 60)
@@ -793,23 +794,61 @@ private extension Color {
 
 #if DEBUG
 private enum CommanderActivityPreviewFixtures {
-  static let alarmAttributes = AlarmAttributes(
-    presentation: AlarmPresentation(
-      alert: AlarmPresentation.Alert(title: "Vyrazit na Masáž"),
-      countdown: AlarmPresentation.Countdown(title: "Odchod za Masáž")
-    ),
-    metadata: CommanderAlarmMetadata(
-      stableId: "preview-massage",
-      scheduleVersion: 1,
-      iconKey: "massage",
-      title: "Masáž",
-      location: "Rehabilitace, box 3",
-      kind: .procedure,
-      startAt: "2026-09-01T14:00:00",
-      leaveAt: "2026-09-01T13:50:00"
-    ),
-    tintColor: .orange
-  )
+  private static let previewTimeZone = TimeZone(identifier: "Europe/Prague")!
+
+  private static func localISO(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.timeZone = previewTimeZone
+    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+    return formatter.string(from: date)
+  }
+
+  static var departureAlarmAttributes: AlarmAttributes<CommanderAlarmMetadata> {
+    let now = Date()
+    let leaveAt = now.addingTimeInterval(10 * 60)
+    let startAt = leaveAt.addingTimeInterval(10 * 60)
+    return AlarmAttributes(
+      presentation: AlarmPresentation(
+        alert: AlarmPresentation.Alert(title: "Vyrazit na Masáž"),
+        countdown: AlarmPresentation.Countdown(title: "Odchod za Masáž")
+      ),
+      metadata: CommanderAlarmMetadata(
+        stableId: "preview-massage-departure",
+        scheduleVersion: 1,
+        iconKey: "massage",
+        title: "Masáž",
+        location: "Rehabilitace, box 3",
+        kind: .procedure,
+        startAt: localISO(startAt),
+        leaveAt: localISO(leaveAt)
+      ),
+      tintColor: .orange
+    )
+  }
+
+  static var leaveNowAlarmAttributes: AlarmAttributes<CommanderAlarmMetadata> {
+    let now = Date()
+    let startAt = now.addingTimeInterval(10 * 60)
+    return AlarmAttributes(
+      presentation: AlarmPresentation(
+        alert: AlarmPresentation.Alert(title: "Vyrazit na Masáž"),
+        countdown: AlarmPresentation.Countdown(title: "Odchod za Masáž")
+      ),
+      metadata: CommanderAlarmMetadata(
+        stableId: "preview-massage-leave-now",
+        scheduleVersion: 1,
+        iconKey: "massage",
+        title: "Masáž",
+        location: "Rehabilitace, box 3",
+        kind: .procedure,
+        startAt: localISO(startAt),
+        leaveAt: localISO(now)
+      ),
+      tintColor: .orange
+    )
+  }
 
   static var departureInTenMinutes: AlarmPresentationState {
     let now = Date()
@@ -868,13 +907,13 @@ private enum CommanderActivityPreviewFixtures {
   )
 }
 
-#Preview("Lock Screen - Odchod za 10 min", as: .content, using: CommanderActivityPreviewFixtures.alarmAttributes) {
+#Preview("Lock Screen - Odchod za 10 min", as: .content, using: CommanderActivityPreviewFixtures.departureAlarmAttributes) {
   LazenskyCommanderAlarmLiveActivity()
 } contentStates: {
   CommanderActivityPreviewFixtures.departureInTenMinutes
 }
 
-#Preview("Lock Screen - Vyrazit ted", as: .content, using: CommanderActivityPreviewFixtures.alarmAttributes) {
+#Preview("Lock Screen - Vyrazit ted", as: .content, using: CommanderActivityPreviewFixtures.leaveNowAlarmAttributes) {
   LazenskyCommanderAlarmLiveActivity()
 } contentStates: {
   CommanderActivityPreviewFixtures.leaveNow
@@ -892,13 +931,13 @@ private enum CommanderActivityPreviewFixtures {
   CommanderActivityPreviewFixtures.current
 }
 
-#Preview("Dynamic Island - Compact odchod", as: .dynamicIsland(.compact), using: CommanderActivityPreviewFixtures.alarmAttributes) {
+#Preview("Dynamic Island - Compact odchod", as: .dynamicIsland(.compact), using: CommanderActivityPreviewFixtures.departureAlarmAttributes) {
   LazenskyCommanderAlarmLiveActivity()
 } contentStates: {
   CommanderActivityPreviewFixtures.departureInTenMinutes
 }
 
-#Preview("Dynamic Island - Expanded Masaz", as: .dynamicIsland(.expanded), using: CommanderActivityPreviewFixtures.alarmAttributes) {
+#Preview("Dynamic Island - Expanded Masaz", as: .dynamicIsland(.expanded), using: CommanderActivityPreviewFixtures.departureAlarmAttributes) {
   LazenskyCommanderAlarmLiveActivity()
 } contentStates: {
   CommanderActivityPreviewFixtures.departureInTenMinutes
