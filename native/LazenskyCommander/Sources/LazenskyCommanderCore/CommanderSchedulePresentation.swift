@@ -105,7 +105,7 @@ public struct CommanderStayPresentation: Equatable, Sendable {
     )
   }
 
-  private static func period(stay: [String: String], now: Date) -> CommanderStayPeriod? {
+  public static func period(stay: [String: String], now: Date) -> CommanderStayPeriod? {
     guard let from = stay["dateFrom"], let to = stay["dateTo"],
           let start = try? NativeAlarmContract.dateTime(date: from, time: "00:00"),
           let end = try? NativeAlarmContract.dateTime(date: to, time: "00:00"),

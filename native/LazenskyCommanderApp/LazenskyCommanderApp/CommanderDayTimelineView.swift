@@ -10,7 +10,7 @@ struct CommanderDayTimelineView: View {
         .commanderFont(.section)
         .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
         .accessibilityAddTraits(.isHeader)
-      LazyVStack(spacing: CommanderDesignTokens.Spacing.small) {
+      LazyVStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
         ForEach(items, id: \.event.stableId) { item in
           CommanderEventRow(item: item)
         }
@@ -33,7 +33,7 @@ struct CommanderEventRow: View {
   }
 
   var body: some View {
-    HStack(alignment: .top, spacing: 6) {
+    HStack(alignment: .center, spacing: 6) {
       VStack(alignment: .leading, spacing: 2) {
         Text(item.startAt.formatted(CommanderScheduleDateStyle.clock))
         Text(item.endAt.formatted(CommanderScheduleDateStyle.clock))
@@ -51,7 +51,10 @@ struct CommanderEventRow: View {
     .padding(.horizontal, 10)
     .padding(.vertical, 7)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .commanderCard(accent: item.phase == .current ? accent : nil)
+    .commanderCard(
+      accent: item.phase == .current ? accent : nil,
+      surface: .eventRow
+    )
     .accessibilityElement(children: .combine)
     .accessibilityValue(item.phase == .current ? "Právě probíhá" : "")
   }
@@ -84,7 +87,7 @@ struct CommanderEventRow: View {
   private var location: some View {
     Label(item.event.location, systemImage: "mappin.circle.fill")
       .commanderFont(.location)
-      .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
+      .foregroundStyle(accent)
   }
 
   private var departure: some View {

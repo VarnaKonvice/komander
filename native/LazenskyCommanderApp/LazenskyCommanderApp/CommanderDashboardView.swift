@@ -43,7 +43,6 @@ struct CommanderDashboardContent: View {
           CommanderTodayLiveCard(presentation: presentation)
           if !presentation.timeline.isEmpty {
             CommanderDayTimelineView(items: presentation.timeline)
-              .padding(.top, CommanderDesignTokens.Spacing.tiny)
           }
         }
       }
@@ -77,7 +76,8 @@ struct CommanderTodayLiveCard: View {
     case .leaveNow: return "Čas vyrazit"
     case .inProgress: return item?.event.kind == .meal ? "Právě jídlo" : "Právě probíhá"
     case .dayDone: return "Pro dnešek hotovo"
-    case .noSchedule: return "Dnes bez programu"
+    case .noSchedule:
+      return presentation.stayPeriod?.phase == .finished ? "Pobyt skončil" : "Dnes bez programu"
     case .unsynchronized: return "Rozpis ještě není načten"
     }
   }
@@ -111,7 +111,7 @@ struct CommanderTodayLiveCard: View {
               .commanderFont(.eventTitle)
               .foregroundStyle(CommanderEventAppearance.accent(for: item.event))
               .fixedSize(horizontal: false, vertical: true)
-          } else {
+          } else if presentation.mode != .noSchedule {
             Text(presentation.mode == .dayDone ? "Dnešní program je dokončený." : "Na dnešek nejsou naplánované události.")
               .commanderFont(.subtitle)
               .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
@@ -121,22 +121,11 @@ struct CommanderTodayLiveCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
       }
 
-      if let item {
+      if presentation.mode == .noSchedule {
+        noScheduleDetails
+      } else if let item {
         countdown(item)
-        if !item.event.location.isEmpty {
-          Label(item.event.location, systemImage: "mappin.circle.fill")
-            .commanderFont(.location)
-            .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(CommanderDesignTokens.Spacing.small)
-            .background(CommanderDesignTokens.Colors.locationBlue.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
-            .overlay {
-              RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-                .strokeBorder(CommanderDesignTokens.Colors.locationBlue.opacity(0.45), lineWidth: 1)
-            }
-        }
+        locationPanel(for: item)
         if presentation.mode == .inProgress, let next = presentation.nextEvent {
           VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
             Text("Dále \(next.startAt.formatted(CommanderScheduleDateStyle.clock)) · \(next.event.title)")
@@ -156,6 +145,92 @@ struct CommanderTodayLiveCard: View {
     .frame(maxWidth: .infinity, alignment: .leading)
     .commanderCard(accent: statusColor)
     .accessibilityElement(children: .combine)
+  }
+
+  @ViewBuilder
+  private var noScheduleDetails: some View {
+    if let stay = presentation.stayPeriod, stay.phase == .finished {
+      Text("Poslední den pobytu \(CommanderDateText.numericDate(stay.dateTo))")
+        .commanderFont(.subtitle)
+        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        .fixedSize(horizontal: false, vertical: true)
+    } else if let procedure = presentation.nextProcedure {
+      let accent = CommanderEventAppearance.accent(for: procedure.event)
+      VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.small) {
+        VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
+          Text(freeHeadline(for: procedure))
+            .commanderFont(.countdown)
+            .monospacedDigit()
+            .foregroundStyle(CommanderDesignTokens.Colors.freeBlue)
+            .fixedSize(horizontal: false, vertical: true)
+          Text("První procedura \(procedure.startAt.formatted(CommanderScheduleDateStyle.clock)) · \(procedure.event.title)")
+            .commanderFont(.eventTitle)
+            .foregroundStyle(accent)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        locationPanel(for: procedure)
+        departureLine(for: procedure)
+      }
+    } else {
+      Text("Další procedura není v rozpisu")
+        .commanderFont(.subtitle)
+        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+  }
+
+  private func freeHeadline(for procedure: CommanderDashboardEvent) -> String {
+    let departure = departureDescription(for: procedure)
+    return procedure.leaveAt > presentation.now
+      ? "Volno do \(departure)"
+      : "Je čas vyrazit · \(departure)"
+  }
+
+  private func departureDescription(for procedure: CommanderDashboardEvent) -> String {
+    let time = procedure.leaveAt.formatted(CommanderScheduleDateStyle.clock)
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+    guard !calendar.isDate(procedure.startAt, inSameDayAs: presentation.now) else { return time }
+    return "\(CommanderDateText.shortDay(procedure.leaveAt)) \(time)"
+  }
+
+  @ViewBuilder
+  private func locationPanel(for item: CommanderDashboardEvent) -> some View {
+    if !item.event.location.isEmpty {
+      Label(item.event.location, systemImage: "mappin.circle.fill")
+        .commanderFont(.location)
+        .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(CommanderDesignTokens.Spacing.small)
+        .background(CommanderDesignTokens.Colors.locationBlue.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
+        .overlay {
+          RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
+            .strokeBorder(CommanderDesignTokens.Colors.locationBlue.opacity(0.45), lineWidth: 1)
+        }
+    }
+  }
+
+  private func departureLine(for procedure: CommanderDashboardEvent) -> some View {
+    let time = procedure.leaveAt.formatted(CommanderScheduleDateStyle.clock)
+    let relative = presentation.minutesUntilNextProcedureLeave.map {
+      " · za \(relativeDuration(minutes: $0))"
+    } ?? ""
+    return (
+      Text("Odchod \(time)").foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        + Text(relative).foregroundStyle(CommanderDesignTokens.Colors.amber)
+    )
+    .commanderFont(.subtitle)
+    .monospacedDigit()
+    .fixedSize(horizontal: false, vertical: true)
+  }
+
+  private func relativeDuration(minutes: Int) -> String {
+    let hours = minutes / 60
+    let remainder = minutes % 60
+    if hours == 0 { return "\(remainder) min" }
+    return remainder == 0 ? "\(hours) h" : "\(hours) h \(remainder) min"
   }
 
   @ViewBuilder

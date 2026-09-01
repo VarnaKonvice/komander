@@ -21,6 +21,8 @@ enum CommanderDesignTokens {
 
   enum Spacing {
     static let tiny: CGFloat = 4
+    static let metricTile: CGFloat = 1
+    static let eventRows: CGFloat = 6
     static let small: CGFloat = 8
     static let medium: CGFloat = 12
     static let page: CGFloat = 16
@@ -28,10 +30,31 @@ enum CommanderDesignTokens {
     static let bottom: CGFloat = 28
   }
 
+  enum Size {
+    static let metricIcon: CGFloat = 30
+  }
+
   enum Radius {
-    static let card: CGFloat = 12
-    static let header: CGFloat = 18
-    static let inset: CGFloat = 8
+    static let eventRow: CGFloat = 14
+    static let card: CGFloat = 18
+    static let header: CGFloat = 22
+    static let inset: CGFloat = 12
+  }
+
+  enum CardSurface {
+    case card
+    case eventRow
+    case header
+
+    var radius: CGFloat {
+      switch self {
+      case .card: Radius.card
+      case .eventRow: Radius.eventRow
+      case .header: Radius.header
+      }
+    }
+
+    var isGlass: Bool { self == .header }
   }
 
   enum Stroke {
@@ -51,11 +74,11 @@ enum CommanderDesignTokens {
       case .liveTitle: 22
       case .date: 20
       case .time: 18
-      case .brand, .section, .eventTitle: 17
+      case .brand: 20
+      case .section, .eventTitle: 17
       case .metric: 16
-      case .location: 15
-      case .subtitle, .label: 14
-      case .departure: 13
+      case .location: 16
+      case .subtitle, .label, .departure: 14
       }
     }
 
@@ -88,16 +111,14 @@ enum CommanderDesignTokens {
 
 private struct CommanderCardSurface: ViewModifier {
   var accent: Color?
-  var glass: Bool
+  var surface: CommanderDesignTokens.CardSurface
 
   func body(content: Content) -> some View {
-    let shape = RoundedRectangle(
-      cornerRadius: glass ? CommanderDesignTokens.Radius.header : CommanderDesignTokens.Radius.card
-    )
+    let shape = RoundedRectangle(cornerRadius: surface.radius)
     content
       .background {
         ZStack {
-          if glass {
+          if surface.isGlass {
             shape.fill(.ultraThinMaterial)
               .overlay(CommanderDesignTokens.Colors.panel.opacity(0.8))
           } else {
@@ -123,8 +144,11 @@ extension View {
     modifier(CommanderFontModifier(style: style))
   }
 
-  func commanderCard(accent: Color? = nil, glass: Bool = false) -> some View {
-    modifier(CommanderCardSurface(accent: accent, glass: glass))
+  func commanderCard(
+    accent: Color? = nil,
+    surface: CommanderDesignTokens.CardSurface = .card
+  ) -> some View {
+    modifier(CommanderCardSurface(accent: accent, surface: surface))
   }
 }
 
@@ -157,7 +181,7 @@ struct CommanderGlassHeader: View {
     }
     .padding(.horizontal, 6)
     .padding(.vertical, CommanderDesignTokens.Spacing.tiny)
-    .commanderCard(glass: true)
+    .commanderCard(surface: .header)
     .accessibilityElement(children: .combine)
   }
 

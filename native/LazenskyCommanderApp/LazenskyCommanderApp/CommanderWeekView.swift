@@ -16,6 +16,7 @@ struct CommanderWeekView: View {
     ScrollView {
       LazyVStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
         CommanderGlassHeader(tab: "Týden")
+        CommanderScreenHeading(title: "Týden", subtitle: "Přehled procedur a aktivit")
         if let days, !days.isEmpty {
           ForEach(days, id: \.date) { day in
             CommanderWeekDayTile(
@@ -69,8 +70,10 @@ struct CommanderWeekDayTile: View {
             .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
             .padding(CommanderDesignTokens.Spacing.medium)
         } else {
-          ForEach(day.events, id: \.event.stableId) { item in
-            CommanderEventRow(item: item)
+          LazyVStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
+            ForEach(day.events, id: \.event.stableId) { item in
+              CommanderEventRow(item: item)
+            }
           }
         }
       }
@@ -108,23 +111,23 @@ struct CommanderDaySummaryCard: View {
       }
       HStack(alignment: .top, spacing: 6) {
         if !isCompact {
-          CommanderDayMetric(
+          CommanderMetricTile(
             title: "Procedury", value: "\(overview.procedureCount)",
             symbol: "cross.case", accent: CommanderDesignTokens.Colors.primaryPurple
           )
         }
-        CommanderDayMetric(
+        CommanderMetricTile(
           title: "Konec\nprocedur", value: overview.procedureEndAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
           symbol: isCompact ? nil : "clock", accent: CommanderDesignTokens.Colors.primaryPurple,
           accessibleValue: overview.procedureEndAt == nil ? "Bez procedur" : nil
         )
-        CommanderDayMetric(
+        CommanderMetricTile(
           title: "Volno do\nvečeře", value: freeTime,
           symbol: isCompact ? nil : "cup.and.saucer", accent: CommanderDesignTokens.Colors.freeBlue,
           accessibleValue: overview.freeBeforeDinnerMinutes == nil ? "Údaj není k dispozici" : nil
         )
         .frame(minWidth: 100)
-        CommanderDayMetric(
+        CommanderMetricTile(
           title: "Večeře", value: overview.dinnerStartAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
           symbol: isCompact ? nil : "fork.knife", accent: CommanderDesignTokens.Colors.mealGreen,
           accessibleValue: overview.dinnerStartAt == nil ? "Není v rozpisu" : nil
@@ -155,7 +158,7 @@ struct CommanderDaySummaryCard: View {
   }
 }
 
-private struct CommanderDayMetric: View {
+private struct CommanderMetricTile: View {
   let title: String
   let value: String
   let symbol: String?
@@ -163,9 +166,18 @@ private struct CommanderDayMetric: View {
   var accessibleValue: String? = nil
 
   var body: some View {
-    VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
+    VStack(
+      alignment: .leading,
+      spacing: symbol == nil
+        ? CommanderDesignTokens.Spacing.tiny
+        : CommanderDesignTokens.Spacing.metricTile
+    ) {
       if let symbol {
-        CommanderSymbolBadge(symbol: symbol, color: accent, size: 24)
+        CommanderSymbolBadge(
+          symbol: symbol,
+          color: accent,
+          size: CommanderDesignTokens.Size.metricIcon
+        )
       }
       Text(title)
         .commanderFont(.label)
