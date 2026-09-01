@@ -286,11 +286,17 @@ private struct CommanderAlarmHero: View {
           .lineLimit(1)
 
         if mode.isAlert {
-          Text(CommanderAlarmTime.minutesUntilStart(from: startAt))
-            .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
-            .foregroundStyle(accent)
-            .lineLimit(1)
-            .minimumScaleFactor(0.78)
+          if let startDate = CommanderAlarmTime.startDate(from: startAt) {
+            Text(startDate, style: .timer)
+              .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
+              .foregroundStyle(accent)
+              .lineLimit(1)
+              .minimumScaleFactor(0.74)
+          } else {
+            Text("TEĎ")
+              .font(.system(size: 42, weight: .heavy, design: .rounded))
+              .foregroundStyle(accent)
+          }
         } else {
           CommanderAlarmCountdown(mode: mode)
             .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
@@ -767,13 +773,6 @@ private enum CommanderAlarmTime {
     formatter.timeZone = TimeZone(identifier: "Europe/Prague")
     formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
     return formatter.date(from: localISO)
-  }
-
-  static func minutesUntilStart(from localISO: String?, now: Date = Date()) -> String {
-    guard let startDate = startDate(from: localISO) else { return "-- min" }
-    let remaining = max(0, startDate.timeIntervalSince(now))
-    let minutes = Int(ceil(remaining / 60))
-    return "\(minutes) min"
   }
 
   static func duration(_ seconds: TimeInterval) -> String {
