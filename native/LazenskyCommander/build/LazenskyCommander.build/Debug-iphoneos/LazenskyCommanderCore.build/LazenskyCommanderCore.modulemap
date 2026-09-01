@@ -1,4 +1,0 @@
-module LazenskyCommanderCore {
-header "LazenskyCommanderCore-Swift.h"
-export *
-}
