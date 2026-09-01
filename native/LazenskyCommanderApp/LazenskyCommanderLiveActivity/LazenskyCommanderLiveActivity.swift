@@ -21,6 +21,7 @@ private enum CommanderActivityTokens {
 
   static let insetRadius: CGFloat = 12
   static let cardRadius: CGFloat = 22
+  static let lockScreenMinHeight: CGFloat = 138
 
   static var backgroundGradient: LinearGradient {
     LinearGradient(colors: [panel, background], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -205,18 +206,17 @@ private struct CommanderAlarmLockScreenView: View {
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 7) {
-      CommanderAlarmStatusRow(mode: context.state.mode)
-      CommanderActivityEventIdentity(
+    VStack(spacing: 8) {
+      CommanderAlarmHero(mode: context.state.mode)
+      CommanderActivityDivider(accent: departureAccent)
+      CommanderActivityEventFooter(
         title: metadata?.title ?? "Lázeňský Commander",
         location: metadata?.location,
         symbol: eventSymbol,
-        eventAccent: eventAccent
-      )
-      CommanderActivityCanonicalTime(
-        label: "Začátek",
-        value: CommanderAlarmTime.startTime(from: metadata?.startAt),
-        accent: departureAccent
+        eventAccent: eventAccent,
+        timeLabel: "Začátek",
+        timeValue: CommanderAlarmTime.startTime(from: metadata?.startAt),
+        timeAccent: departureAccent
       )
     }
     .commanderActivityCard(accent: departureAccent)
@@ -243,141 +243,210 @@ private struct CommanderProcedureLockScreenView: View {
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 7) {
-      CommanderProcedureStatusRow(
+    VStack(spacing: 8) {
+      CommanderProcedureHero(
         kind: context.attributes.kind,
         endAt: context.attributes.endAt,
         isStale: context.isStale,
         accent: stateAccent
       )
-      CommanderActivityEventIdentity(
+      CommanderActivityDivider(accent: stateAccent)
+      CommanderActivityEventFooter(
         title: context.attributes.title,
         location: context.attributes.location,
         symbol: eventSymbol,
-        eventAccent: accent
-      )
-      CommanderActivityCanonicalTime(
-        label: "Konec",
-        value: context.attributes.endAt.formatted(date: .omitted, time: .shortened),
-        accent: stateAccent
+        eventAccent: accent,
+        timeLabel: "Konec",
+        timeValue: context.attributes.endAt.formatted(date: .omitted, time: .shortened),
+        timeAccent: stateAccent
       )
     }
     .commanderActivityCard(accent: stateAccent)
   }
 }
 
-private struct CommanderAlarmStatusRow: View {
+private struct CommanderAlarmHero: View {
   let mode: AlarmPresentationState.Mode
 
-  private var departureAccent: Color {
+  private var accent: Color {
     CommanderActivityTokens.departureAccent(for: mode)
   }
 
   var body: some View {
-    HStack(spacing: 9) {
-      CommanderActivityBrandMark(size: 28)
-      if mode.isAlert {
-        Text("VYRAZIT TEĎ")
-          .font(.system(size: 22, weight: .heavy, design: .rounded))
-          .foregroundStyle(departureAccent)
-          .lineLimit(1)
-      } else {
-        Text("Odchod za")
-          .font(.system(size: 16, weight: .bold))
-          .foregroundStyle(departureAccent)
-          .lineLimit(1)
-        Spacer(minLength: 6)
-        CommanderAlarmCountdown(mode: mode)
-          .font(.system(size: 32, weight: .heavy, design: .rounded).monospacedDigit())
-          .foregroundStyle(departureAccent)
-          .lineLimit(1)
-          .minimumScaleFactor(0.82)
+    HStack(alignment: .center, spacing: 12) {
+      CommanderActivityBrandMark(size: 54)
+
+      VStack(alignment: .leading, spacing: 1) {
+        if mode.isAlert {
+          Text("VYRAZIT TEĎ")
+            .font(.system(size: 27, weight: .heavy, design: .rounded))
+            .foregroundStyle(accent)
+            .lineLimit(1)
+            .minimumScaleFactor(0.82)
+          Text("Je čas vyrazit")
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(CommanderActivityTokens.textSecondary)
+        } else {
+          Text("Odchod za")
+            .font(.system(size: 14, weight: .bold))
+            .foregroundStyle(accent)
+          CommanderAlarmCountdown(mode: mode)
+            .font(.system(size: 42, weight: .heavy, design: .rounded).monospacedDigit())
+            .foregroundStyle(accent)
+            .lineLimit(1)
+            .minimumScaleFactor(0.76)
+        }
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
+
+      CommanderActivityStateBadge(
+        symbol: "figure.walk",
+        label: mode.isAlert ? "Je čas\nvyrazit" : "Odchod",
+        accent: accent
+      )
     }
-    .frame(minHeight: 34)
+    .frame(minHeight: 58)
   }
 }
 
-private struct CommanderProcedureStatusRow: View {
+private struct CommanderProcedureHero: View {
   let kind: ScheduleKind
   let endAt: Date
   let isStale: Bool
   let accent: Color
 
   var body: some View {
-    HStack(spacing: 9) {
-      CommanderActivityBrandMark(size: 28)
-      Text(CommanderProcedureText.status(kind: kind, isStale: isStale))
-        .font(.system(size: 16, weight: .bold))
-        .foregroundStyle(isStale ? CommanderActivityTokens.textSecondary : accent)
-        .lineLimit(1)
-      Spacer(minLength: 6)
-      if isStale {
-        Image(systemName: "checkmark.circle.fill")
-          .font(.system(size: 24, weight: .bold))
+    HStack(alignment: .center, spacing: 12) {
+      CommanderActivityBrandMark(size: 54)
+
+      VStack(alignment: .leading, spacing: 1) {
+        Text(CommanderProcedureText.status(kind: kind, isStale: isStale))
+          .font(.system(size: 14, weight: .bold))
           .foregroundStyle(accent)
-      } else {
-        VStack(alignment: .trailing, spacing: 0) {
-          Text("Do konce")
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(CommanderActivityTokens.textSecondary)
+          .lineLimit(1)
+
+        if isStale {
+          Text("Skončilo")
+            .font(.system(size: 27, weight: .heavy, design: .rounded))
+            .foregroundStyle(CommanderActivityTokens.textPrimary)
+            .lineLimit(1)
+        } else {
           Text(endAt, style: .timer)
-            .font(.system(size: 27, weight: .heavy, design: .rounded).monospacedDigit())
+            .font(.system(size: 42, weight: .heavy, design: .rounded).monospacedDigit())
             .foregroundStyle(accent)
             .lineLimit(1)
-            .minimumScaleFactor(0.82)
+            .minimumScaleFactor(0.76)
         }
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
+
+      CommanderActivityStateBadge(
+        symbol: isStale ? "checkmark" : "play.fill",
+        label: isStale ? "Skončilo" : "Do konce",
+        accent: accent
+      )
     }
-    .frame(minHeight: 34)
+    .frame(minHeight: 58)
   }
 }
 
-private struct CommanderActivityEventIdentity: View {
+private struct CommanderActivityStateBadge: View {
+  let symbol: String
+  let label: String
+  let accent: Color
+
+  var body: some View {
+    VStack(spacing: 3) {
+      Image(systemName: symbol)
+        .font(.system(size: 24, weight: .semibold))
+        .foregroundStyle(accent)
+        .frame(width: 34, height: 30)
+      Text(label)
+        .font(.system(size: 10, weight: .semibold))
+        .foregroundStyle(CommanderActivityTokens.textSecondary)
+        .multilineTextAlignment(.center)
+        .lineLimit(2)
+    }
+    .frame(width: 50)
+  }
+}
+
+private struct CommanderActivityDivider: View {
+  let accent: Color
+
+  var body: some View {
+    Rectangle()
+      .fill(
+        LinearGradient(
+          colors: [accent.opacity(0.55), CommanderActivityTokens.panelStroke.opacity(0.18)],
+          startPoint: .leading,
+          endPoint: .trailing
+        )
+      )
+      .frame(height: 1)
+  }
+}
+
+private struct CommanderActivityEventFooter: View {
   let title: String
   let location: String?
   let symbol: String
   let eventAccent: Color
+  let timeLabel: String
+  let timeValue: String
+  let timeAccent: Color
 
   var body: some View {
     HStack(alignment: .center, spacing: 9) {
-      CommanderActivityEventBadge(symbol: symbol, accent: eventAccent, size: 30)
+      CommanderActivityEventBadge(symbol: symbol, accent: eventAccent, size: 32)
+
       VStack(alignment: .leading, spacing: 1) {
         Text(title)
-          .font(.system(size: 21, weight: .bold))
+          .font(.system(size: 19, weight: .bold))
           .foregroundStyle(CommanderActivityTokens.textPrimary)
           .lineLimit(1)
-          .minimumScaleFactor(0.9)
+          .minimumScaleFactor(0.84)
         if let location, !location.isEmpty {
           Label(location, systemImage: "mappin.circle.fill")
-            .font(.system(size: 16, weight: .semibold))
+            .font(.system(size: 14, weight: .semibold))
             .foregroundStyle(CommanderActivityTokens.locationBlue)
             .lineLimit(1)
-            .minimumScaleFactor(0.88)
+            .minimumScaleFactor(0.78)
         }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
+      .layoutPriority(1)
+
+      CommanderActivityTimeBlock(
+        label: timeLabel,
+        value: timeValue,
+        accent: timeAccent
+      )
     }
+    .frame(minHeight: 42)
   }
 }
 
-private struct CommanderActivityCanonicalTime: View {
+private struct CommanderActivityTimeBlock: View {
   let label: String
   let value: String
   let accent: Color
 
   var body: some View {
-    HStack(spacing: 6) {
+    HStack(spacing: 5) {
       Image(systemName: "clock.fill")
+        .font(.system(size: 12, weight: .semibold))
         .foregroundStyle(accent)
-      Text(label)
-        .foregroundStyle(CommanderActivityTokens.textSecondary)
-      Text(value)
-        .fontWeight(.bold)
-        .monospacedDigit()
-        .foregroundStyle(CommanderActivityTokens.textPrimary)
+      VStack(alignment: .trailing, spacing: 0) {
+        Text(label)
+          .font(.system(size: 10, weight: .semibold))
+          .foregroundStyle(CommanderActivityTokens.textSecondary)
+        Text(value)
+          .font(.system(size: 15, weight: .bold).monospacedDigit())
+          .foregroundStyle(CommanderActivityTokens.textPrimary)
+      }
     }
-    .font(.system(size: 14))
+    .fixedSize(horizontal: true, vertical: false)
   }
 }
 
@@ -451,12 +520,25 @@ private struct CommanderActivityCardStyle: ViewModifier {
   func body(content: Content) -> some View {
     content
       .padding(.horizontal, 14)
-      .padding(.vertical, 10)
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .background(CommanderActivityTokens.backgroundGradient)
+      .padding(.vertical, 11)
+      .frame(
+        maxWidth: .infinity,
+        minHeight: CommanderActivityTokens.lockScreenMinHeight,
+        alignment: .leading
+      )
+      .background {
+        ZStack {
+          CommanderActivityTokens.backgroundGradient
+          LinearGradient(
+            colors: [accent.opacity(0.11), .clear, accent.opacity(0.04)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        }
+      }
       .overlay {
         RoundedRectangle(cornerRadius: CommanderActivityTokens.cardRadius)
-          .strokeBorder(accent.opacity(0.55), lineWidth: 1)
+          .strokeBorder(accent.opacity(0.62), lineWidth: 1)
       }
   }
 }
