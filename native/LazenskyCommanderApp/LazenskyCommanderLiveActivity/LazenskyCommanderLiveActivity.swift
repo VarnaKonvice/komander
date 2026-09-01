@@ -4,6 +4,22 @@ import SwiftUI
 import UIKit
 import WidgetKit
 
+private enum CommanderActivityPalette {
+  static let background = Color(red: 0.05, green: 0.09, blue: 0.22)
+  static let backgroundLift = Color(red: 0.08, green: 0.17, blue: 0.34)
+  static let departure = Color(red: 1.0, green: 0.79, blue: 0.28)
+  static let location = Color(red: 0.44, green: 0.84, blue: 1.0)
+  static let success = Color(red: 0.32, green: 0.88, blue: 0.42)
+
+  static var gradient: LinearGradient {
+    LinearGradient(
+      colors: [backgroundLift, background],
+      startPoint: .topLeading,
+      endPoint: .bottomTrailing
+    )
+  }
+}
+
 @main
 struct LazenskyCommanderLiveActivityBundle: WidgetBundle {
   var body: some Widget {
@@ -16,47 +32,49 @@ struct LazenskyCommanderAlarmLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: AlarmAttributes<CommanderAlarmMetadata>.self) { context in
       CommanderAlarmLockScreenView(context: context)
-        .activityBackgroundTint(Color(.systemBackground))
-        .activitySystemActionForegroundColor(.primary)
+        .activityBackgroundTint(CommanderActivityPalette.background)
+        .activitySystemActionForegroundColor(.white)
     } dynamicIsland: { context in
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
-          CommanderAlarmIcon(iconKey: context.attributes.metadata?.iconKey, size: 42)
+          CommanderAlarmIcon(iconKey: context.attributes.metadata?.iconKey, size: 44)
         }
         DynamicIslandExpandedRegion(.center) {
-          VStack(alignment: .leading, spacing: 2) {
+          VStack(alignment: .leading, spacing: 3) {
             Text(context.attributes.metadata?.title ?? "Lázeňský Commander")
-              .font(.headline)
+              .font(.headline.weight(.bold))
+              .foregroundStyle(.white)
               .lineLimit(1)
             if let location = context.attributes.metadata?.location, !location.isEmpty {
-              Text(location)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+              Label(location, systemImage: "mappin.and.ellipse")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(CommanderActivityPalette.location)
                 .lineLimit(1)
             }
           }
         }
         DynamicIslandExpandedRegion(.trailing) {
-          CommanderAlarmCountdownContext(mode: context.state.mode, showsLabel: true)
+          CommanderAlarmCountdownContext(mode: context.state.mode, showsLabel: true, size: .regular)
         }
         DynamicIslandExpandedRegion(.bottom) {
           HStack {
             Label("Začátek", systemImage: "clock")
-              .foregroundStyle(.secondary)
+              .foregroundStyle(.white.opacity(0.68))
             Spacer()
             Text(CommanderAlarmTime.startTime(from: context.attributes.metadata?.startAt))
               .fontWeight(.semibold)
+              .foregroundStyle(.white)
           }
           .font(.subheadline)
         }
       } compactLeading: {
         CommanderAlarmIcon(iconKey: context.attributes.metadata?.iconKey, size: 22)
       } compactTrailing: {
-        CommanderAlarmCountdownContext(mode: context.state.mode, showsLabel: false)
+        CommanderAlarmCountdownContext(mode: context.state.mode, showsLabel: false, size: .compact)
       } minimal: {
         CommanderAlarmIcon(iconKey: context.attributes.metadata?.iconKey, size: 20)
       }
-      .keylineTint(.teal)
+      .keylineTint(CommanderActivityPalette.location)
     }
   }
 }
@@ -65,25 +83,26 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: CommanderProcedureLiveActivityAttributes.self) { context in
       CommanderProcedureLockScreenView(context: context)
-        .activityBackgroundTint(Color(.systemBackground))
-        .activitySystemActionForegroundColor(.primary)
+        .activityBackgroundTint(CommanderActivityPalette.background)
+        .activitySystemActionForegroundColor(.white)
     } dynamicIsland: { context in
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
-          CommanderAlarmIcon(iconKey: context.attributes.iconKey, size: 42)
+          CommanderAlarmIcon(iconKey: context.attributes.iconKey, size: 44)
         }
         DynamicIslandExpandedRegion(.center) {
-          VStack(alignment: .leading, spacing: 2) {
+          VStack(alignment: .leading, spacing: 3) {
             Text(context.isStale ? "Dokončeno" : "Právě probíhá")
               .font(.caption.weight(.semibold))
-              .foregroundStyle(context.isStale ? Color.secondary : Color.teal)
+              .foregroundStyle(context.isStale ? Color.white.opacity(0.6) : CommanderActivityPalette.success)
             Text(context.attributes.title)
-              .font(.headline)
+              .font(.headline.weight(.bold))
+              .foregroundStyle(.white)
               .lineLimit(1)
             if !context.attributes.location.isEmpty {
-              Text(context.attributes.location)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+              Label(context.attributes.location, systemImage: "mappin.and.ellipse")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(CommanderActivityPalette.location)
                 .lineLimit(1)
             }
           }
@@ -99,13 +118,15 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
           if context.isStale {
             Label("Procedura skončila", systemImage: "checkmark.circle.fill")
               .font(.subheadline)
+              .foregroundStyle(CommanderActivityPalette.success)
           } else {
             HStack {
               Label("Konec", systemImage: "clock")
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.68))
               Spacer()
               Text(context.attributes.endAt, style: .time)
                 .fontWeight(.semibold)
+                .foregroundStyle(.white)
             }
             .font(.subheadline)
           }
@@ -120,9 +141,9 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
         )
       } minimal: {
         Image(systemName: context.isStale ? "checkmark" : "waveform.path.ecg")
-          .foregroundStyle(.teal)
+          .foregroundStyle(CommanderActivityPalette.success)
       }
-      .keylineTint(.teal)
+      .keylineTint(CommanderActivityPalette.success)
     }
   }
 }
@@ -131,36 +152,37 @@ private struct CommanderProcedureLockScreenView: View {
   let context: ActivityViewContext<CommanderProcedureLiveActivityAttributes>
 
   var body: some View {
-    HStack(spacing: 14) {
-      CommanderAlarmIcon(iconKey: context.attributes.iconKey, size: 52)
+    VStack(alignment: .leading, spacing: 12) {
+      CommanderActivityBrandHeader(iconKey: context.attributes.iconKey)
 
-      VStack(alignment: .leading, spacing: 3) {
-        Text(context.isStale ? "Dokončeno" : "Právě probíhá")
-          .font(.caption.weight(.semibold))
-          .foregroundStyle(context.isStale ? Color.secondary : Color.teal)
-        Text(context.attributes.title)
-          .font(.headline)
-          .lineLimit(2)
-        if !context.attributes.location.isEmpty {
-          Text(context.attributes.location)
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
+      HStack(alignment: .top, spacing: 14) {
+        VStack(alignment: .leading, spacing: 7) {
+          Text(context.isStale ? "Dokončeno" : "Právě probíhá")
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(context.isStale ? Color.white.opacity(0.62) : CommanderActivityPalette.success)
+          Text(context.attributes.title)
+            .font(.title3.weight(.bold))
+            .foregroundStyle(.white)
+            .lineLimit(2)
+          if !context.attributes.location.isEmpty {
+            CommanderActivityLocationPill(location: context.attributes.location)
+          }
+          Text("Konec \(context.attributes.endAt.formatted(date: .omitted, time: .shortened))")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.white.opacity(0.68))
         }
-        Text("Konec \(context.attributes.endAt.formatted(date: .omitted, time: .shortened))")
-          .font(.caption)
-          .foregroundStyle(.secondary)
+
+        Spacer(minLength: 8)
+
+        CommanderProcedureTiming(
+          endAt: context.attributes.endAt,
+          isStale: context.isStale,
+          compact: false
+        )
       }
-
-      Spacer(minLength: 8)
-
-      CommanderProcedureTiming(
-        endAt: context.attributes.endAt,
-        isStale: context.isStale,
-        compact: false
-      )
     }
-    .padding()
+    .padding(18)
+    .background(CommanderActivityPalette.gradient)
   }
 }
 
@@ -173,17 +195,17 @@ private struct CommanderProcedureTiming: View {
     Group {
       if isStale {
         Image(systemName: "checkmark.circle.fill")
-          .foregroundStyle(.teal)
+          .foregroundStyle(CommanderActivityPalette.success)
       } else {
         VStack(alignment: .trailing, spacing: 1) {
           if !compact {
             Text("Do konce")
               .font(.caption2.weight(.semibold))
-              .foregroundStyle(.secondary)
+              .foregroundStyle(.white.opacity(0.68))
           }
           Text(endAt, style: .timer)
-            .font(compact ? .caption2.monospacedDigit() : .headline.monospacedDigit())
-            .foregroundStyle(.teal)
+            .font(compact ? .caption2.monospacedDigit() : .title2.weight(.heavy).monospacedDigit())
+            .foregroundStyle(CommanderActivityPalette.success)
             .lineLimit(1)
         }
       }
@@ -195,49 +217,58 @@ private struct CommanderAlarmLockScreenView: View {
   let context: ActivityViewContext<AlarmAttributes<CommanderAlarmMetadata>>
 
   var body: some View {
-    HStack(spacing: 14) {
-      CommanderAlarmIcon(iconKey: context.attributes.metadata?.iconKey, size: 52)
+    VStack(alignment: .leading, spacing: 14) {
+      CommanderActivityBrandHeader(iconKey: context.attributes.metadata?.iconKey)
 
-      VStack(alignment: .leading, spacing: 3) {
+      CommanderAlarmCountdownContext(mode: context.state.mode, showsLabel: true, size: .large)
+        .multilineTextAlignment(.leading)
+
+      VStack(alignment: .leading, spacing: 8) {
         Text(context.attributes.metadata?.title ?? "Lázeňský Commander")
-          .font(.headline)
+          .font(.title3.weight(.bold))
+          .foregroundStyle(.white)
           .lineLimit(2)
         if let location = context.attributes.metadata?.location, !location.isEmpty {
-          Text(location)
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
+          CommanderActivityLocationPill(location: location)
         }
         Text("Začátek \(CommanderAlarmTime.startTime(from: context.attributes.metadata?.startAt))")
-          .font(.caption)
-          .foregroundStyle(.secondary)
+          .font(.subheadline.weight(.semibold))
+          .foregroundStyle(.white.opacity(0.72))
       }
-
-      Spacer(minLength: 8)
-
-      CommanderAlarmCountdownContext(mode: context.state.mode, showsLabel: true)
-        .multilineTextAlignment(.trailing)
     }
-    .padding()
+    .padding(18)
+    .background(CommanderActivityPalette.gradient)
   }
 }
 
 private struct CommanderAlarmCountdownContext: View {
   let mode: AlarmPresentationState.Mode
   let showsLabel: Bool
+  var size: CommanderAlarmCountdownSize = .regular
 
   var body: some View {
-    VStack(alignment: .trailing, spacing: 1) {
+    VStack(alignment: size == .large ? .leading : .trailing, spacing: 2) {
       if showsLabel {
         Text(label)
-          .font(.caption2.weight(.semibold))
-          .foregroundStyle(.secondary)
+          .font(size == .large ? .headline.weight(.bold) : .caption2.weight(.bold))
+          .foregroundStyle(size == .large ? CommanderActivityPalette.departure : .white.opacity(0.7))
           .lineLimit(1)
       }
       CommanderAlarmCountdown(mode: mode)
-        .font(showsLabel ? .headline.monospacedDigit() : .caption2.monospacedDigit())
-        .foregroundStyle(.teal)
+        .font(countdownFont)
+        .foregroundStyle(CommanderActivityPalette.departure)
         .lineLimit(1)
+    }
+  }
+
+  private var countdownFont: Font {
+    switch size {
+    case .compact:
+      .caption2.weight(.bold).monospacedDigit()
+    case .regular:
+      .headline.weight(.heavy).monospacedDigit()
+    case .large:
+      .system(size: 40, weight: .heavy, design: .rounded).monospacedDigit()
     }
   }
 
@@ -250,6 +281,50 @@ private struct CommanderAlarmCountdownContext: View {
     @unknown default:
       "Vyrazit za"
     }
+  }
+}
+
+private enum CommanderAlarmCountdownSize {
+  case compact, regular, large
+}
+
+private struct CommanderActivityBrandHeader: View {
+  let iconKey: String?
+
+  var body: some View {
+    HStack(spacing: 10) {
+      CommanderBrandAssets.circularMark
+        .resizable()
+        .scaledToFit()
+        .frame(width: 30, height: 30)
+        .accessibilityHidden(true)
+      VStack(alignment: .leading, spacing: 1) {
+        Text("Lázeňský Commander")
+          .font(.caption.weight(.bold))
+          .foregroundStyle(.white)
+        Text("Buď připravený včas")
+          .font(.caption2.weight(.medium))
+          .foregroundStyle(.white.opacity(0.66))
+      }
+      Spacer(minLength: 8)
+      CommanderAlarmIcon(iconKey: iconKey, size: 30)
+    }
+  }
+}
+
+private struct CommanderActivityLocationPill: View {
+  let location: String
+
+  var body: some View {
+    Label(location, systemImage: "mappin.and.ellipse")
+      .font(.headline.weight(.bold))
+      .foregroundStyle(.white)
+      .lineLimit(2)
+      .padding(.horizontal, 12)
+      .padding(.vertical, 8)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(CommanderActivityPalette.location.opacity(0.22))
+      .clipShape(RoundedRectangle(cornerRadius: 8))
   }
 }
 

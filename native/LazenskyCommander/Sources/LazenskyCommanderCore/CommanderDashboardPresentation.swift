@@ -44,6 +44,7 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
   public let nextEvent: CommanderDashboardEvent?
   public let thenEvent: CommanderDashboardEvent?
   public let daySummary: CommanderDaySummary
+  public let dayOverview: CommanderDayOverview
   public let timeline: [CommanderDashboardEvent]
   public let meals: [CommanderDashboardEvent]
   public let now: Date
@@ -66,6 +67,11 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
         nextEvent: nil,
         thenEvent: nil,
         daySummary: CommanderDaySummary.make(timeline: [], now: now),
+        dayOverview: CommanderDayOverview.make(
+          date: pragueCalendar.startOfDay(for: now),
+          timeline: [],
+          now: now
+        ),
         timeline: [],
         meals: [],
         now: now
@@ -73,6 +79,7 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
     }
 
     let timeline = todayEvents(schedule: schedule, now: now, overrides: overrides)
+    let day = pragueCalendar.startOfDay(for: now)
     let mode = timeline.isEmpty ? .noSchedule : dashboardMode(for: liveState.state)
     let currentEvent = liveState.event.flatMap { liveEvent in
       timeline.first { $0.event.stableId == liveEvent.stableId }
@@ -90,6 +97,7 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
       nextEvent: following.first,
       thenEvent: following.count > 1 ? following[1] : nil,
       daySummary: CommanderDaySummary.make(timeline: timeline, now: now),
+      dayOverview: CommanderDayOverview.make(date: day, timeline: timeline, now: now),
       timeline: timeline,
       meals: timeline.filter { $0.event.kind == .meal },
       now: now
@@ -147,5 +155,11 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
     case .dayDone: .dayDone
     case .noSchedule: .noSchedule
     }
+  }
+
+  private static var pragueCalendar: Calendar {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+    return calendar
   }
 }

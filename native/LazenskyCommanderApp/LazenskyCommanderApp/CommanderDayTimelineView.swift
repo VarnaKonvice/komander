@@ -5,81 +5,92 @@ struct CommanderDayTimelineView: View {
   let items: [CommanderDashboardEvent]
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      CommanderSectionTitle(title: "Program dne", systemImage: "list.bullet")
-      LazyVStack(spacing: 8) {
+    VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.small) {
+      Text("Dnešní program")
+        .commanderFont(.section)
+        .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        .accessibilityAddTraits(.isHeader)
+      LazyVStack(spacing: CommanderDesignTokens.Spacing.small) {
         ForEach(items, id: \.event.stableId) { item in
-          CommanderTimelineRow(item: item)
+          CommanderEventRow(item: item)
         }
       }
     }
   }
 }
 
-private struct CommanderTimelineRow: View {
+struct CommanderEventRow: View {
   let item: CommanderDashboardEvent
 
-  private var icon: CommanderIconMap.Icon? {
-    CommanderVisualAssets.icon(for: item.event)
-  }
+  private var accent: Color { CommanderEventAppearance.accent(for: item.event) }
 
-  private var accent: Color {
-    Color(commanderHex: CommanderVisualAssets.accent(for: icon))
-  }
-
-  private var rowOpacity: Double {
-    item.phase == .past ? 0.52 : 1
+  private var departureText: String {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+    let time = item.leaveAt.formatted(CommanderScheduleDateStyle.clock)
+    return calendar.isDate(item.startAt, inSameDayAs: item.leaveAt)
+      ? time : "\(CommanderDateText.shortDay(item.leaveAt)) \(time)"
   }
 
   var body: some View {
-    HStack(alignment: .center, spacing: 11) {
-      VStack(spacing: 2) {
-        Text(item.startAt, format: .dateTime.hour().minute())
-          .font(.subheadline.bold().monospacedDigit())
-        Text(item.endAt, format: .dateTime.hour().minute())
-          .font(.caption.monospacedDigit())
-          .foregroundStyle(.white.opacity(0.56))
+    HStack(alignment: .top, spacing: 6) {
+      VStack(alignment: .leading, spacing: 2) {
+        Text(item.startAt.formatted(CommanderScheduleDateStyle.clock))
+        Text(item.endAt.formatted(CommanderScheduleDateStyle.clock))
       }
-      .frame(minWidth: 48)
+      .commanderFont(.time)
+      .monospacedDigit()
+      .foregroundStyle(accent)
+      .fixedSize(horizontal: true, vertical: false)
+      .frame(width: 55, alignment: .leading)
+      CommanderSymbolBadge(
+        symbol: CommanderEventAppearance.symbol(for: item.event), color: accent, size: 30
+      )
+      details.layoutPriority(1)
+    }
+    .padding(.horizontal, 10)
+    .padding(.vertical, 7)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .commanderCard(accent: item.phase == .current ? accent : nil)
+    .accessibilityElement(children: .combine)
+    .accessibilityValue(item.phase == .current ? "Právě probíhá" : "")
+  }
 
-      Rectangle()
-        .fill(item.phase == .current ? CommanderDashboardPalette.inProgress : accent)
-        .frame(width: item.phase == .current ? 4 : 2, height: 46)
-
-      CommanderEventIconView(event: item.event, size: 42)
-
-      VStack(alignment: .leading, spacing: 3) {
-        HStack(spacing: 7) {
-          Text(item.event.title)
-            .font(.headline)
-            .foregroundStyle(.white)
-            .fixedSize(horizontal: false, vertical: true)
-          if item.phase == .current {
-            Text("TEĎ")
-              .font(.caption2.bold())
-              .foregroundStyle(CommanderDashboardPalette.inProgress)
+  private var details: some View {
+    VStack(alignment: .leading, spacing: 2) {
+      Text(item.event.title)
+        .commanderFont(.eventTitle)
+        .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        .fixedSize(horizontal: false, vertical: true)
+      if !item.event.location.isEmpty {
+        ViewThatFits(in: .horizontal) {
+          HStack(alignment: .firstTextBaseline, spacing: 6) {
+            location.fixedSize()
+            Spacer(minLength: 0)
+            departure.fixedSize()
+          }
+          VStack(alignment: .leading, spacing: 2) {
+            location.fixedSize(horizontal: false, vertical: true)
+            departure.fixedSize(horizontal: false, vertical: true)
           }
         }
-        if !item.event.location.isEmpty {
-          Text(item.event.location)
-            .font(.subheadline)
-            .foregroundStyle(.white.opacity(0.66))
-            .fixedSize(horizontal: false, vertical: true)
-        }
+      } else {
+        departure
       }
-      Spacer(minLength: 0)
     }
-    .padding(12)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(item.phase == .current ? CommanderDashboardPalette.elevatedSurface : CommanderDashboardPalette.surface.opacity(0.72))
-    .overlay {
-      if item.phase == .current {
-        RoundedRectangle(cornerRadius: 8)
-          .stroke(CommanderDashboardPalette.inProgress.opacity(0.55), lineWidth: 1)
-      }
-    }
-    .clipShape(RoundedRectangle(cornerRadius: 8))
-    .opacity(rowOpacity)
-    .accessibilityElement(children: .combine)
+  }
+
+  private var location: some View {
+    Label(item.event.location, systemImage: "mappin.circle.fill")
+      .commanderFont(.location)
+      .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
+  }
+
+  private var departure: some View {
+    Text("Odchod \(departureText)")
+      .commanderFont(.departure)
+      .monospacedDigit()
+      .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
   }
 }

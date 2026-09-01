@@ -16,17 +16,27 @@ struct CommanderInfoView: View {
         if fields.isEmpty {
           CommanderScheduleEmptyView(title: "Informace o pobytu nejsou uvedeny")
         } else {
-          List(fields, id: \.key) { field in
-            LabeledContent(labels[field.key] ?? field.key, value: field.value)
+          ScrollView {
+            LazyVStack(alignment: .leading, spacing: 14) {
+              CommanderPageHeader(title: "Info", subtitle: "Údaje z rozpisu")
+              CommanderScreenTitle(title: "Info", subtitle: "Praktické údaje k pobytu")
+              CommanderInfoPanel(title: "Pobyt", systemImage: "info.circle") {
+                ForEach(fields, id: \.key) { field in
+                  CommanderInfoRow(title: labels[field.key] ?? field.key, value: field.value)
+                }
+              }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 28)
           }
-          .scrollContentBackground(.hidden)
+          .contentMargins(.top, 6, for: .scrollContent)
+          .scrollIndicators(.hidden)
         }
       } else {
         CommanderScheduleEmptyView(title: "Rozpis ještě není načten")
       }
     }
-    .background(CommanderDashboardPalette.background)
-    .navigationTitle("Info")
-    .navigationBarTitleDisplayMode(.inline)
+    .background(CommanderDashboardPalette.backgroundGradient.ignoresSafeArea())
+    .toolbar(.hidden, for: .navigationBar)
   }
 }

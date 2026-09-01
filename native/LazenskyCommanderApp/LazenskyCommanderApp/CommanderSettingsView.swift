@@ -6,6 +6,13 @@ struct CommanderSettingsView: View {
 
   var body: some View {
     Form {
+      Section {
+        CommanderPageHeader(title: "Nastavení", subtitle: "Odchody, rozpis a stav aplikace")
+        CommanderScreenTitle(title: "Nastavení", subtitle: "Předstihy, obnova profilu a diagnostika")
+      }
+      .listRowBackground(Color.clear)
+      .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 2, trailing: 0))
+
       if model.requiresUserAction, let message = model.userActionMessage {
         Section("Potřebuje tvůj zásah") { Text(message) }
       }
@@ -48,9 +55,9 @@ struct CommanderSettingsView: View {
       }
     }
     .scrollContentBackground(.hidden)
-    .background(CommanderDashboardPalette.background)
-    .navigationTitle("Nastavení")
-    .navigationBarTitleDisplayMode(.inline)
+    .contentMargins(.top, 6, for: .scrollContent)
+    .background(CommanderDashboardPalette.backgroundGradient.ignoresSafeArea())
+    .toolbar(.hidden, for: .navigationBar)
   }
 }
 
@@ -168,6 +175,8 @@ private struct CommanderLeadTimeSettingsView: View {
         }
       }
     }
+    .scrollContentBackground(.hidden)
+    .background(CommanderDashboardPalette.backgroundGradient.ignoresSafeArea())
     .navigationTitle("Čas na odchod")
     .navigationBarTitleDisplayMode(.inline)
   }

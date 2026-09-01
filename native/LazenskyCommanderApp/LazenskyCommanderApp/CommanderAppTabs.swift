@@ -39,7 +39,7 @@ struct CommanderScheduleEmptyView: View {
     }
     .padding(24)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(CommanderDashboardPalette.background)
+    .background(CommanderDashboardPalette.backgroundGradient.ignoresSafeArea())
   }
 }
 

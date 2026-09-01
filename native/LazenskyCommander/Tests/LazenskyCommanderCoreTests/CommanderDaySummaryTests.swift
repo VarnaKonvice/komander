@@ -22,6 +22,45 @@ import Testing
   #expect(schedule == original)
 }
 
+@Test func dayOverviewIsSharedByDashboardAndWeekForCollapsedDailyTiles() throws {
+  let schedule = summarySchedule(summaryEvents())
+  let dashboard = summaryPresentation(schedule, "08:30")
+  let week = try CommanderWeekPresentation.make(schedule: schedule, now: summaryDate("08:30"))
+
+  #expect(week.first?.overview == dashboard.dayOverview)
+  #expect(dashboard.dayOverview.date == summaryDate("00:00"))
+  #expect(dashboard.dayOverview.procedureCount == 2)
+  #expect(dashboard.dayOverview.procedureEndAt == summaryDate("14:20"))
+  #expect(dashboard.dayOverview.dinnerStartAt == summaryDate("17:30"))
+  #expect(dashboard.dayOverview.freeBeforeDinner == DateInterval(start: summaryDate("14:20"), end: summaryDate("17:30")))
+  #expect(dashboard.dayOverview.freeBeforeDinnerMinutes == 190)
+  #expect(dashboard.dayOverview.firstRelevantStartAt == summaryDate("09:00"))
+  #expect(dashboard.dayOverview.firstRelevantTitle == "Koupel")
+}
+
+@Test func dayOverviewDoesNotInventFreeBeforeDinnerWithoutProceduresOrDinner() {
+  let mealsOnly = summaryPresentation(summarySchedule(summaryEvents().filter { $0.kind == .meal }), "14:00").dayOverview
+  #expect(mealsOnly.procedureCount == 0)
+  #expect(mealsOnly.procedureEndAt == nil)
+  #expect(mealsOnly.dinnerStartAt == summaryDate("17:30"))
+  #expect(mealsOnly.freeBeforeDinner == nil)
+  #expect(mealsOnly.freeBeforeDinnerMinutes == nil)
+
+  let noDinner = summaryPresentation(summarySchedule(summaryEvents().filter { $0.stableId != "dinner" }), "15:00").dayOverview
+  #expect(noDinner.procedureCount == 2)
+  #expect(noDinner.procedureEndAt == summaryDate("14:20"))
+  #expect(noDinner.dinnerStartAt == nil)
+  #expect(noDinner.freeBeforeDinner == nil)
+
+  let empty = CommanderDashboardPresentation.make(schedule: nil, now: summaryDate("10:00")).dayOverview
+  #expect(empty.procedureCount == 0)
+  #expect(empty.procedureEndAt == nil)
+  #expect(empty.dinnerStartAt == nil)
+  #expect(empty.freeBeforeDinner == nil)
+  #expect(empty.firstRelevantStartAt == nil)
+  #expect(empty.firstRelevantTitle == nil)
+}
+
 @Test func lastProcedureEndUsesLatestEndNotLatestStartOrDinnerEnd() {
   let schedule = summarySchedule([
     summaryEvent("long", "09:00", "15:00"),
