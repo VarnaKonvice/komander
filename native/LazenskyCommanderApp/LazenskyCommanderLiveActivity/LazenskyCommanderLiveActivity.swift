@@ -310,8 +310,8 @@ private struct CommanderAlarmHero: View {
       .frame(maxWidth: .infinity)
 
       HStack(spacing: 0) {
-        CommanderActivityBrandMark(size: 54)
-          .frame(width: 64, alignment: .leading)
+        CommanderActivityBrandMark(size: 66)
+          .frame(width: 74, alignment: .leading)
 
         Spacer(minLength: 0)
 
@@ -375,8 +375,8 @@ private struct CommanderProcedureHero: View {
       .frame(maxWidth: .infinity)
 
       HStack(spacing: 0) {
-        CommanderActivityBrandMark(size: 54)
-          .frame(width: 64, alignment: .leading)
+        CommanderActivityBrandMark(size: 66)
+          .frame(width: 74, alignment: .leading)
 
         Spacer(minLength: 0)
 
