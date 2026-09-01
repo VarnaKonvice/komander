@@ -1,0 +1,23 @@
+{
+  "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/Sources/LazenskyCommanderCore/ProvisioningProfile.swift" : {
+    "const-values" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/ProvisioningProfile.swiftconstvalues",
+    "dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/ProvisioningProfile.d",
+    "diagnostics" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/ProvisioningProfile.dia",
+    "object" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/ProvisioningProfile.o",
+    "swift-dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/ProvisioningProfile.swiftdeps"
+  },
+  "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/Sources/LazenskyCommanderCore/ProvisioningReminder.swift" : {
+    "const-values" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/ProvisioningReminder.swiftconstvalues",
+    "dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/ProvisioningReminder.d",
+    "diagnostics" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/ProvisioningReminder.dia",
+    "object" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/ProvisioningReminder.o",
+    "swift-dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/ProvisioningReminder.swiftdeps"
+  },
+  "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/Sources/LazenskyCommanderCore/Reconciliation.swift" : {
+    "const-values" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/Reconciliation.swiftconstvalues",
+    "dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/Reconciliation.d",
+    "diagnostics" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/Reconciliation.dia",
+    "object" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/Reconciliation.o",
+    "swift-dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/Reconciliation.swiftdeps"
+  }
+}

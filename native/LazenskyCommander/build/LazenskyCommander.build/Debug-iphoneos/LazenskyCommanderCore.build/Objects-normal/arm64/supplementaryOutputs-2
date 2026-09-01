@@ -1,0 +1,30 @@
+{
+  "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/Sources/LazenskyCommanderCore/AlarmPersistence.swift" : {
+    "const-values" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/AlarmPersistence.swiftconstvalues",
+    "dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/AlarmPersistence.d",
+    "diagnostics" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/AlarmPersistence.dia",
+    "object" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/AlarmPersistence.o",
+    "swift-dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/AlarmPersistence.swiftdeps"
+  },
+  "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/Sources/LazenskyCommanderCore/AlarmSyncService.swift" : {
+    "const-values" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/AlarmSyncService.swiftconstvalues",
+    "dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/AlarmSyncService.d",
+    "diagnostics" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/AlarmSyncService.dia",
+    "object" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/AlarmSyncService.o",
+    "swift-dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/AlarmSyncService.swiftdeps"
+  },
+  "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/Sources/LazenskyCommanderCore/CommanderDashboardPresentation.swift" : {
+    "const-values" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/CommanderDashboardPresentation.swiftconstvalues",
+    "dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/CommanderDashboardPresentation.d",
+    "diagnostics" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/CommanderDashboardPresentation.dia",
+    "object" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/CommanderDashboardPresentation.o",
+    "swift-dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/CommanderDashboardPresentation.swiftdeps"
+  },
+  "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/Sources/LazenskyCommanderCore/CommanderDateText.swift" : {
+    "const-values" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/CommanderDateText.swiftconstvalues",
+    "dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/CommanderDateText.d",
+    "diagnostics" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/CommanderDateText.dia",
+    "object" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/CommanderDateText.o",
+    "swift-dependencies" : "/Users/petrbohanes/.codex/.chatgpt-projects/g-p-6a0fe07232688191891dd949f407b445/komander/native/LazenskyCommander/build/LazenskyCommander.build/Debug-iphoneos/LazenskyCommanderCore.build/Objects-normal/arm64/CommanderDateText.swiftdeps"
+  }
+}

@@ -1,0 +1,6 @@
+Target dependency graph (3 targets)
+Target 'LazenskyCommanderLiveActivity' in project 'LazenskyCommanderApp'
+➜ Explicit dependency on target 'LazenskyCommanderCore' in project 'LazenskyCommander'
+Target 'LazenskyCommanderCore' in project 'LazenskyCommander'
+➜ Explicit dependency on target 'LazenskyCommanderCore' in project 'LazenskyCommander'
+Target 'LazenskyCommanderCore' in project 'LazenskyCommander' (no dependencies)
