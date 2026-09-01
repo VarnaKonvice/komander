@@ -305,7 +305,8 @@ private struct CommanderAlarmHero: View {
             .minimumScaleFactor(0.74)
         }
       }
-      .padding(.horizontal, 70)
+      .frame(width: 160, alignment: .center)
+      .multilineTextAlignment(.center)
       .frame(maxWidth: .infinity)
 
       HStack(spacing: 0) {
@@ -369,7 +370,8 @@ private struct CommanderProcedureHero: View {
             .minimumScaleFactor(0.74)
         }
       }
-      .padding(.horizontal, 70)
+      .frame(width: 160, alignment: .center)
+      .multilineTextAlignment(.center)
       .frame(maxWidth: .infinity)
 
       HStack(spacing: 0) {
