@@ -86,17 +86,11 @@ struct CommanderTodayLiveCard: View {
     VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
       HStack(alignment: .top, spacing: CommanderDesignTokens.Spacing.medium) {
         if !dynamicTypeSize.isAccessibilitySize {
-          if presentation.mode == .inProgress, let item {
-            CommanderSymbolBadge(
-              symbol: CommanderEventAppearance.symbol(for: item.event), color: statusColor, size: 52
-            )
-          } else {
-            CommanderBrandAssets.smallGlyph
-              .resizable()
-              .scaledToFit()
-              .frame(width: 60, height: 60)
-              .accessibilityHidden(true)
-          }
+          CommanderSymbolBadge(
+            symbol: item.map { CommanderEventAppearance.symbol(for: $0.event) } ?? "clock.fill",
+            color: statusColor,
+            size: CommanderDesignTokens.Size.sectionBadge
+          )
         }
         VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
           Text(statusTitle)

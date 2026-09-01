@@ -1,7 +1,7 @@
 import LazenskyCommanderCore
 import SwiftUI
 
-// Source-of-Truth v2. The other tabs keep their existing palette until their design wave.
+// Source-of-Truth v2 shared by every main application tab.
 enum CommanderDesignTokens {
   enum Colors {
     static let background = Color(commanderHex: "#0E1530")
@@ -31,7 +31,8 @@ enum CommanderDesignTokens {
   }
 
   enum Size {
-    static let metricIcon: CGFloat = 30
+    static let sectionBadge: CGFloat = 40
+    static let rowMetricBadge: CGFloat = 30
   }
 
   enum Radius {
@@ -219,6 +220,194 @@ struct CommanderScreenHeading: View {
         .commanderFont(.subtitle)
         .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
         .fixedSize(horizontal: false, vertical: true)
+    }
+  }
+}
+
+struct CommanderTabScaffold<Content: View>: View {
+  let tab: String
+  let title: String
+  let subtitle: String
+  let content: Content
+
+  init(
+    tab: String,
+    title: String,
+    subtitle: String,
+    @ViewBuilder content: () -> Content
+  ) {
+    self.tab = tab
+    self.title = title
+    self.subtitle = subtitle
+    self.content = content()
+  }
+
+  var body: some View {
+    ScrollView {
+      LazyVStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
+        CommanderGlassHeader(tab: tab)
+        CommanderScreenHeading(title: title, subtitle: subtitle)
+        content
+      }
+      .padding(.horizontal, CommanderDesignTokens.Spacing.page)
+      .padding(.top, CommanderDesignTokens.Spacing.tiny)
+      .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
+    }
+    .scrollIndicators(.hidden)
+    .background(CommanderDesignTokens.Colors.background.ignoresSafeArea())
+    .toolbar(.hidden, for: .navigationBar)
+  }
+}
+
+struct CommanderSectionCard<Content: View>: View {
+  let title: String
+  let symbol: String
+  let accent: Color
+  let content: Content
+
+  init(
+    title: String,
+    symbol: String,
+    accent: Color,
+    @ViewBuilder content: () -> Content
+  ) {
+    self.title = title
+    self.symbol = symbol
+    self.accent = accent
+    self.content = content()
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
+      HStack(spacing: CommanderDesignTokens.Spacing.small) {
+        CommanderSymbolBadge(
+          symbol: symbol,
+          color: accent,
+          size: CommanderDesignTokens.Size.sectionBadge
+        )
+        Text(title)
+          .commanderFont(.section)
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+      }
+      content
+    }
+    .padding(CommanderDesignTokens.Spacing.medium)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .commanderCard()
+  }
+}
+
+struct CommanderDetailRow: View {
+  let title: String
+  let value: String
+  let symbol: String
+  let accent: Color
+  var valueColor = CommanderDesignTokens.Colors.textPrimary
+
+  var body: some View {
+    HStack(spacing: CommanderDesignTokens.Spacing.small) {
+      CommanderSymbolBadge(
+        symbol: symbol,
+        color: accent,
+        size: CommanderDesignTokens.Size.rowMetricBadge
+      )
+      VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
+        Text(title)
+          .commanderFont(.label)
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        Text(value)
+          .commanderFont(.metric)
+          .foregroundStyle(valueColor)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      Spacer(minLength: 0)
+    }
+    .padding(CommanderDesignTokens.Spacing.small)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(CommanderDesignTokens.Colors.panel.opacity(0.72))
+    .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
+    .overlay {
+      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
+        .strokeBorder(CommanderDesignTokens.Stroke.normal, lineWidth: CommanderDesignTokens.Stroke.width)
+    }
+    .accessibilityElement(children: .combine)
+  }
+}
+
+struct CommanderProgressMeter: View {
+  let title: String
+  let value: String
+  let fraction: Double
+  let accent: Color
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.small) {
+      HStack(alignment: .firstTextBaseline, spacing: CommanderDesignTokens.Spacing.small) {
+        Text(title)
+          .commanderFont(.label)
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        Spacer(minLength: 0)
+        Text(value)
+          .commanderFont(.metric)
+          .monospacedDigit()
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+      }
+      GeometryReader { proxy in
+        ZStack(alignment: .leading) {
+          Capsule().fill(CommanderDesignTokens.Colors.textSecondary.opacity(0.16))
+          Capsule()
+            .fill(accent)
+            .frame(width: proxy.size.width * min(max(fraction, 0), 1))
+        }
+      }
+      .frame(height: 8)
+    }
+    .accessibilityElement(children: .combine)
+  }
+}
+
+struct CommanderNavigationRow: View {
+  let title: String
+  let subtitle: String
+  let symbol: String
+  let accent: Color
+  var value: String? = nil
+
+  var body: some View {
+    HStack(spacing: CommanderDesignTokens.Spacing.small) {
+      CommanderSymbolBadge(
+        symbol: symbol,
+        color: accent,
+        size: CommanderDesignTokens.Size.rowMetricBadge
+      )
+      VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
+        Text(title)
+          .commanderFont(.metric)
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        Text(subtitle)
+          .commanderFont(.label)
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      Spacer(minLength: CommanderDesignTokens.Spacing.small)
+      if let value {
+        Text(value)
+          .commanderFont(.label)
+          .foregroundStyle(accent)
+          .monospacedDigit()
+      }
+      Image(systemName: "chevron.right")
+        .font(.system(size: 13, weight: .semibold))
+        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        .accessibilityHidden(true)
+    }
+    .padding(CommanderDesignTokens.Spacing.small)
+    .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+    .background(CommanderDesignTokens.Colors.panel.opacity(0.72))
+    .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
+    .overlay {
+      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
+        .strokeBorder(CommanderDesignTokens.Stroke.normal, lineWidth: CommanderDesignTokens.Stroke.width)
     }
   }
 }

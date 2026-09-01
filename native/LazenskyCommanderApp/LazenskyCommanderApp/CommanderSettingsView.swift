@@ -5,59 +5,173 @@ struct CommanderSettingsView: View {
   @ObservedObject var model: CommanderViewModel
 
   var body: some View {
-    Form {
-      Section {
-        CommanderPageHeader(title: "Nastavení", subtitle: "Odchody, rozpis a stav aplikace")
-        CommanderScreenTitle(title: "Nastavení", subtitle: "Předstihy, obnova profilu a diagnostika")
-      }
-      .listRowBackground(Color.clear)
-      .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 2, trailing: 0))
-
+    CommanderTabScaffold(
+      tab: "Nastavení",
+      title: "Nastavení",
+      subtitle: "Upravte si chování aplikace podle svých potřeb."
+    ) {
       if model.requiresUserAction, let message = model.userActionMessage {
-        Section("Potřebuje tvůj zásah") { Text(message) }
+        CommanderSettingsAttentionCard(message: message)
       }
 
-      Section("Čas odchodu") {
+      CommanderSectionCard(
+        title: "Čas odchodu",
+        symbol: "clock.fill",
+        accent: CommanderDesignTokens.Colors.amber
+      ) {
         NavigationLink {
           CommanderLeadTimeSettingsView(model: model)
         } label: {
-          LabeledContent("Předstihy", value: "\(model.defaultLeadTimeMinutes) min")
+          CommanderNavigationRow(
+            title: "Předstihy",
+            subtitle: "Obecné, typové a individuální časy",
+            symbol: "figure.walk.motion",
+            accent: CommanderDesignTokens.Colors.amber,
+            value: "\(model.defaultLeadTimeMinutes) min"
+          )
         }
+        .buttonStyle(.plain)
       }
 
       CommanderProvisioningSection()
 
-      Section("Rozpis") {
-        Button {
-          model.synchronize()
-        } label: {
-          HStack {
-            Label(model.isSynchronizing ? "Kontroluji…" : "Zkontrolovat rozpis", systemImage: "arrow.triangle.2.circlepath")
-            Spacer()
-            if model.isSynchronizing { ProgressView() }
-          }
-        }
-        .disabled(model.isSynchronizing)
-        if let completed = model.summary?.completedAt {
-          LabeledContent("Poslední ověření", value: completed.formatted(CommanderScheduleDateStyle.departure))
-        }
-        if model.accessStatus.contains("not been requested") || model.accessStatus.contains("denied") {
-          Button("Povolit alarmy") { model.requestAuthorization() }
-        }
-      }
+      CommanderScheduleSettingsCard(model: model)
 
-      Section {
+      CommanderSectionCard(
+        title: "Pokročilé",
+        symbol: "wrench.and.screwdriver.fill",
+        accent: CommanderDesignTokens.Colors.textSecondary
+      ) {
         NavigationLink {
           CommanderSystemStatusView(model: model)
         } label: {
-          Label("Diagnostika", systemImage: "waveform.path.ecg")
+          CommanderNavigationRow(
+            title: "Diagnostika",
+            subtitle: "Technický stav alarmů a synchronizace",
+            symbol: "waveform.path.ecg",
+            accent: CommanderDesignTokens.Colors.textSecondary
+          )
         }
+        .buttonStyle(.plain)
       }
     }
-    .scrollContentBackground(.hidden)
-    .contentMargins(.top, 6, for: .scrollContent)
-    .background(CommanderDashboardPalette.backgroundGradient.ignoresSafeArea())
-    .toolbar(.hidden, for: .navigationBar)
+  }
+}
+
+private struct CommanderSettingsAttentionCard: View {
+  let message: String
+
+  var body: some View {
+    HStack(alignment: .top, spacing: CommanderDesignTokens.Spacing.small) {
+      CommanderSymbolBadge(
+        symbol: "exclamationmark.triangle.fill",
+        color: CommanderDesignTokens.Colors.criticalRed,
+        size: CommanderDesignTokens.Size.sectionBadge
+      )
+      VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
+        Text("Potřebuje váš zásah")
+          .commanderFont(.eventTitle)
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        Text(message)
+          .commanderFont(.subtitle)
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+    }
+    .padding(CommanderDesignTokens.Spacing.medium)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .commanderCard(accent: CommanderDesignTokens.Colors.criticalRed)
+  }
+}
+
+private struct CommanderScheduleSettingsCard: View {
+  @ObservedObject var model: CommanderViewModel
+
+  private var needsAlarmPermission: Bool {
+    model.accessStatus.contains("not been requested") || model.accessStatus.contains("denied")
+  }
+
+  var body: some View {
+    CommanderSectionCard(
+      title: "Rozpis",
+      symbol: "calendar",
+      accent: CommanderDesignTokens.Colors.locationBlue
+    ) {
+      Button {
+        model.synchronize()
+      } label: {
+        CommanderSettingsActionRow(
+          title: model.isSynchronizing ? "Kontroluji…" : "Zkontrolovat rozpis",
+          subtitle: "Ověřit aktuální data a alarmy",
+          symbol: "arrow.triangle.2.circlepath",
+          accent: CommanderDesignTokens.Colors.locationBlue,
+          isWorking: model.isSynchronizing
+        )
+      }
+      .buttonStyle(.plain)
+      .disabled(model.isSynchronizing)
+
+      if let completed = model.summary?.completedAt {
+        CommanderDetailRow(
+          title: "Poslední ověření",
+          value: completed.formatted(CommanderScheduleDateStyle.departure),
+          symbol: "checkmark.circle.fill",
+          accent: CommanderDesignTokens.Colors.mealGreen
+        )
+      }
+
+      if needsAlarmPermission {
+        Button("Povolit alarmy") { model.requestAuthorization() }
+          .commanderFont(.metric)
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .padding(CommanderDesignTokens.Spacing.small)
+          .frame(maxWidth: .infinity, minHeight: 44)
+          .background(CommanderDesignTokens.Colors.urgentOrange.opacity(0.18))
+          .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
+          .overlay {
+            RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
+              .strokeBorder(CommanderDesignTokens.Colors.urgentOrange.opacity(0.5), lineWidth: 1)
+          }
+      }
+    }
+  }
+}
+
+private struct CommanderSettingsActionRow: View {
+  let title: String
+  let subtitle: String
+  let symbol: String
+  let accent: Color
+  let isWorking: Bool
+
+  var body: some View {
+    HStack(spacing: CommanderDesignTokens.Spacing.small) {
+      CommanderSymbolBadge(
+        symbol: symbol,
+        color: accent,
+        size: CommanderDesignTokens.Size.rowMetricBadge
+      )
+      VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
+        Text(title)
+          .commanderFont(.metric)
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        Text(subtitle)
+          .commanderFont(.label)
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+      }
+      Spacer(minLength: CommanderDesignTokens.Spacing.small)
+      if isWorking {
+        ProgressView().tint(accent)
+      }
+    }
+    .padding(CommanderDesignTokens.Spacing.small)
+    .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
+    .background(CommanderDesignTokens.Colors.panel.opacity(0.72))
+    .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
+    .overlay {
+      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
+        .strokeBorder(CommanderDesignTokens.Stroke.normal, lineWidth: CommanderDesignTokens.Stroke.width)
+    }
   }
 }
 

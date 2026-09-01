@@ -71,6 +71,7 @@ public struct CommanderProcedureSummary: Equatable, Sendable {
   public let name: String
   public let completed: Int
   public let total: Int
+  public let representativeEvent: ScheduleEvent
 }
 
 public struct CommanderStayPresentation: Equatable, Sendable {
@@ -99,7 +100,8 @@ public struct CommanderStayPresentation: Equatable, Sendable {
         return CommanderProcedureSummary(
           name: name,
           completed: events.filter { completedIDs.contains($0.stableId) }.count,
-          total: events.count
+          total: events.count,
+          representativeEvent: events[0]
         )
       }
     )

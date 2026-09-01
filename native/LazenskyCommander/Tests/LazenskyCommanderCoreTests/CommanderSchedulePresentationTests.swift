@@ -92,6 +92,7 @@ import Testing
   #expect(summary.procedures.map(\.name) == ["Koupel", "Speciální procedura"])
   #expect(summary.procedures.map(\.total) == [2, 2])
   #expect(summary.procedures.map(\.completed) == [1, 0])
+  #expect(summary.procedures.map(\.representativeEvent.stableId) == ["past", "future"])
   let atEnd = try CommanderStayPresentation.make(schedule: schedule, now: overviewNow("2026-08-20T09:30:00"))
   #expect(atEnd.completedProcedures == 2)
 }

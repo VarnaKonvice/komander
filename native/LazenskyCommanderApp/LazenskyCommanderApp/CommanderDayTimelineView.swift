@@ -44,7 +44,9 @@ struct CommanderEventRow: View {
       .fixedSize(horizontal: true, vertical: false)
       .frame(width: 55, alignment: .leading)
       CommanderSymbolBadge(
-        symbol: CommanderEventAppearance.symbol(for: item.event), color: accent, size: 30
+        symbol: CommanderEventAppearance.symbol(for: item.event),
+        color: accent,
+        size: CommanderDesignTokens.Size.rowMetricBadge
       )
       details.layoutPriority(1)
     }
@@ -66,19 +68,17 @@ struct CommanderEventRow: View {
         .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
         .fixedSize(horizontal: false, vertical: true)
       if !item.event.location.isEmpty {
-        ViewThatFits(in: .horizontal) {
-          HStack(alignment: .firstTextBaseline, spacing: 6) {
-            location.fixedSize()
-            Spacer(minLength: 0)
-            departure.fixedSize()
-          }
-          VStack(alignment: .leading, spacing: 2) {
-            location.fixedSize(horizontal: false, vertical: true)
-            departure.fixedSize(horizontal: false, vertical: true)
-          }
+        HStack(alignment: .top, spacing: 6) {
+          location
+            .fixedSize(horizontal: false, vertical: true)
+            .layoutPriority(1)
+          Spacer(minLength: 4)
+          departure
+            .fixedSize(horizontal: true, vertical: true)
         }
       } else {
         departure
+          .frame(maxWidth: .infinity, alignment: .trailing)
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)

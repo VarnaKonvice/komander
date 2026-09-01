@@ -89,7 +89,11 @@ struct CommanderDaySummaryCard: View {
   var body: some View {
     VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.small) {
       HStack(spacing: CommanderDesignTokens.Spacing.small) {
-        CommanderSymbolBadge(symbol: "calendar", color: CommanderDesignTokens.Colors.primaryPurple, size: 28)
+        CommanderSymbolBadge(
+          symbol: "calendar",
+          color: CommanderDesignTokens.Colors.primaryPurple,
+          size: CommanderDesignTokens.Size.rowMetricBadge
+        )
         Text(CommanderDateText.shortDay(overview.date))
           .commanderFont(.date)
           .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
@@ -118,18 +122,18 @@ struct CommanderDaySummaryCard: View {
         }
         CommanderMetricTile(
           title: "Konec\nprocedur", value: overview.procedureEndAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
-          symbol: isCompact ? nil : "clock", accent: CommanderDesignTokens.Colors.primaryPurple,
+          symbol: "clock", accent: CommanderDesignTokens.Colors.primaryPurple,
           accessibleValue: overview.procedureEndAt == nil ? "Bez procedur" : nil
         )
         CommanderMetricTile(
           title: "Volno do\nvečeře", value: freeTime,
-          symbol: isCompact ? nil : "cup.and.saucer", accent: CommanderDesignTokens.Colors.freeBlue,
+          symbol: "cup.and.saucer", accent: CommanderDesignTokens.Colors.freeBlue,
           accessibleValue: overview.freeBeforeDinnerMinutes == nil ? "Údaj není k dispozici" : nil
         )
         .frame(minWidth: 100)
         CommanderMetricTile(
           title: "Večeře", value: overview.dinnerStartAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
-          symbol: isCompact ? nil : "fork.knife", accent: CommanderDesignTokens.Colors.mealGreen,
+          symbol: "fork.knife", accent: CommanderDesignTokens.Colors.mealGreen,
           accessibleValue: overview.dinnerStartAt == nil ? "Není v rozpisu" : nil
         )
       }
@@ -176,7 +180,7 @@ private struct CommanderMetricTile: View {
         CommanderSymbolBadge(
           symbol: symbol,
           color: accent,
-          size: CommanderDesignTokens.Size.metricIcon
+          size: CommanderDesignTokens.Size.rowMetricBadge
         )
       }
       Text(title)
