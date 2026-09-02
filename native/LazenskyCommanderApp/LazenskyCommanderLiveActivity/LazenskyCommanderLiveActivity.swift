@@ -126,10 +126,18 @@ struct LazenskyCommanderAlarmLiveActivity: Widget {
 struct LazenskyCommanderProcedureLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: CommanderProcedureLiveActivityAttributes.self) { context in
-      CommanderProcedureLockScreenView(context: context)
-        .activityBackgroundTint(CommanderActivityTokens.background)
-        .activitySystemActionForegroundColor(CommanderActivityTokens.textPrimary)
+      Group {
+        if context.state.isDepartureBridge && context.isStale {
+          EmptyView()
+        } else {
+          CommanderProcedureLockScreenView(context: context)
+        }
+      }
+      .activityBackgroundTint(CommanderActivityTokens.background)
+      .activitySystemActionForegroundColor(CommanderActivityTokens.textPrimary)
     } dynamicIsland: { context in
+      let isDepartureBridge = context.state.isDepartureBridge
+      let hidesDepartureBridge = isDepartureBridge && context.isStale
       let currentAccent = CommanderActivityTokens.eventAccent(
         kind: context.attributes.kind,
         iconKey: context.attributes.iconKey,
@@ -140,7 +148,8 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
         iconKey: context.attributes.iconKey,
         title: context.attributes.title
       )
-      let hasHandoff = context.isStale
+      let hasHandoff = !isDepartureBridge
+        && context.isStale
         && context.state.nextTitle != nil
         && context.state.nextStartAt != nil
         && context.state.nextLeaveAt != nil
@@ -155,74 +164,103 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
         iconKey: context.state.nextIconKey,
         title: nextTitle
       )
-      let stateAccent = context.isStale
-        ? (hasHandoff ? CommanderActivityTokens.freeBlue : CommanderActivityTokens.textSecondary)
-        : CommanderActivityTokens.runningGreen
+      let stateAccent: Color = isDepartureBridge
+        ? CommanderActivityTokens.criticalRed
+        : (context.isStale
+          ? (hasHandoff ? CommanderActivityTokens.freeBlue : CommanderActivityTokens.textSecondary)
+          : CommanderActivityTokens.runningGreen)
 
       return DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
-          CommanderActivityBrandMark(size: 34)
+          if !hidesDepartureBridge {
+            CommanderActivityBrandMark(size: 34)
+          }
         }
         DynamicIslandExpandedRegion(.center) {
-          CommanderIslandEventTitle(
-            title: hasHandoff ? nextTitle : context.attributes.title,
-            symbol: hasHandoff ? nextSymbol : currentSymbol,
-            accent: hasHandoff ? nextAccent : currentAccent
-          )
+          if !hidesDepartureBridge {
+            CommanderIslandEventTitle(
+              title: hasHandoff ? nextTitle : context.attributes.title,
+              symbol: hasHandoff ? nextSymbol : currentSymbol,
+              accent: hasHandoff ? nextAccent : currentAccent
+            )
+          }
         }
         DynamicIslandExpandedRegion(.trailing) {
-          if hasHandoff, let leaveAt = context.state.nextLeaveAt {
-            CommanderNextDepartureTiming(leaveAt: leaveAt, size: .regular)
+          if !hidesDepartureBridge {
+            if isDepartureBridge {
+              CommanderDepartureBridgeTiming(startAt: context.attributes.startAt, size: .regular)
+            } else if hasHandoff, let leaveAt = context.state.nextLeaveAt {
+              CommanderNextDepartureTiming(leaveAt: leaveAt, size: .regular)
+            } else {
+              CommanderProcedureTiming(
+                endAt: context.attributes.endAt,
+                isStale: context.isStale,
+                accent: stateAccent,
+                size: .regular
+              )
+            }
+          }
+        }
+        DynamicIslandExpandedRegion(.bottom) {
+          if !hidesDepartureBridge {
+            if isDepartureBridge {
+              CommanderIslandDetails(
+                location: context.attributes.location,
+                status: "VYRAZIT TEĎ",
+                statusAccent: CommanderActivityTokens.criticalRed,
+                timeLabel: "Začátek",
+                timeValue: context.attributes.startAt.formatted(date: .omitted, time: .shortened),
+                timeAccent: currentAccent
+              )
+            } else if hasHandoff {
+              CommanderIslandDetails(
+                location: context.state.nextLocation,
+                status: "Právě volno",
+                statusAccent: CommanderActivityTokens.freeBlue,
+                timeLabel: "Odchod",
+                timeValue: context.state.nextLeaveAt?.formatted(date: .omitted, time: .shortened) ?? "--:--",
+                timeAccent: CommanderActivityTokens.amber
+              )
+            } else {
+              CommanderIslandDetails(
+                location: context.attributes.location,
+                status: CommanderProcedureText.status(
+                  kind: context.attributes.kind,
+                  isStale: context.isStale
+                ),
+                statusAccent: stateAccent,
+                timeLabel: "Konec",
+                timeValue: context.attributes.endAt.formatted(date: .omitted, time: .shortened),
+                timeAccent: currentAccent
+              )
+            }
+          }
+        }
+      } compactLeading: {
+        if !hidesDepartureBridge {
+          CommanderActivityBrandMark(size: 22)
+        }
+      } compactTrailing: {
+        if !hidesDepartureBridge {
+          if isDepartureBridge {
+            CommanderDepartureBridgeTiming(startAt: context.attributes.startAt, size: .compact)
+          } else if hasHandoff, let leaveAt = context.state.nextLeaveAt {
+            CommanderNextDepartureTiming(leaveAt: leaveAt, size: .compact)
           } else {
             CommanderProcedureTiming(
               endAt: context.attributes.endAt,
               isStale: context.isStale,
               accent: stateAccent,
-              size: .regular
+              size: .compact
             )
           }
-        }
-        DynamicIslandExpandedRegion(.bottom) {
-          if hasHandoff {
-            CommanderIslandDetails(
-              location: context.state.nextLocation,
-              status: "Právě volno",
-              statusAccent: CommanderActivityTokens.freeBlue,
-              timeLabel: "Odchod",
-              timeValue: context.state.nextLeaveAt?.formatted(date: .omitted, time: .shortened) ?? "--:--",
-              timeAccent: CommanderActivityTokens.amber
-            )
-          } else {
-            CommanderIslandDetails(
-              location: context.attributes.location,
-              status: CommanderProcedureText.status(
-                kind: context.attributes.kind,
-                isStale: context.isStale
-              ),
-              statusAccent: stateAccent,
-              timeLabel: "Konec",
-              timeValue: context.attributes.endAt.formatted(date: .omitted, time: .shortened),
-              timeAccent: currentAccent
-            )
-          }
-        }
-      } compactLeading: {
-        CommanderActivityBrandMark(size: 22)
-      } compactTrailing: {
-        if hasHandoff, let leaveAt = context.state.nextLeaveAt {
-          CommanderNextDepartureTiming(leaveAt: leaveAt, size: .compact)
-        } else {
-          CommanderProcedureTiming(
-            endAt: context.attributes.endAt,
-            isStale: context.isStale,
-            accent: stateAccent,
-            size: .compact
-          )
         }
       } minimal: {
-        CommanderActivityBrandMark(size: 20)
+        if !hidesDepartureBridge {
+          CommanderActivityBrandMark(size: 20)
+        }
       }
-      .keylineTint(stateAccent)
+      .keylineTint(hidesDepartureBridge ? .clear : stateAccent)
     }
   }
 }
@@ -280,8 +318,10 @@ private struct CommanderProcedureLockScreenView: View {
       title: context.attributes.title
     )
   }
+  private var isDepartureBridge: Bool { context.state.isDepartureBridge }
   private var hasHandoff: Bool {
-    context.isStale
+    !isDepartureBridge
+      && context.isStale
       && context.state.nextTitle != nil
       && context.state.nextStartAt != nil
       && context.state.nextLeaveAt != nil
@@ -302,14 +342,27 @@ private struct CommanderProcedureLockScreenView: View {
     )
   }
   private var stateAccent: Color {
-    context.isStale
+    if isDepartureBridge { return CommanderActivityTokens.criticalRed }
+    return context.isStale
       ? (hasHandoff ? CommanderActivityTokens.freeBlue : CommanderActivityTokens.textSecondary)
       : CommanderActivityTokens.runningGreen
   }
 
   var body: some View {
     VStack(spacing: 9) {
-      if hasHandoff, let leaveAt = context.state.nextLeaveAt {
+      if isDepartureBridge {
+        CommanderDepartureBridgeHero(startAt: context.attributes.startAt)
+        CommanderActivityDivider(accent: CommanderActivityTokens.criticalRed)
+        CommanderActivityEventFooter(
+          title: context.attributes.title,
+          location: context.attributes.location,
+          symbol: currentSymbol,
+          eventAccent: currentAccent,
+          timeLabel: "Začátek",
+          timeValue: context.attributes.startAt.formatted(date: .omitted, time: .shortened),
+          timeAccent: CommanderActivityTokens.criticalRed
+        )
+      } else if hasHandoff, let leaveAt = context.state.nextLeaveAt {
         CommanderTransitionHero(leaveAt: leaveAt)
         CommanderActivityDivider(accent: CommanderActivityTokens.freeBlue)
         CommanderActivityEventFooter(
@@ -415,6 +468,48 @@ private struct CommanderAlarmSideStatus: View {
         .multilineTextAlignment(.center)
         .lineLimit(2)
     }
+  }
+}
+
+private struct CommanderDepartureBridgeHero: View {
+  let startAt: Date
+
+  var body: some View {
+    ZStack {
+      VStack(spacing: 0) {
+        Text("VYRAZIT TEĎ")
+          .font(.system(size: 19, weight: .bold, design: .rounded))
+          .foregroundStyle(CommanderActivityTokens.criticalRed)
+          .lineLimit(1)
+        Text(startAt, style: .timer)
+          .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
+          .foregroundStyle(CommanderActivityTokens.criticalRed)
+          .lineLimit(1)
+          .minimumScaleFactor(0.74)
+      }
+      .frame(width: 180, alignment: .center)
+      .multilineTextAlignment(.center)
+      .frame(maxWidth: .infinity)
+
+      HStack(spacing: 0) {
+        CommanderActivityBrandMark(size: 74)
+          .frame(width: 82, alignment: .leading)
+        Spacer(minLength: 0)
+        VStack(spacing: 2) {
+          Image(systemName: "figure.walk")
+            .font(.system(size: 27, weight: .semibold))
+            .foregroundStyle(CommanderActivityTokens.criticalRed)
+            .frame(height: 31)
+          Text("Je čas\nvyrazit")
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(CommanderActivityTokens.textSecondary)
+            .multilineTextAlignment(.center)
+            .lineLimit(2)
+        }
+        .frame(width: 72, alignment: .trailing)
+      }
+    }
+    .frame(minHeight: 72)
   }
 }
 
@@ -813,6 +908,29 @@ private struct CommanderProcedureTiming: View {
   }
 }
 
+private struct CommanderDepartureBridgeTiming: View {
+  let startAt: Date
+  let size: CommanderTimingSize
+
+  var body: some View {
+    Text(startAt, style: .timer)
+      .font(timingFont)
+      .foregroundStyle(CommanderActivityTokens.criticalRed)
+      .lineLimit(1)
+      .minimumScaleFactor(0.72)
+      .fixedSize(horizontal: true, vertical: false)
+      .layoutPriority(1)
+  }
+
+  private var timingFont: Font {
+    switch size {
+    case .compact: return .caption2.weight(.bold).monospacedDigit()
+    case .regular: return .subheadline.weight(.heavy).monospacedDigit()
+    case .large: return .title2.weight(.heavy).monospacedDigit()
+    }
+  }
+}
+
 private struct CommanderNextDepartureTiming: View {
   let leaveAt: Date
   let size: CommanderTimingSize
@@ -967,7 +1085,8 @@ private enum CommanderActivityPreviewFixtures {
         location: "Rehabilitace, box 3",
         kind: .procedure,
         startAt: localISO(startAt),
-        leaveAt: localISO(leaveAt)
+        leaveAt: localISO(leaveAt),
+        endAt: localISO(startAt.addingTimeInterval(30 * 60))
       ),
       tintColor: .orange
     )
@@ -989,7 +1108,8 @@ private enum CommanderActivityPreviewFixtures {
         location: "Rehabilitace, box 3",
         kind: .procedure,
         startAt: localISO(startAt),
-        leaveAt: localISO(now)
+        leaveAt: localISO(now),
+        endAt: localISO(startAt.addingTimeInterval(30 * 60))
       ),
       tintColor: .orange
     )
@@ -1047,8 +1167,27 @@ private enum CommanderActivityPreviewFixtures {
     )
   }
 
+  static var departureBridgeAttributes: CommanderProcedureLiveActivityAttributes {
+    let now = Date()
+    return CommanderProcedureLiveActivityAttributes(
+      stableId: "preview-departure-bridge",
+      scheduleVersion: 1,
+      iconKey: "massage",
+      title: "Masáž",
+      location: "Rehabilitace, box 3",
+      kind: .procedure,
+      startAt: now.addingTimeInterval(7 * 60),
+      endAt: now.addingTimeInterval(37 * 60)
+    )
+  }
+
   static let current = CommanderProcedureLiveActivityAttributes.ContentState(
     projectionRevision: 1
+  )
+
+  static let departureBridge = CommanderProcedureLiveActivityAttributes.ContentState(
+    projectionRevision: -1,
+    phase: .departureBridge
   )
 }
 
@@ -1074,6 +1213,12 @@ private enum CommanderActivityPreviewFixtures {
   LazenskyCommanderProcedureLiveActivity()
 } contentStates: {
   CommanderActivityPreviewFixtures.current
+}
+
+#Preview("Lock Screen - Vyrazit po zastaveni", as: .content, using: CommanderActivityPreviewFixtures.departureBridgeAttributes) {
+  LazenskyCommanderProcedureLiveActivity()
+} contentStates: {
+  CommanderActivityPreviewFixtures.departureBridge
 }
 
 #Preview("Dynamic Island - Compact odchod", as: .dynamicIsland(.compact), using: CommanderActivityPreviewFixtures.departureAlarmAttributes) {
