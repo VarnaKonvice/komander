@@ -22,7 +22,9 @@ struct CommanderDayTimelineView: View {
 struct CommanderEventRow: View {
   let item: CommanderDashboardEvent
 
-  private var accent: Color { CommanderEventAppearance.accent(for: item.event) }
+  private var accent: Color {
+    Color(commanderHex: CommanderVisualAssets.accent(for: item.event))
+  }
 
   private var departureText: String {
     var calendar = Calendar(identifier: .gregorian)
@@ -44,7 +46,7 @@ struct CommanderEventRow: View {
       .fixedSize(horizontal: true, vertical: false)
       .frame(width: 55, alignment: .leading)
       CommanderSymbolBadge(
-        symbol: CommanderEventAppearance.symbol(for: item.event),
+        symbol: CommanderVisualAssets.symbol(for: item.event),
         color: accent,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
@@ -87,7 +89,7 @@ struct CommanderEventRow: View {
   private var location: some View {
     Label(item.event.location, systemImage: "mappin.circle.fill")
       .commanderFont(.location)
-      .foregroundStyle(accent)
+      .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
   }
 
   private var departure: some View {
