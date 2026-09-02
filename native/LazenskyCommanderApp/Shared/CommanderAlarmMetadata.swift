@@ -12,11 +12,39 @@ struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
   let kind: ScheduleKind
   let startAt: String
   let leaveAt: String
+  let endAt: String?
+
+  init(
+    stableId: String,
+    scheduleVersion: Int,
+    iconKey: String,
+    title: String,
+    location: String,
+    kind: ScheduleKind,
+    startAt: String,
+    leaveAt: String,
+    endAt: String? = nil
+  ) {
+    self.stableId = stableId
+    self.scheduleVersion = scheduleVersion
+    self.iconKey = iconKey
+    self.title = title
+    self.location = location
+    self.kind = kind
+    self.startAt = startAt
+    self.leaveAt = leaveAt
+    self.endAt = endAt
+  }
+}
+
+enum CommanderProcedureLiveActivityPhase: String, Codable, Hashable, Sendable {
+  case departureBridge
 }
 
 struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
   struct ContentState: Codable, Hashable {
     let projectionRevision: Int
+    let phase: CommanderProcedureLiveActivityPhase?
     let nextTitle: String?
     let nextLocation: String?
     let nextKind: ScheduleKind?
@@ -27,6 +55,7 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
 
     init(
       projectionRevision: Int,
+      phase: CommanderProcedureLiveActivityPhase? = nil,
       nextTitle: String? = nil,
       nextLocation: String? = nil,
       nextKind: ScheduleKind? = nil,
@@ -36,6 +65,7 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
       nextLeaveAt: Date? = nil
     ) {
       self.projectionRevision = projectionRevision
+      self.phase = phase
       self.nextTitle = nextTitle
       self.nextLocation = nextLocation
       self.nextKind = nextKind
@@ -44,6 +74,8 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
       self.nextEndAt = nextEndAt
       self.nextLeaveAt = nextLeaveAt
     }
+
+    var isDepartureBridge: Bool { phase == .departureBridge }
   }
 
   let stableId: String
