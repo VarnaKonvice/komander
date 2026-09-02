@@ -427,32 +427,34 @@ actor AlarmKitAdapter: AlarmAdapting {
     overrides: LeadTimeOverrides?,
     projectionRevision: Int
   ) -> CommanderProcedureLiveActivityAttributes.ContentState {
-    let next: (event: ScheduleEvent, startAt: Date, endAt: Date)? = schedule.events.compactMap { candidate in
+    let nextCandidates: [(event: ScheduleEvent, startAt: Date, endAt: Date)] = schedule.events.compactMap {
+      (candidate: ScheduleEvent) -> (event: ScheduleEvent, startAt: Date, endAt: Date)? in
       guard candidate.stableId != event.stableId,
             candidate.date == event.date,
             let startAt = try? NativeAlarmContract.dateTime(date: candidate.date, time: candidate.start),
             let candidateEndAt = try? NativeAlarmContract.dateTime(date: candidate.date, time: candidate.end),
             startAt >= endAt
       else { return nil }
-      return (candidate, startAt, candidateEndAt)
-    }.sorted {
+      return (event: candidate, startAt: startAt, endAt: candidateEndAt)
+    }
+    let next = nextCandidates.sorted {
       if $0.startAt != $1.startAt { return $0.startAt < $1.startAt }
       return $0.event.stableId < $1.event.stableId
     }.first
 
     guard let next,
-          let alarm = try? NativeAlarmContract.alarm(
+          let leadTimeMinutes = try? NativeAlarmContract.effectiveLeadTime(
             event: next.event,
             schedule: schedule,
             overrides: overrides
-          ),
-          let leaveAt = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+          )
     else {
       return CommanderProcedureLiveActivityAttributes.ContentState(
         projectionRevision: projectionRevision
       )
     }
 
+    let leaveAt = next.startAt.addingTimeInterval(TimeInterval(-leadTimeMinutes * 60))
     return CommanderProcedureLiveActivityAttributes.ContentState(
       projectionRevision: projectionRevision,
       nextTitle: next.event.title,
