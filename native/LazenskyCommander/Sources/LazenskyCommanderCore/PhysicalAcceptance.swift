@@ -166,16 +166,13 @@ public struct PhysicalAcceptancePreflight: Sendable {
       problems.append("Do prvního alarmu zbývá méně než minuta. Tento běh není připravený.")
     }
 
-    func hasPriorHandoffSource(for event: ScheduleEvent) -> Bool {
-      guard let eventStart = try? NativeAlarmContract.dateTime(date: event.date, time: event.start) else {
-        return false
-      }
-      return run.schedule.events.contains { candidate in
+    func hasPriorHandoffSource(for event: ScheduleEvent, leaveAt: Date) -> Bool {
+      run.schedule.events.contains { candidate in
         guard candidate.stableId != event.stableId,
               candidate.date == event.date,
               let candidateEnd = try? NativeAlarmContract.dateTime(date: candidate.date, time: candidate.end)
         else { return false }
-        return candidateEnd <= eventStart
+        return candidateEnd <= leaveAt
       }
     }
 
@@ -185,7 +182,7 @@ public struct PhysicalAcceptancePreflight: Sendable {
       let matches = observations.filter { $0.stableID == alarm.stableId }
       let actual = matches.count == 1 ? matches.first : nil
       let plan = try AlarmCountdown.plan(for: alarm, in: run.schedule, now: actual?.configuredAt ?? run.now)
-      let usesPreparedHandoff = procedureActivityPrepared && hasPriorHandoffSource(for: event)
+      let usesPreparedHandoff = procedureActivityPrepared && hasPriorHandoffSource(for: event, leaveAt: plan.scheduledAlertAt)
       var errors: [String] = []
 
       if let actual, let configuredAt = actual.configuredAt {
