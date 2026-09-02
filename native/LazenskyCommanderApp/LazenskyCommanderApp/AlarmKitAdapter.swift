@@ -68,10 +68,13 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     else { return .result() }
 
     let bridgeStableID = stableId + ".departureBridge"
+    let now = Date()
     let activities = Activity<CommanderProcedureLiveActivityAttributes>.activities
     let matchingHandoffs = activities.filter { activity in
       let state = activity.content.state
-      guard !state.isDepartureBridge else { return false }
+      guard !state.isDepartureBridge,
+            activity.attributes.endAt <= now
+      else { return false }
       let sameNextStart = state.nextStartAt.map { abs($0.timeIntervalSince(startDate)) <= 1 } == true
       return state.nextTitle == eventTitle && sameNextStart
     }
@@ -87,7 +90,6 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
       return .result()
     }
 
-    let now = Date()
     guard startDate > now, ActivityAuthorizationInfo().areActivitiesEnabled else {
       for handoff in matchingHandoffs {
         await handoff.end(nil, dismissalPolicy: .immediate)
@@ -258,9 +260,8 @@ actor AlarmKitAdapter: AlarmAdapting {
 
     let configuration: AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>
     if hasPreparedHandoff(for: alarm) {
-      // A stale Commander event already owns the free-time countdown to leaveAt.
-      // Schedule a traditional AlarmKit alert only; adding its pre-alert countdown
-      // would create the duplicate blue + amber Live Activities seen on device.
+      // A Commander event owns a real free interval through leaveAt. Schedule only
+      // the system alert; a pre-alert countdown would duplicate the blue handoff.
       configuration = .alarm(
         schedule: .fixed(countdownPlan.scheduledAlertAt),
         attributes: attributes,
@@ -364,14 +365,17 @@ actor AlarmKitAdapter: AlarmAdapting {
   }
 
   private func hasPreparedHandoff(for alarm: NativeAlarm) -> Bool {
-    guard let startAt = try? NativeAlarmContract.date(fromLocalISO: alarm.startAt) else {
-      return false
-    }
+    guard let startAt = try? NativeAlarmContract.date(fromLocalISO: alarm.startAt),
+          let leaveAt = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+    else { return false }
+
     return Activity<CommanderProcedureLiveActivityAttributes>.activities.contains { activity in
       let state = activity.content.state
       guard !state.isDepartureBridge,
+            activity.attributes.endAt <= leaveAt,
             state.nextTitle == alarm.title,
-            state.nextStartAt.map({ abs($0.timeIntervalSince(startAt)) <= 1 }) == true
+            state.nextStartAt.map({ abs($0.timeIntervalSince(startAt)) <= 1 }) == true,
+            state.nextLeaveAt.map({ abs($0.timeIntervalSince(leaveAt)) <= 1 }) == true
       else { return false }
       return activity.activityState == .pending
         || activity.activityState == .active
