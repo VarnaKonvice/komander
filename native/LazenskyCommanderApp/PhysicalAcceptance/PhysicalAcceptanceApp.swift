@@ -119,7 +119,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
     if let preflight {
       lines += ["Ověřeno: \(Self.time(preflight.checkedAt))", "Očekávané alarmy: 2; ověřené: \(preflight.verifiedAlarmCount)", "Skutečné alarmy při posledním čtení: \(observations.count)"]
       for row in preflight.rows {
-        lines += ["\(row.alarm.stableId) | \(row.alarm.title)", "lead: \(row.leadTime.minutes) min; source: \(Self.source(row.leadTime.source))", "canonical leaveAt / expected fire: \(row.alarm.leaveAt)", "expected countdown start: \(Self.time(row.expectedCountdownStart))"]
+        lines += ["\(row.alarm.stableId) | \(row.alarm.title)", "lead: \(row.leadTime.minutes) min; source: \(Self.source(row.leadTime.source))", "canonical leaveAt / expected fire: \(row.alarm.leaveAt)", "expected visible/system transition: \(Self.time(row.expectedCountdownStart))"]
         if let actual = observations.first(where: { $0.stableID == row.alarm.stableId }) ?? row.actual {
           lines += ["AlarmKit ID: \(actual.platformID)", "state: \(actual.state); fixed: \(Self.time(actual.fixedScheduleAt)); schedule: \(actual.scheduleKind)", "preAlert: \(Self.duration(actual.preAlert)); postAlert: \(Self.duration(actual.postAlert)); system fireDate: \(Self.time(actual.fireDate))"]
         }
@@ -193,7 +193,7 @@ struct PhysicalAcceptanceView: View {
                 .padding(.vertical, 4)
               }
             }
-            Text("Sled: Odchod za → alarm → Právě jídlo → Právě volno / další odchod → alarm → Právě probíhá.")
+            Text("Sled: Odchod za → alarm → VYRAZIT TEĎ → Právě jídlo → Právě volno → alarm → VYRAZIT TEĎ → Právě probíhá.")
               .font(.footnote)
               .foregroundStyle(.secondary)
           } else {
@@ -223,7 +223,7 @@ struct PhysicalAcceptanceView: View {
         ForEach(check.rows, id: \.alarm.stableId) { row in
           Section(row.alarm.title) {
             field("Čas na odchod", row.alarm.leaveAt)
-            field("Začátek odpočtu", PhysicalAcceptanceModel.time(row.expectedCountdownStart))
+            field("Přechod k alarmu", PhysicalAcceptanceModel.time(row.expectedCountdownStart))
             field("Čas alarmu", PhysicalAcceptanceModel.time(row.expectedPlan.scheduledAlertAt))
             field("Předstih", "\(row.leadTime.minutes) min")
             if let actual = model.observations.first(where: { $0.stableID == row.alarm.stableId }) {
