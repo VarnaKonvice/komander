@@ -843,7 +843,7 @@ private enum CommanderTimingSize {
 private enum CommanderProcedureText {
   static func status(kind: ScheduleKind, isStale: Bool) -> String {
     if isStale { return kind == .meal ? "Jídlo skončilo" : "Procedura skončila" }
-    return "Právě probíhá"
+    return kind == .meal ? "Právě jídlo" : "Právě probíhá"
   }
 }
 
