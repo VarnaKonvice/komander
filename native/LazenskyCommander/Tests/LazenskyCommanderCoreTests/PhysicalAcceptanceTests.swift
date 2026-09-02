@@ -114,7 +114,8 @@ import Testing
   #expect(check.rows[1].leadTime.source == .eventOverride)
   let first = try #require(readings.first { $0.state == "countdown" })
   let second = try #require(readings.first { $0.stableID == run.schedule.events[1].stableId })
-  let secondPlan = try AlarmCountdown.plan(for: run.payload().alarms[1], in: run.schedule, now: run.now)
+  let payload = try run.payload()
+  let secondPlan = try AlarmCountdown.plan(for: payload.alarms[1], in: run.schedule, now: run.now)
   #expect(first.preAlert != nil)
   #expect(second.preAlert == nil)
   #expect(second.scheduleKind == "fixed")
@@ -130,7 +131,8 @@ import Testing
   let readings = await adapter.readings()
   let first = try #require(readings.first { $0.state == "countdown" })
   let second = try #require(readings.first { $0.stableID == run.schedule.events[1].stableId })
-  let firstAlarm = run.payload().alarms[0]
+  let payload = try run.payload()
+  let firstAlarm = payload.alarms[0]
   let brokenFirst = PhysicalAlarmObservation(
     platformID: first.platformID, stableID: first.stableID, configuredAt: first.configuredAt,
     scheduleKind: "fixed", fixedScheduleAt: try NativeAlarmContract.date(fromLocalISO: firstAlarm.leaveAt),
@@ -146,7 +148,8 @@ import Testing
   let readings = await adapter.readings()
   let first = try #require(readings.first { $0.state == "countdown" })
   let second = try #require(readings.first { $0.stableID == run.schedule.events[1].stableId })
-  let alarm = run.payload().alarms[1]
+  let payload = try run.payload()
+  let alarm = payload.alarms[1]
   let plan = try AlarmCountdown.plan(for: alarm, in: run.schedule, now: run.now)
   let duplicated = PhysicalAlarmObservation(
     platformID: second.platformID, stableID: second.stableID, configuredAt: second.configuredAt,
@@ -178,7 +181,8 @@ import Testing
 @Test func physicalPreflightNeverClaimsReadyAfterSlowPreparationOrWithoutProcedureActivity() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let readings = await adapter.readings(), state = await session.alarmStore.load()
-  let lastMoment = try NativeAlarmContract.date(fromLocalISO: run.payload().alarms[0].leaveAt).addingTimeInterval(-59)
+  let payload = try run.payload()
+  let lastMoment = try NativeAlarmContract.date(fromLocalISO: payload.alarms[0].leaveAt).addingTimeInterval(-59)
   let late = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state, syncVerified: true, procedureActivityPrepared: true, now: lastMoment)
   let missingActivity = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state, syncVerified: true, procedureActivityPrepared: false, now: run.now)
   let unverified = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state, syncVerified: false, procedureActivityPrepared: true, now: run.now)
