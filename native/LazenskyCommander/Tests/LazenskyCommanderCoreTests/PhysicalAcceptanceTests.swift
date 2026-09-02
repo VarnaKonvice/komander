@@ -50,7 +50,6 @@ import Testing
   let suite = PhysicalAcceptanceRun.storageSuite + ".test." + UUID().uuidString
   let defaults = UserDefaults(suiteName: suite)!
   defer { defaults.removePersistentDomain(forName: suite) }
-  // Sentinels model production and remote-E2E domains without touching real user defaults.
   for channel in ["production", "e2e"] {
     for name in ["scheduleSnapshot", "leadTimePreferences", "managedAlarms"] {
       defaults.set(Data("{\"defaultLeadTimeMinutes\":99}".utf8), forKey: "lazensky.commander.\(name).\(channel).v1")
@@ -133,15 +132,9 @@ import Testing
   let second = try #require(readings.first { $0.stableID == run.schedule.events[1].stableId })
   let firstAlarm = run.payload().alarms[0]
   let brokenFirst = PhysicalAlarmObservation(
-    platformID: first.platformID,
-    stableID: first.stableID,
-    configuredAt: first.configuredAt,
-    scheduleKind: "fixed",
-    fixedScheduleAt: try NativeAlarmContract.date(fromLocalISO: firstAlarm.leaveAt),
-    preAlert: first.preAlert,
-    postAlert: nil,
-    state: "scheduled",
-    fireDate: nil
+    platformID: first.platformID, stableID: first.stableID, configuredAt: first.configuredAt,
+    scheduleKind: "fixed", fixedScheduleAt: try NativeAlarmContract.date(fromLocalISO: firstAlarm.leaveAt),
+    preAlert: first.preAlert, postAlert: nil, state: "scheduled", fireDate: nil
   )
   let check = try await acceptanceCheck(run, [brokenFirst, second], session.alarmStore.load())
   #expect(!check.ready && check.verifiedAlarmCount == 1)
@@ -156,15 +149,9 @@ import Testing
   let alarm = run.payload().alarms[1]
   let plan = try AlarmCountdown.plan(for: alarm, in: run.schedule, now: run.now)
   let duplicated = PhysicalAlarmObservation(
-    platformID: second.platformID,
-    stableID: second.stableID,
-    configuredAt: second.configuredAt,
-    scheduleKind: "fixed",
-    fixedScheduleAt: plan.scheduledStartAt,
-    preAlert: plan.countdownWindow,
-    postAlert: nil,
-    state: "scheduled",
-    fireDate: nil
+    platformID: second.platformID, stableID: second.stableID, configuredAt: second.configuredAt,
+    scheduleKind: "fixed", fixedScheduleAt: plan.scheduledStartAt,
+    preAlert: plan.countdownWindow, postAlert: nil, state: "scheduled", fireDate: nil
   )
   let check = try await acceptanceCheck(run, [first, duplicated], session.alarmStore.load())
   #expect(!check.ready && check.verifiedAlarmCount == 1)
@@ -212,6 +199,7 @@ import Testing
   #expect(adapter.contains("guard channel == .production || physicalRunID != nil"))
   #expect(adapter.contains("for alarm in alarms where cleanup.cancelIDs.contains(alarm.id.uuidString)"))
   #expect(adapter.contains("if hasPreparedHandoff(for: alarm)"))
+  #expect(adapter.contains("activity.attributes.endAt <= leaveAt"))
   #expect(adapter.contains("phase: .departureBridge"))
   #expect(!adapter.contains("Activity<AlarmAttributes<CommanderAlarmMetadata>>.request"))
   #expect(adapter.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
@@ -308,14 +296,14 @@ private actor AcceptanceTestAdapter: AlarmAdapting {
 
   private func hasPriorHandoffSource(for alarm: NativeAlarm, schedule: Schedule) -> Bool {
     guard let event = schedule.events.first(where: { $0.stableId == alarm.stableId }),
-          let startAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.start)
+          let leaveAt = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
     else { return false }
     return schedule.events.contains { candidate in
       guard candidate.stableId != event.stableId,
             candidate.date == event.date,
             let endAt = try? NativeAlarmContract.dateTime(date: candidate.date, time: candidate.end)
       else { return false }
-      return endAt <= startAt
+      return endAt <= leaveAt
     }
   }
 }
