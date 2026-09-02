@@ -3,6 +3,111 @@ import LazenskyCommanderCore
 import UserNotifications
 #if DEBUG
 import ActivityKit
+
+private struct AlarmFreeVisualActivityOutcome: Sendable {
+  let status: String
+  let errorMessage: String?
+}
+
+private enum AlarmFreeVisualActivityReconciler {
+  static func reconcile(
+    schedule: Schedule,
+    now: Date,
+    projectionRevision: Int
+  ) async -> AlarmFreeVisualActivityOutcome {
+    guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG pobyt načtený · Live Activities nejsou povolené",
+        errorMessage: nil
+      )
+    }
+
+    let prefix = AlarmFreeVisualTestSchedule.stableIDPrefix
+    let debugActivities = Activity<CommanderProcedureLiveActivityAttributes>.activities.filter {
+      $0.attributes.stableId.hasPrefix(prefix)
+    }
+
+    guard let running = schedule.events.first(where: { event in
+      guard event.kind == .procedure,
+            event.stableId.hasPrefix(prefix),
+            let startAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.start),
+            let endAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.end)
+      else { return false }
+      return startAt <= now && endAt > now
+    }),
+    let startAt = try? NativeAlarmContract.dateTime(date: running.date, time: running.start),
+    let endAt = try? NativeAlarmContract.dateTime(date: running.date, time: running.end)
+    else {
+      for activity in debugActivities {
+        await activity.end(nil, dismissalPolicy: .immediate)
+      }
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG pobyt načtený · žádná procedura právě neprobíhá",
+        errorMessage: nil
+      )
+    }
+
+    let content = ActivityContent(
+      state: CommanderProcedureLiveActivityAttributes.ContentState(
+        projectionRevision: projectionRevision
+      ),
+      staleDate: endAt,
+      relevanceScore: 1
+    )
+
+    var hasMatchingActivity = false
+    for activity in debugActivities {
+      let matches = activity.attributes.stableId == running.stableId
+        && activity.attributes.scheduleVersion == schedule.scheduleVersion
+        && activity.attributes.title == running.title
+        && activity.attributes.location == running.location
+        && abs(activity.attributes.startAt.timeIntervalSince(startAt)) <= 1
+        && abs(activity.attributes.endAt.timeIntervalSince(endAt)) <= 1
+      if matches {
+        hasMatchingActivity = true
+        await activity.update(content)
+      } else {
+        await activity.end(nil, dismissalPolicy: .immediate)
+      }
+    }
+
+    if hasMatchingActivity {
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG pobyt načtený · Live Activity běží",
+        errorMessage: nil
+      )
+    }
+
+    let attributes = CommanderProcedureLiveActivityAttributes(
+      stableId: running.stableId,
+      scheduleVersion: schedule.scheduleVersion,
+      iconKey: CommanderVisualAssets.icon(for: running)?.key ?? "",
+      title: running.title,
+      location: running.location,
+      kind: running.kind,
+      startAt: startAt,
+      endAt: endAt
+    )
+
+    do {
+      _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+        attributes: attributes,
+        content: content,
+        pushType: nil,
+        style: .standard
+      )
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG pobyt načtený · Live Activity spuštěná",
+        errorMessage: nil
+      )
+    } catch {
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG pobyt načtený · Live Activity se nespustila",
+        errorMessage: error.localizedDescription
+      )
+    }
+  }
+}
 #endif
 
 enum CommanderRuntime {
@@ -276,90 +381,13 @@ final class CommanderViewModel: ObservableObject {
     recoveryStatus = "DEBUG testovací pobyt bez alarmů"
     fallbackStatus = "DEBUG test: záložní upozornění jsou vypnutá"
 
-    await reconcileAlarmFreeVisualActivity(schedule: schedule, now: now)
-  }
-
-  private func reconcileAlarmFreeVisualActivity(schedule: Schedule, now: Date) async {
-    guard ActivityAuthorizationInfo().areActivitiesEnabled else {
-      recoveryStatus = "DEBUG pobyt načtený · Live Activities nejsou povolené"
-      return
-    }
-
-    let prefix = AlarmFreeVisualTestSchedule.stableIDPrefix
-    let debugActivities = Activity<CommanderProcedureLiveActivityAttributes>.activities.filter {
-      $0.attributes.stableId.hasPrefix(prefix)
-    }
-
-    guard let running = schedule.events.first(where: { event in
-      guard event.kind == .procedure,
-            event.stableId.hasPrefix(prefix),
-            let startAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.start),
-            let endAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.end)
-      else { return false }
-      return startAt <= now && endAt > now
-    }),
-    let startAt = try? NativeAlarmContract.dateTime(date: running.date, time: running.start),
-    let endAt = try? NativeAlarmContract.dateTime(date: running.date, time: running.end)
-    else {
-      for activity in debugActivities {
-        await activity.end(nil, dismissalPolicy: .immediate)
-      }
-      recoveryStatus = "DEBUG pobyt načtený · žádná procedura právě neprobíhá"
-      return
-    }
-
-    let content = ActivityContent(
-      state: CommanderProcedureLiveActivityAttributes.ContentState(
-        projectionRevision: leadTimeProjectionRevision
-      ),
-      staleDate: endAt,
-      relevanceScore: 1
+    let outcome = await AlarmFreeVisualActivityReconciler.reconcile(
+      schedule: schedule,
+      now: now,
+      projectionRevision: leadTimeProjectionRevision
     )
-
-    var matchingActivity: Activity<CommanderProcedureLiveActivityAttributes>?
-    for activity in debugActivities {
-      let matches = activity.attributes.stableId == running.stableId
-        && activity.attributes.scheduleVersion == schedule.scheduleVersion
-        && activity.attributes.title == running.title
-        && activity.attributes.location == running.location
-        && abs(activity.attributes.startAt.timeIntervalSince(startAt)) <= 1
-        && abs(activity.attributes.endAt.timeIntervalSince(endAt)) <= 1
-      if matches {
-        matchingActivity = activity
-        await activity.update(content)
-      } else {
-        await activity.end(nil, dismissalPolicy: .immediate)
-      }
-    }
-
-    guard matchingActivity == nil else {
-      recoveryStatus = "DEBUG pobyt načtený · Live Activity běží"
-      return
-    }
-
-    let attributes = CommanderProcedureLiveActivityAttributes(
-      stableId: running.stableId,
-      scheduleVersion: schedule.scheduleVersion,
-      iconKey: CommanderVisualAssets.icon(for: running)?.key ?? "",
-      title: running.title,
-      location: running.location,
-      kind: running.kind,
-      startAt: startAt,
-      endAt: endAt
-    )
-
-    do {
-      _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
-        attributes: attributes,
-        content: content,
-        pushType: nil,
-        style: .standard
-      )
-      recoveryStatus = "DEBUG pobyt načtený · Live Activity spuštěná"
-    } catch {
-      recoveryStatus = "DEBUG pobyt načtený · Live Activity se nespustila"
-      errorMessage = error.localizedDescription
-    }
+    recoveryStatus = outcome.status
+    errorMessage = outcome.errorMessage
   }
 #endif
 
