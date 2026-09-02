@@ -189,13 +189,13 @@ private struct CommanderProcedureProgressRow: View {
   let procedure: CommanderProcedureSummary
 
   private var accent: Color {
-    CommanderEventAppearance.accent(for: procedure.representativeEvent)
+    Color(commanderHex: CommanderVisualAssets.accent(for: procedure.representativeEvent))
   }
 
   var body: some View {
     HStack(spacing: CommanderDesignTokens.Spacing.small) {
       CommanderSymbolBadge(
-        symbol: CommanderEventAppearance.symbol(for: procedure.representativeEvent),
+        symbol: CommanderVisualAssets.symbol(for: procedure.representativeEvent),
         color: accent,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
