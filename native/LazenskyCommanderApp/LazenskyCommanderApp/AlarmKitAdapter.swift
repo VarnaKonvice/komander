@@ -1,5 +1,6 @@
 import ActivityKit
 import AlarmKit
+import AppIntents
 import Foundation
 import SwiftUI
 import LazenskyCommanderCore
@@ -15,6 +16,126 @@ enum AlarmKitAdapterError: LocalizedError {
     case .invalidLeaveAt(let value): return "Neplatný čas odchodu: \(value)."
     case .missingUsageDescription: return "Chybí NSAlarmKitUsageDescription v Info.plist."
     }
+  }
+}
+
+struct CommanderAlarmStopIntent: LiveActivityIntent {
+  static let title: LocalizedStringResource = "Pokračovat k události"
+  static let description = IntentDescription("Po zastavení alarmu zachová na zamčené obrazovce stav VYRAZIT TEĎ až do začátku události.")
+  static let supportedModes: IntentModes = [.background]
+  static let isDiscoverable = false
+
+  @Parameter(title: "Alarm ID") var alarmID: String
+  @Parameter(title: "Stable ID") var stableId: String
+  @Parameter(title: "Verze rozpisu") var scheduleVersion: Int
+  @Parameter(title: "Ikona") var iconKey: String
+  @Parameter(title: "Název") var eventTitle: String
+  @Parameter(title: "Místo") var location: String
+  @Parameter(title: "Jídlo") var isMeal: Bool
+  @Parameter(title: "Začátek") var startAt: String
+  @Parameter(title: "Odchod") var leaveAt: String
+
+  init() {
+    alarmID = ""
+    stableId = ""
+    scheduleVersion = 0
+    iconKey = ""
+    eventTitle = ""
+    location = ""
+    isMeal = false
+    startAt = ""
+    leaveAt = ""
+  }
+
+  init(alarmID: UUID, metadata: CommanderAlarmMetadata) {
+    self.alarmID = alarmID.uuidString
+    stableId = metadata.stableId
+    scheduleVersion = metadata.scheduleVersion
+    iconKey = metadata.iconKey
+    eventTitle = metadata.title
+    location = metadata.location
+    isMeal = metadata.kind == .meal
+    startAt = metadata.startAt
+    leaveAt = metadata.leaveAt
+  }
+
+  func perform() async throws -> some IntentResult {
+    guard let alarmUUID = UUID(uuidString: alarmID),
+          let startDate = try? NativeAlarmContract.date(fromLocalISO: startAt)
+    else { return .result() }
+
+    // The previous event's stale handoff must disappear at leaveAt. Otherwise its
+    // timer crosses zero and starts counting upward while the user is already due.
+    for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities {
+      let state = activity.content.state
+      let sameNextStart = state.nextStartAt.map { abs($0.timeIntervalSince(startDate)) <= 1 } == true
+      let sameNextEvent = state.nextTitle == eventTitle && sameNextStart
+      if sameNextEvent {
+        await activity.end(nil, dismissalPolicy: .immediate)
+      }
+    }
+
+    let now = Date()
+    guard startDate > now, ActivityAuthorizationInfo().areActivitiesEnabled else {
+      return .result()
+    }
+
+    let kind: ScheduleKind = isMeal ? .meal : .procedure
+    let metadata = CommanderAlarmMetadata(
+      stableId: stableId,
+      scheduleVersion: scheduleVersion,
+      iconKey: iconKey,
+      title: eventTitle,
+      location: location,
+      kind: kind,
+      startAt: startAt,
+      leaveAt: leaveAt
+    )
+    let alert = AlarmPresentation.Alert(
+      title: LocalizedStringResource(stringLiteral: "Čas vyrazit: \(eventTitle)")
+    )
+    let countdown = AlarmPresentation.Countdown(
+      title: LocalizedStringResource(stringLiteral: "Odchod za \(eventTitle)")
+    )
+    let attributes = AlarmAttributes(
+      presentation: AlarmPresentation(alert: alert, countdown: countdown),
+      metadata: metadata,
+      tintColor: .teal
+    )
+
+    var calendar = Calendar.current
+    calendar.timeZone = .current
+    let components = calendar.dateComponents([.hour, .minute], from: now)
+    let alertTime = Alarm.Schedule.Relative.Time(
+      hour: components.hour ?? 0,
+      minute: components.minute ?? 0
+    )
+    let state = AlarmPresentationState(
+      alarmID: alarmUUID,
+      mode: .alert(.init(time: alertTime))
+    )
+    let content = ActivityContent(
+      state: state,
+      staleDate: startDate,
+      relevanceScore: 1
+    )
+
+    do {
+      let bridge = try Activity<AlarmAttributes<CommanderAlarmMetadata>>.request(
+        attributes: attributes,
+        content: content,
+        pushType: nil,
+        style: .standard
+      )
+      // Ending immediately freezes this bridge in the approved red alert design,
+      // while .after removes it exactly when the real event begins. The already
+      // prepared meal/procedure Live Activity starts at that same moment.
+      await bridge.end(content, dismissalPolicy: .after(startDate))
+    } catch {
+      // Stopping the alarm must never fail because the continuity bridge could not start.
+    }
+
+    return .result()
   }
 }
 
@@ -105,11 +226,22 @@ actor AlarmKitAdapter: AlarmAdapting {
     let event = schedule?.events.first(where: { $0.stableId == alarm.stableId })
     let iconKey = event.flatMap { CommanderVisualAssets.icon(for: $0)?.key } ?? ""
     let countdown = AlarmPresentation.Countdown(title: LocalizedStringResource(stringLiteral: "Odchod za \(alarm.title)"))
+    let metadata = CommanderAlarmMetadata(
+      stableId: alarm.stableId,
+      scheduleVersion: schedule?.scheduleVersion ?? 0,
+      iconKey: iconKey,
+      title: alarm.title,
+      location: alarm.location,
+      kind: alarm.kind,
+      startAt: alarm.startAt,
+      leaveAt: alarm.leaveAt
+    )
     let attributes = AlarmAttributes(
       presentation: AlarmPresentation(alert: alert, countdown: countdown),
-      metadata: CommanderAlarmMetadata(stableId: alarm.stableId, scheduleVersion: schedule?.scheduleVersion ?? 0, iconKey: iconKey, title: alarm.title, location: alarm.location, kind: alarm.kind, startAt: alarm.startAt, leaveAt: alarm.leaveAt),
+      metadata: metadata,
       tintColor: .teal
     )
+    let stopIntent = CommanderAlarmStopIntent(alarmID: id, metadata: metadata)
 
     let now = Date()
     let countdownPlan: AlarmCountdownPlan
@@ -129,12 +261,14 @@ actor AlarmKitAdapter: AlarmAdapting {
         countdownDuration: Alarm.CountdownDuration(preAlert: countdownPlan.countdownWindow, postAlert: nil),
         schedule: countdownPlan.scheduledStartAt.map { .fixed($0) },
         attributes: attributes,
+        stopIntent: stopIntent,
         sound: .default
       )
     } else {
       configuration = .alarm(
         schedule: .fixed(countdownPlan.scheduledAlertAt),
         attributes: attributes,
+        stopIntent: stopIntent,
         sound: .default
       )
     }
@@ -278,6 +412,10 @@ actor AlarmKitAdapter: AlarmAdapting {
     for id in ownedIDs { await ownership.forget(id) }
     for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
       where activity.attributes.stableId.hasPrefix(PhysicalAcceptanceRun.stableIDPrefix) {
+      await activity.end(nil, dismissalPolicy: .immediate)
+    }
+    for activity in Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities
+      where activity.attributes.metadata?.stableId.hasPrefix(PhysicalAcceptanceRun.stableIDPrefix) == true {
       await activity.end(nil, dismissalPolicy: .immediate)
     }
   }
