@@ -68,25 +68,30 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     else { return .result() }
 
     let bridgeStableID = stableId + ".departureBridge"
-
-    // The previous event owns the blue handoff until the departure alarm is stopped.
-    // Remove that handoff before presenting the red departure bridge so the lock
-    // screen never contains two Commander cards for the same next event.
-    for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities {
+    let activities = Activity<CommanderProcedureLiveActivityAttributes>.activities
+    let matchingHandoffs = activities.filter { activity in
       let state = activity.content.state
-      if state.isDepartureBridge && activity.attributes.stableId == bridgeStableID {
-        await activity.end(nil, dismissalPolicy: .immediate)
-        continue
-      }
+      guard !state.isDepartureBridge else { return false }
       let sameNextStart = state.nextStartAt.map { abs($0.timeIntervalSince(startDate)) <= 1 } == true
-      let sameNextEvent = state.nextTitle == eventTitle && sameNextStart
-      if sameNextEvent {
-        await activity.end(nil, dismissalPolicy: .immediate)
+      return state.nextTitle == eventTitle && sameNextStart
+    }
+
+    if activities.contains(where: {
+      $0.content.state.isDepartureBridge
+        && $0.attributes.stableId == bridgeStableID
+        && ($0.activityState == .pending || $0.activityState == .active)
+    }) {
+      for handoff in matchingHandoffs {
+        await handoff.end(nil, dismissalPolicy: .immediate)
       }
+      return .result()
     }
 
     let now = Date()
     guard startDate > now, ActivityAuthorizationInfo().areActivitiesEnabled else {
+      for handoff in matchingHandoffs {
+        await handoff.end(nil, dismissalPolicy: .immediate)
+      }
       return .result()
     }
 
@@ -117,8 +122,13 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
         pushType: nil,
         style: .standard
       )
+      // Only remove the blue handoff after ActivityKit accepted the red bridge.
+      // If the bridge request fails, keeping the blue card is safer than a blank lock screen.
+      for handoff in matchingHandoffs {
+        await handoff.end(nil, dismissalPolicy: .immediate)
+      }
     } catch {
-      // Stopping the alarm must never fail because the continuity bridge could not start.
+      // The existing handoff deliberately remains visible as a fail-safe.
     }
 
     return .result()
