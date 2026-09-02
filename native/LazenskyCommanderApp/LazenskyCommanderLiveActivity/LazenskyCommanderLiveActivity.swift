@@ -130,18 +130,33 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
         .activityBackgroundTint(CommanderActivityTokens.background)
         .activitySystemActionForegroundColor(CommanderActivityTokens.textPrimary)
     } dynamicIsland: { context in
-      let accent = CommanderActivityTokens.eventAccent(
+      let currentAccent = CommanderActivityTokens.eventAccent(
         kind: context.attributes.kind,
         iconKey: context.attributes.iconKey,
         title: context.attributes.title
       )
-      let eventSymbol = CommanderActivityTokens.eventSymbol(
+      let currentSymbol = CommanderActivityTokens.eventSymbol(
         kind: context.attributes.kind,
         iconKey: context.attributes.iconKey,
         title: context.attributes.title
+      )
+      let hasHandoff = context.isStale
+        && context.state.nextTitle != nil
+        && context.state.nextStartAt != nil
+        && context.state.nextLeaveAt != nil
+      let nextTitle = context.state.nextTitle ?? context.attributes.title
+      let nextAccent = CommanderActivityTokens.eventAccent(
+        kind: context.state.nextKind,
+        iconKey: context.state.nextIconKey,
+        title: nextTitle
+      )
+      let nextSymbol = CommanderActivityTokens.eventSymbol(
+        kind: context.state.nextKind,
+        iconKey: context.state.nextIconKey,
+        title: nextTitle
       )
       let stateAccent = context.isStale
-        ? CommanderActivityTokens.textSecondary
+        ? (hasHandoff ? CommanderActivityTokens.freeBlue : CommanderActivityTokens.textSecondary)
         : CommanderActivityTokens.runningGreen
 
       return DynamicIsland {
@@ -150,41 +165,60 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
         }
         DynamicIslandExpandedRegion(.center) {
           CommanderIslandEventTitle(
-            title: context.attributes.title,
-            symbol: eventSymbol,
-            accent: accent
+            title: hasHandoff ? nextTitle : context.attributes.title,
+            symbol: hasHandoff ? nextSymbol : currentSymbol,
+            accent: hasHandoff ? nextAccent : currentAccent
           )
         }
         DynamicIslandExpandedRegion(.trailing) {
-          CommanderProcedureTiming(
-            endAt: context.attributes.endAt,
-            isStale: context.isStale,
-            accent: stateAccent,
-            size: .regular
-          )
+          if hasHandoff, let leaveAt = context.state.nextLeaveAt {
+            CommanderNextDepartureTiming(leaveAt: leaveAt, size: .regular)
+          } else {
+            CommanderProcedureTiming(
+              endAt: context.attributes.endAt,
+              isStale: context.isStale,
+              accent: stateAccent,
+              size: .regular
+            )
+          }
         }
         DynamicIslandExpandedRegion(.bottom) {
-          CommanderIslandDetails(
-            location: context.attributes.location,
-            status: CommanderProcedureText.status(
-              kind: context.attributes.kind,
-              isStale: context.isStale
-            ),
-            statusAccent: stateAccent,
-            timeLabel: "Konec",
-            timeValue: context.attributes.endAt.formatted(date: .omitted, time: .shortened),
-            timeAccent: accent
-          )
+          if hasHandoff {
+            CommanderIslandDetails(
+              location: context.state.nextLocation,
+              status: "Právě volno",
+              statusAccent: CommanderActivityTokens.freeBlue,
+              timeLabel: "Odchod",
+              timeValue: context.state.nextLeaveAt?.formatted(date: .omitted, time: .shortened) ?? "--:--",
+              timeAccent: CommanderActivityTokens.amber
+            )
+          } else {
+            CommanderIslandDetails(
+              location: context.attributes.location,
+              status: CommanderProcedureText.status(
+                kind: context.attributes.kind,
+                isStale: context.isStale
+              ),
+              statusAccent: stateAccent,
+              timeLabel: "Konec",
+              timeValue: context.attributes.endAt.formatted(date: .omitted, time: .shortened),
+              timeAccent: currentAccent
+            )
+          }
         }
       } compactLeading: {
         CommanderActivityBrandMark(size: 22)
       } compactTrailing: {
-        CommanderProcedureTiming(
-          endAt: context.attributes.endAt,
-          isStale: context.isStale,
-          accent: stateAccent,
-          size: .compact
-        )
+        if hasHandoff, let leaveAt = context.state.nextLeaveAt {
+          CommanderNextDepartureTiming(leaveAt: leaveAt, size: .compact)
+        } else {
+          CommanderProcedureTiming(
+            endAt: context.attributes.endAt,
+            isStale: context.isStale,
+            accent: stateAccent,
+            size: .compact
+          )
+        }
       } minimal: {
         CommanderActivityBrandMark(size: 20)
       }
@@ -232,42 +266,79 @@ private struct CommanderAlarmLockScreenView: View {
 private struct CommanderProcedureLockScreenView: View {
   let context: ActivityViewContext<CommanderProcedureLiveActivityAttributes>
 
-  private var accent: Color {
+  private var currentAccent: Color {
     CommanderActivityTokens.eventAccent(
       kind: context.attributes.kind,
       iconKey: context.attributes.iconKey,
       title: context.attributes.title
     )
   }
-  private var eventSymbol: String {
+  private var currentSymbol: String {
     CommanderActivityTokens.eventSymbol(
       kind: context.attributes.kind,
       iconKey: context.attributes.iconKey,
       title: context.attributes.title
     )
   }
+  private var hasHandoff: Bool {
+    context.isStale
+      && context.state.nextTitle != nil
+      && context.state.nextStartAt != nil
+      && context.state.nextLeaveAt != nil
+  }
+  private var nextTitle: String { context.state.nextTitle ?? context.attributes.title }
+  private var nextAccent: Color {
+    CommanderActivityTokens.eventAccent(
+      kind: context.state.nextKind,
+      iconKey: context.state.nextIconKey,
+      title: nextTitle
+    )
+  }
+  private var nextSymbol: String {
+    CommanderActivityTokens.eventSymbol(
+      kind: context.state.nextKind,
+      iconKey: context.state.nextIconKey,
+      title: nextTitle
+    )
+  }
   private var stateAccent: Color {
-    context.isStale ? CommanderActivityTokens.textSecondary : CommanderActivityTokens.runningGreen
+    context.isStale
+      ? (hasHandoff ? CommanderActivityTokens.freeBlue : CommanderActivityTokens.textSecondary)
+      : CommanderActivityTokens.runningGreen
   }
 
   var body: some View {
     VStack(spacing: 9) {
-      CommanderProcedureHero(
-        kind: context.attributes.kind,
-        endAt: context.attributes.endAt,
-        isStale: context.isStale,
-        accent: stateAccent
-      )
-      CommanderActivityDivider(accent: stateAccent)
-      CommanderActivityEventFooter(
-        title: context.attributes.title,
-        location: context.attributes.location,
-        symbol: eventSymbol,
-        eventAccent: accent,
-        timeLabel: "Konec",
-        timeValue: context.attributes.endAt.formatted(date: .omitted, time: .shortened),
-        timeAccent: stateAccent
-      )
+      if hasHandoff, let leaveAt = context.state.nextLeaveAt {
+        CommanderTransitionHero(leaveAt: leaveAt)
+        CommanderActivityDivider(accent: CommanderActivityTokens.freeBlue)
+        CommanderActivityEventFooter(
+          title: nextTitle,
+          location: context.state.nextLocation,
+          symbol: nextSymbol,
+          eventAccent: nextAccent,
+          timeLabel: "Odchod",
+          timeValue: leaveAt.formatted(date: .omitted, time: .shortened),
+          timeAccent: CommanderActivityTokens.amber
+        )
+      } else {
+        CommanderProcedureHero(
+          kind: context.attributes.kind,
+          endAt: context.attributes.endAt,
+          isStale: context.isStale,
+          accent: stateAccent
+        )
+        CommanderActivityDivider(accent: stateAccent)
+        CommanderActivityEventFooter(
+          title: context.attributes.title,
+          location: context.attributes.location,
+          symbol: currentSymbol,
+          eventAccent: currentAccent,
+          timeLabel: "Konec",
+          timeValue: context.attributes.endAt.formatted(date: .omitted, time: .shortened),
+          timeAccent: stateAccent
+        )
+      }
     }
     .commanderActivityCard(accent: stateAccent)
   }
@@ -389,6 +460,46 @@ private struct CommanderProcedureHero: View {
           isStale: isStale,
           accent: accent
         )
+        .frame(width: 72, alignment: .center)
+      }
+    }
+    .frame(minHeight: 72)
+  }
+}
+
+private struct CommanderTransitionHero: View {
+  let leaveAt: Date
+
+  var body: some View {
+    ZStack {
+      VStack(spacing: 0) {
+        Text("Právě volno")
+          .font(.system(size: 16, weight: .bold, design: .rounded))
+          .foregroundStyle(CommanderActivityTokens.freeBlue)
+          .lineLimit(1)
+        Text(leaveAt, style: .timer)
+          .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
+          .foregroundStyle(CommanderActivityTokens.freeBlue)
+          .lineLimit(1)
+          .minimumScaleFactor(0.74)
+      }
+      .frame(width: 180, alignment: .center)
+      .multilineTextAlignment(.center)
+      .frame(maxWidth: .infinity)
+
+      HStack(spacing: 0) {
+        CommanderActivityBrandMark(size: 74)
+          .frame(width: 82, alignment: .leading)
+        Spacer(minLength: 0)
+        VStack(spacing: 2) {
+          Image(systemName: "figure.walk")
+            .font(.system(size: 25, weight: .semibold))
+            .foregroundStyle(CommanderActivityTokens.amber)
+          Text("Odchod\nza")
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(CommanderActivityTokens.textSecondary)
+            .multilineTextAlignment(.center)
+        }
         .frame(width: 72, alignment: .center)
       }
     }
@@ -691,6 +802,29 @@ private struct CommanderProcedureTiming: View {
     }
     .fixedSize(horizontal: true, vertical: false)
     .layoutPriority(1)
+  }
+
+  private var timingFont: Font {
+    switch size {
+    case .compact: return .caption2.weight(.bold).monospacedDigit()
+    case .regular: return .subheadline.weight(.heavy).monospacedDigit()
+    case .large: return .title2.weight(.heavy).monospacedDigit()
+    }
+  }
+}
+
+private struct CommanderNextDepartureTiming: View {
+  let leaveAt: Date
+  let size: CommanderTimingSize
+
+  var body: some View {
+    Text(leaveAt, style: .timer)
+      .font(timingFont)
+      .foregroundStyle(CommanderActivityTokens.freeBlue)
+      .lineLimit(1)
+      .minimumScaleFactor(0.72)
+      .fixedSize(horizontal: true, vertical: false)
+      .layoutPriority(1)
   }
 
   private var timingFont: Font {
