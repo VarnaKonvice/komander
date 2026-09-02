@@ -140,7 +140,6 @@ actor AlarmKitAdapter: AlarmAdapting {
     }
 
     if let physicalRunID, let physicalOwnership {
-      // Reserve ownership before SDK I/O, so interrupted scheduling remains recoverable.
       await physicalOwnership.remember(id.uuidString, runID: physicalRunID)
     }
     let scheduled = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
@@ -212,8 +211,6 @@ actor AlarmKitAdapter: AlarmAdapting {
         preAlert: alarm.countdownDuration?.preAlert,
         countdownFireDate: countdownDeadlines[platformID]
       ) else {
-        // A timer's activity may arrive after schedule() returns. Do not cancel it or
-        // claim verification from desired metadata; the existing retry will re-read it.
         throw AlarmAdapterError.timingReadbackUnavailable
       }
       result[platformID] = deadline
@@ -226,7 +223,6 @@ actor AlarmKitAdapter: AlarmAdapting {
     return Set(UserDefaults.standard.stringArray(forKey: Self.e2eOwnershipKey) ?? [])
   }
 
-  /// Read-only observation includes unexpected IDs so preflight rejects rather than hides them.
   func physicalObservations() throws -> [PhysicalAlarmObservation] {
     guard physicalRunID != nil, Bundle.main.bundleIdentifier == PhysicalAcceptanceRun.bundleID else {
       throw PhysicalAcceptanceError.wrongApplication
@@ -252,15 +248,18 @@ actor AlarmKitAdapter: AlarmAdapting {
   }
 
   func physicalProcedureActivityPrepared(run: PhysicalAcceptanceRun) -> Bool {
-    guard physicalRunID == run.id,
-          let procedure = run.schedule.events.first(where: { $0.kind == .procedure }),
-          let start = try? NativeAlarmContract.dateTime(date: procedure.date, time: procedure.start)
-    else { return false }
-    return Activity<CommanderProcedureLiveActivityAttributes>.activities.contains {
-      $0.attributes.stableId == procedure.stableId
-        && $0.attributes.startAt == start
-        && $0.content.state.projectionRevision == run.projectionRevision
-        && ($0.activityState == .pending || $0.activityState == .active)
+    guard physicalRunID == run.id else { return false }
+    let activities = Activity<CommanderProcedureLiveActivityAttributes>.activities
+    return run.schedule.events.allSatisfy { event in
+      guard let start = try? NativeAlarmContract.dateTime(date: event.date, time: event.start) else {
+        return false
+      }
+      return activities.contains {
+        $0.attributes.stableId == event.stableId
+          && $0.attributes.startAt == start
+          && $0.content.state.projectionRevision == run.projectionRevision
+          && ($0.activityState == .pending || $0.activityState == .active)
+      }
     }
   }
 
@@ -275,7 +274,6 @@ actor AlarmKitAdapter: AlarmAdapting {
     for alarm in alarms where cleanup.cancelIDs.contains(alarm.id.uuidString) {
       try AlarmManager.shared.cancel(id: alarm.id)
     }
-    // Unknown IDs are never cancelled. They prevent a clean preflight instead.
     guard try AlarmManager.shared.alarms.isEmpty else { throw PhysicalAcceptanceError.cleanupIncomplete }
     for id in ownedIDs { await ownership.forget(id) }
     for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
@@ -307,8 +305,7 @@ actor AlarmKitAdapter: AlarmAdapting {
     guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
     let candidates: [ProcedureActivityCandidate] = schedule.events.compactMap { event in
-      guard event.kind == .procedure,
-            let startAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.start),
+      guard let startAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.start),
             let endAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.end),
             endAt > now
       else { return nil }
@@ -395,8 +392,9 @@ actor AlarmKitAdapter: AlarmAdapting {
             style: .standard
           )
         } else {
+          let alertTitle = item.event.kind == .meal ? "Jídlo začíná" : "Procedura začíná"
           let alert = ActivityKit.AlertConfiguration(
-            title: LocalizedStringResource(stringLiteral: "Procedura začíná"),
+            title: LocalizedStringResource(stringLiteral: alertTitle),
             body: LocalizedStringResource(stringLiteral: item.event.title),
             sound: .default
           )
@@ -410,13 +408,10 @@ actor AlarmKitAdapter: AlarmAdapting {
           )
         }
       } catch {
-        // Alarm reconciliation must remain independent. A later foreground/sync pass retries.
         continue
       }
     }
 
-    // Read after write. Missing activities are left for the next automatic reconciliation pass;
-    // they never downgrade or invalidate the already verified alarm projection.
     _ = Activity<CommanderProcedureLiveActivityAttributes>.activities
   }
 
