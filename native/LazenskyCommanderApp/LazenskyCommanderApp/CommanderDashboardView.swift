@@ -60,12 +60,15 @@ struct CommanderTodayLiveCard: View {
 
   private var item: CommanderDashboardEvent? { presentation.currentEvent }
 
+  private var eventAccent: Color {
+    guard let item else { return CommanderDesignTokens.Colors.primaryPurple }
+    return Color(commanderHex: CommanderVisualAssets.accent(for: item.event))
+  }
+
   private var statusColor: Color {
     switch presentation.mode {
     case .leaveNow: return CommanderDesignTokens.Colors.criticalRed
-    case .inProgress:
-      return item.map { CommanderEventAppearance.accent(for: $0.event) }
-        ?? CommanderDesignTokens.Colors.primaryPurple
+    case .inProgress: return CommanderDesignTokens.Colors.mealGreen
     default: return CommanderDesignTokens.Colors.freeBlue
     }
   }
@@ -87,8 +90,8 @@ struct CommanderTodayLiveCard: View {
       HStack(alignment: .top, spacing: CommanderDesignTokens.Spacing.medium) {
         if !dynamicTypeSize.isAccessibilitySize {
           CommanderSymbolBadge(
-            symbol: item.map { CommanderEventAppearance.symbol(for: $0.event) } ?? "clock.fill",
-            color: statusColor,
+            symbol: item.map { CommanderVisualAssets.symbol(for: $0.event) } ?? "clock.fill",
+            color: presentation.mode == .inProgress ? eventAccent : statusColor,
             size: CommanderDesignTokens.Size.sectionBadge
           )
         }
@@ -103,7 +106,7 @@ struct CommanderTodayLiveCard: View {
               .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
             Text("\(item.event.title) · \(item.startAt.formatted(CommanderScheduleDateStyle.clock))")
               .commanderFont(.eventTitle)
-              .foregroundStyle(CommanderEventAppearance.accent(for: item.event))
+              .foregroundStyle(eventAccent)
               .fixedSize(horizontal: false, vertical: true)
           } else if presentation.mode != .noSchedule {
             Text(presentation.mode == .dayDone ? "Dnešní program je dokončený." : "Na dnešek nejsou naplánované události.")
@@ -149,7 +152,7 @@ struct CommanderTodayLiveCard: View {
         .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
         .fixedSize(horizontal: false, vertical: true)
     } else if let procedure = presentation.nextProcedure {
-      let accent = CommanderEventAppearance.accent(for: procedure.event)
+      let accent = Color(commanderHex: CommanderVisualAssets.accent(for: procedure.event))
       VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.small) {
         VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
           Text(freeHeadline(for: procedure))
@@ -244,7 +247,7 @@ struct CommanderTodayLiveCard: View {
         .foregroundStyle(CommanderDesignTokens.Colors.criticalRed)
         .fixedSize(horizontal: false, vertical: true)
     case .inProgress:
-      // This only formats the existing event end, without selecting or changing a live state.
+      // State is green; the event itself keeps its own category accent above.
       let minutes = max(0, Int(ceil(item.endAt.timeIntervalSince(presentation.now) / 60)))
       Label("Do konce \(minutes) min", systemImage: "clock")
         .commanderFont(.countdown)
