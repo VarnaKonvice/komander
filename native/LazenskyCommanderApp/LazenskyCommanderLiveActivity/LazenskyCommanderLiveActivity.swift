@@ -13,6 +13,7 @@ private enum CommanderActivityTokens {
   static let locationBlue = Color(commanderActivityHex: CommanderBrandAssets.Colors.locationBlue)
   static let mealGreen = Color(commanderActivityHex: CommanderBrandAssets.Colors.mealGreen)
   static let amber = Color(commanderActivityHex: CommanderBrandAssets.Colors.amber)
+  static let freeBlue = Color(commanderActivityHex: CommanderBrandAssets.Colors.freeBlue)
   static let procedureCyan = Color(commanderActivityHex: CommanderBrandAssets.Colors.procedureCyan)
   static let urgentOrange = Color(commanderActivityHex: CommanderBrandAssets.Colors.urgentOrange)
   static let criticalRed = Color(commanderActivityHex: CommanderBrandAssets.Colors.criticalRed)
@@ -28,13 +29,12 @@ private enum CommanderActivityTokens {
     LinearGradient(colors: [panel, background], startPoint: .topLeading, endPoint: .bottomTrailing)
   }
 
-  static func eventAccent(kind: ScheduleKind?, iconKey: String?) -> Color {
-    if kind == .meal { return mealGreen }
-    switch iconKey {
-    case "iodobrom", "peat_wrap": return amber
-    case "electro_therapy", "hydrojet", "whirlpool", "pool": return procedureCyan
-    default: return primaryPurple
-    }
+  static func eventAccent(kind: ScheduleKind?, iconKey: String?, title: String) -> Color {
+    Color(commanderActivityHex: CommanderBrandAssets.procedureAccentHex(
+      iconKey: iconKey,
+      title: title,
+      isMeal: kind == .meal
+    ))
   }
 
   static func departureAccent(for mode: AlarmPresentationState.Mode) -> Color {
@@ -45,16 +45,12 @@ private enum CommanderActivityTokens {
     }
   }
 
-  static func eventSymbol(kind: ScheduleKind?, iconKey: String?) -> String {
-    if kind == .meal || iconKey == "meal" { return "fork.knife" }
-    switch iconKey {
-    case "electro_therapy": return "atom"
-    case "iodobrom", "whirlpool": return "bathtub.fill"
-    case "massage", "peat_wrap": return "figure.mind.and.body"
-    case "pool", "hydrojet": return "water.waves"
-    case "individual_rehab", "imoove": return "figure.walk"
-    default: return "calendar"
-    }
+  static func eventSymbol(kind: ScheduleKind?, iconKey: String?, title: String) -> String {
+    CommanderBrandAssets.procedureSymbol(
+      iconKey: iconKey,
+      title: title,
+      isMeal: kind == .meal
+    )
   }
 }
 
@@ -74,14 +70,17 @@ struct LazenskyCommanderAlarmLiveActivity: Widget {
         .activitySystemActionForegroundColor(CommanderActivityTokens.textPrimary)
     } dynamicIsland: { context in
       let metadata = context.attributes.metadata
+      let title = metadata?.title ?? "Lázeňský Commander"
       let eventAccent = CommanderActivityTokens.eventAccent(
         kind: metadata?.kind,
-        iconKey: metadata?.iconKey
+        iconKey: metadata?.iconKey,
+        title: title
       )
       let departureAccent = CommanderActivityTokens.departureAccent(for: context.state.mode)
       let eventSymbol = CommanderActivityTokens.eventSymbol(
         kind: metadata?.kind,
-        iconKey: metadata?.iconKey
+        iconKey: metadata?.iconKey,
+        title: title
       )
 
       return DynamicIsland {
@@ -90,7 +89,7 @@ struct LazenskyCommanderAlarmLiveActivity: Widget {
         }
         DynamicIslandExpandedRegion(.center) {
           CommanderIslandEventTitle(
-            title: metadata?.title ?? "Lázeňský Commander",
+            title: title,
             symbol: eventSymbol,
             accent: eventAccent
           )
@@ -133,11 +132,13 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
     } dynamicIsland: { context in
       let accent = CommanderActivityTokens.eventAccent(
         kind: context.attributes.kind,
-        iconKey: context.attributes.iconKey
+        iconKey: context.attributes.iconKey,
+        title: context.attributes.title
       )
       let eventSymbol = CommanderActivityTokens.eventSymbol(
         kind: context.attributes.kind,
-        iconKey: context.attributes.iconKey
+        iconKey: context.attributes.iconKey,
+        title: context.attributes.title
       )
       let stateAccent = context.isStale
         ? CommanderActivityTokens.textSecondary
@@ -196,14 +197,15 @@ private struct CommanderAlarmLockScreenView: View {
   let context: ActivityViewContext<AlarmAttributes<CommanderAlarmMetadata>>
 
   private var metadata: CommanderAlarmMetadata? { context.attributes.metadata }
+  private var title: String { metadata?.title ?? "Lázeňský Commander" }
   private var eventAccent: Color {
-    CommanderActivityTokens.eventAccent(kind: metadata?.kind, iconKey: metadata?.iconKey)
+    CommanderActivityTokens.eventAccent(kind: metadata?.kind, iconKey: metadata?.iconKey, title: title)
   }
   private var departureAccent: Color {
     CommanderActivityTokens.departureAccent(for: context.state.mode)
   }
   private var eventSymbol: String {
-    CommanderActivityTokens.eventSymbol(kind: metadata?.kind, iconKey: metadata?.iconKey)
+    CommanderActivityTokens.eventSymbol(kind: metadata?.kind, iconKey: metadata?.iconKey, title: title)
   }
 
   var body: some View {
@@ -214,7 +216,7 @@ private struct CommanderAlarmLockScreenView: View {
       )
       CommanderActivityDivider(accent: departureAccent)
       CommanderActivityEventFooter(
-        title: metadata?.title ?? "Lázeňský Commander",
+        title: title,
         location: metadata?.location,
         symbol: eventSymbol,
         eventAccent: eventAccent,
@@ -233,13 +235,15 @@ private struct CommanderProcedureLockScreenView: View {
   private var accent: Color {
     CommanderActivityTokens.eventAccent(
       kind: context.attributes.kind,
-      iconKey: context.attributes.iconKey
+      iconKey: context.attributes.iconKey,
+      title: context.attributes.title
     )
   }
   private var eventSymbol: String {
     CommanderActivityTokens.eventSymbol(
       kind: context.attributes.kind,
-      iconKey: context.attributes.iconKey
+      iconKey: context.attributes.iconKey,
+      title: context.attributes.title
     )
   }
   private var stateAccent: Color {
@@ -519,6 +523,7 @@ private struct CommanderIslandEventTitle: View {
         .font(.subheadline.weight(.bold))
         .foregroundStyle(CommanderActivityTokens.textPrimary)
         .lineLimit(1)
+        .minimumScaleFactor(0.72)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
   }
@@ -634,14 +639,16 @@ private struct CommanderAlarmCountdownContext: View {
         .font(countdownFont)
         .foregroundStyle(accent)
         .lineLimit(1)
-        .minimumScaleFactor(0.8)
+        .minimumScaleFactor(0.74)
     }
+    .fixedSize(horizontal: true, vertical: false)
+    .layoutPriority(1)
   }
 
   private var countdownFont: Font {
     switch size {
     case .compact: return .caption2.weight(.bold).monospacedDigit()
-    case .regular: return .headline.weight(.heavy).monospacedDigit()
+    case .regular: return .subheadline.weight(.heavy).monospacedDigit()
     case .large: return .system(size: 38, weight: .heavy, design: .rounded).monospacedDigit()
     }
   }
@@ -678,16 +685,18 @@ private struct CommanderProcedureTiming: View {
             .font(timingFont)
             .foregroundStyle(accent)
             .lineLimit(1)
-            .minimumScaleFactor(0.82)
+            .minimumScaleFactor(0.72)
         }
       }
     }
+    .fixedSize(horizontal: true, vertical: false)
+    .layoutPriority(1)
   }
 
   private var timingFont: Font {
     switch size {
     case .compact: return .caption2.weight(.bold).monospacedDigit()
-    case .regular: return .headline.weight(.heavy).monospacedDigit()
+    case .regular: return .subheadline.weight(.heavy).monospacedDigit()
     case .large: return .title2.weight(.heavy).monospacedDigit()
     }
   }
