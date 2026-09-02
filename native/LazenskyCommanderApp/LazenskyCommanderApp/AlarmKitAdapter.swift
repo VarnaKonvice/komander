@@ -23,9 +23,17 @@ actor AlarmKitAdapter: AlarmAdapting {
   private static let e2eOwnershipKey = "lazensky.commander.alarmkitOwned.e2e.v1"
   private let channel: ScheduleChannel
   private var scheduleContext: Schedule?
+  private var leadTimeOverridesContext: LeadTimeOverrides?
   private var physicalRunID: UUID?
   private var physicalOwnership: PhysicalAcceptanceOwnershipStore?
   private var physicalAttempts: [String: (stableID: String, configuredAt: Date)] = [:]
+
+  private struct ProcedureActivityCandidate {
+    let event: ScheduleEvent
+    let startAt: Date
+    let endAt: Date
+    let contentState: CommanderProcedureLiveActivityAttributes.ContentState
+  }
 
   init(channel: ScheduleChannel) {
     self.channel = channel
@@ -45,13 +53,23 @@ actor AlarmKitAdapter: AlarmAdapting {
   }
 
   func prepare(schedule: Schedule, projectionRevision: Int) async {
+    await prepare(schedule: schedule, projectionRevision: projectionRevision, overrides: nil)
+  }
+
+  func prepare(
+    schedule: Schedule,
+    projectionRevision: Int,
+    overrides: LeadTimeOverrides?
+  ) async {
     scheduleContext = schedule
+    leadTimeOverridesContext = overrides
     guard channel == .production || physicalRunID != nil else { return }
     // This projection is deliberately best-effort and independent from AlarmKit safety.
     // A Live Activity failure must never block alarm reconciliation.
     await reconcileProcedureLiveActivities(
       schedule: schedule,
-      projectionRevision: max(0, projectionRevision)
+      projectionRevision: max(0, projectionRevision),
+      overrides: overrides
     )
   }
 
@@ -283,17 +301,29 @@ actor AlarmKitAdapter: AlarmAdapting {
   private func reconcileProcedureLiveActivities(
     schedule: Schedule,
     projectionRevision: Int,
+    overrides: LeadTimeOverrides?,
     now: Date = Date()
   ) async {
     guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
-    let candidates: [(event: ScheduleEvent, startAt: Date, endAt: Date)] = schedule.events.compactMap { event in
+    let candidates: [ProcedureActivityCandidate] = schedule.events.compactMap { event in
       guard event.kind == .procedure,
             let startAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.start),
             let endAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.end),
             endAt > now
       else { return nil }
-      return (event: event, startAt: startAt, endAt: endAt)
+      return ProcedureActivityCandidate(
+        event: event,
+        startAt: startAt,
+        endAt: endAt,
+        contentState: procedureContentState(
+          after: event,
+          endAt: endAt,
+          schedule: schedule,
+          overrides: overrides,
+          projectionRevision: projectionRevision
+        )
+      )
     }.sorted {
       if $0.startAt != $1.startAt { return $0.startAt < $1.startAt }
       return $0.event.stableId < $1.event.stableId
@@ -313,9 +343,7 @@ actor AlarmKitAdapter: AlarmAdapting {
       }
       if let match {
         let updatedContent = ActivityContent(
-          state: CommanderProcedureLiveActivityAttributes.ContentState(
-            projectionRevision: projectionRevision
-          ),
+          state: match.contentState,
           staleDate: match.endAt,
           relevanceScore: 1
         )
@@ -353,9 +381,7 @@ actor AlarmKitAdapter: AlarmAdapting {
         endAt: item.endAt
       )
       let content = ActivityContent(
-        state: CommanderProcedureLiveActivityAttributes.ContentState(
-          projectionRevision: projectionRevision
-        ),
+        state: item.contentState,
         staleDate: item.endAt,
         relevanceScore: 1
       )
@@ -392,6 +418,51 @@ actor AlarmKitAdapter: AlarmAdapting {
     // Read after write. Missing activities are left for the next automatic reconciliation pass;
     // they never downgrade or invalidate the already verified alarm projection.
     _ = Activity<CommanderProcedureLiveActivityAttributes>.activities
+  }
+
+  private func procedureContentState(
+    after event: ScheduleEvent,
+    endAt: Date,
+    schedule: Schedule,
+    overrides: LeadTimeOverrides?,
+    projectionRevision: Int
+  ) -> CommanderProcedureLiveActivityAttributes.ContentState {
+    let next: (event: ScheduleEvent, startAt: Date, endAt: Date)? = schedule.events.compactMap { candidate in
+      guard candidate.stableId != event.stableId,
+            candidate.date == event.date,
+            let startAt = try? NativeAlarmContract.dateTime(date: candidate.date, time: candidate.start),
+            let candidateEndAt = try? NativeAlarmContract.dateTime(date: candidate.date, time: candidate.end),
+            startAt >= endAt
+      else { return nil }
+      return (candidate, startAt, candidateEndAt)
+    }.sorted {
+      if $0.startAt != $1.startAt { return $0.startAt < $1.startAt }
+      return $0.event.stableId < $1.event.stableId
+    }.first
+
+    guard let next,
+          let alarm = try? NativeAlarmContract.alarm(
+            event: next.event,
+            schedule: schedule,
+            overrides: overrides
+          ),
+          let leaveAt = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+    else {
+      return CommanderProcedureLiveActivityAttributes.ContentState(
+        projectionRevision: projectionRevision
+      )
+    }
+
+    return CommanderProcedureLiveActivityAttributes.ContentState(
+      projectionRevision: projectionRevision,
+      nextTitle: next.event.title,
+      nextLocation: next.event.location,
+      nextKind: next.event.kind,
+      nextIconKey: CommanderVisualAssets.icon(for: next.event)?.key,
+      nextStartAt: next.startAt,
+      nextEndAt: next.endAt,
+      nextLeaveAt: leaveAt
+    )
   }
 
   static func map(_ state: AlarmManager.AuthorizationState) -> AlarmAuthorizationStatus {
