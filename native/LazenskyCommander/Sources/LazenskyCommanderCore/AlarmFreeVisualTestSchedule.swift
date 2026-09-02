@@ -12,13 +12,13 @@ public enum AlarmFreeVisualTestSchedule {
   private static let prague = TimeZone(identifier: "Europe/Prague")!
   private static let procedures = [
     ProcedureTemplate(title: "Slatinná koupel", location: "LDB-Slatina 1"),
-    ProcedureTemplate(title: "Klasická masáž částečná", location: "Lázně Aurora"),
+    ProcedureTemplate(title: "Klasická masáž částečná", location: "Bertiny lázně"),
     ProcedureTemplate(title: "Vysokoindukční magnet", location: "LDB-Elektroléčba"),
     ProcedureTemplate(title: "Vířivka dolní končetiny", location: "LDB-Vodoléčba"),
-    ProcedureTemplate(title: "Hydro Jet", location: "Lázně Aurora"),
-    ProcedureTemplate(title: "IMOOVE", location: "Lázně Aurora"),
-    ProcedureTemplate(title: "Fyzioterapie", location: "Lázně Aurora"),
-    ProcedureTemplate(title: "Cvičení", location: "Lázně Aurora")
+    ProcedureTemplate(title: "Hydro Jet", location: "Bertiny lázně"),
+    ProcedureTemplate(title: "IMOOVE", location: "Bertiny lázně"),
+    ProcedureTemplate(title: "Fyzioterapie", location: "Bertiny lázně"),
+    ProcedureTemplate(title: "Cvičení", location: "Bertiny lázně")
   ]
 
   public static func make(now: Date = Date()) -> Schedule {
@@ -50,6 +50,10 @@ public enum AlarmFreeVisualTestSchedule {
     let activeStart = now.addingTimeInterval(-5 * 60)
     let activeEnd = now.addingTimeInterval(30 * 60)
     let activeDate = dateText(today)
+
+    // Keep the realistic three-procedure day: the live test replaces the second
+    // morning procedure instead of creating an artificial fourth procedure.
+    events.removeAll { $0.stableId == stableIDPrefix + "\(activeDate)-p2" }
     events.append(
       ScheduleEvent(
         stableId: stableIDPrefix + "running",
@@ -57,7 +61,7 @@ public enum AlarmFreeVisualTestSchedule {
         start: timeText(activeStart),
         end: timeText(activeEnd),
         title: "Fyzioterapie",
-        location: "Lázně Aurora",
+        location: "Bertiny lázně",
         kind: .procedure,
         procedureType: "Fyzioterapie",
         mealType: nil,
@@ -76,7 +80,7 @@ public enum AlarmFreeVisualTestSchedule {
       scheduleVersion: 990_001,
       updatedAt: ISO8601DateFormatter().string(from: now),
       stay: [
-        "spa": "Lázeňský dům Aurora, Třeboň",
+        "spa": "Bertiny lázně, Třeboň",
         "dateFrom": dateText(dateFrom),
         "dateTo": dateText(dateTo)
       ],
@@ -96,7 +100,7 @@ public enum AlarmFreeVisualTestSchedule {
       start: start,
       end: end,
       title: title,
-      location: "Lázně Aurora",
+      location: "Bertiny lázně",
       kind: .meal,
       procedureType: nil,
       mealType: title,
