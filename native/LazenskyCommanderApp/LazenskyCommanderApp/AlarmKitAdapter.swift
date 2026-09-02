@@ -21,7 +21,7 @@ enum AlarmKitAdapterError: LocalizedError {
 
 struct CommanderAlarmStopIntent: LiveActivityIntent {
   static let title: LocalizedStringResource = "Pokračovat k události"
-  static let description = IntentDescription("Po zastavení alarmu zachová na zamčené obrazovce stav VYRAZIT TEĎ až do začátku události.")
+  static let description = IntentDescription("Po zastavení alarmu zachová stav VYRAZIT TEĎ až do začátku události.")
   static let supportedModes: IntentModes = [.background]
   static let isDiscoverable = false
 
@@ -34,6 +34,7 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
   @Parameter(title: "Jídlo") var isMeal: Bool
   @Parameter(title: "Začátek") var startAt: String
   @Parameter(title: "Odchod") var leaveAt: String
+  @Parameter(title: "Konec") var endAt: String
 
   init() {
     alarmID = ""
@@ -45,6 +46,7 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     isMeal = false
     startAt = ""
     leaveAt = ""
+    endAt = ""
   }
 
   init(alarmID: UUID, metadata: CommanderAlarmMetadata) {
@@ -57,17 +59,25 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     isMeal = metadata.kind == .meal
     startAt = metadata.startAt
     leaveAt = metadata.leaveAt
+    endAt = metadata.endAt ?? metadata.startAt
   }
 
   func perform() async throws -> some IntentResult {
-    guard let alarmUUID = UUID(uuidString: alarmID),
-          let startDate = try? NativeAlarmContract.date(fromLocalISO: startAt)
+    guard let startDate = try? NativeAlarmContract.date(fromLocalISO: startAt),
+          let endDate = try? NativeAlarmContract.date(fromLocalISO: endAt)
     else { return .result() }
 
-    // The previous event's stale handoff must disappear at leaveAt. Otherwise its
-    // timer crosses zero and starts counting upward while the user is already due.
+    let bridgeStableID = stableId + ".departureBridge"
+
+    // The previous event owns the blue handoff until the departure alarm is stopped.
+    // Remove that handoff before presenting the red departure bridge so the lock
+    // screen never contains two Commander cards for the same next event.
     for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities {
       let state = activity.content.state
+      if state.isDepartureBridge && activity.attributes.stableId == bridgeStableID {
+        await activity.end(nil, dismissalPolicy: .immediate)
+        continue
+      }
       let sameNextStart = state.nextStartAt.map { abs($0.timeIntervalSince(startDate)) <= 1 } == true
       let sameNextEvent = state.nextTitle == eventTitle && sameNextStart
       if sameNextEvent {
@@ -81,56 +91,32 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     }
 
     let kind: ScheduleKind = isMeal ? .meal : .procedure
-    let metadata = CommanderAlarmMetadata(
-      stableId: stableId,
+    let attributes = CommanderProcedureLiveActivityAttributes(
+      stableId: bridgeStableID,
       scheduleVersion: scheduleVersion,
       iconKey: iconKey,
       title: eventTitle,
       location: location,
       kind: kind,
-      startAt: startAt,
-      leaveAt: leaveAt
-    )
-    let alert = AlarmPresentation.Alert(
-      title: LocalizedStringResource(stringLiteral: "Čas vyrazit: \(eventTitle)")
-    )
-    let countdown = AlarmPresentation.Countdown(
-      title: LocalizedStringResource(stringLiteral: "Odchod za \(eventTitle)")
-    )
-    let attributes = AlarmAttributes(
-      presentation: AlarmPresentation(alert: alert, countdown: countdown),
-      metadata: metadata,
-      tintColor: .teal
-    )
-
-    var calendar = Calendar.current
-    calendar.timeZone = .current
-    let components = calendar.dateComponents([.hour, .minute], from: now)
-    let alertTime = Alarm.Schedule.Relative.Time(
-      hour: components.hour ?? 0,
-      minute: components.minute ?? 0
-    )
-    let state = AlarmPresentationState(
-      alarmID: alarmUUID,
-      mode: .alert(.init(time: alertTime))
+      startAt: startDate,
+      endAt: endDate
     )
     let content = ActivityContent(
-      state: state,
+      state: CommanderProcedureLiveActivityAttributes.ContentState(
+        projectionRevision: -1,
+        phase: .departureBridge
+      ),
       staleDate: startDate,
       relevanceScore: 1
     )
 
     do {
-      let bridge = try Activity<AlarmAttributes<CommanderAlarmMetadata>>.request(
+      _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
         attributes: attributes,
         content: content,
         pushType: nil,
         style: .standard
       )
-      // Ending immediately freezes this bridge in the approved red alert design,
-      // while .after removes it exactly when the real event begins. The already
-      // prepared meal/procedure Live Activity starts at that same moment.
-      await bridge.end(content, dismissalPolicy: .after(startDate))
     } catch {
       // Stopping the alarm must never fail because the continuity bridge could not start.
     }
@@ -226,6 +212,10 @@ actor AlarmKitAdapter: AlarmAdapting {
     let event = schedule?.events.first(where: { $0.stableId == alarm.stableId })
     let iconKey = event.flatMap { CommanderVisualAssets.icon(for: $0)?.key } ?? ""
     let countdown = AlarmPresentation.Countdown(title: LocalizedStringResource(stringLiteral: "Odchod za \(alarm.title)"))
+    let eventEndAt = event.map { event in
+      let normalizedEnd = event.end.count == 5 ? event.end + ":00" : event.end
+      return "\(event.date)T\(normalizedEnd)"
+    }
     let metadata = CommanderAlarmMetadata(
       stableId: alarm.stableId,
       scheduleVersion: schedule?.scheduleVersion ?? 0,
@@ -234,7 +224,8 @@ actor AlarmKitAdapter: AlarmAdapting {
       location: alarm.location,
       kind: alarm.kind,
       startAt: alarm.startAt,
-      leaveAt: alarm.leaveAt
+      leaveAt: alarm.leaveAt,
+      endAt: eventEndAt
     )
     let attributes = AlarmAttributes(
       presentation: AlarmPresentation(alert: alert, countdown: countdown),
@@ -256,7 +247,17 @@ actor AlarmKitAdapter: AlarmAdapting {
     }
 
     let configuration: AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>
-    if countdownPlan.countdownWindow > 0 {
+    if hasPreparedHandoff(for: alarm) {
+      // A stale Commander event already owns the free-time countdown to leaveAt.
+      // Schedule a traditional AlarmKit alert only; adding its pre-alert countdown
+      // would create the duplicate blue + amber Live Activities seen on device.
+      configuration = .alarm(
+        schedule: .fixed(countdownPlan.scheduledAlertAt),
+        attributes: attributes,
+        stopIntent: stopIntent,
+        sound: .default
+      )
+    } else if countdownPlan.countdownWindow > 0 {
       configuration = AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>(
         countdownDuration: Alarm.CountdownDuration(preAlert: countdownPlan.countdownWindow, postAlert: nil),
         schedule: countdownPlan.scheduledStartAt.map { .fixed($0) },
@@ -352,6 +353,22 @@ actor AlarmKitAdapter: AlarmAdapting {
     return result
   }
 
+  private func hasPreparedHandoff(for alarm: NativeAlarm) -> Bool {
+    guard let startAt = try? NativeAlarmContract.date(fromLocalISO: alarm.startAt) else {
+      return false
+    }
+    return Activity<CommanderProcedureLiveActivityAttributes>.activities.contains { activity in
+      let state = activity.content.state
+      guard !state.isDepartureBridge,
+            state.nextTitle == alarm.title,
+            state.nextStartAt.map({ abs($0.timeIntervalSince(startAt)) <= 1 }) == true
+      else { return false }
+      return activity.activityState == .pending
+        || activity.activityState == .active
+        || activity.activityState == .stale
+    }
+  }
+
   private func e2eOwnedPlatformIDs() -> Set<String> {
     guard channel == .e2e else { return [] }
     return Set(UserDefaults.standard.stringArray(forKey: Self.e2eOwnershipKey) ?? [])
@@ -391,6 +408,7 @@ actor AlarmKitAdapter: AlarmAdapting {
       return activities.contains {
         $0.attributes.stableId == event.stableId
           && $0.attributes.startAt == start
+          && !$0.content.state.isDepartureBridge
           && $0.content.state.projectionRevision == run.projectionRevision
           && ($0.activityState == .pending || $0.activityState == .active)
       }
@@ -468,6 +486,13 @@ actor AlarmKitAdapter: AlarmAdapting {
     let existing = Activity<CommanderProcedureLiveActivityAttributes>.activities
 
     for activity in existing {
+      if activity.content.state.isDepartureBridge {
+        if activity.activityState == .stale || activity.attributes.startAt <= now {
+          await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        continue
+      }
+
       let match = desired.first { item in
         activity.attributes.stableId == item.event.stableId
           && activity.attributes.scheduleVersion == schedule.scheduleVersion
@@ -497,7 +522,8 @@ actor AlarmKitAdapter: AlarmAdapting {
     let remaining = Activity<CommanderProcedureLiveActivityAttributes>.activities
     for item in desired {
       let alreadyPrepared = remaining.contains { activity in
-        activity.attributes.stableId == item.event.stableId
+        !activity.content.state.isDepartureBridge
+          && activity.attributes.stableId == item.event.stableId
           && activity.attributes.scheduleVersion == schedule.scheduleVersion
           && abs(activity.attributes.startAt.timeIntervalSince(item.startAt)) <= 1
           && abs(activity.attributes.endAt.timeIntervalSince(item.endAt)) <= 1
