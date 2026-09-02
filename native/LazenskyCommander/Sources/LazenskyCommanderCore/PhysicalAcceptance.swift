@@ -165,29 +165,77 @@ public struct PhysicalAcceptancePreflight: Sendable {
     if let first = payload.alarms.first, try NativeAlarmContract.date(fromLocalISO: first.leaveAt).timeIntervalSince(now) < 60 {
       problems.append("Do prvního alarmu zbývá méně než minuta. Tento běh není připravený.")
     }
+
+    func hasPriorHandoffSource(for event: ScheduleEvent) -> Bool {
+      guard let eventStart = try? NativeAlarmContract.dateTime(date: event.date, time: event.start) else {
+        return false
+      }
+      return run.schedule.events.contains { candidate in
+        guard candidate.stableId != event.stableId,
+              candidate.date == event.date,
+              let candidateEnd = try? NativeAlarmContract.dateTime(date: candidate.date, time: candidate.end)
+        else { return false }
+        return candidateEnd <= eventStart
+      }
+    }
+
     rows = try payload.alarms.map { alarm in
       let event = run.schedule.events.first { $0.stableId == alarm.stableId }!
       let resolution = try NativeAlarmContract.resolvedLeadTime(event: event, schedule: run.schedule, overrides: run.overrides)
       let matches = observations.filter { $0.stableID == alarm.stableId }
       let actual = matches.count == 1 ? matches.first : nil
       let plan = try AlarmCountdown.plan(for: alarm, in: run.schedule, now: actual?.configuredAt ?? run.now)
+      let usesPreparedHandoff = procedureActivityPrepared && hasPriorHandoffSource(for: event)
       var errors: [String] = []
+
       if let actual, let configuredAt = actual.configuredAt {
         if configuredAt < run.now || configuredAt > now { errors.append("Neplatný čas konfigurace.") }
         if managed.records[alarm.stableId]?.platformAlarmID != actual.platformID { errors.append("Nesouhlasí spravované ID.") }
         if actual.postAlert != nil { errors.append("Neočekávaný postAlert.") }
-        if let preAlert = actual.preAlert, preAlert.isFinite, abs(preAlert - plan.countdownWindow) <= 1 {} else { errors.append("Nesouhlasí uložený preAlert.") }
-        if let start = plan.scheduledStartAt {
-          if actual.scheduleKind != "fixed" || actual.fixedScheduleAt.map({ abs($0.timeIntervalSince(start)) <= 1 }) != true { errors.append("Nesouhlasí pevný začátek odpočtu.") }
-          if actual.state != "scheduled" { errors.append("Budoucí odpočet není naplánovaný.") }
+
+        if usesPreparedHandoff {
+          if actual.preAlert != nil { errors.append("Alarm po připraveném volnu nemá mít duplicitní systémový předodpočet.") }
+          if actual.scheduleKind != "fixed" || actual.fixedScheduleAt.map({ abs($0.timeIntervalSince(plan.scheduledAlertAt)) <= 1 }) != true {
+            errors.append("Přímý alarm není naplánovaný přesně na čas odchodu.")
+          }
+          if actual.state != "scheduled" { errors.append("Přímý budoucí alarm není naplánovaný.") }
         } else {
-          if actual.scheduleKind != "none" || actual.fixedScheduleAt != nil { errors.append("Okamžitý odpočet nemá schedule=nil.") }
-          if actual.state != "countdown" || actual.fireDate == nil { errors.append("Systém nepotvrdil okamžitý odpočet a jeho čas alarmu.") }
+          if let preAlert = actual.preAlert, preAlert.isFinite, abs(preAlert - plan.countdownWindow) <= 1 {} else {
+            errors.append("Nesouhlasí uložený preAlert.")
+          }
+          if let start = plan.scheduledStartAt {
+            if actual.scheduleKind != "fixed" || actual.fixedScheduleAt.map({ abs($0.timeIntervalSince(start)) <= 1 }) != true {
+              errors.append("Nesouhlasí pevný začátek odpočtu.")
+            }
+            if actual.state != "scheduled" { errors.append("Budoucí odpočet není naplánovaný.") }
+          } else {
+            if actual.scheduleKind != "none" || actual.fixedScheduleAt != nil { errors.append("Okamžitý odpočet nemá schedule=nil.") }
+            if actual.state != "countdown" || actual.fireDate == nil { errors.append("Systém nepotvrdil okamžitý odpočet a jeho čas alarmu.") }
+          }
         }
-        let endpoint = AlarmCountdown.effectiveAlertDate(fixedScheduleAt: actual.fixedScheduleAt, preAlert: actual.preAlert, countdownFireDate: actual.fireDate)
-        if endpoint.map({ abs($0.timeIntervalSince(plan.scheduledAlertAt)) <= 1 }) != true { errors.append("Výsledný čas alarmu neodpovídá času odchodu.") }
-      } else { errors.append("Chybí jednoznačné systémové ověření a čas konfigurace.") }
-      return PhysicalPreflightRow(alarm: alarm, leadTime: resolution, expectedPlan: plan, expectedCountdownStart: plan.scheduledStartAt ?? actual?.configuredAt ?? run.now, actual: actual, issues: errors)
+
+        let endpoint = AlarmCountdown.effectiveAlertDate(
+          fixedScheduleAt: actual.fixedScheduleAt,
+          preAlert: actual.preAlert,
+          countdownFireDate: actual.fireDate
+        )
+        if endpoint.map({ abs($0.timeIntervalSince(plan.scheduledAlertAt)) <= 1 }) != true {
+          errors.append("Výsledný čas alarmu neodpovídá času odchodu.")
+        }
+      } else {
+        errors.append("Chybí jednoznačné systémové ověření a čas konfigurace.")
+      }
+
+      return PhysicalPreflightRow(
+        alarm: alarm,
+        leadTime: resolution,
+        expectedPlan: plan,
+        expectedCountdownStart: usesPreparedHandoff
+          ? plan.scheduledAlertAt
+          : (plan.scheduledStartAt ?? actual?.configuredAt ?? run.now),
+        actual: actual,
+        issues: errors
+      )
     }
     issues = problems
   }
