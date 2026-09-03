@@ -14,7 +14,7 @@ struct CommanderDashboardView: View {
         synchronize: model.synchronize
       )
     }
-    .background(CommanderDesignTokens.Colors.background.ignoresSafeArea())
+    .background(CommanderDashboardPalette.backgroundGradient.ignoresSafeArea())
     .toolbar(.hidden, for: .navigationBar)
   }
 }
@@ -141,6 +141,23 @@ struct CommanderTodayLiveCard: View {
     .padding(CommanderDesignTokens.Spacing.medium)
     .frame(maxWidth: .infinity, alignment: .leading)
     .commanderCard(accent: statusColor)
+    .overlay {
+      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.card)
+        .strokeBorder(
+          LinearGradient(
+            colors: [
+              Color.white.opacity(0.12),
+              statusColor.opacity(0.20),
+              Color.clear
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          ),
+          lineWidth: 1
+        )
+        .allowsHitTesting(false)
+    }
+    .shadow(color: statusColor.opacity(0.13), radius: 9, y: 3)
     .accessibilityElement(children: .combine)
   }
 
