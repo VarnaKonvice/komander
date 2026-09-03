@@ -207,7 +207,7 @@ import Testing
   #expect(adapter.contains("if hasFreeTimeHandoff(for: alarm)"))
   #expect(!adapter.contains("phase: .departureStandby"))
   #expect(!adapter.contains("prepareStandby("))
-  #expect(adapter.contains("await alarmActivity.end(nil, dismissalPolicy: .after(startDate))"))
+  #expect(adapter.contains("await alarmActivity.end(alarmActivity.content, dismissalPolicy: .after(startDate))"))
   #expect(adapter.contains("await handoff.end(nil, dismissalPolicy: .immediate)"))
   #expect(adapter.contains("presentation: AlarmPresentation(alert: alert)"))
   #expect(adapter.contains("presentation: AlarmPresentation(alert: alert, countdown: countdown)"))
