@@ -45,11 +45,13 @@ struct CommanderEventRow: View {
       .foregroundStyle(accent)
       .fixedSize(horizontal: true, vertical: false)
       .frame(width: 55, alignment: .leading)
+
       CommanderSymbolBadge(
         symbol: CommanderVisualAssets.symbol(for: item.event),
         color: accent,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
+
       details.layoutPriority(1)
     }
     .padding(.horizontal, 10)
@@ -58,6 +60,36 @@ struct CommanderEventRow: View {
     .commanderCard(
       accent: item.phase == .current ? accent : nil,
       surface: .eventRow
+    )
+    .overlay(alignment: .leading) {
+      Capsule()
+        .fill(
+          LinearGradient(
+            colors: [accent.opacity(0.90), accent.opacity(0.25)],
+            startPoint: .top,
+            endPoint: .bottom
+          )
+        )
+        .frame(width: 3)
+        .padding(.vertical, 8)
+        .allowsHitTesting(false)
+    }
+    .overlay {
+      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
+        .strokeBorder(
+          LinearGradient(
+            colors: [accent.opacity(0.18), Color.clear],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          ),
+          lineWidth: 1
+        )
+        .allowsHitTesting(false)
+    }
+    .shadow(
+      color: accent.opacity(item.phase == .current ? 0.20 : 0.07),
+      radius: item.phase == .current ? 8 : 4,
+      y: 2
     )
     .accessibilityElement(children: .combine)
     .accessibilityValue(item.phase == .current ? "Právě probíhá" : "")
