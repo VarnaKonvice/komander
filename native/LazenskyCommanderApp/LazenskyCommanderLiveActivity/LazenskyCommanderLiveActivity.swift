@@ -572,7 +572,7 @@ private struct CommanderTransitionHero: View {
           .font(.system(size: 16, weight: .bold, design: .rounded))
           .foregroundStyle(CommanderActivityTokens.freeBlue)
           .lineLimit(1)
-        Text(leaveAt, style: .timer)
+        Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<leaveAt, showsHours: false))
           .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
           .foregroundStyle(CommanderActivityTokens.freeBlue)
           .lineLimit(1)
@@ -936,7 +936,7 @@ private struct CommanderNextDepartureTiming: View {
   let size: CommanderTimingSize
 
   var body: some View {
-    Text(leaveAt, style: .timer)
+    Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<leaveAt, showsHours: false))
       .font(timingFont)
       .foregroundStyle(CommanderActivityTokens.freeBlue)
       .lineLimit(1)
