@@ -51,6 +51,25 @@ struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
   }
 }
 
+enum CommanderPhysicalAcceptanceDiagnostics {
+  private static let key = "lazensky.commander.physicalAcceptance.stopIntent.v1"
+
+  static func record(_ text: String) {
+    guard Bundle.main.bundleIdentifier == PhysicalAcceptanceRun.bundleID else { return }
+    UserDefaults.standard.set(text, forKey: key)
+  }
+
+  static func read() -> String? {
+    guard Bundle.main.bundleIdentifier == PhysicalAcceptanceRun.bundleID else { return nil }
+    return UserDefaults.standard.string(forKey: key)
+  }
+
+  static func clear() {
+    guard Bundle.main.bundleIdentifier == PhysicalAcceptanceRun.bundleID else { return }
+    UserDefaults.standard.removeObject(forKey: key)
+  }
+}
+
 enum CommanderProcedureLiveActivityPhase: String, Codable, Hashable, Sendable {
   case departureStandby
   case departureBridge
