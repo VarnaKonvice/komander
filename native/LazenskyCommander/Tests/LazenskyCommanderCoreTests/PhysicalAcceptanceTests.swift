@@ -33,7 +33,7 @@ import Testing
   let run = try acceptanceRun()
   let meal = run.schedule.events[0]
   let procedure = run.schedule.events[1]
-  #expect(try NativeAlarmContract.resolvedLeadTime(event: meal, schedule: run.schedule).source == .scheduleTypeOverride)
+  #expect(try NativeAlarmContract.resolvedLeadTime(event: meal, schedule: run.schedule).source == .eventOverride)
   #expect(try NativeAlarmContract.resolvedLeadTime(event: procedure, schedule: run.schedule).source == .eventOverride)
   for (overrides, source) in [
     (LeadTimeOverrides(defaultLeadTimeMinutes: 1), LeadTimeSource.localDefault),
@@ -110,7 +110,7 @@ import Testing
   let readings = await adapter.readings()
   let check = try acceptanceCheck(run, readings, state)
   #expect(check.ready && check.expectedAlarmCount == 2 && check.verifiedAlarmCount == 2)
-  #expect(check.rows[0].leadTime.source == .scheduleTypeOverride)
+  #expect(check.rows[0].leadTime.source == .eventOverride)
   #expect(check.rows[1].leadTime.source == .eventOverride)
   let first = try #require(readings.first { $0.state == "countdown" })
   let second = try #require(readings.first { $0.stableID == run.schedule.events[1].stableId })
