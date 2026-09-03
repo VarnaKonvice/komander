@@ -1,6 +1,41 @@
 import LazenskyCommanderCore
 import SwiftUI
 
+struct CommanderDepthBackground: View {
+  var body: some View {
+    ZStack {
+      CommanderDashboardPalette.backgroundGradient
+      LinearGradient(
+        colors: [
+          Color.white.opacity(0.035),
+          Color.clear,
+          CommanderDesignTokens.Colors.primaryPurple.opacity(0.08)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+      )
+      RadialGradient(
+        colors: [CommanderDesignTokens.Colors.primaryPurple.opacity(0.32), .clear],
+        center: UnitPoint(x: 0.16, y: 0.08),
+        startRadius: 0,
+        endRadius: 260
+      )
+      RadialGradient(
+        colors: [CommanderDesignTokens.Colors.freeBlue.opacity(0.24), .clear],
+        center: UnitPoint(x: 0.92, y: 0.24),
+        startRadius: 0,
+        endRadius: 300
+      )
+      RadialGradient(
+        colors: [CommanderDesignTokens.Colors.panelStroke.opacity(0.14), .clear],
+        center: .bottom,
+        startRadius: 20,
+        endRadius: 330
+      )
+    }
+  }
+}
+
 struct CommanderDashboardView: View {
   @ObservedObject var model: CommanderViewModel
 
@@ -14,7 +49,7 @@ struct CommanderDashboardView: View {
         synchronize: model.synchronize
       )
     }
-    .background(CommanderDashboardPalette.backgroundGradient.ignoresSafeArea())
+    .background(CommanderDepthBackground().ignoresSafeArea())
     .toolbar(.hidden, for: .navigationBar)
   }
 }
@@ -142,12 +177,21 @@ struct CommanderTodayLiveCard: View {
     .frame(maxWidth: .infinity, alignment: .leading)
     .commanderCard(accent: statusColor)
     .overlay {
-      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.card)
-        .strokeBorder(
+      let shape = RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.card)
+      ZStack {
+        shape.fill(
+          RadialGradient(
+            colors: [statusColor.opacity(0.11), .clear],
+            center: .topLeading,
+            startRadius: 8,
+            endRadius: 220
+          )
+        )
+        shape.strokeBorder(
           LinearGradient(
             colors: [
-              Color.white.opacity(0.12),
-              statusColor.opacity(0.20),
+              Color.white.opacity(0.16),
+              statusColor.opacity(0.30),
               Color.clear
             ],
             startPoint: .topLeading,
@@ -155,9 +199,10 @@ struct CommanderTodayLiveCard: View {
           ),
           lineWidth: 1
         )
-        .allowsHitTesting(false)
+      }
+      .allowsHitTesting(false)
     }
-    .shadow(color: statusColor.opacity(0.13), radius: 9, y: 3)
+    .shadow(color: statusColor.opacity(0.17), radius: 11, y: 3)
     .accessibilityElement(children: .combine)
   }
 
@@ -264,7 +309,6 @@ struct CommanderTodayLiveCard: View {
         .foregroundStyle(CommanderDesignTokens.Colors.criticalRed)
         .fixedSize(horizontal: false, vertical: true)
     case .inProgress:
-      // State is green; the event itself keeps its own category accent above.
       let minutes = max(0, Int(ceil(item.endAt.timeIntervalSince(presentation.now) / 60)))
       Label("Do konce \(minutes) min", systemImage: "clock")
         .commanderFont(.countdown)
