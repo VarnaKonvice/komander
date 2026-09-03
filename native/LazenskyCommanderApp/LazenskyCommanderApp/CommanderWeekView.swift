@@ -44,7 +44,7 @@ struct CommanderWeekView: View {
       .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
     }
     .scrollIndicators(.hidden)
-    .background(CommanderDesignTokens.Colors.background.ignoresSafeArea())
+    .background(CommanderDashboardPalette.backgroundGradient.ignoresSafeArea())
     .toolbar(.hidden, for: .navigationBar)
   }
 }
@@ -53,6 +53,8 @@ struct CommanderWeekDayTile: View {
   let day: CommanderWeekDay
   let isExpanded: Bool
   let toggle: () -> Void
+
+  private let expandedRadius: CGFloat = 22
 
   var body: some View {
     VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.small) {
@@ -63,6 +65,7 @@ struct CommanderWeekDayTile: View {
       .buttonStyle(.plain)
       .accessibilityValue(isExpanded ? "Rozbaleno" : "Sbaleno")
       .accessibilityHint(isExpanded ? "Sbalí program dne" : "Rozbalí program dne")
+
       if isExpanded {
         if day.events.isEmpty {
           Text("Žádný program")
@@ -75,73 +78,196 @@ struct CommanderWeekDayTile: View {
               CommanderEventRow(item: item)
             }
           }
+          .padding(.horizontal, 2)
+          .padding(.bottom, 2)
         }
       }
     }
+    .padding(isExpanded ? 7 : 0)
+    .background {
+      if isExpanded {
+        let shape = RoundedRectangle(cornerRadius: expandedRadius)
+        ZStack {
+          shape.fill(
+            LinearGradient(
+              colors: [
+                CommanderDesignTokens.Colors.panel.opacity(0.98),
+                CommanderDashboardPalette.backgroundLift.opacity(0.96),
+                CommanderDesignTokens.Colors.background.opacity(0.98)
+              ],
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            )
+          )
+          shape.fill(
+            RadialGradient(
+              colors: [
+                CommanderDesignTokens.Colors.freeBlue.opacity(0.20),
+                CommanderDesignTokens.Colors.primaryPurple.opacity(0.11),
+                .clear
+              ],
+              center: .topTrailing,
+              startRadius: 12,
+              endRadius: 260
+            )
+          )
+        }
+      }
+    }
+    .overlay {
+      if isExpanded {
+        RoundedRectangle(cornerRadius: expandedRadius)
+          .strokeBorder(
+            LinearGradient(
+              colors: [
+                CommanderDesignTokens.Colors.freeBlue.opacity(0.95),
+                CommanderDesignTokens.Colors.primaryPurple.opacity(0.92),
+                CommanderDesignTokens.Colors.freeBlue.opacity(0.55)
+              ],
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            ),
+            lineWidth: 1.6
+          )
+      }
+    }
+    .shadow(
+      color: isExpanded ? CommanderDesignTokens.Colors.freeBlue.opacity(0.30) : .clear,
+      radius: isExpanded ? 15 : 0
+    )
+    .shadow(
+      color: isExpanded ? CommanderDesignTokens.Colors.primaryPurple.opacity(0.20) : .clear,
+      radius: isExpanded ? 24 : 0
+    )
+    .animation(.easeInOut(duration: 0.18), value: isExpanded)
   }
 }
 
 struct CommanderDaySummaryCard: View {
   let overview: CommanderDayOverview
   var isExpanded: Bool? = nil
-  private var isCompact: Bool { isExpanded != nil }
+
+  private var isWeekTile: Bool { isExpanded != nil }
+  private var showsMetrics: Bool { !isWeekTile || isExpanded == true }
+  private var summaryAccent: Color {
+    isExpanded == true
+      ? CommanderDesignTokens.Colors.freeBlue
+      : CommanderDesignTokens.Colors.primaryPurple
+  }
+
+  private var cardRadius: CGFloat { CommanderDesignTokens.Radius.card }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.small) {
+    VStack(alignment: .leading, spacing: showsMetrics ? 11 : 4) {
       HStack(spacing: CommanderDesignTokens.Spacing.small) {
         CommanderSymbolBadge(
           symbol: "calendar",
           color: CommanderDesignTokens.Colors.primaryPurple,
-          size: CommanderDesignTokens.Size.rowMetricBadge
+          size: showsMetrics ? 34 : CommanderDesignTokens.Size.rowMetricBadge
         )
         Text(CommanderDateText.shortDay(overview.date))
-          .commanderFont(.date)
+          .font(.system(size: showsMetrics ? 22 : 20, weight: .bold))
           .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
           .fixedSize(horizontal: false, vertical: true)
           .layoutPriority(1)
         Spacer(minLength: 0)
-        if isCompact {
+        if isWeekTile {
           Text(proceduresText)
-            .commanderFont(.subtitle)
-            .foregroundStyle(CommanderDesignTokens.Colors.primaryPurple)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(
+              isExpanded == true
+                ? CommanderDesignTokens.Colors.freeBlue
+                : CommanderDesignTokens.Colors.primaryPurple
+            )
             .fixedSize(horizontal: false, vertical: true)
         }
         if let isExpanded {
           Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-            .commanderFont(.subtitle)
-            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+            .font(.system(size: 15, weight: .bold))
+            .foregroundStyle(
+              isExpanded
+                ? CommanderDesignTokens.Colors.freeBlue
+                : CommanderDesignTokens.Colors.textSecondary
+            )
             .accessibilityHidden(true)
         }
       }
-      HStack(alignment: .top, spacing: 6) {
-        if !isCompact {
+
+      if showsMetrics {
+        HStack(alignment: .top, spacing: 6) {
           CommanderMetricTile(
             title: "Procedury", value: "\(overview.procedureCount)",
             symbol: "cross.case", accent: CommanderDesignTokens.Colors.primaryPurple
           )
+          CommanderMetricTile(
+            title: "Konec\nprocedur",
+            value: overview.procedureEndAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
+            symbol: "clock", accent: CommanderDesignTokens.Colors.primaryPurple,
+            accessibleValue: overview.procedureEndAt == nil ? "Bez procedur" : nil
+          )
+          CommanderMetricTile(
+            title: "Volno do\nvečeře", value: freeTime,
+            symbol: "cup.and.saucer", accent: CommanderDesignTokens.Colors.freeBlue,
+            accessibleValue: overview.freeBeforeDinnerMinutes == nil ? "Údaj není k dispozici" : nil
+          )
+          CommanderMetricTile(
+            title: "Večeře",
+            value: overview.dinnerStartAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
+            symbol: "fork.knife", accent: CommanderDesignTokens.Colors.mealGreen,
+            accessibleValue: overview.dinnerStartAt == nil ? "Není v rozpisu" : nil
+          )
         }
-        CommanderMetricTile(
-          title: "Konec\nprocedur", value: overview.procedureEndAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
-          symbol: "clock", accent: CommanderDesignTokens.Colors.primaryPurple,
-          accessibleValue: overview.procedureEndAt == nil ? "Bez procedur" : nil
-        )
-        CommanderMetricTile(
-          title: "Volno do\nvečeře", value: freeTime,
-          symbol: "cup.and.saucer", accent: CommanderDesignTokens.Colors.freeBlue,
-          accessibleValue: overview.freeBeforeDinnerMinutes == nil ? "Údaj není k dispozici" : nil
-        )
-        .frame(minWidth: 100)
-        CommanderMetricTile(
-          title: "Večeře", value: overview.dinnerStartAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
-          symbol: "fork.knife", accent: CommanderDesignTokens.Colors.mealGreen,
-          accessibleValue: overview.dinnerStartAt == nil ? "Není v rozpisu" : nil
-        )
       }
     }
-    .padding(.horizontal, 10)
-    .padding(.vertical, isCompact ? 8 : 10)
+    .padding(.horizontal, showsMetrics ? 11 : 10)
+    .padding(.vertical, showsMetrics ? 11 : 9)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .commanderCard()
+    .background {
+      let shape = RoundedRectangle(cornerRadius: cardRadius)
+      ZStack {
+        shape.fill(
+          LinearGradient(
+            colors: [
+              CommanderDesignTokens.Colors.panel.opacity(0.98),
+              CommanderDashboardPalette.elevatedSurface.opacity(0.98),
+              CommanderDesignTokens.Colors.background.opacity(0.98)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+        if showsMetrics {
+          shape.fill(
+            RadialGradient(
+              colors: [summaryAccent.opacity(isExpanded == true ? 0.18 : 0.10), .clear],
+              center: .topLeading,
+              startRadius: 8,
+              endRadius: 220
+            )
+          )
+        }
+      }
+    }
+    .clipShape(RoundedRectangle(cornerRadius: cardRadius))
+    .overlay {
+      RoundedRectangle(cornerRadius: cardRadius)
+        .strokeBorder(
+          LinearGradient(
+            colors: [
+              summaryAccent.opacity(isExpanded == true ? 0.90 : 0.52),
+              CommanderDesignTokens.Colors.panelStroke.opacity(0.48)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          ),
+          lineWidth: isExpanded == true ? 1.4 : 1
+        )
+    }
+    .shadow(
+      color: summaryAccent.opacity(isExpanded == true ? 0.17 : 0.07),
+      radius: isExpanded == true ? 10 : 5,
+      y: 2
+    )
     .accessibilityElement(children: .combine)
   }
 
@@ -170,33 +296,43 @@ private struct CommanderMetricTile: View {
   var accessibleValue: String? = nil
 
   var body: some View {
-    VStack(
-      alignment: .leading,
-      spacing: symbol == nil
-        ? CommanderDesignTokens.Spacing.tiny
-        : CommanderDesignTokens.Spacing.metricTile
-    ) {
+    VStack(alignment: .leading, spacing: 3) {
       if let symbol {
-        CommanderSymbolBadge(
-          symbol: symbol,
-          color: accent,
-          size: CommanderDesignTokens.Size.rowMetricBadge
-        )
+        CommanderSymbolBadge(symbol: symbol, color: accent, size: 34)
       }
       Text(title)
-        .commanderFont(.label)
+        .font(.system(size: 14, weight: .semibold))
         .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
         .fixedSize(horizontal: false, vertical: true)
-        .frame(minHeight: 34, alignment: .topLeading)
+        .frame(minHeight: 36, alignment: .topLeading)
       Text(value)
-        .commanderFont(.metric)
+        .font(.system(size: 21, weight: .bold))
         .monospacedDigit()
         .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
         .lineLimit(2)
-        .minimumScaleFactor(0.94)
+        .minimumScaleFactor(0.88)
         .fixedSize(horizontal: false, vertical: true)
     }
-    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.horizontal, 7)
+    .padding(.vertical, 8)
+    .frame(maxWidth: .infinity, minHeight: 116, alignment: .leading)
+    .background {
+      let shape = RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
+      ZStack {
+        shape.fill(CommanderDesignTokens.Colors.panel.opacity(0.68))
+        shape.fill(
+          LinearGradient(
+            colors: [accent.opacity(0.12), .clear],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+      }
+    }
+    .overlay {
+      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
+        .strokeBorder(accent.opacity(0.32), lineWidth: 1)
+    }
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(title.replacingOccurrences(of: "\n", with: " "))
     .accessibilityValue(accessibleValue ?? value)
