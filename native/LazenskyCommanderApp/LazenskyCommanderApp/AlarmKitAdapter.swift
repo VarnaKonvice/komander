@@ -159,7 +159,11 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
   }
 
   func perform() async throws -> some IntentResult {
-    guard let startDate = CommanderRollingLiveActivity.date(startAt) else { return .result() }
+    CommanderPhysicalAcceptanceDiagnostics.record("Zastavit spuštěno · \(stableId)")
+    guard let startDate = CommanderRollingLiveActivity.date(startAt) else {
+      CommanderPhysicalAcceptanceDiagnostics.record("Zastavit spuštěno, neplatný začátek · \(stableId)")
+      return .result()
+    }
 
     if let stoppedAlarmID = UUID(uuidString: alarmID) {
       for alarmActivity in Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities
@@ -183,7 +187,6 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
         && AlarmKitAdapter.isOngoing($0.activityState)
     }
 
-    // Reuse an existing Commander holder instead of requesting a new red activity.
     if let holder = handoff ?? standby {
       if startDate > Date() {
         let old = holder.content.state
@@ -203,14 +206,15 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
           ActivityContent(state: red, staleDate: nil, relevanceScore: 1),
           dismissalPolicy: .after(startDate)
         )
+        CommanderPhysicalAcceptanceDiagnostics.record("Červená karta předána · \(stableId)")
       } else {
         await holder.end(nil, dismissalPolicy: .immediate)
+        CommanderPhysicalAcceptanceDiagnostics.record("Zastavit proběhlo až po začátku · \(stableId)")
       }
+    } else {
+      CommanderPhysicalAcceptanceDiagnostics.record("Zastavit spuštěno, chybí karta · \(stableId)")
     }
 
-    // Ensure only the event whose alarm was just stopped is prepared to turn green.
-    // The first event is already scheduled, so this is a no-op there. Later events are
-    // added just in time and carry their own next-event handoff context.
     if let current = Self.decode(currentEventJSON) {
       await CommanderRollingLiveActivity.scheduleRunning(
         event: current,
@@ -585,6 +589,7 @@ actor AlarmKitAdapter: AlarmAdapting {
     guard Bundle.main.bundleIdentifier == PhysicalAcceptanceRun.bundleID else {
       throw PhysicalAcceptanceError.wrongApplication
     }
+    CommanderPhysicalAcceptanceDiagnostics.clear()
     let ownedIDs = await ownership.allIDs()
     let alarms = try AlarmManager.shared.alarms
     let cleanup = PhysicalAcceptanceCleanupPlan(
