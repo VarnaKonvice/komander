@@ -61,19 +61,6 @@ struct CommanderEventRow: View {
       accent: item.phase == .current ? accent : nil,
       surface: .eventRow
     )
-    .overlay(alignment: .leading) {
-      Capsule()
-        .fill(
-          LinearGradient(
-            colors: [accent.opacity(0.90), accent.opacity(0.25)],
-            startPoint: .top,
-            endPoint: .bottom
-          )
-        )
-        .frame(width: 3)
-        .padding(.vertical, 8)
-        .allowsHitTesting(false)
-    }
     .overlay {
       RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
         .strokeBorder(
