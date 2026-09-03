@@ -19,7 +19,7 @@ enum CommanderBrandAssets {
         static let panelStroke = "#4E68D8"
         static let primaryPurple = "#A873FF"
         static let locationBlue = "#4CC8FF"
-        static let mealGreen = "#5FE875"
+        static let mealGreen = "#50B863"
         static let amber = "#FFB54A"
         static let freeBlue = "#2EA6FF"
         static let procedureCyan = "#2ED4FF"

@@ -681,12 +681,12 @@ private struct CommanderActivityDivider: View {
     Rectangle()
       .fill(
         LinearGradient(
-          colors: [accent.opacity(0.72), CommanderActivityTokens.panelStroke.opacity(0.20)],
+          colors: [accent.opacity(0.95), accent.opacity(0.20), CommanderActivityTokens.panelStroke.opacity(0.16)],
           startPoint: .leading,
           endPoint: .trailing
         )
       )
-      .frame(height: 1)
+      .frame(height: 1.4)
   }
 }
 
@@ -834,15 +834,21 @@ private struct CommanderActivityCardStyle: ViewModifier {
         ZStack {
           CommanderActivityTokens.backgroundGradient
           LinearGradient(
-            colors: [accent.opacity(0.18), .clear, accent.opacity(0.08)],
+            colors: [accent.opacity(0.34), accent.opacity(0.14), accent.opacity(0.24)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
+          )
+          RadialGradient(
+            colors: [accent.opacity(0.20), .clear],
+            center: .topLeading,
+            startRadius: 12,
+            endRadius: 220
           )
         }
       }
       .overlay {
         RoundedRectangle(cornerRadius: CommanderActivityTokens.cardRadius)
-          .strokeBorder(accent.opacity(0.82), lineWidth: 1.2)
+          .strokeBorder(accent.opacity(0.98), lineWidth: 1.6)
       }
   }
 }
