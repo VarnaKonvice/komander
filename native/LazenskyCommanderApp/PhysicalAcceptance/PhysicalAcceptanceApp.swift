@@ -12,6 +12,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
   @Published private(set) var error: String?
   @Published private(set) var isBusy = false
   @Published private(set) var readAt: Date?
+  @Published private(set) var stopIntentStatus = "Zastavit zatím nebylo provedeno"
   private let ownership = PhysicalAcceptanceOwnershipStore()
   private var adapter: AlarmKitAdapter?
   private var observationTask: Task<Void, Never>?
@@ -38,6 +39,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
     observationTask?.cancel()
     observationTask = nil
     run = nil; preflight = nil; observations = []; error = nil; readAt = nil
+    stopIntentStatus = "Zastavit zatím nebylo provedeno"
     status = "Ověřuji oprávnění a čistý testovací stav"
     do {
       let runID = UUID()
@@ -97,6 +99,8 @@ final class PhysicalAcceptanceModel: ObservableObject {
   }
 
   func refreshObservations(expectedRunID: UUID? = nil) async {
+    stopIntentStatus = CommanderPhysicalAcceptanceDiagnostics.read()
+      ?? "Zastavit zatím nebylo provedeno"
     guard let run, !isBusy, expectedRunID == nil || run.id == expectedRunID, let adapter else { return }
     do {
       let readings = try await adapter.physicalObservations()
@@ -112,7 +116,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
   }
 
   var report: String {
-    var lines = [status, "Režim: physicalAcceptance; síť: nepoužita; Watch delivery: vypnuto", "Lokální overrides: žádné (nová prázdná hodnota, bez čtení preferences)"]
+    var lines = [status, "Režim: physicalAcceptance; síť: nepoužita; Watch delivery: vypnuto", "Lokální overrides: žádné (nová prázdná hodnota, bez čtení preferences)", "Akce po Zastavit: \(stopIntentStatus)"]
     if let run {
       lines += ["Run ID: \(run.id)", "now: \(Self.time(run.now))", "namespace: \(run.namespace)", "projectionRevision: \(run.projectionRevision)"]
     }
@@ -209,6 +213,7 @@ struct PhysicalAcceptanceView: View {
           field("Revize", String(run.projectionRevision))
           field("Apple Watch", "Předávání vypnuto")
           field("Síť / GitHub", "Nepoužito")
+          field("Akce po Zastavit", model.stopIntentStatus)
         }
       }
 
