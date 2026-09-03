@@ -69,6 +69,17 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
 
     let bridgeStableID = stableId + ".departureBridge"
     let now = Date()
+
+    // Scheduled Live Activities count against the same ActivityKit limit as active ones.
+    // The AlarmKit activity can still exist while its stop intent is running, so end that
+    // just-stopped system activity before asking ActivityKit for the Commander red bridge.
+    if let stoppedAlarmID = UUID(uuidString: alarmID) {
+      for alarmActivity in Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities
+        where alarmActivity.content.state.alarmID == stoppedAlarmID {
+        await alarmActivity.end(nil, dismissalPolicy: .immediate)
+      }
+    }
+
     let activities = Activity<CommanderProcedureLiveActivityAttributes>.activities
     let matchingHandoffs = activities.filter { activity in
       let state = activity.content.state
