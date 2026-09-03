@@ -3,6 +3,17 @@ import AlarmKit
 import Foundation
 import LazenskyCommanderCore
 
+struct CommanderAlarmEventSnapshot: Codable, Hashable, Sendable {
+  let stableId: String
+  let iconKey: String
+  let title: String
+  let location: String
+  let kind: ScheduleKind
+  let startAt: String
+  let endAt: String
+  let leaveAt: String
+}
+
 struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
   let stableId: String
   let scheduleVersion: Int
@@ -13,6 +24,8 @@ struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
   let startAt: String
   let leaveAt: String
   let endAt: String?
+  let nextEvent: CommanderAlarmEventSnapshot?
+  let followingEvent: CommanderAlarmEventSnapshot?
 
   init(
     stableId: String,
@@ -23,7 +36,9 @@ struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
     kind: ScheduleKind,
     startAt: String,
     leaveAt: String,
-    endAt: String? = nil
+    endAt: String? = nil,
+    nextEvent: CommanderAlarmEventSnapshot? = nil,
+    followingEvent: CommanderAlarmEventSnapshot? = nil
   ) {
     self.stableId = stableId
     self.scheduleVersion = scheduleVersion
@@ -34,10 +49,13 @@ struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
     self.startAt = startAt
     self.leaveAt = leaveAt
     self.endAt = endAt
+    self.nextEvent = nextEvent
+    self.followingEvent = followingEvent
   }
 }
 
 enum CommanderProcedureLiveActivityPhase: String, Codable, Hashable, Sendable {
+  case departureStandby
   case departureBridge
 }
 
@@ -45,6 +63,7 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
   struct ContentState: Codable, Hashable {
     let projectionRevision: Int
     let phase: CommanderProcedureLiveActivityPhase?
+    let nextStableId: String?
     let nextTitle: String?
     let nextLocation: String?
     let nextKind: ScheduleKind?
@@ -56,6 +75,7 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
     init(
       projectionRevision: Int,
       phase: CommanderProcedureLiveActivityPhase? = nil,
+      nextStableId: String? = nil,
       nextTitle: String? = nil,
       nextLocation: String? = nil,
       nextKind: ScheduleKind? = nil,
@@ -66,6 +86,7 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
     ) {
       self.projectionRevision = projectionRevision
       self.phase = phase
+      self.nextStableId = nextStableId
       self.nextTitle = nextTitle
       self.nextLocation = nextLocation
       self.nextKind = nextKind
@@ -75,6 +96,7 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
       self.nextLeaveAt = nextLeaveAt
     }
 
+    var isDepartureStandby: Bool { phase == .departureStandby }
     var isDepartureBridge: Bool { phase == .departureBridge }
   }
 
