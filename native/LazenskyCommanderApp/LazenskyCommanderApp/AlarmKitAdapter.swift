@@ -170,7 +170,7 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
       for alarmActivity in Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities
         where alarmActivity.content.state.alarmID == stoppedAlarmID {
         if startDate > Date() {
-          await alarmActivity.end(nil, dismissalPolicy: .after(startDate))
+          await alarmActivity.end(alarmActivity.content, dismissalPolicy: .after(startDate))
           keptAlarmCard = true
         } else {
           await alarmActivity.end(nil, dismissalPolicy: .immediate)
