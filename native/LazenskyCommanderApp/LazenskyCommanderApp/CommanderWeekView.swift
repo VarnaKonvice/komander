@@ -44,7 +44,7 @@ struct CommanderWeekView: View {
       .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
     }
     .scrollIndicators(.hidden)
-    .background(CommanderDashboardPalette.backgroundGradient.ignoresSafeArea())
+    .background(CommanderDepthBackground().ignoresSafeArea())
     .toolbar(.hidden, for: .navigationBar)
   }
 }
@@ -92,7 +92,7 @@ struct CommanderWeekDayTile: View {
             LinearGradient(
               colors: [
                 CommanderDesignTokens.Colors.panel.opacity(0.98),
-                CommanderDashboardPalette.backgroundLift.opacity(0.96),
+                CommanderDashboardPalette.backgroundLift.opacity(0.97),
                 CommanderDesignTokens.Colors.background.opacity(0.98)
               ],
               startPoint: .topLeading,
@@ -102,12 +102,12 @@ struct CommanderWeekDayTile: View {
           shape.fill(
             RadialGradient(
               colors: [
-                CommanderDesignTokens.Colors.freeBlue.opacity(0.20),
-                CommanderDesignTokens.Colors.primaryPurple.opacity(0.11),
+                CommanderDesignTokens.Colors.freeBlue.opacity(0.30),
+                CommanderDesignTokens.Colors.primaryPurple.opacity(0.18),
                 .clear
               ],
               center: .topTrailing,
-              startRadius: 12,
+              startRadius: 8,
               endRadius: 260
             )
           )
@@ -120,24 +120,24 @@ struct CommanderWeekDayTile: View {
           .strokeBorder(
             LinearGradient(
               colors: [
-                CommanderDesignTokens.Colors.freeBlue.opacity(0.95),
-                CommanderDesignTokens.Colors.primaryPurple.opacity(0.92),
-                CommanderDesignTokens.Colors.freeBlue.opacity(0.55)
+                CommanderDesignTokens.Colors.freeBlue.opacity(0.98),
+                CommanderDesignTokens.Colors.primaryPurple.opacity(0.95),
+                CommanderDesignTokens.Colors.freeBlue.opacity(0.62)
               ],
               startPoint: .topLeading,
               endPoint: .bottomTrailing
             ),
-            lineWidth: 1.6
+            lineWidth: 1.8
           )
       }
     }
     .shadow(
-      color: isExpanded ? CommanderDesignTokens.Colors.freeBlue.opacity(0.30) : .clear,
-      radius: isExpanded ? 15 : 0
+      color: isExpanded ? CommanderDesignTokens.Colors.freeBlue.opacity(0.34) : .clear,
+      radius: isExpanded ? 17 : 0
     )
     .shadow(
-      color: isExpanded ? CommanderDesignTokens.Colors.primaryPurple.opacity(0.20) : .clear,
-      radius: isExpanded ? 24 : 0
+      color: isExpanded ? CommanderDesignTokens.Colors.primaryPurple.opacity(0.24) : .clear,
+      radius: isExpanded ? 26 : 0
     )
     .animation(.easeInOut(duration: 0.18), value: isExpanded)
   }
@@ -148,7 +148,6 @@ struct CommanderDaySummaryCard: View {
   var isExpanded: Bool? = nil
 
   private var isWeekTile: Bool { isExpanded != nil }
-  private var showsMetrics: Bool { !isWeekTile || isExpanded == true }
   private var summaryAccent: Color {
     isExpanded == true
       ? CommanderDesignTokens.Colors.freeBlue
@@ -157,16 +156,23 @@ struct CommanderDaySummaryCard: View {
 
   private var cardRadius: CGFloat { CommanderDesignTokens.Radius.card }
 
+  private var metricColumns: [GridItem] {
+    Array(
+      repeating: GridItem(.flexible(minimum: 0), spacing: 5, alignment: .top),
+      count: 4
+    )
+  }
+
   var body: some View {
-    VStack(alignment: .leading, spacing: showsMetrics ? 11 : 4) {
+    VStack(alignment: .leading, spacing: 11) {
       HStack(spacing: CommanderDesignTokens.Spacing.small) {
         CommanderSymbolBadge(
           symbol: "calendar",
           color: CommanderDesignTokens.Colors.primaryPurple,
-          size: showsMetrics ? 34 : CommanderDesignTokens.Size.rowMetricBadge
+          size: 34
         )
         Text(CommanderDateText.shortDay(overview.date))
-          .font(.system(size: showsMetrics ? 22 : 20, weight: .bold))
+          .font(.system(size: 22, weight: .bold))
           .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
           .fixedSize(horizontal: false, vertical: true)
           .layoutPriority(1)
@@ -193,34 +199,32 @@ struct CommanderDaySummaryCard: View {
         }
       }
 
-      if showsMetrics {
-        HStack(alignment: .top, spacing: 6) {
-          CommanderMetricTile(
-            title: "Procedury", value: "\(overview.procedureCount)",
-            symbol: "cross.case", accent: CommanderDesignTokens.Colors.primaryPurple
-          )
-          CommanderMetricTile(
-            title: "Konec\nprocedur",
-            value: overview.procedureEndAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
-            symbol: "clock", accent: CommanderDesignTokens.Colors.primaryPurple,
-            accessibleValue: overview.procedureEndAt == nil ? "Bez procedur" : nil
-          )
-          CommanderMetricTile(
-            title: "Volno do\nvečeře", value: freeTime,
-            symbol: "cup.and.saucer", accent: CommanderDesignTokens.Colors.freeBlue,
-            accessibleValue: overview.freeBeforeDinnerMinutes == nil ? "Údaj není k dispozici" : nil
-          )
-          CommanderMetricTile(
-            title: "Večeře",
-            value: overview.dinnerStartAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
-            symbol: "fork.knife", accent: CommanderDesignTokens.Colors.mealGreen,
-            accessibleValue: overview.dinnerStartAt == nil ? "Není v rozpisu" : nil
-          )
-        }
+      LazyVGrid(columns: metricColumns, alignment: .leading, spacing: 0) {
+        CommanderMetricTile(
+          title: "Procedury", value: "\(overview.procedureCount)",
+          symbol: "cross.case", accent: CommanderDesignTokens.Colors.primaryPurple
+        )
+        CommanderMetricTile(
+          title: "Konec\nprocedur",
+          value: overview.procedureEndAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
+          symbol: "clock", accent: CommanderDesignTokens.Colors.primaryPurple,
+          accessibleValue: overview.procedureEndAt == nil ? "Bez procedur" : nil
+        )
+        CommanderMetricTile(
+          title: "Volno do\nvečeře", value: freeTime,
+          symbol: "cup.and.saucer", accent: CommanderDesignTokens.Colors.freeBlue,
+          accessibleValue: overview.freeBeforeDinnerMinutes == nil ? "Údaj není k dispozici" : nil
+        )
+        CommanderMetricTile(
+          title: "Večeře",
+          value: overview.dinnerStartAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
+          symbol: "fork.knife", accent: CommanderDesignTokens.Colors.mealGreen,
+          accessibleValue: overview.dinnerStartAt == nil ? "Není v rozpisu" : nil
+        )
       }
     }
-    .padding(.horizontal, showsMetrics ? 11 : 10)
-    .padding(.vertical, showsMetrics ? 11 : 9)
+    .padding(.horizontal, 9)
+    .padding(.vertical, 10)
     .frame(maxWidth: .infinity, alignment: .leading)
     .background {
       let shape = RoundedRectangle(cornerRadius: cardRadius)
@@ -236,16 +240,17 @@ struct CommanderDaySummaryCard: View {
             endPoint: .bottomTrailing
           )
         )
-        if showsMetrics {
-          shape.fill(
-            RadialGradient(
-              colors: [summaryAccent.opacity(isExpanded == true ? 0.18 : 0.10), .clear],
-              center: .topLeading,
-              startRadius: 8,
-              endRadius: 220
-            )
+        shape.fill(
+          RadialGradient(
+            colors: [
+              summaryAccent.opacity(isExpanded == true ? 0.24 : 0.16),
+              .clear
+            ],
+            center: .topLeading,
+            startRadius: 8,
+            endRadius: 220
           )
-        }
+        )
       }
     }
     .clipShape(RoundedRectangle(cornerRadius: cardRadius))
@@ -254,18 +259,18 @@ struct CommanderDaySummaryCard: View {
         .strokeBorder(
           LinearGradient(
             colors: [
-              summaryAccent.opacity(isExpanded == true ? 0.90 : 0.52),
-              CommanderDesignTokens.Colors.panelStroke.opacity(0.48)
+              summaryAccent.opacity(isExpanded == true ? 0.92 : 0.66),
+              CommanderDesignTokens.Colors.panelStroke.opacity(0.52)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           ),
-          lineWidth: isExpanded == true ? 1.4 : 1
+          lineWidth: isExpanded == true ? 1.5 : 1.1
         )
     }
     .shadow(
-      color: summaryAccent.opacity(isExpanded == true ? 0.17 : 0.07),
-      radius: isExpanded == true ? 10 : 5,
+      color: summaryAccent.opacity(isExpanded == true ? 0.20 : 0.10),
+      radius: isExpanded == true ? 11 : 6,
       y: 2
     )
     .accessibilityElement(children: .combine)
@@ -303,26 +308,25 @@ private struct CommanderMetricTile: View {
       Text(title)
         .font(.system(size: 14, weight: .semibold))
         .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(minHeight: 36, alignment: .topLeading)
+        .lineLimit(2)
+        .frame(height: 36, alignment: .topLeading)
       Text(value)
         .font(.system(size: 21, weight: .bold))
         .monospacedDigit()
         .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
         .lineLimit(2)
-        .minimumScaleFactor(0.88)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(minHeight: 48, alignment: .topLeading)
     }
-    .padding(.horizontal, 7)
+    .padding(.horizontal, 6)
     .padding(.vertical, 8)
-    .frame(maxWidth: .infinity, minHeight: 116, alignment: .leading)
+    .frame(maxWidth: .infinity, minHeight: 136, alignment: .topLeading)
     .background {
       let shape = RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
       ZStack {
         shape.fill(CommanderDesignTokens.Colors.panel.opacity(0.68))
         shape.fill(
           LinearGradient(
-            colors: [accent.opacity(0.12), .clear],
+            colors: [accent.opacity(0.14), .clear],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           )
@@ -331,7 +335,7 @@ private struct CommanderMetricTile: View {
     }
     .overlay {
       RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-        .strokeBorder(accent.opacity(0.32), lineWidth: 1)
+        .strokeBorder(accent.opacity(0.36), lineWidth: 1)
     }
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(title.replacingOccurrences(of: "\n", with: " "))
