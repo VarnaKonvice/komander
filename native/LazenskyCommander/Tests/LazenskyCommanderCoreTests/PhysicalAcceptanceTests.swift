@@ -37,8 +37,8 @@ import Testing
   #expect(try NativeAlarmContract.resolvedLeadTime(event: procedure, schedule: run.schedule).source == .eventOverride)
   for (overrides, source) in [
     (LeadTimeOverrides(defaultLeadTimeMinutes: 1), LeadTimeSource.localDefault),
-    (LeadTimeOverrides(defaultLeadTimeMinutes: 1, mealOverrides: ["Snídaně": 1]), .localTypeOverride),
-    (LeadTimeOverrides(defaultLeadTimeMinutes: 1, mealOverrides: ["Snídaně": 1], eventOverrides: [meal.stableId: 1]), .localEventOverride)
+    (LeadTimeOverrides(defaultLeadTimeMinutes: 1, mealOverrides: ["Oběd": 1]), .localTypeOverride),
+    (LeadTimeOverrides(defaultLeadTimeMinutes: 1, mealOverrides: ["Oběd": 1], eventOverrides: [meal.stableId: 1]), .localEventOverride)
   ] {
     let resolution = try NativeAlarmContract.resolvedLeadTime(event: meal, schedule: run.schedule, overrides: overrides)
     #expect(resolution.minutes == 1 && resolution.source == source)
