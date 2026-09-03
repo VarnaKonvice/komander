@@ -165,19 +165,20 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
       return .result()
     }
 
+    var keptAlarmCard = false
     if let stoppedAlarmID = UUID(uuidString: alarmID) {
       for alarmActivity in Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities
         where alarmActivity.content.state.alarmID == stoppedAlarmID {
-        await alarmActivity.end(nil, dismissalPolicy: .immediate)
+        if startDate > Date() {
+          await alarmActivity.end(nil, dismissalPolicy: .after(startDate))
+          keptAlarmCard = true
+        } else {
+          await alarmActivity.end(nil, dismissalPolicy: .immediate)
+        }
       }
     }
 
     let activities = Activity<CommanderProcedureLiveActivityAttributes>.activities
-    let standby = activities.first {
-      $0.content.state.isDepartureStandby
-        && $0.attributes.stableId == stableId + ".departureStandby"
-        && AlarmKitAdapter.isOngoing($0.activityState)
-    }
     let handoff = activities.first {
       let state = $0.content.state
       return !state.isDepartureStandby
@@ -186,33 +187,16 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
         && state.nextStartAt.map { abs($0.timeIntervalSince(startDate)) <= 1 } == true
         && AlarmKitAdapter.isOngoing($0.activityState)
     }
+    if let handoff {
+      await handoff.end(nil, dismissalPolicy: .immediate)
+    }
 
-    if let holder = handoff ?? standby {
-      if startDate > Date() {
-        let old = holder.content.state
-        let red = CommanderProcedureLiveActivityAttributes.ContentState(
-          projectionRevision: old.projectionRevision,
-          phase: .departureBridge,
-          nextStableId: old.nextStableId,
-          nextTitle: old.nextTitle,
-          nextLocation: old.nextLocation,
-          nextKind: old.nextKind,
-          nextIconKey: old.nextIconKey,
-          nextStartAt: old.nextStartAt,
-          nextEndAt: old.nextEndAt,
-          nextLeaveAt: old.nextLeaveAt
-        )
-        await holder.end(
-          ActivityContent(state: red, staleDate: nil, relevanceScore: 1),
-          dismissalPolicy: .after(startDate)
-        )
-        CommanderPhysicalAcceptanceDiagnostics.record("Červená karta předána · \(stableId)")
-      } else {
-        await holder.end(nil, dismissalPolicy: .immediate)
-        CommanderPhysicalAcceptanceDiagnostics.record("Zastavit proběhlo až po začátku · \(stableId)")
-      }
+    if keptAlarmCard {
+      CommanderPhysicalAcceptanceDiagnostics.record("Červená AlarmKit karta ponechána · \(stableId)")
+    } else if startDate <= Date() {
+      CommanderPhysicalAcceptanceDiagnostics.record("Zastavit proběhlo až po začátku · \(stableId)")
     } else {
-      CommanderPhysicalAcceptanceDiagnostics.record("Zastavit spuštěno, chybí karta · \(stableId)")
+      CommanderPhysicalAcceptanceDiagnostics.record("Zastavit spuštěno, chybí AlarmKit karta · \(stableId)")
     }
 
     if let current = Self.decode(currentEventJSON) {
@@ -241,7 +225,7 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
 }
 
 actor AlarmKitAdapter: AlarmAdapting {
-  fileprivate static let maximumCommanderActivities = 2
+  fileprivate static let maximumCommanderActivities = 1
   private static let e2eOwnershipKey = "lazensky.commander.alarmkitOwned.e2e.v1"
   private let channel: ScheduleChannel
   private var scheduleContext: Schedule?
@@ -574,13 +558,8 @@ actor AlarmKitAdapter: AlarmAdapting {
         && abs($0.attributes.startAt.timeIntervalSince(firstStart)) <= 1
         && $0.content.state.projectionRevision == run.projectionRevision
     }
-    let standby = activities.filter {
-      $0.content.state.isDepartureStandby
-        && $0.attributes.stableId == first.stableId + ".departureStandby"
-    }
     return activities.count == Self.maximumCommanderActivities
       && running.count == 1
-      && standby.count == 1
   }
 
   static func clearPreviousPhysicalAcceptance(
@@ -673,25 +652,20 @@ actor AlarmKitAdapter: AlarmAdapting {
         && state.nextStableId == primary.event.stableId
         && Self.isOngoing(activity.activityState)
     }
-    let needsStandby = primary.startAt > now && priorHandoff == nil
-    let desiredRunning = (needsStandby || priorHandoff != nil)
-      ? [primary]
-      : Array(candidates.prefix(Self.maximumCommanderActivities))
+    let desiredRunning: [ProcedureActivityCandidate]
+    if priorHandoff != nil {
+      desiredRunning = []
+    } else {
+      desiredRunning = [primary]
+    }
 
     for activity in existing {
       let state = activity.content.state
       if let priorHandoff, activity.id == priorHandoff.id { continue }
 
-      if state.isDepartureStandby {
-        let keep = needsStandby
-          && activity.attributes.stableId == primary.event.stableId + ".departureStandby"
-        if !keep { await activity.end(nil, dismissalPolicy: .immediate) }
-        continue
-      }
-      if state.isDepartureBridge {
-        if activity.attributes.startAt <= now {
-          await activity.end(nil, dismissalPolicy: .immediate)
-        }
+      // Compatibility cleanup for older builds that created a hidden standby activity.
+      if state.isDepartureStandby || state.isDepartureBridge {
+        await activity.end(nil, dismissalPolicy: .immediate)
         continue
       }
 
@@ -716,13 +690,6 @@ actor AlarmKitAdapter: AlarmAdapting {
 
     for item in desiredRunning {
       await prepareRunning(item, scheduleVersion: schedule.scheduleVersion, now: now)
-    }
-    if needsStandby {
-      await prepareStandby(
-        primary,
-        scheduleVersion: schedule.scheduleVersion,
-        projectionRevision: projectionRevision
-      )
     }
   }
 
@@ -780,49 +747,6 @@ actor AlarmKitAdapter: AlarmAdapting {
           start: item.startAt
         )
       }
-    } catch {
-      return
-    }
-  }
-
-  private func prepareStandby(
-    _ item: ProcedureActivityCandidate,
-    scheduleVersion: Int,
-    projectionRevision: Int
-  ) async {
-    let stableID = item.event.stableId + ".departureStandby"
-    let exists = Activity<CommanderProcedureLiveActivityAttributes>.activities.contains {
-      $0.content.state.isDepartureStandby
-        && $0.attributes.stableId == stableID
-        && Self.isOngoing($0.activityState)
-    }
-    if exists { return }
-
-    let attributes = CommanderProcedureLiveActivityAttributes(
-      stableId: stableID,
-      scheduleVersion: scheduleVersion,
-      iconKey: CommanderVisualAssets.icon(for: item.event)?.key ?? "",
-      title: item.event.title,
-      location: item.event.location,
-      kind: item.event.kind,
-      startAt: item.startAt,
-      endAt: item.endAt
-    )
-    let content = ActivityContent(
-      state: CommanderProcedureLiveActivityAttributes.ContentState(
-        projectionRevision: projectionRevision,
-        phase: .departureStandby
-      ),
-      staleDate: item.startAt,
-      relevanceScore: 0
-    )
-    do {
-      _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
-        attributes: attributes,
-        content: content,
-        pushType: nil,
-        style: .standard
-      )
     } catch {
       return
     }
