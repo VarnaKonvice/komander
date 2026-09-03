@@ -52,7 +52,7 @@ private enum CommanderRollingLiveActivity {
 
   static func scheduleRunning(
     event: CommanderAlarmEventSnapshot,
-    following: CommanderAlarmEventSnapshot?,
+    next: CommanderAlarmEventSnapshot?,
     scheduleVersion: Int,
     projectionRevision: Int = -1
   ) async {
@@ -82,7 +82,7 @@ private enum CommanderRollingLiveActivity {
       endAt: endAt
     )
     let content = ActivityContent(
-      state: state(projectionRevision: projectionRevision, next: following),
+      state: state(projectionRevision: projectionRevision, next: next),
       staleDate: endAt,
       relevanceScore: 1
     )
@@ -127,16 +127,16 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
   @Parameter(title: "Stable ID") var stableId: String
   @Parameter(title: "Verze rozpisu") var scheduleVersion: Int
   @Parameter(title: "Začátek") var startAt: String
+  @Parameter(title: "Událost alarmu") var currentEventJSON: String
   @Parameter(title: "Další událost") var nextEventJSON: String
-  @Parameter(title: "Následující událost") var followingEventJSON: String
 
   init() {
     alarmID = ""
     stableId = ""
     scheduleVersion = 0
     startAt = ""
+    currentEventJSON = ""
     nextEventJSON = ""
-    followingEventJSON = ""
   }
 
   init(alarmID: UUID, metadata: CommanderAlarmMetadata) {
@@ -144,15 +144,23 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     stableId = metadata.stableId
     scheduleVersion = metadata.scheduleVersion
     startAt = metadata.startAt
+    let current = CommanderAlarmEventSnapshot(
+      stableId: metadata.stableId,
+      iconKey: metadata.iconKey,
+      title: metadata.title,
+      location: metadata.location,
+      kind: metadata.kind,
+      startAt: metadata.startAt,
+      endAt: metadata.endAt ?? metadata.startAt,
+      leaveAt: metadata.leaveAt
+    )
+    currentEventJSON = Self.encode(current)
     nextEventJSON = Self.encode(metadata.nextEvent)
-    followingEventJSON = Self.encode(metadata.followingEvent)
   }
 
   func perform() async throws -> some IntentResult {
     guard let startDate = CommanderRollingLiveActivity.date(startAt) else { return .result() }
 
-    // AlarmKit owns the audible alert. Once Stop is pressed, remove its Live Activity
-    // before manipulating Commander activities so the rolling window stays bounded.
     if let stoppedAlarmID = UUID(uuidString: alarmID) {
       for alarmActivity in Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities
         where alarmActivity.content.state.alarmID == stoppedAlarmID {
@@ -175,9 +183,7 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
         && AlarmKitAdapter.isOngoing($0.activityState)
     }
 
-    // Never request a brand-new red activity here. Reuse the already-present holder
-    // (blue handoff, or hidden standby for the first event) and finish it with final red
-    // content that remains on the Lock Screen exactly until the event starts.
+    // Reuse an existing Commander holder instead of requesting a new red activity.
     if let holder = handoff ?? standby {
       if startDate > Date() {
         let old = holder.content.state
@@ -202,12 +208,13 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
       }
     }
 
-    // Roll the green window forward only after the preceding alarm has been stopped.
-    // That avoids reserving many future Live Activities at once.
-    if let next = Self.decode(nextEventJSON) {
+    // Ensure only the event whose alarm was just stopped is prepared to turn green.
+    // The first event is already scheduled, so this is a no-op there. Later events are
+    // added just in time and carry their own next-event handoff context.
+    if let current = Self.decode(currentEventJSON) {
       await CommanderRollingLiveActivity.scheduleRunning(
-        event: next,
-        following: Self.decode(followingEventJSON),
+        event: current,
+        next: Self.decode(nextEventJSON),
         scheduleVersion: scheduleVersion
       )
     }
@@ -319,15 +326,15 @@ actor AlarmKitAdapter: AlarmAdapting {
       title: LocalizedStringResource(stringLiteral: "Odchod za \(alarm.title)")
     )
     let eventEndAt = event.map { Self.localISO(date: $0.date, time: $0.end) }
-    let lookahead: [CommanderAlarmEventSnapshot]
+    let nextSnapshot: CommanderAlarmEventSnapshot?
     if let event, let schedule {
-      lookahead = rollingSnapshots(
-        after: event,
+      nextSnapshot = snapshotAfter(
+        event: event,
         schedule: schedule,
         overrides: leadTimeOverridesContext
       )
     } else {
-      lookahead = []
+      nextSnapshot = nil
     }
     let metadata = CommanderAlarmMetadata(
       stableId: alarm.stableId,
@@ -339,8 +346,7 @@ actor AlarmKitAdapter: AlarmAdapting {
       startAt: alarm.startAt,
       leaveAt: alarm.leaveAt,
       endAt: eventEndAt,
-      nextEvent: lookahead.first,
-      followingEvent: lookahead.dropFirst().first
+      nextEvent: nextSnapshot
     )
     let countdownAttributes = AlarmAttributes(
       presentation: AlarmPresentation(alert: alert, countdown: countdown),
@@ -368,8 +374,6 @@ actor AlarmKitAdapter: AlarmAdapting {
 
     let configuration: AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>
     if hasFreeTimeHandoff(for: alarm) {
-      // The preceding event owns the real free interval through leaveAt, so Commander
-      // shows that single blue countdown. AlarmKit owns only the actual audible alert.
       configuration = .alarm(
         schedule: .fixed(countdownPlan.scheduledAlertAt),
         attributes: alertOnlyAttributes,
@@ -451,7 +455,7 @@ actor AlarmKitAdapter: AlarmAdapting {
 
     var countdownDeadlines: [String: Date] = [:]
     for activity in Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities {
-      guard isOngoing(activity.activityState),
+      guard Self.isOngoing(activity.activityState),
             case .countdown(let countdown) = activity.content.state.mode else { continue }
       countdownDeadlines[activity.content.state.alarmID.uuidString] = countdown.fireDate
     }
@@ -522,7 +526,7 @@ actor AlarmKitAdapter: AlarmAdapting {
     }
     var fireDates: [String: Date] = [:]
     for activity in Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities {
-      if isOngoing(activity.activityState),
+      if Self.isOngoing(activity.activityState),
          case .countdown(let countdown) = activity.content.state.mode {
         fireDates[activity.content.state.alarmID.uuidString] = countdown.fireDate
       }
@@ -850,36 +854,21 @@ actor AlarmKitAdapter: AlarmAdapting {
     )
   }
 
-  private func rollingSnapshots(
-    after event: ScheduleEvent,
+  private func snapshotAfter(
+    event: ScheduleEvent,
     schedule: Schedule,
     overrides: LeadTimeOverrides?
-  ) -> [CommanderAlarmEventSnapshot] {
-    guard let eventEnd = try? NativeAlarmContract.dateTime(date: event.date, time: event.end),
-          let first = nextEvent(after: event, endAt: eventEnd, schedule: schedule)
-    else { return [] }
-
-    var result: [CommanderAlarmEventSnapshot] = []
-    if let firstSnapshot = eventSnapshot(
-      first.event,
-      startAt: first.startAt,
-      endAt: first.endAt,
+  ) -> CommanderAlarmEventSnapshot? {
+    guard let endAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.end),
+          let next = nextEvent(after: event, endAt: endAt, schedule: schedule)
+    else { return nil }
+    return eventSnapshot(
+      next.event,
+      startAt: next.startAt,
+      endAt: next.endAt,
       schedule: schedule,
       overrides: overrides
-    ) {
-      result.append(firstSnapshot)
-    }
-    if let second = nextEvent(after: first.event, endAt: first.endAt, schedule: schedule),
-       let secondSnapshot = eventSnapshot(
-         second.event,
-         startAt: second.startAt,
-         endAt: second.endAt,
-         schedule: schedule,
-         overrides: overrides
-       ) {
-      result.append(secondSnapshot)
-    }
-    return result
+    )
   }
 
   private func eventSnapshot(
@@ -894,7 +883,6 @@ actor AlarmKitAdapter: AlarmAdapting {
       schedule: schedule,
       overrides: overrides
     ) else { return nil }
-
     return CommanderAlarmEventSnapshot(
       stableId: event.stableId,
       iconKey: CommanderVisualAssets.icon(for: event)?.key ?? "",
