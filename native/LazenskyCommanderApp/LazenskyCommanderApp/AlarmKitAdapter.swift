@@ -239,8 +239,13 @@ actor AlarmKitAdapter: AlarmAdapting {
       leaveAt: alarm.leaveAt,
       endAt: eventEndAt
     )
-    let attributes = AlarmAttributes(
+    let countdownAttributes = AlarmAttributes(
       presentation: AlarmPresentation(alert: alert, countdown: countdown),
+      metadata: metadata,
+      tintColor: .teal
+    )
+    let alertOnlyAttributes = AlarmAttributes(
+      presentation: AlarmPresentation(alert: alert),
       metadata: metadata,
       tintColor: .teal
     )
@@ -262,9 +267,10 @@ actor AlarmKitAdapter: AlarmAdapting {
     if hasPreparedHandoff(for: alarm) {
       // A Commander event owns a real free interval through leaveAt. Schedule only
       // the system alert; a pre-alert countdown would duplicate the blue handoff.
+      // AlarmKit's own sample uses an alert-only presentation for alarms without countdown mode.
       configuration = .alarm(
         schedule: .fixed(countdownPlan.scheduledAlertAt),
-        attributes: attributes,
+        attributes: alertOnlyAttributes,
         stopIntent: stopIntent,
         sound: .default
       )
@@ -272,14 +278,14 @@ actor AlarmKitAdapter: AlarmAdapting {
       configuration = AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>(
         countdownDuration: Alarm.CountdownDuration(preAlert: countdownPlan.countdownWindow, postAlert: nil),
         schedule: countdownPlan.scheduledStartAt.map { .fixed($0) },
-        attributes: attributes,
+        attributes: countdownAttributes,
         stopIntent: stopIntent,
         sound: .default
       )
     } else {
       configuration = .alarm(
         schedule: .fixed(countdownPlan.scheduledAlertAt),
-        attributes: attributes,
+        attributes: alertOnlyAttributes,
         stopIntent: stopIntent,
         sound: .default
       )
