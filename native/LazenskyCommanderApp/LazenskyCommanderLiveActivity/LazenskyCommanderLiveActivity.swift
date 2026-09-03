@@ -23,7 +23,10 @@ private enum CommanderActivityTokens {
 
   static let insetRadius: CGFloat = 12
   static let cardRadius: CGFloat = 24
-  static let lockScreenMinHeight: CGFloat = 154
+  static let lockScreenMinHeight: CGFloat = 164
+  static let heroTimeSize: CGFloat = 58
+  static let heroWidth: CGFloat = 196
+  static let heroMinHeight: CGFloat = 80
 
   static var backgroundGradient: LinearGradient {
     LinearGradient(colors: [panel, background], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -451,7 +454,7 @@ private struct CommanderAlarmHero: View {
         if mode.isAlert {
           if let startDate = CommanderAlarmTime.startDate(from: startAt) {
             Text(startDate, style: .timer)
-              .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
+              .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
               .foregroundStyle(accent)
               .lineLimit(1)
               .minimumScaleFactor(0.74)
@@ -462,13 +465,13 @@ private struct CommanderAlarmHero: View {
           }
         } else {
           CommanderAlarmCountdown(mode: mode)
-            .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
+            .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
             .foregroundStyle(accent)
             .lineLimit(1)
             .minimumScaleFactor(0.74)
         }
       }
-      .frame(width: 180, alignment: .center)
+      .frame(width: CommanderActivityTokens.heroWidth, alignment: .center)
       .multilineTextAlignment(.center)
       .frame(maxWidth: .infinity)
 
@@ -482,7 +485,7 @@ private struct CommanderAlarmHero: View {
           .frame(width: 72, alignment: .trailing)
       }
     }
-    .frame(minHeight: 72)
+    .frame(minHeight: CommanderActivityTokens.heroMinHeight)
   }
 }
 
@@ -517,12 +520,12 @@ private struct CommanderDepartureBridgeHero: View {
           .foregroundStyle(CommanderActivityTokens.criticalRed)
           .lineLimit(1)
         Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startAt, showsHours: false))
-          .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
+          .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
           .foregroundStyle(CommanderActivityTokens.criticalRed)
           .lineLimit(1)
           .minimumScaleFactor(0.74)
       }
-      .frame(width: 180, alignment: .center)
+      .frame(width: CommanderActivityTokens.heroWidth, alignment: .center)
       .multilineTextAlignment(.center)
       .frame(maxWidth: .infinity)
 
@@ -544,7 +547,7 @@ private struct CommanderDepartureBridgeHero: View {
         .frame(width: 72, alignment: .trailing)
       }
     }
-    .frame(minHeight: 72)
+    .frame(minHeight: CommanderActivityTokens.heroMinHeight)
   }
 }
 
@@ -569,13 +572,13 @@ private struct CommanderProcedureHero: View {
             .lineLimit(1)
         } else {
           Text(endAt, style: .timer)
-            .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
+            .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
             .foregroundStyle(accent)
             .lineLimit(1)
             .minimumScaleFactor(0.74)
         }
       }
-      .frame(width: 180, alignment: .center)
+      .frame(width: CommanderActivityTokens.heroWidth, alignment: .center)
       .multilineTextAlignment(.center)
       .frame(maxWidth: .infinity)
 
@@ -593,7 +596,7 @@ private struct CommanderProcedureHero: View {
         .frame(width: 72, alignment: .center)
       }
     }
-    .frame(minHeight: 72)
+    .frame(minHeight: CommanderActivityTokens.heroMinHeight)
   }
 }
 
@@ -608,12 +611,12 @@ private struct CommanderTransitionHero: View {
           .foregroundStyle(CommanderActivityTokens.freeBlue)
           .lineLimit(1)
         Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<leaveAt, showsHours: false))
-          .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
+          .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
           .foregroundStyle(CommanderActivityTokens.freeBlue)
           .lineLimit(1)
           .minimumScaleFactor(0.74)
       }
-      .frame(width: 180, alignment: .center)
+      .frame(width: CommanderActivityTokens.heroWidth, alignment: .center)
       .multilineTextAlignment(.center)
       .frame(maxWidth: .infinity)
 
@@ -633,7 +636,7 @@ private struct CommanderTransitionHero: View {
         .frame(width: 72, alignment: .center)
       }
     }
-    .frame(minHeight: 72)
+    .frame(minHeight: CommanderActivityTokens.heroMinHeight)
   }
 }
 
@@ -678,7 +681,7 @@ private struct CommanderActivityDivider: View {
     Rectangle()
       .fill(
         LinearGradient(
-          colors: [accent.opacity(0.55), CommanderActivityTokens.panelStroke.opacity(0.18)],
+          colors: [accent.opacity(0.72), CommanderActivityTokens.panelStroke.opacity(0.20)],
           startPoint: .leading,
           endPoint: .trailing
         )
@@ -821,7 +824,7 @@ private struct CommanderActivityCardStyle: ViewModifier {
   func body(content: Content) -> some View {
     content
       .padding(.horizontal, 15)
-      .padding(.vertical, 12)
+      .padding(.vertical, 13)
       .frame(
         maxWidth: .infinity,
         minHeight: CommanderActivityTokens.lockScreenMinHeight,
@@ -831,7 +834,7 @@ private struct CommanderActivityCardStyle: ViewModifier {
         ZStack {
           CommanderActivityTokens.backgroundGradient
           LinearGradient(
-            colors: [accent.opacity(0.11), .clear, accent.opacity(0.04)],
+            colors: [accent.opacity(0.18), .clear, accent.opacity(0.08)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           )
@@ -839,7 +842,7 @@ private struct CommanderActivityCardStyle: ViewModifier {
       }
       .overlay {
         RoundedRectangle(cornerRadius: CommanderActivityTokens.cardRadius)
-          .strokeBorder(accent.opacity(0.62), lineWidth: 1)
+          .strokeBorder(accent.opacity(0.82), lineWidth: 1.2)
       }
   }
 }
