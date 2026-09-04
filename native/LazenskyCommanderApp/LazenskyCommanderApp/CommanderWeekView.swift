@@ -28,7 +28,7 @@ struct CommanderWeekView: View {
                 } else {
                   expandedDays.insert(day.date)
                   DispatchQueue.main.async {
-                    withAnimation(.easeInOut(duration: 0.34)) {
+                    withAnimation(.easeOut(duration: 0.12)) {
                       proxy.scrollTo(day.date, anchor: .top)
                     }
                   }
@@ -165,7 +165,6 @@ struct CommanderWeekDayTile: View {
       color: isExpanded ? CommanderDesignTokens.Colors.primaryPurple.opacity(0.20) : .clear,
       radius: isExpanded ? 27 : 0
     )
-    .animation(.easeInOut(duration: 0.18), value: isExpanded)
   }
 }
 
@@ -195,9 +194,15 @@ struct CommanderDaySummaryCard: View {
         CommanderSymbolBadge(
           symbol: "calendar",
           color: CommanderDesignTokens.Colors.primaryPurple,
-          size: 34
+          size: 40
         )
-        .shadow(color: CommanderDesignTokens.Colors.primaryPurple.opacity(0.46), radius: 7)
+        .background(CommanderDesignTokens.Colors.primaryPurple.opacity(0.10), in: Circle())
+        .overlay {
+          Circle().strokeBorder(
+            CommanderDesignTokens.Colors.primaryPurple.opacity(0.60), lineWidth: 1.2
+          )
+        }
+        .shadow(color: CommanderDesignTokens.Colors.primaryPurple.opacity(0.52), radius: 8)
 
         Text(CommanderDateText.shortDay(overview.date))
           .font(.system(size: 22, weight: .bold))
@@ -343,8 +348,10 @@ private struct CommanderMetricTile: View {
   var body: some View {
     VStack(alignment: .center, spacing: 3) {
       if let symbol {
-        CommanderSymbolBadge(symbol: symbol, color: accent, size: 34)
-          .shadow(color: accent.opacity(0.52), radius: 7)
+        CommanderSymbolBadge(symbol: symbol, color: accent, size: 40)
+          .background(accent.opacity(0.10), in: Circle())
+          .overlay { Circle().strokeBorder(accent.opacity(0.60), lineWidth: 1.2) }
+          .shadow(color: accent.opacity(0.50), radius: 8)
       }
       Text(title)
         .font(.system(size: 14, weight: .semibold))
