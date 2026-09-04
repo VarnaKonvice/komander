@@ -4,33 +4,41 @@ import SwiftUI
 struct CommanderDepthBackground: View {
   var body: some View {
     ZStack {
-      CommanderDashboardPalette.backgroundGradient
       LinearGradient(
         colors: [
-          Color.white.opacity(0.035),
+          Color(red: 0.18, green: 0.21, blue: 0.48),
+          Color(red: 0.075, green: 0.18, blue: 0.38),
+          Color(red: 0.035, green: 0.07, blue: 0.20)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+      )
+      LinearGradient(
+        colors: [
+          Color.white.opacity(0.055),
           Color.clear,
-          CommanderDesignTokens.Colors.primaryPurple.opacity(0.08)
+          CommanderDesignTokens.Colors.primaryPurple.opacity(0.09)
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
       )
       RadialGradient(
-        colors: [CommanderDesignTokens.Colors.primaryPurple.opacity(0.32), .clear],
-        center: UnitPoint(x: 0.16, y: 0.08),
-        startRadius: 0,
-        endRadius: 260
-      )
-      RadialGradient(
-        colors: [CommanderDesignTokens.Colors.freeBlue.opacity(0.24), .clear],
-        center: UnitPoint(x: 0.92, y: 0.24),
+        colors: [CommanderDesignTokens.Colors.primaryPurple.opacity(0.28), .clear],
+        center: UnitPoint(x: 0.14, y: 0.08),
         startRadius: 0,
         endRadius: 300
       )
       RadialGradient(
-        colors: [CommanderDesignTokens.Colors.panelStroke.opacity(0.14), .clear],
+        colors: [CommanderDesignTokens.Colors.freeBlue.opacity(0.22), .clear],
+        center: UnitPoint(x: 0.94, y: 0.28),
+        startRadius: 0,
+        endRadius: 320
+      )
+      RadialGradient(
+        colors: [CommanderDesignTokens.Colors.panelStroke.opacity(0.12), .clear],
         center: .bottom,
         startRadius: 20,
-        endRadius: 330
+        endRadius: 340
       )
     }
   }
@@ -129,6 +137,10 @@ struct CommanderTodayLiveCard: View {
             color: presentation.mode == .inProgress ? eventAccent : statusColor,
             size: CommanderDesignTokens.Size.sectionBadge
           )
+          .shadow(
+            color: (presentation.mode == .inProgress ? eventAccent : statusColor).opacity(0.48),
+            radius: 8
+          )
         }
         VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
           Text(statusTitle)
@@ -182,8 +194,8 @@ struct CommanderTodayLiveCard: View {
         shape.fill(
           LinearGradient(
             colors: [
-              Color.white.opacity(0.055),
-              statusColor.opacity(0.16),
+              Color.white.opacity(0.085),
+              CommanderDesignTokens.Colors.primaryPurple.opacity(0.055),
               Color.clear
             ],
             startPoint: .topLeading,
@@ -192,18 +204,26 @@ struct CommanderTodayLiveCard: View {
         )
         shape.fill(
           RadialGradient(
-            colors: [statusColor.opacity(0.17), .clear],
-            center: .topLeading,
+            colors: [eventAccent.opacity(0.12), .clear],
+            center: UnitPoint(x: 0.12, y: 0.18),
+            startRadius: 4,
+            endRadius: 180
+          )
+        )
+        shape.fill(
+          RadialGradient(
+            colors: [statusColor.opacity(0.065), .clear],
+            center: .bottomTrailing,
             startRadius: 8,
-            endRadius: 220
+            endRadius: 190
           )
         )
         shape.strokeBorder(
           LinearGradient(
             colors: [
-              Color.white.opacity(0.22),
-              statusColor.opacity(0.42),
-              Color.clear
+              Color.white.opacity(0.26),
+              statusColor.opacity(0.46),
+              CommanderDesignTokens.Colors.panelStroke.opacity(0.24)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -213,7 +233,8 @@ struct CommanderTodayLiveCard: View {
       }
       .allowsHitTesting(false)
     }
-    .shadow(color: statusColor.opacity(0.22), radius: 13, y: 3)
+    .shadow(color: Color.black.opacity(0.32), radius: 10, y: 6)
+    .shadow(color: statusColor.opacity(0.10), radius: 12)
     .accessibilityElement(children: .combine)
   }
 
