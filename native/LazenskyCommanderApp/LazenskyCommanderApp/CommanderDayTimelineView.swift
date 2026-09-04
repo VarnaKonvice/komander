@@ -51,45 +51,69 @@ struct CommanderEventRow: View {
         color: accent,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
+      .shadow(color: accent.opacity(0.42), radius: 6)
 
       details.layoutPriority(1)
     }
     .padding(.horizontal, 10)
     .padding(.vertical, 7)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .commanderCard(
-      accent: item.phase == .current ? accent : nil,
-      surface: .eventRow
-    )
-    .overlay {
+    .background {
       let shape = RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
       ZStack {
         shape.fill(
           LinearGradient(
             colors: [
-              Color.white.opacity(0.035),
-              accent.opacity(item.phase == .current ? 0.12 : 0.075),
+              Color(red: 0.13, green: 0.16, blue: 0.33),
+              Color(red: 0.055, green: 0.085, blue: 0.21),
+              Color(red: 0.03, green: 0.05, blue: 0.14)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+        shape.fill(
+          LinearGradient(
+            colors: [
+              Color.white.opacity(0.075),
+              accent.opacity(item.phase == .current ? 0.11 : 0.07),
               Color.clear
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           )
         )
-        shape.strokeBorder(
+        shape.fill(
+          RadialGradient(
+            colors: [accent.opacity(item.phase == .current ? 0.13 : 0.08), .clear],
+            center: UnitPoint(x: 0.18, y: 0.2),
+            startRadius: 4,
+            endRadius: 130
+          )
+        )
+      }
+    }
+    .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow))
+    .overlay {
+      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
+        .strokeBorder(
           LinearGradient(
-            colors: [accent.opacity(item.phase == .current ? 0.34 : 0.22), Color.clear],
+            colors: [
+              Color.white.opacity(item.phase == .current ? 0.22 : 0.15),
+              accent.opacity(item.phase == .current ? 0.40 : 0.26),
+              Color.black.opacity(0.14)
+            ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           ),
           lineWidth: 1
         )
-      }
-      .allowsHitTesting(false)
+        .allowsHitTesting(false)
     }
+    .shadow(color: Color.black.opacity(0.26), radius: 5, y: 3)
     .shadow(
-      color: accent.opacity(item.phase == .current ? 0.20 : 0.08),
-      radius: item.phase == .current ? 8 : 5,
-      y: 2
+      color: accent.opacity(item.phase == .current ? 0.15 : 0.055),
+      radius: item.phase == .current ? 8 : 5
     )
     .accessibilityElement(children: .combine)
     .accessibilityValue(item.phase == .current ? "Právě probíhá" : "")
