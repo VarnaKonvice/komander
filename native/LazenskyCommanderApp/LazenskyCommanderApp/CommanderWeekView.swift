@@ -100,10 +100,22 @@ struct CommanderWeekDayTile: View {
             )
           )
           shape.fill(
+            LinearGradient(
+              colors: [
+                Color.white.opacity(0.065),
+                CommanderDesignTokens.Colors.primaryPurple.opacity(0.10),
+                CommanderDesignTokens.Colors.freeBlue.opacity(0.08),
+                Color.clear
+              ],
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            )
+          )
+          shape.fill(
             RadialGradient(
               colors: [
-                CommanderDesignTokens.Colors.freeBlue.opacity(0.30),
-                CommanderDesignTokens.Colors.primaryPurple.opacity(0.18),
+                CommanderDesignTokens.Colors.freeBlue.opacity(0.34),
+                CommanderDesignTokens.Colors.primaryPurple.opacity(0.21),
                 .clear
               ],
               center: .topTrailing,
@@ -120,6 +132,7 @@ struct CommanderWeekDayTile: View {
           .strokeBorder(
             LinearGradient(
               colors: [
+                Color.white.opacity(0.35),
                 CommanderDesignTokens.Colors.freeBlue.opacity(0.98),
                 CommanderDesignTokens.Colors.primaryPurple.opacity(0.95),
                 CommanderDesignTokens.Colors.freeBlue.opacity(0.62)
@@ -132,12 +145,12 @@ struct CommanderWeekDayTile: View {
       }
     }
     .shadow(
-      color: isExpanded ? CommanderDesignTokens.Colors.freeBlue.opacity(0.34) : .clear,
-      radius: isExpanded ? 17 : 0
+      color: isExpanded ? CommanderDesignTokens.Colors.freeBlue.opacity(0.36) : .clear,
+      radius: isExpanded ? 18 : 0
     )
     .shadow(
-      color: isExpanded ? CommanderDesignTokens.Colors.primaryPurple.opacity(0.24) : .clear,
-      radius: isExpanded ? 26 : 0
+      color: isExpanded ? CommanderDesignTokens.Colors.primaryPurple.opacity(0.25) : .clear,
+      radius: isExpanded ? 27 : 0
     )
     .animation(.easeInOut(duration: 0.18), value: isExpanded)
   }
@@ -241,9 +254,20 @@ struct CommanderDaySummaryCard: View {
           )
         )
         shape.fill(
+          LinearGradient(
+            colors: [
+              Color.white.opacity(0.065),
+              summaryAccent.opacity(isExpanded == true ? 0.15 : 0.105),
+              Color.clear
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+        shape.fill(
           RadialGradient(
             colors: [
-              summaryAccent.opacity(isExpanded == true ? 0.24 : 0.16),
+              summaryAccent.opacity(isExpanded == true ? 0.29 : 0.20),
               .clear
             ],
             center: .topLeading,
@@ -259,18 +283,19 @@ struct CommanderDaySummaryCard: View {
         .strokeBorder(
           LinearGradient(
             colors: [
-              summaryAccent.opacity(isExpanded == true ? 0.92 : 0.66),
+              Color.white.opacity(isExpanded == true ? 0.30 : 0.19),
+              summaryAccent.opacity(isExpanded == true ? 0.94 : 0.72),
               CommanderDesignTokens.Colors.panelStroke.opacity(0.52)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           ),
-          lineWidth: isExpanded == true ? 1.5 : 1.1
+          lineWidth: isExpanded == true ? 1.5 : 1.15
         )
     }
     .shadow(
-      color: summaryAccent.opacity(isExpanded == true ? 0.20 : 0.10),
-      radius: isExpanded == true ? 11 : 6,
+      color: summaryAccent.opacity(isExpanded == true ? 0.22 : 0.12),
+      radius: isExpanded == true ? 12 : 7,
       y: 2
     )
     .accessibilityElement(children: .combine)
@@ -323,10 +348,14 @@ private struct CommanderMetricTile: View {
     .background {
       let shape = RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
       ZStack {
-        shape.fill(CommanderDesignTokens.Colors.panel.opacity(0.68))
+        shape.fill(CommanderDesignTokens.Colors.panel.opacity(0.66))
         shape.fill(
           LinearGradient(
-            colors: [accent.opacity(0.14), .clear],
+            colors: [
+              Color.white.opacity(0.055),
+              accent.opacity(0.17),
+              Color.clear
+            ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           )
@@ -335,7 +364,14 @@ private struct CommanderMetricTile: View {
     }
     .overlay {
       RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-        .strokeBorder(accent.opacity(0.36), lineWidth: 1)
+        .strokeBorder(
+          LinearGradient(
+            colors: [Color.white.opacity(0.14), accent.opacity(0.44)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          ),
+          lineWidth: 1
+        )
     }
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(title.replacingOccurrences(of: "\n", with: " "))
