@@ -180,8 +180,19 @@ struct CommanderTodayLiveCard: View {
       let shape = RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.card)
       ZStack {
         shape.fill(
+          LinearGradient(
+            colors: [
+              Color.white.opacity(0.055),
+              statusColor.opacity(0.16),
+              Color.clear
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+        shape.fill(
           RadialGradient(
-            colors: [statusColor.opacity(0.11), .clear],
+            colors: [statusColor.opacity(0.17), .clear],
             center: .topLeading,
             startRadius: 8,
             endRadius: 220
@@ -190,19 +201,19 @@ struct CommanderTodayLiveCard: View {
         shape.strokeBorder(
           LinearGradient(
             colors: [
-              Color.white.opacity(0.16),
-              statusColor.opacity(0.30),
+              Color.white.opacity(0.22),
+              statusColor.opacity(0.42),
               Color.clear
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           ),
-          lineWidth: 1
+          lineWidth: 1.15
         )
       }
       .allowsHitTesting(false)
     }
-    .shadow(color: statusColor.opacity(0.17), radius: 11, y: 3)
+    .shadow(color: statusColor.opacity(0.22), radius: 13, y: 3)
     .accessibilityElement(children: .combine)
   }
 
