@@ -49,9 +49,11 @@ struct CommanderEventRow: View {
       CommanderSymbolBadge(
         symbol: CommanderVisualAssets.symbol(for: item.event),
         color: accent,
-        size: CommanderDesignTokens.Size.rowMetricBadge
+        size: 34
       )
-      .shadow(color: accent.opacity(0.42), radius: 6)
+      .background(accent.opacity(0.10), in: Circle())
+      .overlay { Circle().strokeBorder(accent.opacity(0.56), lineWidth: 1.15) }
+      .shadow(color: accent.opacity(0.46), radius: 7)
 
       details.layoutPriority(1)
     }
