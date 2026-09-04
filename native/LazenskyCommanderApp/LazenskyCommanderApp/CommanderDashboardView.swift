@@ -6,36 +6,36 @@ struct CommanderDepthBackground: View {
     ZStack {
       LinearGradient(
         colors: [
-          Color(red: 0.18, green: 0.21, blue: 0.48),
-          Color(red: 0.075, green: 0.18, blue: 0.38),
-          Color(red: 0.035, green: 0.07, blue: 0.20)
+          Color(red: 0.145, green: 0.17, blue: 0.39),
+          Color(red: 0.06, green: 0.145, blue: 0.31),
+          Color(red: 0.03, green: 0.058, blue: 0.17)
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
       )
       LinearGradient(
         colors: [
-          Color.white.opacity(0.055),
+          Color.white.opacity(0.045),
           Color.clear,
-          CommanderDesignTokens.Colors.primaryPurple.opacity(0.09)
+          CommanderDesignTokens.Colors.primaryPurple.opacity(0.08)
         ],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
       )
       RadialGradient(
-        colors: [CommanderDesignTokens.Colors.primaryPurple.opacity(0.28), .clear],
+        colors: [CommanderDesignTokens.Colors.primaryPurple.opacity(0.23), .clear],
         center: UnitPoint(x: 0.14, y: 0.08),
         startRadius: 0,
         endRadius: 300
       )
       RadialGradient(
-        colors: [CommanderDesignTokens.Colors.freeBlue.opacity(0.22), .clear],
+        colors: [CommanderDesignTokens.Colors.freeBlue.opacity(0.18), .clear],
         center: UnitPoint(x: 0.94, y: 0.28),
         startRadius: 0,
         endRadius: 320
       )
       RadialGradient(
-        colors: [CommanderDesignTokens.Colors.panelStroke.opacity(0.12), .clear],
+        colors: [CommanderDesignTokens.Colors.panelStroke.opacity(0.10), .clear],
         center: .bottom,
         startRadius: 20,
         endRadius: 340
