@@ -257,7 +257,8 @@ struct CommanderDaySummaryCard: View {
       }
     }
     .padding(.horizontal, 9)
-    .padding(.vertical, 10)
+    .padding(.top, 14)
+    .padding(.bottom, 11)
     .frame(maxWidth: .infinity, alignment: .leading)
     .background {
       let shape = RoundedRectangle(cornerRadius: cardRadius)
@@ -345,6 +346,10 @@ private struct CommanderMetricTile: View {
   let accent: Color
   var accessibleValue: String? = nil
 
+  private var isClockValue: Bool {
+    value.contains(":") && !value.contains(" ")
+  }
+
   var body: some View {
     VStack(alignment: .center, spacing: 3) {
       if let symbol {
@@ -364,12 +369,14 @@ private struct CommanderMetricTile: View {
         .monospacedDigit()
         .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
         .multilineTextAlignment(.center)
-        .lineLimit(2)
+        .lineLimit(isClockValue ? 1 : 2)
+        .minimumScaleFactor(isClockValue ? 0.90 : 1)
         .frame(maxWidth: .infinity, minHeight: 48, alignment: .top)
     }
-    .padding(.horizontal, 8)
-    .padding(.vertical, 8)
-    .frame(maxWidth: .infinity, minHeight: 136, alignment: .top)
+    .padding(.horizontal, 5)
+    .padding(.top, 12)
+    .padding(.bottom, 9)
+    .frame(maxWidth: .infinity, minHeight: 142, alignment: .top)
     .background {
       let shape = RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
       ZStack {
