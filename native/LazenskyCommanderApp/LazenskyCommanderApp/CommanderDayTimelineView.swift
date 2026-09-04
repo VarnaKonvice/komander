@@ -62,20 +62,33 @@ struct CommanderEventRow: View {
       surface: .eventRow
     )
     .overlay {
-      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
-        .strokeBorder(
+      let shape = RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
+      ZStack {
+        shape.fill(
           LinearGradient(
-            colors: [accent.opacity(0.18), Color.clear],
+            colors: [
+              Color.white.opacity(0.035),
+              accent.opacity(item.phase == .current ? 0.12 : 0.075),
+              Color.clear
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+        shape.strokeBorder(
+          LinearGradient(
+            colors: [accent.opacity(item.phase == .current ? 0.34 : 0.22), Color.clear],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           ),
           lineWidth: 1
         )
-        .allowsHitTesting(false)
+      }
+      .allowsHitTesting(false)
     }
     .shadow(
-      color: accent.opacity(item.phase == .current ? 0.20 : 0.07),
-      radius: item.phase == .current ? 8 : 4,
+      color: accent.opacity(item.phase == .current ? 0.20 : 0.08),
+      radius: item.phase == .current ? 8 : 5,
       y: 2
     )
     .accessibilityElement(children: .combine)
