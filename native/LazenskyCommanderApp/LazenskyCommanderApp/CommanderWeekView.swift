@@ -229,7 +229,7 @@ struct CommanderDaySummaryCard: View {
 
       LazyVGrid(columns: metricColumns, alignment: .leading, spacing: 0) {
         CommanderMetricTile(
-          title: "Procedury", value: "\(overview.procedureCount)",
+          title: "Terapie", value: "\(overview.procedureCount)",
           symbol: "cross.case", accent: CommanderDesignTokens.Colors.primaryPurple
         )
         CommanderMetricTile(
@@ -341,7 +341,7 @@ private struct CommanderMetricTile: View {
   var accessibleValue: String? = nil
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 3) {
+    VStack(alignment: .center, spacing: 3) {
       if let symbol {
         CommanderSymbolBadge(symbol: symbol, color: accent, size: 34)
           .shadow(color: accent.opacity(0.52), radius: 7)
@@ -349,18 +349,20 @@ private struct CommanderMetricTile: View {
       Text(title)
         .font(.system(size: 14, weight: .semibold))
         .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        .multilineTextAlignment(.center)
         .lineLimit(2)
-        .frame(height: 36, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 36, alignment: .top)
       Text(value)
         .font(.system(size: 21, weight: .bold))
         .monospacedDigit()
         .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        .multilineTextAlignment(.center)
         .lineLimit(2)
-        .frame(minHeight: 48, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 48, alignment: .top)
     }
-    .padding(.horizontal, 6)
+    .padding(.horizontal, 8)
     .padding(.vertical, 8)
-    .frame(maxWidth: .infinity, minHeight: 136, alignment: .topLeading)
+    .frame(maxWidth: .infinity, minHeight: 136, alignment: .top)
     .background {
       let shape = RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
       ZStack {
