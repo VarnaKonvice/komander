@@ -10,12 +10,34 @@ enum CommanderVisualAssets {
     iconMap?.classify(event)
   }
 
+  static func accent(for event: ScheduleEvent) -> String {
+    let icon = icon(for: event)
+    return CommanderBrandAssets.procedureAccentHex(
+      iconKey: icon?.key,
+      title: event.title,
+      isMeal: event.kind == .meal
+    )
+  }
+
+  static func symbol(for event: ScheduleEvent) -> String {
+    let icon = icon(for: event)
+    return CommanderBrandAssets.procedureSymbol(
+      iconKey: icon?.key,
+      title: event.title,
+      isMeal: event.kind == .meal
+    )
+  }
+
+  // Kept for older surfaces while all visible event rows migrate to accent(for: event).
   static func accent(for icon: CommanderIconMap.Icon?) -> String {
     guard let icon else {
       return colors?.brand.commanderPurple ?? iconMap?.fallback.accent ?? "#6E56CF"
     }
-    let colorKey = icon.key.hasPrefix("meal_") ? "meal" : icon.key
-    return colors?.procedures[colorKey] ?? icon.accent
+    return CommanderBrandAssets.procedureAccentHex(
+      iconKey: icon.key,
+      title: icon.label,
+      isMeal: icon.key.hasPrefix("meal_")
+    )
   }
 
   @MainActor

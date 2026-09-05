@@ -27,27 +27,55 @@ struct CommanderProvisioningSection: View {
 
   var body: some View {
     if AppConfiguration().channel == .production {
-      Section("Obnova aplikace") {
+      CommanderSectionCard(
+        title: "Obnova aplikace",
+        symbol: "arrow.clockwise.circle.fill",
+        accent: deadlineAccent
+      ) {
         if let profile = renewal.profile {
-          LabeledContent("Platnost aplikace do", value: profile.expirationDate.formatted(CommanderScheduleDateStyle.departure))
-          LabeledContent("Obnovit nejpozději", value: profile.recommendedRefreshAt.formatted(CommanderScheduleDateStyle.departure))
+          CommanderDetailRow(
+            title: "Platnost aplikace do",
+            value: profile.expirationDate.formatted(CommanderScheduleDateStyle.departure),
+            symbol: "checkmark.seal.fill",
+            accent: CommanderDesignTokens.Colors.primaryPurple
+          )
+          CommanderDetailRow(
+            title: "Obnovit nejpozději",
+            value: profile.recommendedRefreshAt.formatted(CommanderScheduleDateStyle.departure),
+            symbol: "clock.badge.exclamationmark.fill",
+            accent: deadlineAccent,
+            valueColor: deadlineAccent
+          )
         } else {
           Text("Platnost aplikace není dostupná")
-            .foregroundStyle(.secondary)
+            .commanderFont(.subtitle)
+            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
         }
-        LabeledContent("Připomenutí", value: statusText)
+        CommanderDetailRow(
+          title: "Připomenutí",
+          value: statusText,
+          symbol: "bell.badge.fill",
+          accent: reminderAccent,
+          valueColor: reminderAccent
+        )
         if renewal.status == .permissionRequired || renewal.status == .denied {
-          Button("Povolit připomenutí obnovy") {
+          Button {
             if renewal.status == .denied {
               if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
             } else {
               Task { await renewal.refresh(requestPermission: true) }
             }
+          } label: {
+            actionLabel("Povolit připomenutí obnovy", symbol: "bell.badge")
           }
+          .buttonStyle(.plain)
           .disabled(renewal.isRefreshing)
         } else if renewal.status == .failed {
-          Button("Zkusit připomenutí znovu") { Task { await renewal.refresh() } }
-            .disabled(renewal.isRefreshing)
+          Button { Task { await renewal.refresh() } } label: {
+            actionLabel("Zkusit připomenutí znovu", symbol: "arrow.clockwise")
+          }
+          .buttonStyle(.plain)
+          .disabled(renewal.isRefreshing)
         }
       }
     }
@@ -62,6 +90,38 @@ struct CommanderProvisioningSection: View {
     case .expired: "Platnost vypršela"
     case .failed: "Nepodařilo se nastavit"
     }
+  }
+
+  private var deadlineAccent: Color {
+    switch renewal.status {
+    case .scheduled: CommanderDesignTokens.Colors.mealGreen
+    case .permissionRequired, .denied, .failed: CommanderDesignTokens.Colors.urgentOrange
+    case .due, .expired: CommanderDesignTokens.Colors.criticalRed
+    case .unavailable: CommanderDesignTokens.Colors.textSecondary
+    }
+  }
+
+  private var reminderAccent: Color {
+    switch renewal.status {
+    case .scheduled: CommanderDesignTokens.Colors.mealGreen
+    case .permissionRequired, .denied, .failed: CommanderDesignTokens.Colors.urgentOrange
+    case .due, .expired: CommanderDesignTokens.Colors.criticalRed
+    case .unavailable: CommanderDesignTokens.Colors.textSecondary
+    }
+  }
+
+  private func actionLabel(_ title: String, symbol: String) -> some View {
+    Label(title, systemImage: symbol)
+      .commanderFont(.metric)
+      .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+      .padding(CommanderDesignTokens.Spacing.small)
+      .frame(maxWidth: .infinity, minHeight: 44)
+      .background(reminderAccent.opacity(0.18))
+      .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
+      .overlay {
+        RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
+          .strokeBorder(reminderAccent.opacity(0.5), lineWidth: 1)
+      }
   }
 }
 

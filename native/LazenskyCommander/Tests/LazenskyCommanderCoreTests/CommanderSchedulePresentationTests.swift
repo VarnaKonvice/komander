@@ -16,6 +16,9 @@ import Testing
   let days = try CommanderWeekPresentation.make(schedule: schedule, now: overviewNow())
   #expect(days.map { $0.events.first!.event.date } == ["2026-08-19", "2026-08-20", "2026-08-29"])
   #expect(days[1].events.map(\.event.stableId) == ["morning", "early-end", "a", "z"])
+  #expect(days[1].summary.procedureCount == 4)
+  #expect(days[1].summary.firstEventStartAt == (try overviewNow("2026-08-20T08:00:00")))
+  #expect(days[1].summary.lastEventEndAt == (try overviewNow("2026-08-20T10:30:00")))
   #expect(schedule == original)
 }
 
@@ -54,6 +57,27 @@ import Testing
   #expect(days[0].events[0].leaveAt == (try overviewNow("2026-08-19T23:40:00")))
 }
 
+@Test func weekBuildsCollapsedSummariesForEveryStayDay() throws {
+  let schedule = overviewSchedule(stay: ["dateFrom": "2026-08-20", "dateTo": "2026-08-22"], events: [
+    overviewEvent("breakfast", start: "07:30", end: "08:00", kind: .meal, type: "Snídaně"),
+    overviewEvent("procedure", start: "09:00", end: "09:30", type: "Koupel"),
+    overviewEvent("last-day", date: "2026-08-22", start: "10:00", end: "10:30", type: "Masáž")
+  ])
+
+  let days = try CommanderWeekPresentation.make(schedule: schedule, now: overviewNow("2026-08-20T06:00:00"))
+
+  #expect(days.map { CommanderDateText.numericDate($0.date) } == ["20. 8. 2026", "21. 8. 2026", "22. 8. 2026"])
+  #expect(days.map { $0.events.map(\.event.stableId) } == [["breakfast", "procedure"], [], ["last-day"]])
+  #expect(days.map(\.summary.procedureCount) == [1, 0, 1])
+  #expect(days.map(\.overview.procedureCount) == [1, 0, 1])
+  #expect(days[0].overview.procedureEndAt == (try overviewNow("2026-08-20T09:30:00")))
+  #expect(days[1].overview.procedureEndAt == nil)
+  #expect(days[0].summary.firstEventStartAt == (try overviewNow("2026-08-20T07:30:00")))
+  #expect(days[0].summary.lastEventEndAt == (try overviewNow("2026-08-20T09:30:00")))
+  #expect(days[1].summary.firstEventStartAt == nil)
+  #expect(days[1].summary.lastEventEndAt == nil)
+}
+
 @Test func stayCountsOnlyEndedProceduresAndGroupsByTypeOrTitle() throws {
   let schedule = overviewSchedule(events: [
     overviewEvent("past", start: "08:00", end: "08:20", title: "První koupel", type: "Koupel"),
@@ -68,6 +92,7 @@ import Testing
   #expect(summary.procedures.map(\.name) == ["Koupel", "Speciální procedura"])
   #expect(summary.procedures.map(\.total) == [2, 2])
   #expect(summary.procedures.map(\.completed) == [1, 0])
+  #expect(summary.procedures.map(\.representativeEvent.stableId) == ["past", "future"])
   let atEnd = try CommanderStayPresentation.make(schedule: schedule, now: overviewNow("2026-08-20T09:30:00"))
   #expect(atEnd.completedProcedures == 2)
 }
@@ -117,10 +142,20 @@ import Testing
   let stay = ["spa": "Lázně", "dateFrom": "2026-08-20", "dateTo": "2026-08-22", "room": "208", "doctor": "MUDr. Test", "mealShift": "II. směna", "contact": "Recepce", "empty": "  "]
   let fields = CommanderInfoPresentation.fields(stay: stay)
   #expect(fields.map(\.key) == ["spa", "dateFrom", "dateTo", "room", "doctor", "mealShift", "contact"])
+  #expect(fields.first { $0.key == "dateFrom" }?.value == "20. 8. 2026")
+  #expect(fields.first { $0.key == "dateTo" }?.value == "22. 8. 2026")
   #expect(fields.first { $0.key == "room" }?.value == "208")
   #expect(fields.first { $0.key == "doctor" }?.value == "MUDr. Test")
   #expect(CommanderInfoPresentation.fields(stay: [:]).isEmpty)
   #expect(CommanderInfoPresentation.fields(stay: ["room": "208"]).map(\.key) == ["room"])
+}
+
+@Test func commanderDateTextUsesShortCzechNumericDates() throws {
+  let date = try overviewNow("2026-08-31T12:00:00")
+  #expect(CommanderDateText.shortDay(date) == "Po 31. 8.")
+  #expect(CommanderDateText.numericDate(date) == "31. 8. 2026")
+  #expect(CommanderDateText.numericDate(isoDate: "2026-08-15") == "15. 8. 2026")
+  #expect(CommanderDateText.numericDate(isoDate: "2026-02-30") == nil)
 }
 
 @Test func emptyScheduleHasNoWeekEventsOrProcedures() throws {

@@ -22,6 +22,45 @@ import Testing
   #expect(schedule == original)
 }
 
+@Test func dayOverviewIsSharedByDashboardAndWeekForCollapsedDailyTiles() throws {
+  let schedule = summarySchedule(summaryEvents())
+  let dashboard = summaryPresentation(schedule, "08:30")
+  let week = try CommanderWeekPresentation.make(schedule: schedule, now: summaryDate("08:30"))
+
+  #expect(week.first?.overview == dashboard.dayOverview)
+  #expect(dashboard.dayOverview.date == summaryDate("00:00"))
+  #expect(dashboard.dayOverview.procedureCount == 2)
+  #expect(dashboard.dayOverview.procedureEndAt == summaryDate("14:20"))
+  #expect(dashboard.dayOverview.dinnerStartAt == summaryDate("17:30"))
+  #expect(dashboard.dayOverview.freeBeforeDinner == DateInterval(start: summaryDate("14:20"), end: summaryDate("17:30")))
+  #expect(dashboard.dayOverview.freeBeforeDinnerMinutes == 190)
+  #expect(dashboard.dayOverview.firstRelevantStartAt == summaryDate("09:00"))
+  #expect(dashboard.dayOverview.firstRelevantTitle == "Koupel")
+}
+
+@Test func dayOverviewDoesNotInventFreeBeforeDinnerWithoutProceduresOrDinner() {
+  let mealsOnly = summaryPresentation(summarySchedule(summaryEvents().filter { $0.kind == .meal }), "14:00").dayOverview
+  #expect(mealsOnly.procedureCount == 0)
+  #expect(mealsOnly.procedureEndAt == nil)
+  #expect(mealsOnly.dinnerStartAt == summaryDate("17:30"))
+  #expect(mealsOnly.freeBeforeDinner == nil)
+  #expect(mealsOnly.freeBeforeDinnerMinutes == nil)
+
+  let noDinner = summaryPresentation(summarySchedule(summaryEvents().filter { $0.stableId != "dinner" }), "15:00").dayOverview
+  #expect(noDinner.procedureCount == 2)
+  #expect(noDinner.procedureEndAt == summaryDate("14:20"))
+  #expect(noDinner.dinnerStartAt == nil)
+  #expect(noDinner.freeBeforeDinner == nil)
+
+  let empty = CommanderDashboardPresentation.make(schedule: nil, now: summaryDate("10:00")).dayOverview
+  #expect(empty.procedureCount == 0)
+  #expect(empty.procedureEndAt == nil)
+  #expect(empty.dinnerStartAt == nil)
+  #expect(empty.freeBeforeDinner == nil)
+  #expect(empty.firstRelevantStartAt == nil)
+  #expect(empty.firstRelevantTitle == nil)
+}
+
 @Test func lastProcedureEndUsesLatestEndNotLatestStartOrDinnerEnd() {
   let schedule = summarySchedule([
     summaryEvent("long", "09:00", "15:00"),
@@ -195,16 +234,78 @@ import Testing
 
 @Test func noScheduleAndUnsynchronizedDoNotInventTodaysMetadata() {
   let tomorrow = ScheduleEvent(stableId: "tomorrow", date: "2026-08-21", start: "17:30", end: "18:00", title: "Večeře", location: "Jídelna", kind: .meal, procedureType: nil, mealType: "Večeře", leadTimeMinutes: nil)
-  let noSchedule = summaryPresentation(summarySchedule([tomorrow]), "10:00")
+  let noSchedule = summaryPresentation(
+    summarySchedule([tomorrow], stay: ["dateFrom": "2026-08-20", "dateTo": "2026-08-22"]),
+    "10:00"
+  )
   #expect(noSchedule.mode == .noSchedule)
   #expect(noSchedule.daySummary.procedureCount == 0)
   #expect(noSchedule.daySummary.firstEventStartAt == nil)
   #expect(noSchedule.daySummary.lastEventEndAt == nil)
   #expect(noSchedule.daySummary.dinnerStartAt == nil)
   #expect(noSchedule.thenEvent == nil)
+  #expect(noSchedule.nextProcedure == nil)
+  #expect(noSchedule.minutesUntilNextProcedureLeave == nil)
+  #expect(noSchedule.stayPeriod?.phase == .active)
   let unsynchronized = CommanderDashboardPresentation.make(schedule: nil, now: summaryDate("10:00"))
   #expect(unsynchronized.mode == .unsynchronized)
   #expect(unsynchronized.daySummary == noSchedule.daySummary)
+  #expect(unsynchronized.nextProcedure == nil)
+}
+
+@Test func noScheduleSelectsFirstFutureProcedureAndSkipsEarlierMeals() throws {
+  let breakfast = ScheduleEvent(
+    stableId: "tomorrow-breakfast", date: "2026-08-21", start: "07:30", end: "08:00",
+    title: "Snídaně", location: "Jídelna", kind: .meal,
+    procedureType: nil, mealType: "Snídaně", leadTimeMinutes: nil
+  )
+  let firstProcedure = ScheduleEvent(
+    stableId: "tomorrow-massage", date: "2026-08-21", start: "10:00", end: "10:30",
+    title: "Masáž", location: "Rehabilitace, box 3", kind: .procedure,
+    procedureType: "Masáž", mealType: nil, leadTimeMinutes: nil
+  )
+  let laterProcedure = ScheduleEvent(
+    stableId: "tomorrow-bath", date: "2026-08-21", start: "11:00", end: "11:30",
+    title: "Koupel", location: "Balneo", kind: .procedure,
+    procedureType: "Koupel", mealType: nil, leadTimeMinutes: nil
+  )
+  let schedule = summarySchedule(
+    [laterProcedure, breakfast, firstProcedure],
+    stay: ["dateFrom": "2026-08-20", "dateTo": "2026-08-22"]
+  )
+  let overrides = LeadTimeOverrides(eventOverrides: [firstProcedure.stableId: 30])
+  let now = summaryDate("10:00")
+  let presentation = CommanderDashboardPresentation.make(
+    schedule: schedule,
+    now: now,
+    overrides: overrides
+  )
+
+  #expect(presentation.mode == .noSchedule)
+  #expect(presentation.timeline.isEmpty)
+  #expect(presentation.nextProcedure?.event.stableId == firstProcedure.stableId)
+  #expect(presentation.nextProcedure?.startAt == (try NativeAlarmContract.dateTime(date: "2026-08-21", time: "10:00")))
+  #expect(presentation.nextProcedure?.leaveAt == (try NativeAlarmContract.dateTime(date: "2026-08-21", time: "09:30")))
+  #expect(presentation.minutesUntilNextProcedureLeave == 1_410)
+}
+
+@Test func finishedStayDoesNotSearchForAnotherProcedure() throws {
+  let futureProcedure = ScheduleEvent(
+    stableId: "outside-finished-stay", date: "2026-08-21", start: "10:00", end: "10:30",
+    title: "Masáž", location: "Rehabilitace", kind: .procedure,
+    procedureType: "Masáž", mealType: nil, leadTimeMinutes: nil
+  )
+  let schedule = summarySchedule(
+    [futureProcedure],
+    stay: ["dateFrom": "2026-08-18", "dateTo": "2026-08-19"]
+  )
+  let presentation = summaryPresentation(schedule, "10:00")
+
+  #expect(presentation.mode == .noSchedule)
+  #expect(presentation.stayPeriod?.phase == .finished)
+  #expect(presentation.stayPeriod?.dateTo == (try NativeAlarmContract.dateTime(date: "2026-08-19", time: "00:00")))
+  #expect(presentation.nextProcedure == nil)
+  #expect(presentation.minutesUntilNextProcedureLeave == nil)
 }
 
 private func summaryPresentation(_ schedule: Schedule, _ time: String) -> CommanderDashboardPresentation {
@@ -215,8 +316,8 @@ private func summaryDate(_ time: String) -> Date {
   try! NativeAlarmContract.dateTime(date: "2026-08-20", time: time)
 }
 
-private func summarySchedule(_ events: [ScheduleEvent]) -> Schedule {
-  Schedule(schemaVersion: 1, scheduleVersion: 1, updatedAt: "2026-08-20T00:00:00Z", stay: [:], events: events,
+private func summarySchedule(_ events: [ScheduleEvent], stay: [String: String] = [:]) -> Schedule {
+  Schedule(schemaVersion: 1, scheduleVersion: 1, updatedAt: "2026-08-20T00:00:00Z", stay: stay, events: events,
            settings: ScheduleSettings(defaultLeadTimeMinutes: 20, procedureTypeOverrides: [:], mealOverrides: [:]))
 }
 
