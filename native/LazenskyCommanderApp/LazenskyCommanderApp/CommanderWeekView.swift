@@ -34,6 +34,13 @@ struct CommanderWeekView: View {
               }
               .id(day.date)
             }
+
+            // Give the final days enough trailing scroll range so even the last
+            // expanded card can align under the top safe area like earlier days.
+            Color.clear
+              .frame(height: 520)
+              .allowsHitTesting(false)
+              .accessibilityHidden(true)
           } else {
             Text(model.latestSchedule == nil ? "Rozpis ještě není načten"
                  : days == nil ? "Rozpis nelze zobrazit" : "Rozpis neobsahuje žádné události")
