@@ -113,6 +113,6 @@ struct CommanderInfoView: View {
     }
     .padding(CommanderDesignTokens.Spacing.page)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .commanderCard()
+    .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthCard)
   }
 }
