@@ -26,11 +26,9 @@ struct CommanderWeekView: View {
                 if expandedDays.contains(day.date) {
                   expandedDays.remove(day.date)
                 } else {
-                  expandedDays.insert(day.date)
+                  expandedDays = [day.date]
                   DispatchQueue.main.async {
-                    withAnimation(.easeOut(duration: 0.12)) {
-                      proxy.scrollTo(day.date, anchor: .top)
-                    }
+                    proxy.scrollTo(day.date, anchor: .top)
                   }
                 }
               }
@@ -83,7 +81,7 @@ struct CommanderWeekDayTile: View {
         } else {
           LazyVStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
             ForEach(day.events, id: \.event.stableId) { item in
-              CommanderEventRow(item: item)
+              CommanderWeekEventRow(item: item)
             }
           }
           .padding(.horizontal, 2)
@@ -94,9 +92,8 @@ struct CommanderWeekDayTile: View {
     .padding(isExpanded ? 8 : 0)
     .background {
       if isExpanded {
-        let shape = RoundedRectangle(cornerRadius: expandedRadius)
-        ZStack {
-          shape.fill(
+        RoundedRectangle(cornerRadius: expandedRadius)
+          .fill(
             LinearGradient(
               colors: [
                 Color(red: 0.16, green: 0.18, blue: 0.39),
@@ -107,31 +104,6 @@ struct CommanderWeekDayTile: View {
               endPoint: .bottomTrailing
             )
           )
-          shape.fill(
-            LinearGradient(
-              colors: [
-                Color.white.opacity(0.11),
-                CommanderDesignTokens.Colors.primaryPurple.opacity(0.14),
-                CommanderDesignTokens.Colors.freeBlue.opacity(0.07),
-                Color.clear
-              ],
-              startPoint: .topLeading,
-              endPoint: .bottomTrailing
-            )
-          )
-          shape.fill(
-            RadialGradient(
-              colors: [
-                CommanderDesignTokens.Colors.freeBlue.opacity(0.28),
-                CommanderDesignTokens.Colors.primaryPurple.opacity(0.18),
-                .clear
-              ],
-              center: .topTrailing,
-              startRadius: 8,
-              endRadius: 250
-            )
-          )
-        }
       }
     }
     .overlay {
@@ -140,31 +112,17 @@ struct CommanderWeekDayTile: View {
           .strokeBorder(
             LinearGradient(
               colors: [
-                Color.white.opacity(0.48),
-                CommanderDesignTokens.Colors.freeBlue.opacity(0.98),
-                CommanderDesignTokens.Colors.primaryPurple.opacity(0.92),
-                CommanderDesignTokens.Colors.freeBlue.opacity(0.50)
+                Color.white.opacity(0.34),
+                CommanderDesignTokens.Colors.freeBlue.opacity(0.88),
+                CommanderDesignTokens.Colors.primaryPurple.opacity(0.72)
               ],
               startPoint: .topLeading,
               endPoint: .bottomTrailing
             ),
-            lineWidth: 1.8
+            lineWidth: 1.6
           )
       }
     }
-    .shadow(
-      color: isExpanded ? Color.black.opacity(0.34) : .clear,
-      radius: isExpanded ? 15 : 0,
-      y: isExpanded ? 9 : 0
-    )
-    .shadow(
-      color: isExpanded ? CommanderDesignTokens.Colors.freeBlue.opacity(0.31) : .clear,
-      radius: isExpanded ? 18 : 0
-    )
-    .shadow(
-      color: isExpanded ? CommanderDesignTokens.Colors.primaryPurple.opacity(0.20) : .clear,
-      radius: isExpanded ? 27 : 0
-    )
   }
 }
 
@@ -196,13 +154,12 @@ struct CommanderDaySummaryCard: View {
           color: CommanderDesignTokens.Colors.primaryPurple,
           size: 40
         )
-        .background(CommanderDesignTokens.Colors.primaryPurple.opacity(0.10), in: Circle())
+        .background(CommanderDesignTokens.Colors.primaryPurple.opacity(0.08), in: Circle())
         .overlay {
           Circle().strokeBorder(
-            CommanderDesignTokens.Colors.primaryPurple.opacity(0.60), lineWidth: 1.2
+            CommanderDesignTokens.Colors.primaryPurple.opacity(0.48), lineWidth: 1
           )
         }
-        .shadow(color: CommanderDesignTokens.Colors.primaryPurple.opacity(0.52), radius: 8)
 
         Text(CommanderDateText.shortDay(overview.date))
           .font(.system(size: 22, weight: .bold))
@@ -261,64 +218,27 @@ struct CommanderDaySummaryCard: View {
     .padding(.bottom, 11)
     .frame(maxWidth: .infinity, alignment: .leading)
     .background {
-      let shape = RoundedRectangle(cornerRadius: cardRadius)
-      ZStack {
-        shape.fill(
+      RoundedRectangle(cornerRadius: cardRadius)
+        .fill(
           LinearGradient(
             colors: [
               Color(red: 0.15, green: 0.17, blue: 0.36),
-              Color(red: 0.075, green: 0.11, blue: 0.26),
+              summaryAccent.opacity(isExpanded == true ? 0.15 : 0.10),
               Color(red: 0.035, green: 0.055, blue: 0.16)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           )
         )
-        shape.fill(
-          LinearGradient(
-            colors: [
-              Color.white.opacity(isExpanded == true ? 0.13 : 0.10),
-              summaryAccent.opacity(isExpanded == true ? 0.15 : 0.10),
-              Color.clear
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
-        )
-        shape.fill(
-          RadialGradient(
-            colors: [
-              summaryAccent.opacity(isExpanded == true ? 0.24 : 0.15),
-              .clear
-            ],
-            center: .topLeading,
-            startRadius: 8,
-            endRadius: 220
-          )
-        )
-      }
     }
     .clipShape(RoundedRectangle(cornerRadius: cardRadius))
     .overlay {
       RoundedRectangle(cornerRadius: cardRadius)
         .strokeBorder(
-          LinearGradient(
-            colors: [
-              Color.white.opacity(isExpanded == true ? 0.34 : 0.24),
-              summaryAccent.opacity(isExpanded == true ? 0.88 : 0.64),
-              CommanderDesignTokens.Colors.panelStroke.opacity(0.34)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          ),
-          lineWidth: isExpanded == true ? 1.5 : 1.15
+          summaryAccent.opacity(isExpanded == true ? 0.78 : 0.48),
+          lineWidth: isExpanded == true ? 1.5 : 1
         )
     }
-    .shadow(color: Color.black.opacity(0.28), radius: 9, y: 6)
-    .shadow(
-      color: summaryAccent.opacity(isExpanded == true ? 0.19 : 0.09),
-      radius: isExpanded == true ? 12 : 7
-    )
     .accessibilityElement(children: .combine)
   }
 
@@ -354,9 +274,8 @@ private struct CommanderMetricTile: View {
     VStack(alignment: .center, spacing: 3) {
       if let symbol {
         CommanderSymbolBadge(symbol: symbol, color: accent, size: 40)
-          .background(accent.opacity(0.10), in: Circle())
-          .overlay { Circle().strokeBorder(accent.opacity(0.60), lineWidth: 1.2) }
-          .shadow(color: accent.opacity(0.50), radius: 8)
+          .background(accent.opacity(0.08), in: Circle())
+          .overlay { Circle().strokeBorder(accent.opacity(0.48), lineWidth: 1) }
       }
       Text(title)
         .font(.system(size: 14, weight: .semibold))
@@ -378,9 +297,8 @@ private struct CommanderMetricTile: View {
     .padding(.bottom, 9)
     .frame(maxWidth: .infinity, minHeight: 142, alignment: .top)
     .background {
-      let shape = RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-      ZStack {
-        shape.fill(
+      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
+        .fill(
           LinearGradient(
             colors: [
               Color(red: 0.17, green: 0.18, blue: 0.38),
@@ -391,46 +309,115 @@ private struct CommanderMetricTile: View {
             endPoint: .bottomTrailing
           )
         )
-        shape.fill(
-          LinearGradient(
-            colors: [
-              Color.white.opacity(0.12),
-              accent.opacity(0.13),
-              Color.clear
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
-        )
-        shape.fill(
-          RadialGradient(
-            colors: [accent.opacity(0.15), .clear],
-            center: .topLeading,
-            startRadius: 4,
-            endRadius: 105
-          )
-        )
-      }
     }
     .overlay {
       RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-        .strokeBorder(
-          LinearGradient(
-            colors: [
-              Color.white.opacity(0.24),
-              accent.opacity(0.50),
-              Color.black.opacity(0.18)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          ),
-          lineWidth: 1
-        )
+        .strokeBorder(accent.opacity(0.42), lineWidth: 1)
     }
-    .shadow(color: Color.black.opacity(0.33), radius: 5, y: 4)
-    .shadow(color: accent.opacity(0.12), radius: 8)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(title.replacingOccurrences(of: "\n", with: " "))
     .accessibilityValue(accessibleValue ?? value)
+  }
+}
+
+private struct CommanderWeekEventRow: View {
+  let item: CommanderDashboardEvent
+
+  private var accent: Color {
+    Color(commanderHex: CommanderVisualAssets.accent(for: item.event))
+  }
+
+  private var departureText: String {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+    let time = item.leaveAt.formatted(CommanderScheduleDateStyle.clock)
+    return calendar.isDate(item.startAt, inSameDayAs: item.leaveAt)
+      ? time : "\(CommanderDateText.shortDay(item.leaveAt)) \(time)"
+  }
+
+  var body: some View {
+    HStack(alignment: .center, spacing: 6) {
+      VStack(alignment: .leading, spacing: 2) {
+        Text(item.startAt.formatted(CommanderScheduleDateStyle.clock))
+        Text(item.endAt.formatted(CommanderScheduleDateStyle.clock))
+      }
+      .commanderFont(.time)
+      .monospacedDigit()
+      .foregroundStyle(accent)
+      .fixedSize(horizontal: true, vertical: false)
+      .frame(width: 55, alignment: .leading)
+
+      CommanderSymbolBadge(
+        symbol: CommanderVisualAssets.symbol(for: item.event),
+        color: accent,
+        size: 34
+      )
+
+      details.layoutPriority(1)
+    }
+    .padding(.horizontal, 10)
+    .padding(.vertical, 7)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background {
+      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
+        .fill(
+          LinearGradient(
+            colors: [
+              Color(red: 0.13, green: 0.16, blue: 0.33),
+              accent.opacity(item.phase == .current ? 0.10 : 0.06),
+              Color(red: 0.03, green: 0.05, blue: 0.14)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+    }
+    .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow))
+    .overlay {
+      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
+        .strokeBorder(
+          accent.opacity(item.phase == .current ? 0.38 : 0.22),
+          lineWidth: 1
+        )
+        .allowsHitTesting(false)
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityValue(item.phase == .current ? "Právě probíhá" : "")
+  }
+
+  private var details: some View {
+    VStack(alignment: .leading, spacing: 2) {
+      Text(item.event.title)
+        .commanderFont(.eventTitle)
+        .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        .fixedSize(horizontal: false, vertical: true)
+      if !item.event.location.isEmpty {
+        HStack(alignment: .top, spacing: 6) {
+          location
+            .fixedSize(horizontal: false, vertical: true)
+            .layoutPriority(1)
+          Spacer(minLength: 4)
+          departure
+            .fixedSize(horizontal: true, vertical: true)
+        }
+      } else {
+        departure
+          .frame(maxWidth: .infinity, alignment: .trailing)
+      }
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private var location: some View {
+    Label(item.event.location, systemImage: "mappin.circle.fill")
+      .commanderFont(.location)
+      .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
+  }
+
+  private var departure: some View {
+    Text("Odchod \(departureText)")
+      .commanderFont(.departure)
+      .monospacedDigit()
+      .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
   }
 }
