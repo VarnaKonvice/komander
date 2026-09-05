@@ -37,6 +37,7 @@ private struct CommanderStayOverviewCard: View {
           color: CommanderDesignTokens.Colors.primaryPurple,
           size: CommanderDesignTokens.Size.sectionBadge
         )
+        .shadow(color: CommanderDesignTokens.Colors.primaryPurple.opacity(0.42), radius: 7)
         VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
           Text(primaryTitle)
             .commanderFont(.liveTitle)
@@ -68,7 +69,7 @@ private struct CommanderStayOverviewCard: View {
     }
     .padding(CommanderDesignTokens.Spacing.medium)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .commanderCard()
+    .commanderCard(accent: CommanderDesignTokens.Colors.primaryPurple, surface: .depthCard)
   }
 
   private var primaryTitle: String {
@@ -126,6 +127,7 @@ private struct CommanderStayOverviewCard: View {
         color: CommanderDesignTokens.Colors.locationBlue,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
+      .shadow(color: CommanderDesignTokens.Colors.locationBlue.opacity(0.34), radius: 5)
       VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
         Text(title)
           .commanderFont(.label)
@@ -140,12 +142,7 @@ private struct CommanderStayOverviewCard: View {
     }
     .padding(CommanderDesignTokens.Spacing.small)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(CommanderDesignTokens.Colors.panel.opacity(0.72))
-    .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
-    .overlay {
-      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-        .strokeBorder(CommanderDesignTokens.Stroke.normal, lineWidth: CommanderDesignTokens.Stroke.width)
-    }
+    .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthInset)
   }
 }
 
@@ -154,7 +151,7 @@ private struct CommanderProcedureOverviewCard: View {
 
   var body: some View {
     CommanderSectionCard(
-      title: "Procedury",
+      title: "Terapie",
       symbol: "cross.case.fill",
       accent: CommanderDesignTokens.Colors.primaryPurple
     ) {
@@ -166,7 +163,7 @@ private struct CommanderProcedureOverviewCard: View {
       )
 
       if stay.procedures.isEmpty {
-        Text("Rozpis neobsahuje žádné procedury")
+        Text("Rozpis neobsahuje žádné terapie")
           .commanderFont(.subtitle)
           .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
       } else {
@@ -199,6 +196,7 @@ private struct CommanderProcedureProgressRow: View {
         color: accent,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
+      .shadow(color: accent.opacity(0.34), radius: 5)
       Text(procedure.name)
         .commanderFont(.metric)
         .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
@@ -211,12 +209,7 @@ private struct CommanderProcedureProgressRow: View {
     }
     .padding(CommanderDesignTokens.Spacing.small)
     .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
-    .background(CommanderDesignTokens.Colors.panel.opacity(0.72))
-    .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
-    .overlay {
-      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-        .strokeBorder(accent.opacity(0.35), lineWidth: CommanderDesignTokens.Stroke.width)
-    }
+    .commanderCard(accent: accent, surface: .depthInset)
     .accessibilityElement(children: .combine)
     .accessibilityLabel("\(procedure.name), ukončené podle rozpisu \(procedure.completed) z \(procedure.total)")
   }
@@ -238,6 +231,6 @@ private struct CommanderStayUnavailableCard: View {
     }
     .padding(CommanderDesignTokens.Spacing.page)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .commanderCard()
+    .commanderCard(accent: CommanderDesignTokens.Colors.primaryPurple, surface: .depthCard)
   }
 }
