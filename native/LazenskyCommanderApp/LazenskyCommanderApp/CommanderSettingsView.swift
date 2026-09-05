@@ -68,6 +68,7 @@ private struct CommanderSettingsAttentionCard: View {
         color: CommanderDesignTokens.Colors.criticalRed,
         size: CommanderDesignTokens.Size.sectionBadge
       )
+      .shadow(color: CommanderDesignTokens.Colors.criticalRed.opacity(0.42), radius: 7)
       VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
         Text("Potřebuje váš zásah")
           .commanderFont(.eventTitle)
@@ -80,7 +81,7 @@ private struct CommanderSettingsAttentionCard: View {
     }
     .padding(CommanderDesignTokens.Spacing.medium)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .commanderCard(accent: CommanderDesignTokens.Colors.criticalRed)
+    .commanderCard(accent: CommanderDesignTokens.Colors.criticalRed, surface: .depthCard)
   }
 }
 
@@ -151,6 +152,7 @@ private struct CommanderSettingsActionRow: View {
         color: accent,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
+      .shadow(color: accent.opacity(0.34), radius: 5)
       VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
         Text(title)
           .commanderFont(.metric)
@@ -166,12 +168,7 @@ private struct CommanderSettingsActionRow: View {
     }
     .padding(CommanderDesignTokens.Spacing.small)
     .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-    .background(CommanderDesignTokens.Colors.panel.opacity(0.72))
-    .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
-    .overlay {
-      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-        .strokeBorder(CommanderDesignTokens.Stroke.normal, lineWidth: CommanderDesignTokens.Stroke.width)
-    }
+    .commanderCard(accent: accent, surface: .depthInset)
   }
 }
 
@@ -290,7 +287,7 @@ private struct CommanderLeadTimeSettingsView: View {
       }
     }
     .scrollContentBackground(.hidden)
-    .background(CommanderDashboardPalette.backgroundGradient.ignoresSafeArea())
+    .background(CommanderDepthBackground().ignoresSafeArea())
     .navigationTitle("Čas na odchod")
     .navigationBarTitleDisplayMode(.inline)
   }
