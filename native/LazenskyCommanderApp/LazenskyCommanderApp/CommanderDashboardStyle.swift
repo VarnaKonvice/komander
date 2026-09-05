@@ -44,18 +44,28 @@ enum CommanderDesignTokens {
 
   enum CardSurface {
     case card
+    case depthCard
+    case depthInset
     case eventRow
     case header
 
     var radius: CGFloat {
       switch self {
-      case .card: Radius.card
+      case .card, .depthCard: Radius.card
+      case .depthInset: Radius.inset
       case .eventRow: Radius.eventRow
       case .header: Radius.header
       }
     }
 
     var isGlass: Bool { self == .header }
+
+    var isDepth: Bool {
+      switch self {
+      case .depthCard, .depthInset: true
+      default: false
+      }
+    }
   }
 
   enum Stroke {
@@ -116,27 +126,85 @@ private struct CommanderCardSurface: ViewModifier {
 
   func body(content: Content) -> some View {
     let shape = RoundedRectangle(cornerRadius: surface.radius)
+    let depthAccent = accent ?? CommanderDesignTokens.Colors.primaryPurple
+
     content
       .background {
         ZStack {
           if surface.isGlass {
             shape.fill(.ultraThinMaterial)
               .overlay(CommanderDesignTokens.Colors.panel.opacity(0.8))
+          } else if surface.isDepth {
+            shape.fill(
+              LinearGradient(
+                colors: [
+                  Color(red: 0.17, green: 0.18, blue: 0.38),
+                  depthAccent.opacity(0.10),
+                  Color(red: 0.055, green: 0.075, blue: 0.19)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+              )
+            )
+            shape.fill(
+              LinearGradient(
+                colors: [
+                  Color.white.opacity(0.11),
+                  depthAccent.opacity(0.10),
+                  Color.clear
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+              )
+            )
+            shape.fill(
+              RadialGradient(
+                colors: [depthAccent.opacity(0.13), .clear],
+                center: .topLeading,
+                startRadius: 4,
+                endRadius: surface == .depthInset ? 110 : 220
+              )
+            )
           } else {
             CommanderDesignTokens.cardBackground
+            CommanderDesignTokens.glassHighlight
           }
-          CommanderDesignTokens.glassHighlight
         }
       }
       .background(CommanderDesignTokens.Colors.background)
       .clipShape(shape)
       .overlay {
-        shape.strokeBorder(
-          accent?.opacity(0.55) ?? CommanderDesignTokens.Stroke.normal,
-          lineWidth: CommanderDesignTokens.Stroke.width
-        )
-        .allowsHitTesting(false)
+        if surface.isDepth {
+          shape.strokeBorder(
+            LinearGradient(
+              colors: [
+                Color.white.opacity(0.23),
+                depthAccent.opacity(0.52),
+                Color.black.opacity(0.16)
+              ],
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            ),
+            lineWidth: 1
+          )
+          .allowsHitTesting(false)
+        } else {
+          shape.strokeBorder(
+            accent?.opacity(0.55) ?? CommanderDesignTokens.Stroke.normal,
+            lineWidth: CommanderDesignTokens.Stroke.width
+          )
+          .allowsHitTesting(false)
+        }
       }
+      .shadow(
+        color: surface.isDepth ? Color.black.opacity(0.30) : .clear,
+        radius: surface == .depthInset ? 5 : 9,
+        y: surface == .depthInset ? 4 : 6
+      )
+      .shadow(
+        color: surface.isDepth ? depthAccent.opacity(0.10) : .clear,
+        radius: surface == .depthInset ? 7 : 11
+      )
   }
 }
 
@@ -254,7 +322,7 @@ struct CommanderTabScaffold<Content: View>: View {
       .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
     }
     .scrollIndicators(.hidden)
-    .background(CommanderDesignTokens.Colors.background.ignoresSafeArea())
+    .background(CommanderDepthBackground().ignoresSafeArea())
     .toolbar(.hidden, for: .navigationBar)
   }
 }
@@ -285,6 +353,7 @@ struct CommanderSectionCard<Content: View>: View {
           color: accent,
           size: CommanderDesignTokens.Size.sectionBadge
         )
+        .shadow(color: accent.opacity(0.42), radius: 7)
         Text(title)
           .commanderFont(.section)
           .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
@@ -293,7 +362,7 @@ struct CommanderSectionCard<Content: View>: View {
     }
     .padding(CommanderDesignTokens.Spacing.medium)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .commanderCard()
+    .commanderCard(accent: accent, surface: .depthCard)
   }
 }
 
@@ -311,6 +380,7 @@ struct CommanderDetailRow: View {
         color: accent,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
+      .shadow(color: accent.opacity(0.34), radius: 5)
       VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
         Text(title)
           .commanderFont(.label)
@@ -324,12 +394,7 @@ struct CommanderDetailRow: View {
     }
     .padding(CommanderDesignTokens.Spacing.small)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .background(CommanderDesignTokens.Colors.panel.opacity(0.72))
-    .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
-    .overlay {
-      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-        .strokeBorder(CommanderDesignTokens.Stroke.normal, lineWidth: CommanderDesignTokens.Stroke.width)
-    }
+    .commanderCard(accent: accent, surface: .depthInset)
     .accessibilityElement(children: .combine)
   }
 }
@@ -380,6 +445,7 @@ struct CommanderNavigationRow: View {
         color: accent,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
+      .shadow(color: accent.opacity(0.34), radius: 5)
       VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
         Text(title)
           .commanderFont(.metric)
@@ -403,12 +469,7 @@ struct CommanderNavigationRow: View {
     }
     .padding(CommanderDesignTokens.Spacing.small)
     .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
-    .background(CommanderDesignTokens.Colors.panel.opacity(0.72))
-    .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
-    .overlay {
-      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-        .strokeBorder(CommanderDesignTokens.Stroke.normal, lineWidth: CommanderDesignTokens.Stroke.width)
-    }
+    .commanderCard(accent: accent, surface: .depthInset)
   }
 }
 
