@@ -152,19 +152,26 @@ public struct AlarmSyncService: Sendable {
     // Real AlarmKit exposes its daemon state, so production verifies persisted IDs and effective
     // alert deadlines here. Minimal non-platform test adapters may return nil to opt out of this
     // platform-specific observation; their unit tests then exercise reconciliation only.
-    if let platformIDs {
-      let invalidBeforeWrite = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates, timingIDs: futurePlatformIDs)
-      if !invalidBeforeWrite.isEmpty {
-        repairs += 1
-        for stableID in invalidBeforeWrite {
-          guard let record = state.records[stableID] else { continue }
-          if platformIDs.contains(record.platformAlarmID) {
-            try? await adapter.cancel(platformAlarmID: record.platformAlarmID)
+    do {
+      if let platformIDs {
+        let invalidBeforeWrite = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates, timingIDs: futurePlatformIDs)
+        if !invalidBeforeWrite.isEmpty {
+          repairs += 1
+          for stableID in invalidBeforeWrite {
+            guard let record = state.records[stableID] else { continue }
+            if platformIDs.contains(record.platformAlarmID) {
+              try await adapter.cancel(platformAlarmID: record.platformAlarmID)
+            }
+            state.records.removeValue(forKey: stableID)
           }
-          state.records.removeValue(forKey: stableID)
+          try await store.save(state)
         }
-        try await store.save(state)
       }
+    } catch {
+      // Keep the ID when cancellation failed: creating a replacement could ring twice.
+      try? await store.save(state)
+      let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
+      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: repairs)
     }
 
     let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
@@ -199,7 +206,7 @@ public struct AlarmSyncService: Sendable {
           for stableID in verification.invalidStableIDs {
             if let record = state.records[stableID] {
               if verification.platformIDs.contains(record.platformAlarmID) {
-                try? await adapter.cancel(platformAlarmID: record.platformAlarmID)
+                try await adapter.cancel(platformAlarmID: record.platformAlarmID)
               }
               state.records.removeValue(forKey: stableID)
             }

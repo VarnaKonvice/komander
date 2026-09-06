@@ -9,22 +9,16 @@ public enum ScheduleSnapshotDecision: Equatable, Sendable {
 public protocol ScheduleSnapshotStoring: Sendable {
   func load() async throws -> Schedule?
   func save(_ schedule: Schedule) async throws
+  func accept(_ schedule: Schedule) async throws -> ScheduleSnapshotDecision
 }
 
 public extension ScheduleSnapshotStoring {
   @discardableResult
   func accept(_ schedule: Schedule) async throws -> ScheduleSnapshotDecision {
     try NativeAlarmContract.validateCanonical(schedule)
-    guard let existing = try await load() else {
-      try await save(schedule)
-      return .stored
-    }
-    if existing == schedule { return .unchanged }
-    guard schedule.scheduleVersion > existing.scheduleVersion else {
-      return .rejectedVersion(current: existing.scheduleVersion, incoming: schedule.scheduleVersion)
-    }
-    try await save(schedule)
-    return .stored
+    let decision = ScheduleSnapshotPolicy.decision(incoming: schedule, existing: try await load())
+    if decision == .stored { try await save(schedule) }
+    return decision
   }
 }
 
@@ -49,6 +43,13 @@ public actor UserDefaultsScheduleSnapshotStore: ScheduleSnapshotStoring {
     }
   }
 
+  public func accept(_ schedule: Schedule) throws -> ScheduleSnapshotDecision {
+    try NativeAlarmContract.validateCanonical(schedule)
+    let decision = ScheduleSnapshotPolicy.decision(incoming: schedule, existing: try load())
+    if decision == .stored { try save(schedule) }
+    return decision
+  }
+
   public func save(_ schedule: Schedule) throws {
     try NativeAlarmContract.validateCanonical(schedule)
     defaults.set(try JSONEncoder().encode(schedule), forKey: key)
@@ -62,6 +63,24 @@ public actor InMemoryScheduleSnapshotStore: ScheduleSnapshotStoring {
     self.schedule = schedule
   }
 
+  public func accept(_ incoming: Schedule) throws -> ScheduleSnapshotDecision {
+    try NativeAlarmContract.validateCanonical(incoming)
+    let decision = ScheduleSnapshotPolicy.decision(incoming: incoming, existing: schedule)
+    if decision == .stored { schedule = incoming }
+    return decision
+  }
+
   public func load() -> Schedule? { schedule }
   public func save(_ schedule: Schedule) { self.schedule = schedule }
+}
+
+public enum ScheduleSnapshotPolicy {
+  public static func decision(incoming: Schedule, existing: Schedule?) -> ScheduleSnapshotDecision {
+    guard let existing else { return .stored }
+    if incoming == existing { return .unchanged }
+    guard incoming.scheduleVersion > existing.scheduleVersion else {
+      return .rejectedVersion(current: existing.scheduleVersion, incoming: incoming.scheduleVersion)
+    }
+    return .stored
+  }
 }

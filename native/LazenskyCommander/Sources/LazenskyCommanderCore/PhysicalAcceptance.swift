@@ -166,23 +166,13 @@ public struct PhysicalAcceptancePreflight: Sendable {
       problems.append("Do prvního alarmu zbývá méně než minuta. Tento běh není připravený.")
     }
 
-    func hasPriorHandoffSource(for event: ScheduleEvent, leaveAt: Date) -> Bool {
-      run.schedule.events.contains { candidate in
-        guard candidate.stableId != event.stableId,
-              candidate.date == event.date,
-              let candidateEnd = try? NativeAlarmContract.dateTime(date: candidate.date, time: candidate.end)
-        else { return false }
-        return candidateEnd <= leaveAt
-      }
-    }
-
     rows = try payload.alarms.map { alarm in
       let event = run.schedule.events.first { $0.stableId == alarm.stableId }!
       let resolution = try NativeAlarmContract.resolvedLeadTime(event: event, schedule: run.schedule, overrides: run.overrides)
       let matches = observations.filter { $0.stableID == alarm.stableId }
       let actual = matches.count == 1 ? matches.first : nil
       let plan = try AlarmCountdown.plan(for: alarm, in: run.schedule, now: actual?.configuredAt ?? run.now)
-      let usesPreparedHandoff = procedureActivityPrepared && hasPriorHandoffSource(for: event, leaveAt: plan.scheduledAlertAt)
+      let usesPreparedHandoff = procedureActivityPrepared && CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: run.schedule)
       var errors: [String] = []
 
       if let actual, let configuredAt = actual.configuredAt {

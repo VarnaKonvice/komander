@@ -30,7 +30,7 @@ import Testing
   // The physically verified handoff must remain explicit: ringing is owned by AlarmKit,
   // then an existing free-time/procedure activity becomes the red departure card until start.
   #expect(stopIntent.contains("phase: .departureBridge"))
-  #expect(stopIntent.contains("let canBridgeHandoff = handoff != nil && startDate > now"))
+  #expect(stopIntent.contains("CommanderLiveActivityHandoff.stopDisposition("))
   #expect(stopIntent.contains("await alarmActivity.end(nil, dismissalPolicy: .immediate)"))
   #expect(stopIntent.contains("await handoff.end("))
   #expect(stopIntent.contains("dismissalPolicy: .after(startDate)"))

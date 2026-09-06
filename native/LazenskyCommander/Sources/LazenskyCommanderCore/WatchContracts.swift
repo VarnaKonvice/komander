@@ -67,7 +67,7 @@ public enum WatchScheduleCachePolicy {
     guard
       incoming.contractVersion == WatchScheduleSnapshot.currentContractVersion,
       incoming.projectionRevision >= 0,
-      (try? NativeAlarmContract.validateCanonical(incoming.schedule)) != nil
+      (try? WatchScheduleTransportCodec.encode(incoming)) != nil
     else { return .rejectedInvalid }
     guard let existing else { return .stored }
     if incoming == existing { return .unchanged }
@@ -81,7 +81,8 @@ public enum WatchScheduleCachePolicy {
 
     // A local lead-time edit intentionally keeps the canonical scheduleVersion unchanged.
     // Only a strictly newer local projection revision may replace the cached projection.
-    if incoming.projectionRevision > existing.projectionRevision { return .stored }
+    if incoming.schedule == existing.schedule,
+       incoming.projectionRevision > existing.projectionRevision { return .stored }
     return .rejectedVersion(current: existingVersion, incoming: incomingVersion)
   }
 
