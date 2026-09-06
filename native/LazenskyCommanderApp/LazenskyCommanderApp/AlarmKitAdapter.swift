@@ -19,12 +19,13 @@ enum AlarmKitAdapterError: LocalizedError {
   }
 }
 
+@MainActor
 private enum CommanderRollingLiveActivity {
-  static func date(_ localISO: String) -> Date? {
+  nonisolated static func date(_ localISO: String) -> Date? {
     try? NativeAlarmContract.date(fromLocalISO: localISO)
   }
 
-  static func state(
+  nonisolated static func state(
     projectionRevision: Int,
     next: CommanderAlarmEventSnapshot?
   ) -> CommanderProcedureLiveActivityAttributes.ContentState {
@@ -307,6 +308,11 @@ actor AlarmKitAdapter: AlarmAdapting {
       projectionRevision: max(0, projectionRevision),
       overrides: overrides
     )
+  }
+
+  func presentationContext(for alarm: NativeAlarm) throws -> AlarmPresentationContext? {
+    guard let schedule = scheduleContext else { return nil }
+    return try AlarmPresentationContext(alarm: alarm, schedule: schedule, overrides: leadTimeOverridesContext)
   }
 
   func availability() async -> AlarmKitAvailability {

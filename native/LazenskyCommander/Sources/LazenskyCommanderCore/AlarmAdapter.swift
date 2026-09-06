@@ -32,6 +32,7 @@ public protocol AlarmAdapting: Sendable {
   func prepare(schedule: Schedule, projectionRevision: Int) async
   func prepare(schedule: Schedule, projectionRevision: Int, overrides: LeadTimeOverrides?) async
   func availability() async -> AlarmKitAvailability
+  func presentationContext(for alarm: NativeAlarm) async throws -> AlarmPresentationContext?
   func authorizationStatus() async -> AlarmAuthorizationStatus
   func requestAuthorization() async throws
   func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) async throws -> String
@@ -45,6 +46,7 @@ public protocol AlarmAdapting: Sendable {
 }
 
 public extension AlarmAdapting {
+  func presentationContext(for alarm: NativeAlarm) async throws -> AlarmPresentationContext? { nil }
   func prepare(schedule: Schedule) async {}
   func prepare(schedule: Schedule, projectionRevision: Int) async {
     await prepare(schedule: schedule)

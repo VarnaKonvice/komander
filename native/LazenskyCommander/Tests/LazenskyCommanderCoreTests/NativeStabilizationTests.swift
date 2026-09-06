@@ -144,8 +144,106 @@ import Testing
   #expect(await runtime.ids.count == 1)
 }
 
+
+@Test func neighbourChangeRefreshesStopIntentWithoutChangingOwnAlarmDeadline() async throws {
+  let first = stabilizationSchedule()
+  let runtime = ContextRuntime()
+  let store = InMemoryAlarmStateStore()
+  let source = StabilizationSource(schedule: first)
+  let service = AlarmSyncService(scheduleService: source, store: store, adapter: runtime)
+  #expect(try await service.synchronize(schedule: first, now: stabilizationDate("09:00")).succeeded)
+  let old = await store.load().records
+  let changedEvent = ScheduleEvent(stableId: "procedure", date: "2026-09-06", start: "10:35", end: "10:45", title: "Nová procedura", location: "Jiné místo", kind: .procedure, procedureType: "Magnetoterapie", mealType: nil, leadTimeMinutes: nil)
+  let changed = stabilizationSchedule(version: 2, events: [first.events[0], changedEvent])
+  let updated = try await service.synchronize(schedule: changed, now: stabilizationDate("09:00"))
+  #expect(updated.succeeded && updated.appliedUpdate == 2)
+  let records = await store.load().records
+  #expect(records["meal"]?.alarm == old["meal"]?.alarm)
+  #expect(records["meal"]?.platformAlarmID != old["meal"]?.platformAlarmID)
+  #expect(records["meal"]?.presentationContext?.nextAlarm?.title == "Nová procedura")
+  let repeated = try await service.synchronize(schedule: changed, now: stabilizationDate("09:00"))
+  #expect(repeated.succeeded && repeated.plan.unchanged.count == 2 && repeated.appliedUpdate == 0)
+  let versionOnly = stabilizationSchedule(version: 3, events: changed.events)
+  let sameContent = try await service.synchronize(schedule: versionOnly, now: stabilizationDate("09:00"))
+  #expect(sameContent.succeeded && sameContent.appliedUpdate == 0)
+}
+
+@Test func legacyAlarmPersistenceMigratesContextOnceWithoutChangingCanonicalPayload() async throws {
+  let schedule = stabilizationSchedule()
+  let payload = try NativeAlarmContract.payload(schedule: schedule)
+  let runtime = ContextRuntime()
+  let store = InMemoryAlarmStateStore()
+  let service = AlarmSyncService(scheduleService: StabilizationSource(schedule: schedule), store: store, adapter: runtime)
+  _ = try await service.synchronize(now: stabilizationDate("09:00"))
+  let current = await store.load()
+  var json = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(current)) as? [String: Any])
+  var records = try #require(json["records"] as? [String: [String: Any]])
+  for id in records.keys { records[id]?.removeValue(forKey: "presentationContext") }
+  json["records"] = records
+  let legacy = try JSONDecoder().decode(ManagedAlarmState.self, from: JSONSerialization.data(withJSONObject: json))
+  await store.save(legacy)
+  #expect(try await service.synchronize(now: stabilizationDate("09:00")).appliedUpdate == 2)
+  #expect(try await service.synchronize(now: stabilizationDate("09:00")).appliedUpdate == 0)
+  #expect(try NativeAlarmContract.payload(schedule: schedule) == payload)
+}
+
+private actor ContextRuntime: AlarmAdapting {
+  private var context: Schedule?
+  private var overrides: LeadTimeOverrides?
+  private var dates: [String: Date] = [:]
+  func prepare(schedule: Schedule, projectionRevision: Int, overrides: LeadTimeOverrides?) {
+    context = schedule; self.overrides = overrides
+  }
+  func presentationContext(for alarm: NativeAlarm) throws -> AlarmPresentationContext? {
+    try context.map { try AlarmPresentationContext(alarm: alarm, schedule: $0, overrides: overrides) }
+  }
+  func availability() -> AlarmKitAvailability { .available }
+  func authorizationStatus() -> AlarmAuthorizationStatus { .authorized }
+  func requestAuthorization() {}
+  func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) throws -> String {
+    let id = UUID().uuidString
+    dates[id] = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+    return id
+  }
+  func cancel(platformAlarmID: String) { dates.removeValue(forKey: platformAlarmID) }
+  func existingPlatformAlarmIDs() -> Set<String>? { Set(dates.keys) }
+  func existingPlatformFixedAlertDates(for platformAlarmIDs: Set<String>) -> [String: Date]? {
+    dates.filter { platformAlarmIDs.contains($0.key) }
+  }
+}
+
+
+@Test func asynchronousNotificationOperationsNeverOverlapAndFailureDoesNotBlockNext() async {
+  let queue = CommanderSerialOperationQueue()
+  let probe = SerialProbe()
+  await withTaskGroup(of: Void.self) { group in
+    for number in 0..<20 {
+      group.addTask {
+        _ = try? await queue.run {
+          await probe.enter()
+          for _ in 0..<5 { await Task.yield() }
+          await probe.leave()
+          if number == 0 { throw AlarmAdapterError.verificationFailed }
+        }
+      }
+    }
+  }
+  #expect(await probe.maximumActive == 1)
+  #expect(await probe.completed == 20)
+}
+
+private actor SerialProbe {
+  private var active = 0
+  var maximumActive = 0
+  var completed = 0
+  func enter() { active += 1; maximumActive = max(maximumActive, active) }
+  func leave() { active -= 1; completed += 1 }
+}
+
 private func stabilizationDate(_ time: String) throws -> Date {
-  try NativeAlarmContract.date(fromLocalISO: "2026-09-06T" + time + (time.count == 5 ? ":00" : ""))
+  let parts = time.split(separator: ":")
+  let minute = try NativeAlarmContract.dateTime(date: "2026-09-06", time: parts.prefix(2).joined(separator: ":"))
+  return minute.addingTimeInterval(parts.count == 3 ? Double(parts[2])! : 0)
 }
 
 private func stabilizationSchedule(version: Int = 1, title: String = "Jídlo", events: [ScheduleEvent]? = nil) -> Schedule {

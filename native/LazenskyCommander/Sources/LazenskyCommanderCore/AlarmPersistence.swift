@@ -4,11 +4,13 @@ public struct ManagedAlarmRecord: Codable, Equatable, Sendable {
   public let stableId: String
   public let platformAlarmID: String
   public let alarm: NativeAlarm
+  public let presentationContext: AlarmPresentationContext?
 
-  public init(stableId: String, platformAlarmID: String, alarm: NativeAlarm) {
+  public init(stableId: String, platformAlarmID: String, alarm: NativeAlarm, presentationContext: AlarmPresentationContext? = nil) {
     self.stableId = stableId
     self.platformAlarmID = platformAlarmID
     self.alarm = alarm
+    self.presentationContext = presentationContext
   }
 }
 

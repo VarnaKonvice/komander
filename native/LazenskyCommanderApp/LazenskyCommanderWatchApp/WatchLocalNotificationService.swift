@@ -13,6 +13,8 @@ actor WatchLocalNotificationService {
 
   private static let prague = TimeZone(identifier: "Europe/Prague")!
 
+  private let operations = CommanderSerialOperationQueue()
+  private var latestProjection: WatchScheduleProjectionIdentity?
   private let center: UNUserNotificationCenter
   private let preferences: WatchStandaloneAlarmPreferences
 
@@ -48,9 +50,28 @@ actor WatchLocalNotificationService {
     schedule: Schedule?,
     enabled: Bool,
     overrides: LeadTimeOverrides? = nil,
+    projectionRevision: Int = 0,
     now: Date = Date()
   ) async throws -> WatchNotificationPlan {
+    try await operations.run {
+      try await self.apply(schedule: schedule, enabled: enabled, overrides: overrides,
+                           projectionRevision: projectionRevision, now: now)
+    }
+  }
+
+  private func apply(schedule: Schedule?, enabled: Bool, overrides: LeadTimeOverrides?,
+                     projectionRevision: Int, now: Date) async throws -> WatchNotificationPlan {
+    // A queued cache callback must not re-enable notifications after the user disabled them.
+    let enabled = enabled && preferences.isEnabled
     let current = await managedPendingNotifications()
+    if enabled, let schedule, let latestProjection,
+       schedule.scheduleVersion == latestProjection.scheduleVersion,
+       projectionRevision < latestProjection.projectionRevision {
+      var stale = WatchNotificationPlan()
+      stale.unchanged = current
+      stale.ignoredStaleSchedule = true
+      return stale
+    }
     let plan = try WatchNotificationReconciler.reconcile(
       current: current,
       schedule: schedule,
@@ -72,6 +93,8 @@ actor WatchLocalNotificationService {
     if enabled, let schedule {
       let previous = preferences.lastReconciledScheduleVersion ?? schedule.scheduleVersion
       preferences.lastReconciledScheduleVersion = max(previous, schedule.scheduleVersion)
+      latestProjection = WatchScheduleProjectionIdentity(scheduleVersion: schedule.scheduleVersion,
+                                                         projectionRevision: projectionRevision)
     }
     return plan
   }

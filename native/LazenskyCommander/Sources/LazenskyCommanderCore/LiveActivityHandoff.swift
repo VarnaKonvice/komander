@@ -55,3 +55,27 @@ public enum CommanderLiveActivityHandoff {
     }
   }
 }
+
+/// Persisted adapter context outside the canonical payload. A neighbour change can alter
+/// an alarm's countdown ownership or stop intent without changing its own leaveAt.
+public struct AlarmPresentationContext: Codable, Equatable, Sendable {
+  public let countdownWindow: TimeInterval
+  public let hasFreeTimeSource: Bool
+  public let procedureType: String?
+  public let mealType: String?
+  public let nextAlarm: NativeAlarm?
+  public let nextProcedureType: String?
+  public let nextMealType: String?
+
+  public init(alarm: NativeAlarm, schedule: Schedule, overrides: LeadTimeOverrides?) throws {
+    countdownWindow = try AlarmCountdown.countdownWindow(for: alarm, in: schedule)
+    hasFreeTimeSource = CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: schedule)
+    let current = schedule.events.first { $0.stableId == alarm.stableId }
+    procedureType = current?.procedureType
+    mealType = current?.mealType
+    let next = current.flatMap { CommanderLiveActivityHandoff.nextEvent(after: $0, in: schedule) }
+    nextAlarm = try next.map { try NativeAlarmContract.alarm(event: $0, schedule: schedule, overrides: overrides) }
+    nextProcedureType = next?.procedureType
+    nextMealType = next?.mealType
+  }
+}

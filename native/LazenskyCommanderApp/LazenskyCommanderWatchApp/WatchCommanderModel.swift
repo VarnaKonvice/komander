@@ -46,7 +46,8 @@ final class WatchCommanderModel {
       _ = try? await service.reconcile(
         schedule: snapshot.schedule,
         enabled: true,
-        overrides: snapshot.leadTimeOverrides
+        overrides: snapshot.leadTimeOverrides,
+        projectionRevision: snapshot.projectionRevision
       )
     }
   }
@@ -116,7 +117,8 @@ final class WatchCommanderModel {
         _ = try await notificationService.reconcile(
           schedule: schedule,
           enabled: true,
-          overrides: leadTimeOverrides
+          overrides: leadTimeOverrides,
+          projectionRevision: snapshot?.projectionRevision ?? 0
         )
       } else {
         _ = try await notificationService.reconcile(schedule: nil, enabled: false)

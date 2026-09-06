@@ -109,10 +109,25 @@ public struct AlarmSyncService: Sendable {
       overrides: overrides
     )
     var state = try await store.load()
+    var presentationContexts: [String: AlarmPresentationContext] = [:]
+    for alarm in desiredPayload.alarms {
+      presentationContexts[alarm.stableId] = try await adapter.presentationContext(for: alarm)
+    }
+    func reconciliation(_ state: ManagedAlarmState) -> AlarmReconciliationPlan {
+      var plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
+      let contextChanges = plan.unchanged.filter {
+        presentationContexts[$0.stableId] != state.records[$0.stableId]?.presentationContext
+      }
+      let changedIDs = Set(contextChanges.map(\.stableId))
+      plan.unchanged.removeAll { changedIDs.contains($0.stableId) }
+      plan.update += contextChanges
+      return plan
+    }
+
 
     let availability = await adapter.availability()
     guard case .available = availability else {
-      let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
+      let plan = reconciliation(state)
       let message: String
       if case .unavailable(let reason) = availability { message = reason } else { message = "AlarmKit is unavailable." }
       return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: message, completedAt: nil, verified: false, repairs: 0)
@@ -125,19 +140,17 @@ public struct AlarmSyncService: Sendable {
       do {
         try await adapter.requestAuthorization()
       } catch {
-        let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
+        let plan = reconciliation(state)
         return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0)
       }
     case .denied:
-      let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
+      let plan = reconciliation(state)
       return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: AlarmAdapterError.authorizationDenied.localizedDescription, completedAt: nil, verified: false, repairs: 0)
     }
 
     var repairs = 0
     // Updates/cancellations do not need the old timer's endpoint; verify their replacements below.
-    let retainedStableIDs = Set(AlarmReconciler.reconcile(
-      current: state.records.values.map(\.alarm), next: desiredPayload
-    ).unchanged.map(\.stableId))
+    let retainedStableIDs = Set(reconciliation(state).unchanged.map(\.stableId))
     let futurePlatformIDs = Set(state.records.values.filter { retainedStableIDs.contains($0.stableId) }.map(\.platformAlarmID))
     let platformIDs: Set<String>?
     let fixedAlertDates: [String: Date]?
@@ -145,7 +158,7 @@ public struct AlarmSyncService: Sendable {
       platformIDs = try await adapter.existingPlatformAlarmIDs()
       fixedAlertDates = platformIDs == nil ? nil : try await adapter.existingPlatformFixedAlertDates(for: futurePlatformIDs)
     } catch {
-      let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
+      let plan = reconciliation(state)
       return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0)
     }
 
@@ -170,11 +183,11 @@ public struct AlarmSyncService: Sendable {
     } catch {
       // Keep the ID when cancellation failed: creating a replacement could ring twice.
       try? await store.save(state)
-      let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
+      let plan = reconciliation(state)
       return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: repairs)
     }
 
-    let plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
+    let plan = reconciliation(state)
     var created = 0
     var updated = 0
     var cancelled = 0
@@ -188,12 +201,12 @@ public struct AlarmSyncService: Sendable {
       for change in plan.update {
         try await cancel(change, state: &state)
         try await store.save(state)
-        try await create(change, state: &state)
+        try await create(change, state: &state, presentationContext: presentationContexts[change.stableId])
         updated += 1
         try await store.save(state)
       }
       for change in plan.create {
-        try await create(change, state: &state)
+        try await create(change, state: &state, presentationContext: presentationContexts[change.stableId])
         created += 1
         try await store.save(state)
       }
@@ -220,7 +233,7 @@ public struct AlarmSyncService: Sendable {
           for stableID in verification.invalidStableIDs.sorted() {
             guard let alarm = desiredByStableID[stableID] else { continue }
             let platformAlarmID = try await adapter.schedule(alarm, replacing: nil)
-            state.records[alarm.stableId] = ManagedAlarmRecord(stableId: alarm.stableId, platformAlarmID: platformAlarmID, alarm: alarm)
+            state.records[alarm.stableId] = ManagedAlarmRecord(stableId: alarm.stableId, platformAlarmID: platformAlarmID, alarm: alarm, presentationContext: presentationContexts[alarm.stableId])
             created += 1
             try await store.save(state)
           }
@@ -292,11 +305,11 @@ public struct AlarmSyncService: Sendable {
     return (platformIDs, invalid, orphanIDs)
   }
 
-  private func create(_ change: AlarmChange, state: inout ManagedAlarmState) async throws {
+  private func create(_ change: AlarmChange, state: inout ManagedAlarmState, presentationContext: AlarmPresentationContext?) async throws {
     guard let alarm = change.nextAlarm else { return }
     let previousID = state.records[alarm.stableId]?.platformAlarmID
     let platformAlarmID = try await adapter.schedule(alarm, replacing: previousID)
-    state.records[alarm.stableId] = ManagedAlarmRecord(stableId: alarm.stableId, platformAlarmID: platformAlarmID, alarm: alarm)
+    state.records[alarm.stableId] = ManagedAlarmRecord(stableId: alarm.stableId, platformAlarmID: platformAlarmID, alarm: alarm, presentationContext: presentationContext)
   }
 
   private func cancel(_ change: AlarmChange, state: inout ManagedAlarmState) async throws {
