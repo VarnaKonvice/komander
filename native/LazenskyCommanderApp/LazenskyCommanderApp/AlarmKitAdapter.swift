@@ -165,19 +165,7 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
       return .result()
     }
 
-    var keptAlarmCard = false
-    if let stoppedAlarmID = UUID(uuidString: alarmID) {
-      for alarmActivity in Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities
-        where alarmActivity.content.state.alarmID == stoppedAlarmID {
-        if startDate > Date() {
-          await alarmActivity.end(alarmActivity.content, dismissalPolicy: .after(startDate))
-          keptAlarmCard = true
-        } else {
-          await alarmActivity.end(nil, dismissalPolicy: .immediate)
-        }
-      }
-    }
-
+    let now = Date()
     let activities = Activity<CommanderProcedureLiveActivityAttributes>.activities
     let handoff = activities.first {
       let state = $0.content.state
@@ -187,16 +175,57 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
         && state.nextStartAt.map { abs($0.timeIntervalSince(startDate)) <= 1 } == true
         && AlarmKitAdapter.isOngoing($0.activityState)
     }
-    if let handoff {
-      await handoff.end(nil, dismissalPolicy: .immediate)
+    let canBridgeHandoff = handoff != nil && startDate > now
+
+    var keptAlarmCard = false
+    if let stoppedAlarmID = UUID(uuidString: alarmID) {
+      for alarmActivity in Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities
+        where alarmActivity.content.state.alarmID == stoppedAlarmID {
+        if canBridgeHandoff {
+          await alarmActivity.end(nil, dismissalPolicy: .immediate)
+        } else if startDate > now {
+          await alarmActivity.end(alarmActivity.content, dismissalPolicy: .after(startDate))
+          keptAlarmCard = true
+        } else {
+          await alarmActivity.end(nil, dismissalPolicy: .immediate)
+        }
+      }
     }
 
-    if keptAlarmCard {
+    var bridgedHandoff = false
+    if let handoff {
+      if startDate > now {
+        let old = handoff.content.state
+        let red = CommanderProcedureLiveActivityAttributes.ContentState(
+          projectionRevision: old.projectionRevision,
+          phase: .departureBridge,
+          nextStableId: old.nextStableId,
+          nextTitle: old.nextTitle,
+          nextLocation: old.nextLocation,
+          nextKind: old.nextKind,
+          nextIconKey: old.nextIconKey,
+          nextStartAt: old.nextStartAt,
+          nextEndAt: old.nextEndAt,
+          nextLeaveAt: old.nextLeaveAt
+        )
+        await handoff.end(
+          ActivityContent(state: red, staleDate: nil, relevanceScore: 1),
+          dismissalPolicy: .after(startDate)
+        )
+        bridgedHandoff = true
+      } else {
+        await handoff.end(nil, dismissalPolicy: .immediate)
+      }
+    }
+
+    if bridgedHandoff {
+      CommanderPhysicalAcceptanceDiagnostics.record("Červená karta předána · \(stableId)")
+    } else if keptAlarmCard {
       CommanderPhysicalAcceptanceDiagnostics.record("Červená AlarmKit karta ponechána · \(stableId)")
-    } else if startDate <= Date() {
+    } else if startDate <= now {
       CommanderPhysicalAcceptanceDiagnostics.record("Zastavit proběhlo až po začátku · \(stableId)")
     } else {
-      CommanderPhysicalAcceptanceDiagnostics.record("Zastavit spuštěno, chybí AlarmKit karta · \(stableId)")
+      CommanderPhysicalAcceptanceDiagnostics.record("Zastavit spuštěno, chybí karta pro červený stav · \(stableId)")
     }
 
     if let current = Self.decode(currentEventJSON) {
