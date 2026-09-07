@@ -56,7 +56,7 @@ public enum NativeAlarmContract {
     return NativeAlarmPayload(contractVersion: contractVersion, scheduleVersion: schedule.scheduleVersion, alarms: alarms)
   }
 
-  static func alarm(event: ScheduleEvent, schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> NativeAlarm {
+  public static func alarm(event: ScheduleEvent, schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> NativeAlarm {
     let startAt = try dateTime(date: event.date, time: event.start)
     let endAt = try dateTime(date: event.date, time: event.end)
     let leadTime = try effectiveLeadTime(event: event, schedule: schedule, overrides: overrides)

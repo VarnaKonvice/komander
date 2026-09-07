@@ -1,7 +1,7 @@
 #if canImport(Testing)
 import Foundation
 import Testing
-@testable import LazenskyCommanderCore
+import LazenskyCommanderCore
 
 @Test func stopDecisionPreservesRedUntilExactStartWithAndWithoutExistingCard() throws {
   let start = try stabilizationDate("10:30")
