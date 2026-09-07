@@ -1,8 +1,21 @@
+import Foundation
 import LazenskyCommanderCore
 import SwiftUI
 
 struct CommanderSystemStatusView: View {
   @ObservedObject var model: CommanderViewModel
+
+  private var installedBuildIdentity: String {
+    let info = Bundle.main.infoDictionary ?? [:]
+    let branch = info["LCBuildBranch"] as? String ?? ""
+    let commit = info["LCBuildCommit"] as? String ?? ""
+    if !branch.isEmpty, !commit.isEmpty, !branch.contains("$("), !commit.contains("$(") {
+      return "\(branch) @ \(commit.prefix(8))"
+    }
+    let version = info["CFBundleShortVersionString"] as? String ?? "?"
+    let build = info["CFBundleVersion"] as? String ?? "?"
+    return "verze \(version) (\(build)) · identita není vložena"
+  }
 
   private var scheduleVersion: String {
     model.latestSchedule.map { "v\($0.scheduleVersion)" } ?? "Dosud nenačteno"
@@ -57,6 +70,7 @@ struct CommanderSystemStatusView: View {
         }
         .disabled(model.isSynchronizing)
 
+        LabeledContent("Nainstalovaný kód", value: installedBuildIdentity)
         LabeledContent("Rozpis", value: scheduleVersion)
         LabeledContent("AlarmKit", value: alarmState)
         LabeledContent("Bezpečnostní pojistka", value: model.fallbackStatus)
