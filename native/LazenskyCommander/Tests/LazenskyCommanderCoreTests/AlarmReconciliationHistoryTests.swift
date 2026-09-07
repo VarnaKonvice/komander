@@ -100,6 +100,71 @@ import Testing
   #expect(entry.hadProblemBeforeChanges)
 }
 
+@Test func deniedAlarmAccessIsPersistedBeforeLaterSuccessfulRecovery() async throws {
+  let store = InMemoryAlarmStateStore()
+  let runtime = LedgerRuntime()
+  let service = AlarmSyncService(scheduleService: LedgerSource(schedule: ledgerSchedule()), store: store, adapter: runtime)
+  await runtime.setAuthorization(.denied)
+  let failed = try await service.synchronize(schedule: ledgerSchedule(), now: ledgerDate("2026-09-07T09:00:00"))
+  #expect(!failed.succeeded)
+  #expect(await store.load().reconciliationHistory.count == 1)
+  await runtime.setAuthorization(.authorized)
+  let recovered = try await service.synchronize(schedule: ledgerSchedule(), now: ledgerDate("2026-09-07T09:01:00"))
+  #expect(recovered.succeeded)
+  #expect(recovered.reconciliationHistory.count == 2)
+  #expect(recovered.reconciliationHistory.first?.errorMessage == AlarmAdapterError.authorizationDenied.localizedDescription)
+}
+
+@Test func postDepartureCleanupRecordsMissingPastAlarmBeforeRemovingItsMapping() async throws {
+  let schedule = ledgerSchedule()
+  let alarm = try #require(NativeAlarmContract.payload(schedule: schedule).alarms.first)
+  let record = ManagedAlarmRecord(stableId: alarm.stableId, platformAlarmID: "missing-past", alarm: alarm)
+  let store = InMemoryAlarmStateStore(ManagedAlarmState(records: [alarm.stableId: record]))
+  let service = AlarmSyncService(scheduleService: LedgerSource(schedule: schedule), store: store, adapter: LedgerRuntime())
+  let result = try await service.synchronize(now: ledgerDate("2026-09-07T14:15:00"))
+  #expect(result.succeeded && result.desiredAlarmCount == 0)
+  let before = result.reconciliationHistory.last?.before.first
+  #expect(before?.stableId == alarm.stableId)
+  #expect(before?.platformAlarmID == "missing-past")
+  #expect(before?.platformExists == false)
+  #expect(before?.hasMismatch == true)
+}
+
+@Test func repeatedGreenChecksDoNotEvictLastUncertainAlarmEvidence() throws {
+  var state = ManagedAlarmState()
+  let failure = AlarmReconciliationHistoryEntry(scheduleVersion: 5, startedAt: Date(),
+    desiredAlarmCount: 8, errorMessage: "Nedoložený alarm před odchodem")
+  state.appendReconciliationHistory(failure)
+  for _ in 0..<(ManagedAlarmState.reconciliationHistoryLimit * 2) {
+    state.appendReconciliationHistory(AlarmReconciliationHistoryEntry(scheduleVersion: 5,
+      startedAt: Date(), desiredAlarmCount: 7, verified: true))
+  }
+  let reopened = try JSONDecoder().decode(ManagedAlarmState.self, from: JSONEncoder().encode(state))
+  #expect(reopened.reconciliationHistory.count == ManagedAlarmState.reconciliationHistoryLimit)
+  #expect(reopened.reconciliationHistory.contains { $0.id == failure.id })
+  #expect(reopened.reconciliationHistory.last?.verified == true)
+}
+
+@Test func missingLiveActivityRepairsExistingAlertOnlyAlarmWithoutChangingDeadline() async throws {
+  let schedule = ledgerSchedule()
+  let store = InMemoryAlarmStateStore()
+  let runtime = LedgerRuntime()
+  let service = AlarmSyncService(scheduleService: LedgerSource(schedule: schedule), store: store, adapter: runtime)
+  let now = try ledgerDate("2026-09-07T09:00:00")
+  #expect(try await service.synchronize(now: now).succeeded)
+  let original = await store.load().records
+  #expect(try await service.synchronize(now: now).appliedCreate == 0)
+  #expect(await store.load().records == original)
+  await runtime.loseHandoff()
+  let repaired = try await service.synchronize(now: now)
+  #expect(repaired.succeeded && repaired.repairAttempts == 1 && repaired.appliedCreate == 1)
+  let replacement = try #require(await store.load().records.values.first)
+  #expect(replacement.platformAlarmID != original.values.first?.platformAlarmID)
+  #expect(replacement.alarm == original.values.first?.alarm)
+  #expect(await runtime.ownsCountdown(replacement.platformAlarmID))
+  #expect(try await service.synchronize(now: now).appliedCreate == 0)
+}
+
 private struct LedgerSource: ScheduleServing {
   let schedule: Schedule
   func fetchSchedule() async throws -> Schedule { schedule }
@@ -107,14 +172,24 @@ private struct LedgerSource: ScheduleServing {
 
 private actor LedgerRuntime: AlarmAdapting {
   private var dates: [String: Date] = [:]
+  private var hasHandoff = true
+  private var countdownIDs = Set<String>()
+  func loseHandoff() { hasHandoff = false }
+  func ownsCountdown(_ id: String) -> Bool { countdownIDs.contains(id) }
+  func invalidPlatformPresentationAlarmIDs(for alarms: [String: NativeAlarm]) -> Set<String> {
+    hasHandoff ? [] : Set(alarms.keys).subtracting(countdownIDs)
+  }
+  private var authorization: AlarmAuthorizationStatus = .authorized
+  func setAuthorization(_ value: AlarmAuthorizationStatus) { authorization = value }
 
   func availability() -> AlarmKitAvailability { .available }
-  func authorizationStatus() -> AlarmAuthorizationStatus { .authorized }
+  func authorizationStatus() -> AlarmAuthorizationStatus { authorization }
   func requestAuthorization() {}
 
   func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) throws -> String {
     let id = UUID().uuidString
     dates[id] = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+    if !hasHandoff { countdownIDs.insert(id) }
     return id
   }
 

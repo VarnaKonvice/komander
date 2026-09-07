@@ -69,7 +69,8 @@ final class PhysicalAcceptanceModel: ObservableObject {
         let check = try await PhysicalAcceptancePreflight(
           run: run, observations: observations, managed: session.alarmStore.load(),
           syncVerified: summary?.succeeded == true,
-          procedureActivityPrepared: procedurePrepared, now: now
+          procedureActivityPrepared: procedurePrepared,
+          verifiedHandoffStableIDs: adapter.physicalVerifiedHandoffStableIDs(run: run), now: now
         )
         preflight = check
         readAt = now

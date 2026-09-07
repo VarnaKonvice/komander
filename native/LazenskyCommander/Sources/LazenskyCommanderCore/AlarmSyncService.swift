@@ -155,11 +155,26 @@ public struct AlarmSyncService: Sendable {
       return plan
     }
 
+    let historyID = UUID()
+    let beforeHistory = await reconciliationHistoryObservations(payload: desiredPayload, state: state)
+    state.appendReconciliationHistory(
+      AlarmReconciliationHistoryEntry(
+        id: historyID,
+        scheduleVersion: schedule.scheduleVersion,
+        startedAt: now,
+        desiredAlarmCount: desiredPayload.alarms.count,
+        before: beforeHistory
+      )
+    )
+    try await store.save(state)
+
     let availability = await adapter.availability()
     guard case .available = availability else {
       let plan = reconciliation(state)
       let message: String
       if case .unavailable(let reason) = availability { message = reason } else { message = "AlarmKit is unavailable." }
+      state = await finalizedHistoryState(state, id: historyID, payload: desiredPayload, completedAt: nil, repairs: 0, verified: false, error: message)
+      try await store.save(state)
       return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: message, completedAt: nil, verified: false, repairs: 0, history: state.reconciliationHistory)
     }
 
@@ -171,10 +186,14 @@ public struct AlarmSyncService: Sendable {
         try await adapter.requestAuthorization()
       } catch {
         let plan = reconciliation(state)
+        state = await finalizedHistoryState(state, id: historyID, payload: desiredPayload, completedAt: nil, repairs: 0, verified: false, error: error.localizedDescription)
+        try await store.save(state)
         return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0, history: state.reconciliationHistory)
       }
     case .denied:
       let plan = reconciliation(state)
+      state = await finalizedHistoryState(state, id: historyID, payload: desiredPayload, completedAt: nil, repairs: 0, verified: false, error: AlarmAdapterError.authorizationDenied.localizedDescription)
+      try await store.save(state)
       return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: AlarmAdapterError.authorizationDenied.localizedDescription, completedAt: nil, verified: false, repairs: 0, history: state.reconciliationHistory)
     }
 
@@ -191,24 +210,13 @@ public struct AlarmSyncService: Sendable {
         }
       }
     } catch {
+      state = await finalizedHistoryState(state, id: historyID, payload: desiredPayload, completedAt: nil, repairs: 0, verified: false, error: error.localizedDescription)
+      try await store.save(state)
       return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload,
         plan: reconciliation(state), created: 0, updated: 0, cancelled: 0,
         error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0,
         history: state.reconciliationHistory)
     }
-
-    let historyID = UUID()
-    let beforeHistory = await reconciliationHistoryObservations(payload: desiredPayload, state: state)
-    state.appendReconciliationHistory(
-      AlarmReconciliationHistoryEntry(
-        id: historyID,
-        scheduleVersion: schedule.scheduleVersion,
-        startedAt: now,
-        desiredAlarmCount: desiredPayload.alarms.count,
-        before: beforeHistory
-      )
-    )
-    try? await store.save(state)
 
     var repairs = 0
     // Updates/cancellations do not need the old timer's endpoint; verify their replacements below.
@@ -239,7 +247,11 @@ public struct AlarmSyncService: Sendable {
     // platform-specific observation; their unit tests then exercise reconciliation only.
     do {
       if let platformIDs {
-        let invalidBeforeWrite = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates, timingIDs: futurePlatformIDs)
+        var invalidBeforeWrite = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates, timingIDs: futurePlatformIDs)
+        let presentationIDs = try await adapter.invalidPlatformPresentationAlarmIDs(for:
+          Dictionary(uniqueKeysWithValues: state.records.values.filter { retainedStableIDs.contains($0.stableId) }
+            .map { ($0.platformAlarmID, $0.alarm) }))
+        invalidBeforeWrite.formUnion(state.records.values.filter { presentationIDs.contains($0.platformAlarmID) }.map(\.stableId))
         if !invalidBeforeWrite.isEmpty {
           repairs += 1
           for stableID in invalidBeforeWrite {
@@ -373,7 +385,11 @@ public struct AlarmSyncService: Sendable {
     payload: NativeAlarmPayload,
     state: ManagedAlarmState
   ) async -> [AlarmReconciliationObservation] {
-    let desired = payload.alarms.sorted { lhs, rhs in
+    // Include mappings about to be removed, even when their departure has passed.
+    // A successful future-only check cannot explain whether that past alarm rang.
+    var observed = state.records.mapValues(\.alarm)
+    for alarm in payload.alarms { observed[alarm.stableId] = alarm }
+    let desired = observed.values.sorted { lhs, rhs in
       if lhs.leaveAt != rhs.leaveAt { return lhs.leaveAt < rhs.leaveAt }
       return lhs.stableId < rhs.stableId
     }
@@ -437,7 +453,7 @@ public struct AlarmSyncService: Sendable {
     let after = await reconciliationHistoryObservations(payload: payload, state: updated)
     updated.updateReconciliationHistory(
       id: id,
-      completedAt: completedAt,
+      completedAt: Date(),
       after: after,
       repairAttempts: repairs,
       verified: verified,
@@ -478,7 +494,11 @@ public struct AlarmSyncService: Sendable {
     let expectedIDs = Set(state.records.values.map(\.platformAlarmID))
     let timingIDs = expectedIDs.subtracting(protectedAlertingIDs)
     let fixedAlertDates = try await adapter.existingPlatformFixedAlertDates(for: timingIDs)
-    let invalid = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates, timingIDs: timingIDs)
+    var invalid = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates, timingIDs: timingIDs)
+    let presentationIDs = try await adapter.invalidPlatformPresentationAlarmIDs(for:
+      Dictionary(uniqueKeysWithValues: state.records.values.filter { timingIDs.contains($0.platformAlarmID) }
+        .map { ($0.platformAlarmID, $0.alarm) }))
+    invalid.formUnion(state.records.values.filter { presentationIDs.contains($0.platformAlarmID) }.map(\.stableId))
     let orphanIDs = platformIDs.subtracting(expectedIDs)
     return (platformIDs, invalid, orphanIDs)
   }

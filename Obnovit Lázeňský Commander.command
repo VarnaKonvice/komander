@@ -198,6 +198,10 @@ if [[ -z "$REMOTE_COMMIT" ]]; then
   fail "Na GitHubu chybí cílová větev $TARGET_BRANCH. Nic nebylo nainstalováno."
 fi
 
+if [[ -n "${LC_REFRESH_EXPECTED_COMMIT:-}" && "$REMOTE_COMMIT" != "$LC_REFRESH_EXPECTED_COMMIT" ]]; then
+  fail "Stabilizační větev se během přípravy změnila. Spusť stabilizační instalaci znovu; nic nebylo nainstalováno."
+fi
+
 LOCAL_COMMIT="$(/usr/bin/git -C "$REPO_ROOT" rev-parse --verify "refs/heads/$TARGET_BRANCH^{commit}" 2>/dev/null || true)"
 if [[ -n "$LOCAL_COMMIT" && "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]]; then
   if ! /usr/bin/git -C "$REPO_ROOT" merge-base --is-ancestor "$LOCAL_COMMIT" "$REMOTE_COMMIT"; then

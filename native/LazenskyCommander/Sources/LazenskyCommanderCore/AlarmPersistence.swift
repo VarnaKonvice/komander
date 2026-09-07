@@ -131,13 +131,20 @@ public struct ManagedAlarmState: Codable, Equatable, Sendable {
     self.records = records
     self.lastSuccessfulPayload = lastSuccessfulPayload
     self.lastSuccessfulSync = lastSuccessfulSync
-    self.reconciliationHistory = Array(reconciliationHistory.suffix(Self.reconciliationHistoryLimit))
+    self.reconciliationHistory = reconciliationHistory
+    trimReconciliationHistory()
   }
 
   public mutating func appendReconciliationHistory(_ entry: AlarmReconciliationHistoryEntry) {
     reconciliationHistory.append(entry)
-    if reconciliationHistory.count > Self.reconciliationHistoryLimit {
-      reconciliationHistory.removeFirst(reconciliationHistory.count - Self.reconciliationHistoryLimit)
+    trimReconciliationHistory()
+  }
+
+  private mutating func trimReconciliationHistory() {
+    // Rotate successful routine checks first. They must not erase unresolved evidence.
+    while reconciliationHistory.count > Self.reconciliationHistoryLimit {
+      let index = reconciliationHistory.dropLast().firstIndex { !$0.hasProblem } ?? 0
+      reconciliationHistory.remove(at: index)
     }
   }
 
@@ -166,10 +173,8 @@ public struct ManagedAlarmState: Codable, Equatable, Sendable {
     records = try container.decodeIfPresent([String: ManagedAlarmRecord].self, forKey: .records) ?? [:]
     lastSuccessfulPayload = try container.decodeIfPresent(NativeAlarmPayload.self, forKey: .lastSuccessfulPayload)
     lastSuccessfulSync = try container.decodeIfPresent(Date.self, forKey: .lastSuccessfulSync)
-    reconciliationHistory = Array(
-      (try container.decodeIfPresent([AlarmReconciliationHistoryEntry].self, forKey: .reconciliationHistory) ?? [])
-        .suffix(Self.reconciliationHistoryLimit)
-    )
+    reconciliationHistory = try container.decodeIfPresent([AlarmReconciliationHistoryEntry].self, forKey: .reconciliationHistory) ?? []
+    trimReconciliationHistory()
   }
 }
 

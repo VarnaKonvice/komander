@@ -59,6 +59,7 @@ printf 'Po instalaci musí stejná identita být vidět v Commanderu v Diagnosti
 
 XCODE_XCCONFIG_FILE="$TEMP_XCCONFIG" \
 LC_REFRESH_TARGET_BRANCH="$TARGET_BRANCH" \
+LC_REFRESH_EXPECTED_COMMIT="$REMOTE_COMMIT" \
 "$REFRESH_TOOL"
 RESULT=$?
 

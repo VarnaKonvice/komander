@@ -44,6 +44,17 @@ public enum CommanderLiveActivityHandoff {
     }.first
   }
 
+  public static func isCanonicalFreeTimeSource(
+    stableId: String, endAt: Date, for alarm: NativeAlarm, in schedule: Schedule
+  ) -> Bool {
+    guard let source = schedule.events.first(where: { $0.stableId == stableId }),
+          let canonicalEnd = try? NativeAlarmContract.dateTime(date: source.date, time: source.end),
+          let leave = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt),
+          abs(canonicalEnd.timeIntervalSince(endAt)) <= 1,
+          canonicalEnd <= leave else { return false }
+    return nextEvent(after: source, in: schedule)?.stableId == alarm.stableId
+  }
+
   public static func hasFreeTimeSource(for alarm: NativeAlarm, in schedule: Schedule) -> Bool {
     guard let leave = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt) else { return false }
     return schedule.events.contains { candidate in

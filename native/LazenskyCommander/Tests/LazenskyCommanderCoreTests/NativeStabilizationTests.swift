@@ -61,6 +61,18 @@ import Testing
   #expect(CommanderLiveActivityHandoff.nextEvent(after: schedule.events[0], in: multiDay) == nil)
 }
 
+@Test func verifiedHandoffRejectsRemovedShiftedAndSkippedSourceCards() throws {
+  let schedule = stabilizationSchedule()
+  let alarm = try NativeAlarmContract.payload(schedule: schedule).alarms[1]
+  let end = try stabilizationDate("10:15")
+  #expect(CommanderLiveActivityHandoff.isCanonicalFreeTimeSource(stableId: "meal", endAt: end, for: alarm, in: schedule))
+  #expect(!CommanderLiveActivityHandoff.isCanonicalFreeTimeSource(stableId: "removed", endAt: end, for: alarm, in: schedule))
+  #expect(!CommanderLiveActivityHandoff.isCanonicalFreeTimeSource(stableId: "meal", endAt: end.addingTimeInterval(-60), for: alarm, in: schedule))
+  let inserted = ScheduleEvent(stableId: "intervening", date: "2026-09-06", start: "10:16", end: "10:25", title: "Kontrola", location: "A", kind: .procedure, procedureType: nil, mealType: nil, leadTimeMinutes: 0)
+  #expect(!CommanderLiveActivityHandoff.isCanonicalFreeTimeSource(stableId: "meal", endAt: end, for: alarm,
+    in: stabilizationSchedule(events: schedule.events + [inserted])))
+}
+
 @Test func entireAlarmFlowAgreesAcrossDashboardWatchAndCanonicalBoundaries() throws {
   let schedule = stabilizationSchedule()
   for (time, state, id): (String, CommanderLiveState, String?) in [

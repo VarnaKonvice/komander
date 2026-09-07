@@ -398,7 +398,8 @@ actor AlarmKitAdapter: AlarmAdapting {
 
     let now = Date()
     guard leaveAt > now else { throw AlarmKitAdapterError.departureDeadlinePassed }
-    let countdownPlan: AlarmCountdownPlan
+    let verifiedHandoff = hasVerifiedFreeTimeHandoff(for: alarm, now: now)
+    var countdownPlan: AlarmCountdownPlan
     if let schedule {
       countdownPlan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
     } else {
@@ -409,8 +410,11 @@ actor AlarmKitAdapter: AlarmAdapting {
       )
     }
 
+    // A zero gap in the schedule is not evidence of a visible handoff either.
+    if !verifiedHandoff, countdownPlan.countdownWindow == 0 {
+      countdownPlan = AlarmCountdown.plan(leaveAt: leaveAt, countdownWindow: AlarmCountdown.maximumWindow, now: now)
+    }
     let configuration: AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>
-    let verifiedHandoff = hasVerifiedFreeTimeHandoff(for: alarm, now: now)
     if verifiedHandoff {
       configuration = .alarm(
         schedule: .fixed(countdownPlan.scheduledAlertAt),
@@ -433,12 +437,7 @@ actor AlarmKitAdapter: AlarmAdapting {
         sound: .default
       )
     } else {
-      configuration = .alarm(
-        schedule: .fixed(countdownPlan.scheduledAlertAt),
-        attributes: alertOnlyAttributes,
-        stopIntent: stopIntent,
-        sound: .default
-      )
+      throw AlarmKitAdapterError.departureDeadlinePassed
     }
 
     if let physicalRunID, let physicalOwnership {
@@ -528,6 +527,17 @@ actor AlarmKitAdapter: AlarmAdapting {
     return result
   }
 
+  func invalidPlatformPresentationAlarmIDs(for alarms: [String: NativeAlarm]) async throws -> Set<String> {
+    let now = Date()
+    return Set(try AlarmManager.shared.alarms.compactMap { observed in
+      let id = observed.id.uuidString
+      guard let expected = alarms[id],
+            (observed.countdownDuration?.preAlert ?? 0) <= 0,
+            !hasVerifiedFreeTimeHandoff(for: expected, now: now) else { return nil }
+      return id
+    })
+  }
+
   private func hasVerifiedFreeTimeHandoff(for alarm: NativeAlarm, now: Date) -> Bool {
     guard let schedule = scheduleContext,
           CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: schedule),
@@ -539,9 +549,13 @@ actor AlarmKitAdapter: AlarmAdapting {
       let state = activity.content.state
       return !state.isDepartureStandby
         && !state.isDepartureBridge
-        && state.nextStableId == alarm.stableId
+        && bridgeTarget(state) == alarm
         && state.nextStartAt.map { abs($0.timeIntervalSince(targetStart)) <= 1 } == true
         && state.nextLeaveAt.map { abs($0.timeIntervalSince(targetLeave)) <= 1 } == true
+        && CommanderLiveActivityHandoff.isCanonicalFreeTimeSource(
+          stableId: activity.attributes.stableId, endAt: activity.attributes.endAt,
+          for: alarm, in: schedule
+        )
         && CommanderLiveActivityHandoff.retainsFreeTime(
           previousEnd: activity.attributes.endAt,
           targetStart: targetStart,
@@ -588,6 +602,12 @@ actor AlarmKitAdapter: AlarmAdapting {
         fireDate: fireDates[id]
       )
     }
+  }
+
+  func physicalVerifiedHandoffStableIDs(run: PhysicalAcceptanceRun) throws -> Set<String> {
+    guard physicalRunID == run.id else { return [] }
+    let now = Date()
+    return Set(try run.payload().alarms.filter { hasVerifiedFreeTimeHandoff(for: $0, now: now) }.map(\.stableId))
   }
 
   func physicalProcedureActivityPrepared(run: PhysicalAcceptanceRun) -> Bool {
@@ -701,6 +721,10 @@ actor AlarmKitAdapter: AlarmAdapting {
       return !state.isDepartureStandby
         && !state.isDepartureBridge
         && state.nextStableId == primary.event.stableId
+        && (try? NativeAlarmContract.alarm(event: primary.event, schedule: schedule, overrides: overrides))
+          .map { CommanderLiveActivityHandoff.isCanonicalFreeTimeSource(
+            stableId: activity.attributes.stableId, endAt: activity.attributes.endAt, for: $0, in: schedule
+          ) } == true
         && CommanderLiveActivityHandoff.retainsFreeTime(
           previousEnd: activity.attributes.endAt, targetStart: primary.startAt, now: now
         )

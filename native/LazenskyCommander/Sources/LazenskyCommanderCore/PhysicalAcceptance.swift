@@ -153,7 +153,7 @@ public struct PhysicalAcceptancePreflight: Sendable {
   public var verifiedAlarmCount: Int { rows.filter { $0.issues.isEmpty }.count }
   public var ready: Bool { issues.isEmpty && rows.count == 2 && verifiedAlarmCount == 2 }
 
-  public init(run: PhysicalAcceptanceRun, observations: [PhysicalAlarmObservation], managed: ManagedAlarmState, syncVerified: Bool, procedureActivityPrepared: Bool, now: Date) throws {
+  public init(run: PhysicalAcceptanceRun, observations: [PhysicalAlarmObservation], managed: ManagedAlarmState, syncVerified: Bool, procedureActivityPrepared: Bool, verifiedHandoffStableIDs: Set<String> = [], now: Date) throws {
     checkedAt = now
     let payload = try run.payload()
     var problems: [String] = []
@@ -172,7 +172,7 @@ public struct PhysicalAcceptancePreflight: Sendable {
       let matches = observations.filter { $0.stableID == alarm.stableId }
       let actual = matches.count == 1 ? matches.first : nil
       let plan = try AlarmCountdown.plan(for: alarm, in: run.schedule, now: actual?.configuredAt ?? run.now)
-      let usesPreparedHandoff = procedureActivityPrepared && CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: run.schedule)
+      let usesPreparedHandoff = verifiedHandoffStableIDs.contains(alarm.stableId) && CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: run.schedule)
       var errors: [String] = []
 
       if let actual, let configuredAt = actual.configuredAt {

@@ -122,6 +122,18 @@ await test('double click defaults to main and explicit test override survives la
   assert.match(launcher, /\/usr\/bin\/env LC_REFRESH_TARGET_BRANCH="\$TARGET_BRANCH"/);
 });
 
+await test('stabilization identity refuses a branch move between the two fetches', async () => {
+  const wrapper = await fs.readFile(path.join(root, 'Nainstalovat stabilizační test.command'), 'utf8');
+  assert.match(wrapper, /LC_REFRESH_EXPECTED_COMMIT="\$REMOTE_COMMIT"/);
+  const guard = extractBetween('if [[ -n "${LC_REFRESH_EXPECTED_COMMIT:-}"', '\nLOCAL_COMMIT=');
+  for (const [expected, remote, status] of [['aaa', 'aaa', 0], ['aaa', 'bbb', 1], ['', 'bbb', 0]]) {
+    const result = spawnSync('bash', ['-c', `fail() { exit 1; }\n${guard}`], {
+      encoding: 'utf8', env: { ...process.env, LC_REFRESH_EXPECTED_COMMIT: expected, REMOTE_COMMIT: remote }
+    });
+    assert.equal(result.status, status, result.stderr);
+  }
+});
+
 await test('embedded profile is read after signature verification and expired profiles cannot be installed', async () => {
   const signed = launcher.indexOf('codesign --verify --strict "$APP_PATH"');
   const read = launcher.indexOf('if read_profile_refresh_dates "$APP_PATH/embedded.mobileprovision"');

@@ -126,6 +126,24 @@ import Testing
   #expect(try !acceptanceCheck(run, readings, ManagedAlarmState()).ready)
 }
 
+@Test func physicalPreflightUsesOwnCountdownUntilHandoffActuallyExists() async throws {
+  let (run, session, adapter) = try await acceptanceSetup()
+  let state = await session.alarmStore.load()
+  let readings = await adapter.readings()
+  let first = try #require(readings.first { $0.state == "countdown" })
+  let second = try #require(readings.first { $0.stableID == run.schedule.events[1].stableId })
+  let plan = try AlarmCountdown.plan(for: run.payload().alarms[1], in: run.schedule, now: run.now)
+  let countdown = PhysicalAlarmObservation(platformID: second.platformID, stableID: second.stableID,
+    configuredAt: second.configuredAt, scheduleKind: "fixed", fixedScheduleAt: plan.scheduledStartAt,
+    preAlert: plan.countdownWindow, postAlert: nil, state: "scheduled", fireDate: nil)
+  let ready = try PhysicalAcceptancePreflight(run: run, observations: [first, countdown], managed: state,
+    syncVerified: true, procedureActivityPrepared: true, now: run.now)
+  #expect(ready.ready)
+  let unproven = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state,
+    syncVerified: true, procedureActivityPrepared: true, now: run.now)
+  #expect(!unproven.ready)
+}
+
 @Test func physicalPreflightRejectsHistoricalFixedLeaveAtPlusPreAlertRegression() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let readings = await adapter.readings()
@@ -277,7 +295,7 @@ private func acceptanceSetup() async throws -> (PhysicalAcceptanceRun, PhysicalA
 }
 
 private func acceptanceCheck(_ run: PhysicalAcceptanceRun, _ readings: [PhysicalAlarmObservation], _ state: ManagedAlarmState) throws -> PhysicalAcceptancePreflight {
-  try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state, syncVerified: true, procedureActivityPrepared: true, now: run.now)
+  try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state, syncVerified: true, procedureActivityPrepared: true, verifiedHandoffStableIDs: [run.schedule.events[1].stableId], now: run.now)
 }
 
 private actor AcceptanceTestAdapter: AlarmAdapting {
