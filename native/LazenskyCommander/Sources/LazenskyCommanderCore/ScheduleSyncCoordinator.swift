@@ -27,6 +27,7 @@ public struct CommanderScheduleSyncResult: Equatable, Sendable {
 }
 
 public struct CommanderScheduleSyncCoordinator: Sendable {
+  private let clock: @Sendable () -> Date
   private let scheduleService: any ScheduleServing
   private let alarmSyncService: AlarmSyncService
   private let scheduleStore: any ScheduleSnapshotStoring
@@ -36,8 +37,10 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     scheduleService: any ScheduleServing,
     alarmSyncService: AlarmSyncService,
     scheduleStore: any ScheduleSnapshotStoring,
-    watchDelivery: (any WatchScheduleSnapshotDelivering)? = nil
+    watchDelivery: (any WatchScheduleSnapshotDelivering)? = nil,
+    clock: @escaping @Sendable () -> Date = { Date() }
   ) {
+    self.clock = clock
     self.scheduleService = scheduleService
     self.alarmSyncService = alarmSyncService
     self.scheduleStore = scheduleStore
@@ -52,7 +55,7 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     source: CommanderScheduleSource = .remote,
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
-    now: Date = Date()
+    now: Date? = nil
   ) async throws -> CommanderScheduleSyncResult {
     let decision: ScheduleSnapshotDecision
     let schedule: Schedule
@@ -84,7 +87,8 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
       schedule: schedule,
       overrides: effectiveOverrides,
       projectionRevision: projectionRevision,
-      now: now
+      // The network may cross a departure deadline; project at acceptance time.
+      now: now ?? clock()
     )
     let watchSnapshot = WatchScheduleSnapshot(
       schedule: schedule,

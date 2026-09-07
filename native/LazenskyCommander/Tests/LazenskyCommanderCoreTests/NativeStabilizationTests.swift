@@ -341,6 +341,41 @@ private actor SerialProbe {
   #expect(schedule.events.count == 2)
 }
 
+@Test func slowFetchUsesAcceptanceTimeAndCannotRecreateAnAlarmWhoseDepartureJustPassed() async throws {
+  let schedule = stabilizationSchedule()
+  let clock = StabilizationClock(try stabilizationDate("09:59:59"))
+  let source = AdvancingScheduleSource(schedule: schedule, clock: clock, afterFetch: try stabilizationDate("10:00"))
+  let store = InMemoryAlarmStateStore()
+  let coordinator = CommanderScheduleSyncCoordinator(
+    scheduleService: source,
+    alarmSyncService: AlarmSyncService(scheduleService: source, store: store, adapter: ContextRuntime()),
+    scheduleStore: InMemoryScheduleSnapshotStore(), clock: { clock.read() }
+  )
+  let result = try await coordinator.synchronize()
+  #expect(result.succeeded && result.alarmSummary.desiredAlarmCount == 1)
+  #expect(await store.load().records["meal"] == nil)
+  #expect(await store.load().records["procedure"] != nil)
+  #expect(result.schedule == schedule)
+}
+
+private final class StabilizationClock: @unchecked Sendable {
+  private let lock = NSLock()
+  private var date: Date
+  init(_ date: Date) { self.date = date }
+  func read() -> Date { lock.withLock { date } }
+  func set(_ value: Date) { lock.withLock { date = value } }
+}
+
+private struct AdvancingScheduleSource: ScheduleServing {
+  let schedule: Schedule
+  let clock: StabilizationClock
+  let afterFetch: Date
+  func fetchSchedule() async throws -> Schedule {
+    clock.set(afterFetch)
+    return schedule
+  }
+}
+
 private func stabilizationDate(_ time: String) throws -> Date {
   let parts = time.split(separator: ":")
   let minute = try NativeAlarmContract.dateTime(date: "2026-09-06", time: parts.prefix(2).joined(separator: ":"))

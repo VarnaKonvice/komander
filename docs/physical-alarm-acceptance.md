@@ -35,10 +35,10 @@ Po potvrzení oprávnění a úklidu se zachytí `Date()` jako testovací `now`.
 
 | Událost | Začátek | Konec | Lead time | leaveAt | Countdown |
 | --- | --- | --- | --- | --- | --- |
-| TEST – Snídaně | T+3 min | T+4 min | 1 min ze schedule meal override | T+2 min | Okamžitý `schedule=nil`, zbývající čas do leaveAt |
-| TEST – Magnetoterapie | T+6 min | T+7 min | 1 min z event override | T+5 min | `.fixed(T+4 min)` + `preAlert=60 s` |
+| TEST – Jídlo | T+6 min | T+8 min | 2 min z event override | T+4 min | Okamžitý `schedule=nil`, zbývající čas do leaveAt |
+| TEST – Magnetoterapie | T+13 min | T+15 min | 2 min z event override | T+11 min | Přímý `.fixed(leaveAt)` bez preAlert; volno odpočítává předchozí Live Activity |
 
-První alarm nastane za 2–3 minuty, druhý za 5–6 minut. Skutečná procedure Live Activity je připravená na start procedury za 6–7 minut. Její případné oznámení „Procedura začíná“ **není** odchodový AlarmKit alarm. V sedmiminutovém okně před půlnocí generátor odmítne běh, aby neměnil canonical schéma na události přes půlnoc.
+První alarm nastane přibližně za 4–5 minut, druhý za 11–12 minut. Úvodní živá aktivita je připravená na začátek jídla v T+6. Po konci jídla v T+8 její karta přejde na volno před procedurou. Stop druhého alarmu předá červenou kartu do T+13 a připraví zelenou aktivitu procedury. Oznámení „Jídlo začíná“ / „Procedura začíná“ **není** odchodový AlarmKit alarm. Generátor odmítne běh, jehož konec v T+15 by překročil půlnoc.
 
 Všechny odchody a priority pocházejí z `NativeAlarmContract`. `resolvedLeadTime` vrací hodnotu a zdroj ve stejné prioritní cestě jako `effectiveLeadTime`; stejně velký local override tedy není zaměnitelný za hodnotu z rozpisu. Samotný self-test žádný lokální override nepřijímá.
 
@@ -46,7 +46,7 @@ Všechny odchody a priority pocházejí z `NativeAlarmContract`. `resolvedLeadTi
 
 Používá se existující canonical-first `CommanderScheduleSyncCoordinator`, `AlarmSyncService`, read-back, self-recovery, `projectionRevision` a fronta `CommanderSynchronizationRequestQueue`. Zdroj je lokální `ScheduleServing`, nikoli URLSession. Během úvodního preflightu jsou nejvýše tři sync pokusy a nejvýše dvacet sekund read-back čekání.
 
-Před READY jsou vyžadovány dvě unikátní, správně mapované skutečné AlarmKit ID, správná uložená délka countdownu, správné schedule/state a shoda výsledného fire time s canonical leaveAt v existující toleranci jedné sekundy. Okamžitý alarm musí být `.countdown` a mít dostupný systémový `fireDate`; budoucí alarm musí být `.scheduled` s očekávaným fixed začátkem a 60s preAlert. Raw `.fixed` datum se nikdy samostatně nepovažuje za leaveAt. Připravená procedure Live Activity a ověřená reconciliation jsou také povinné. Do prvního alarmu musí při READY zbývat alespoň minuta.
+Před READY jsou vyžadovány dvě unikátní, správně mapované skutečné AlarmKit ID, správná uložená délka countdownu, správné schedule/state a shoda výsledného fire time s canonical leaveAt v existující toleranci jedné sekundy. Okamžitý alarm musí být `.countdown` a mít dostupný systémový `fireDate`; druhý alarm musí být `.scheduled` přímo na canonical leaveAt bez preAlert, protože volno vlastní předchozí živá aktivita. Raw `.fixed` datum se nikdy samostatně nepovažuje za leaveAt. Právě jedna připravená úvodní živá aktivita jídla a ověřená reconciliation jsou také povinné. Do prvního alarmu musí při READY zbývat alespoň minuta.
 
 Obrazovka ukazuje run ID/now, stableId/title, hodnotu i zdroj předstihu, canonical leaveAt, očekávaný start a konec countdownu, platform ID, uložený preAlert/postAlert, fixed schedule, Alarm.state, dostupný systémový fireDate a expected/verified/actual počty.
 
@@ -58,9 +58,23 @@ NOT READY je **neplatná příprava testu**, ne automatický závěr o nefunkčn
 
 1. Nainstalovat podepsaný target `LazenskyCommanderPhysicalAcceptance` se zabalenou `LazenskyCommanderPhysicalLiveActivity`. Běžný produkční obnovovací launcher tento target neinstaluje. Podepisuje se obojí stejným Personal Teamem; Watch target se nebuildí ani neinstaluje.
 2. Otevřít **Commander Test**, stisknout **Spustit fyzický test**. Při prvním spuštění potvrdit systémové povolení AlarmKitu; Živé aktivity musí být povolené pro tuto novou aplikaci. Vyčkat na **READY / 2 ze 2** a přečíst zobrazené časy.
-3. Zamknout iPhone. Pozorovat Lock Screen a Dynamic Island, první alarm zastavit systémovým ovládáním a vyčkat na druhý. Žádný GitHub publish, ruční přepínání feedu ani další synchronizace nejsou potřeba.
+3. Zamknout iPhone a sledovat celý jediný běh (asi 15–16 minut). U obou odchodů zastavit skutečné zvonění systémovým ovládáním. Aplikaci během běhu není potřeba znovu otevírat ani synchronizovat.
 
-**PASS:** platný READY preflight, oba skutečné systémové alarmy „Čas vyrazit: TEST …“ zazvoní ve zobrazených leaveAt časech, oba countdowny na Lock Screen/Dynamic Island končí zároveň s příslušným alarmem; procedure Live Activity se při začátku procedury také zobrazí. Slyšitelný alarm ani reálnou viditelnost UI nelze potvrdit jen úspěšným SDK read-backem.
+| Čas | Co fyzicky pozorovat na Lock Screen / Dynamic Island |
+| --- | --- |
+| Do T+4 | Odpočet do prvního odchodu |
+| T+4 | Skutečný AlarmKit alarm a červené `VYRAZIT TEĎ` |
+| Po Stop do T+6 | Červený stav zůstane; nesmí vzniknout mezera ani předčasná zelená |
+| T+6 až T+8 | Zelené `PRÁVĚ PROBÍHÁ` pro jídlo |
+| T+8 až T+11 | Volno / odpočet do dalšího odchodu, bez druhého souběžného countdown vlastníka |
+| T+11 | Druhý skutečný AlarmKit alarm a červené `VYRAZIT TEĎ` |
+| Po Stop do T+13 | Červená karta zůstane až do začátku procedury |
+| T+13 až T+15 | Zelené `PRÁVĚ PROBÍHÁ` pro proceduru |
+| Po T+15 | Žádná stará červená karta; žádný opakovaný odchodový alarm |
+
+**PASS:** platný READY preflight, oba skutečné systémové alarmy zazvoní ve zobrazených leaveAt časech a celý výše uvedený tok proběhne se schváleným vzhledem. Slyšitelný alarm ani reálnou viditelnost UI nelze potvrdit jen úspěšným SDK read-backem. Výsledek zaznamenat spolu s commit SHA, iOS verzí a modelem iPhonu; při problému sdílet diagnostiku. Jde o jediný závěrečný acceptance běh, nikoli požadavek opakovat dříve ověřené mezikroky.
+
+Tato izolovaná aplikace neprokazuje doručení Watch notifikace, WatchConnectivity na párovaných zařízeních, Personal Team obnovu produkčního profilu ani přístupnost všech produkčních obrazovek. Tyto hranice se nesmějí skrýt za její PASS.
 
 **FAIL:** po platném READY některý alarm nezazvoní, zazvoní posunutě nebo očekávaná Live Activity/Dynamic Island chybí či odpočítává jinam. Zaznamenat skutečný čas a sdílet diagnostiku. Aplikace sama nikdy nevydá automatický fyzický PASS.
 

@@ -45,14 +45,14 @@ public struct AlarmSyncService: Sendable {
   public func synchronize(
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
-    now: Date = Date()
+    now: Date? = nil
   ) async throws -> AlarmSyncSummary {
     let schedule = try await scheduleService.fetchSchedule()
     let result = try await synchronizeValidated(
       schedule: schedule,
       overrides: overrides,
       projectionRevision: projectionRevision,
-      now: now
+      now: now ?? Date()
     )
     // Preserve the standalone service API's historical permission signal. The Commander
     // coordinator intentionally uses synchronizeValidated so a denied AlarmKit projection

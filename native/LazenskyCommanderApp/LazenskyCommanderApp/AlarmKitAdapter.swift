@@ -9,12 +9,14 @@ import LazenskyCommanderCore
 enum AlarmKitAdapterError: LocalizedError {
   case invalidPlatformAlarmID(String)
   case invalidLeaveAt(String)
+  case departureDeadlinePassed
   case missingUsageDescription
 
   var errorDescription: String? {
     switch self {
     case .invalidPlatformAlarmID(let value): return "Neplatné uložené AlarmKit ID: \(value)."
     case .invalidLeaveAt(let value): return "Neplatný čas odchodu: \(value)."
+    case .departureDeadlinePassed: return "Čas odchodu během přípravy uplynul. Rozpis se znovu zkontroluje."
     case .missingUsageDescription: return "Chybí NSAlarmKitUsageDescription v Info.plist."
     }
   }
@@ -395,6 +397,7 @@ actor AlarmKitAdapter: AlarmAdapting {
     let stopIntent = CommanderAlarmStopIntent(alarmID: id, metadata: metadata)
 
     let now = Date()
+    guard leaveAt > now else { throw AlarmKitAdapterError.departureDeadlinePassed }
     let countdownPlan: AlarmCountdownPlan
     if let schedule {
       countdownPlan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)

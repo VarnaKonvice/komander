@@ -61,7 +61,7 @@ actor WatchLocalNotificationService {
     enabled: Bool,
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
-    now: Date = Date()
+    now: Date? = nil
   ) async throws -> WatchNotificationPlan {
     try await operations.run {
       try await self.apply(schedule: schedule, enabled: enabled, overrides: overrides,
@@ -70,10 +70,11 @@ actor WatchLocalNotificationService {
   }
 
   private func apply(schedule: Schedule?, enabled: Bool, overrides: LeadTimeOverrides?,
-                     projectionRevision: Int, now: Date) async throws -> WatchNotificationPlan {
+                     projectionRevision: Int, now: Date?) async throws -> WatchNotificationPlan {
     // A queued reconciliation must not re-enable notifications after the user disabled them.
     let enabled = enabled && preferences.isEnabled
     let current = await managedPendingNotifications()
+    let now = now ?? Date()
     if enabled, let schedule, let latestProjection,
        schedule.scheduleVersion == latestProjection.scheduleVersion,
        projectionRevision < latestProjection.projectionRevision {
