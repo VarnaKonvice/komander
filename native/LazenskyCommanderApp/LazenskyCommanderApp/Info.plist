@@ -20,6 +20,10 @@
   <string>1.0</string>
   <key>CFBundleVersion</key>
   <string>1</string>
+  <key>LCBuildBranch</key>
+  <string>$(LC_BUILD_BRANCH)</string>
+  <key>LCBuildCommit</key>
+  <string>$(LC_BUILD_COMMIT)</string>
   <key>NSAlarmKitUsageDescription</key>
   <string>Lázeňský Commander používá alarmy, aby vás včas upozornil, kdy máte vyrazit na proceduru nebo jídlo.</string>
   <key>NSSupportsLiveActivities</key>
