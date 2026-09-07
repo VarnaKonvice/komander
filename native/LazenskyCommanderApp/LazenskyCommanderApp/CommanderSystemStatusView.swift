@@ -96,9 +96,15 @@ struct CommanderSystemStatusView: View {
                   .foregroundStyle(.secondary)
               }
 
-              Text(entry.verified ? "Výsledek: ověřeno" : "Výsledek: neověřeno")
-                .font(.caption)
-                .foregroundStyle(entry.verified ? .secondary : .orange)
+              if entry.verified {
+                Text("Výsledek: ověřeno")
+                  .font(.caption)
+                  .foregroundStyle(.secondary)
+              } else {
+                Text("Výsledek: neověřeno")
+                  .font(.caption)
+                  .foregroundStyle(.orange)
+              }
 
               if entry.hadProblemBeforeChanges {
                 Text("Před změnou byl zjištěn nesoulad:")
