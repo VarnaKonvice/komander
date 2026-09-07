@@ -2,7 +2,7 @@
 import Foundation
 import Testing
 
-@Test func installedBuildIdentityIsEmbeddedAndVerifiedBeforeInstallation() throws {
+@Test func stabilizationInstallerEmbedsExactBuildIdentityWithoutChangingProductionDefault() throws {
   let repo = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
     .deletingLastPathComponent()
@@ -26,16 +26,23 @@ import Testing
   #expect(diagnostics.contains("Nainstalovaný kód"))
   #expect(diagnostics.contains("LCBuildBranch"))
   #expect(diagnostics.contains("LCBuildCommit"))
+  #expect(diagnostics.contains("commit.prefix(8)"))
 
-  let refresh = try String(
+  let productionRefresh = try String(
     contentsOf: repo.appendingPathComponent("Obnovit Lázeňský Commander.command"),
     encoding: .utf8
   )
-  #expect(refresh.contains("LC_BUILD_BRANCH=\"$TARGET_BRANCH\""))
-  #expect(refresh.contains("LC_BUILD_COMMIT=\"$GIT_COMMIT\""))
-  #expect(refresh.contains("APP_BUILD_BRANCH=\"$(plist_raw LCBuildBranch"))
-  #expect(refresh.contains("APP_BUILD_COMMIT=\"$(plist_raw LCBuildCommit"))
-  #expect(refresh.contains("$APP_BUILD_BRANCH\" != \"$TARGET_BRANCH"))
-  #expect(refresh.contains("$APP_BUILD_COMMIT\" != \"$GIT_COMMIT"))
+  #expect(productionRefresh.contains("TARGET_BRANCH=\"${LC_REFRESH_TARGET_BRANCH:-main}\""))
+
+  let stabilization = try String(
+    contentsOf: repo.appendingPathComponent("Nainstalovat stabilizační test.command"),
+    encoding: .utf8
+  )
+  #expect(stabilization.contains("TARGET_BRANCH=\"lc/native-stabilization-v2\""))
+  #expect(stabilization.contains("LC_BUILD_BRANCH = %s"))
+  #expect(stabilization.contains("LC_BUILD_COMMIT = %s"))
+  #expect(stabilization.contains("XCODE_XCCONFIG_FILE=\"$TEMP_XCCONFIG\""))
+  #expect(stabilization.contains("LC_REFRESH_TARGET_BRANCH=\"$TARGET_BRANCH\""))
+  #expect(stabilization.contains("Pokud Diagnostika ukáže jinou identitu"))
 }
 #endif
