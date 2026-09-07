@@ -410,7 +410,8 @@ actor AlarmKitAdapter: AlarmAdapting {
     }
 
     let configuration: AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>
-    if hasFreeTimeHandoff(for: alarm) {
+    let verifiedHandoff = hasVerifiedFreeTimeHandoff(for: alarm, now: now)
+    if verifiedHandoff {
       configuration = .alarm(
         schedule: .fixed(countdownPlan.scheduledAlertAt),
         attributes: alertOnlyAttributes,
@@ -418,6 +419,9 @@ actor AlarmKitAdapter: AlarmAdapting {
         sound: .default
       )
     } else if countdownPlan.countdownWindow > 0 {
+      if let schedule, CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: schedule) {
+        CommanderPhysicalAcceptanceDiagnostics.record("Handoff chybí, používám vlastní countdown · \(alarm.stableId)")
+      }
       configuration = AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>(
         countdownDuration: Alarm.CountdownDuration(
           preAlert: countdownPlan.countdownWindow,
@@ -524,9 +528,27 @@ actor AlarmKitAdapter: AlarmAdapting {
     return result
   }
 
-  private func hasFreeTimeHandoff(for alarm: NativeAlarm) -> Bool {
-    guard let schedule = scheduleContext else { return false }
-    return CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: schedule)
+  private func hasVerifiedFreeTimeHandoff(for alarm: NativeAlarm, now: Date) -> Bool {
+    guard let schedule = scheduleContext,
+          CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: schedule),
+          let targetStart = try? NativeAlarmContract.date(fromLocalISO: alarm.startAt),
+          let targetLeave = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+    else { return false }
+
+    return Activity<CommanderProcedureLiveActivityAttributes>.activities.contains { activity in
+      let state = activity.content.state
+      return !state.isDepartureStandby
+        && !state.isDepartureBridge
+        && state.nextStableId == alarm.stableId
+        && state.nextStartAt.map { abs($0.timeIntervalSince(targetStart)) <= 1 } == true
+        && state.nextLeaveAt.map { abs($0.timeIntervalSince(targetLeave)) <= 1 } == true
+        && CommanderLiveActivityHandoff.retainsFreeTime(
+          previousEnd: activity.attributes.endAt,
+          targetStart: targetStart,
+          now: now
+        )
+        && Self.isOngoing(activity.activityState)
+    }
   }
 
   private func e2eOwnedPlatformIDs() -> Set<String> {
