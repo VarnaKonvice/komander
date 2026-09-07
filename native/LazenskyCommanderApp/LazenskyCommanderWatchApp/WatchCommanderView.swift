@@ -29,7 +29,7 @@ private struct WatchCommanderStateView: View {
   }
 
   private var accent: Color {
-    Color(hex: WatchVisualAssets.accent(for: icon))
+    Color(hex: WatchVisualAssets.accent(for: liveState.event))
   }
 
   var body: some View {

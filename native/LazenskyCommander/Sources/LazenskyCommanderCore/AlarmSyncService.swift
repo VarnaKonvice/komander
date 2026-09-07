@@ -73,6 +73,7 @@ public struct AlarmSyncService: Sendable {
     return try await synchronize(
       schedule: schedule,
       payload: payload,
+      overrides: overrides,
       projectionRevision: projectionRevision,
       now: now
     )
@@ -88,6 +89,7 @@ public struct AlarmSyncService: Sendable {
     return try await synchronize(
       schedule: schedule,
       payload: payload,
+      overrides: overrides,
       projectionRevision: projectionRevision,
       now: now
     )
@@ -96,13 +98,15 @@ public struct AlarmSyncService: Sendable {
   private func synchronize(
     schedule: Schedule,
     payload: NativeAlarmPayload,
+    overrides: LeadTimeOverrides?,
     projectionRevision: Int,
     now: Date
   ) async throws -> AlarmSyncSummary {
     let desiredPayload = try desiredPayload(from: payload, now: now)
     await adapter.prepare(
       schedule: schedule,
-      projectionRevision: max(0, projectionRevision)
+      projectionRevision: max(0, projectionRevision),
+      overrides: overrides
     )
     var state = try await store.load()
 

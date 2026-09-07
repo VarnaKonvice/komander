@@ -9,12 +9,22 @@ enum WatchVisualAssets {
     event.flatMap { iconMap?.classify($0) }
   }
 
+  static func accent(for event: ScheduleEvent?) -> String {
+    guard let event else { return CommanderBrandAssets.Colors.primaryPurple }
+    return CommanderBrandAssets.procedureAccentHex(
+      iconKey: icon(for: event)?.key,
+      title: event.title,
+      isMeal: event.kind == .meal
+    )
+  }
+
   static func accent(for icon: CommanderIconMap.Icon?) -> String {
-    guard let icon else {
-      return colors?.brand.commanderPurple ?? iconMap?.fallback.accent ?? "#6E56CF"
-    }
-    let colorKey = icon.key.hasPrefix("meal_") ? "meal" : icon.key
-    return colors?.procedures[colorKey] ?? icon.accent
+    guard let icon else { return CommanderBrandAssets.Colors.primaryPurple }
+    return CommanderBrandAssets.procedureAccentHex(
+      iconKey: icon.key,
+      title: icon.label,
+      isMeal: icon.key.hasPrefix("meal_")
+    )
   }
 
   private static func decode<Value: Decodable>(_ name: String) -> Value? {

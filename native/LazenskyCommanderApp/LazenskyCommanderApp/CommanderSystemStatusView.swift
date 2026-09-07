@@ -71,7 +71,7 @@ struct CommanderSystemStatusView: View {
       }
     }
     .scrollContentBackground(.hidden)
-    .background(CommanderDashboardPalette.background)
+    .background(CommanderDashboardPalette.backgroundGradient.ignoresSafeArea())
     .navigationTitle("Diagnostika")
     .navigationBarTitleDisplayMode(.inline)
   }

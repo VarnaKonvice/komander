@@ -2,6 +2,8 @@ import Foundation
 
 public struct CommanderWeekDay: Equatable, Sendable {
   public let date: Date
+  public let summary: CommanderDaySummary
+  public let overview: CommanderDayOverview
   public let events: [CommanderDashboardEvent]
 }
 
@@ -25,13 +27,31 @@ public enum CommanderWeekPresentation {
       )
     }
     let grouped = Dictionary(grouping: items) { CommanderScheduleCalendar.prague.startOfDay(for: $0.startAt) }
-    return grouped.keys.sorted().map { day in
-      CommanderWeekDay(date: day, events: grouped[day]!.sorted {
+    let days = stayDays(schedule: schedule) ?? grouped.keys.sorted()
+    return days.map { day in
+      let events = (grouped[day] ?? []).sorted {
         if $0.startAt != $1.startAt { return $0.startAt < $1.startAt }
         if $0.endAt != $1.endAt { return $0.endAt < $1.endAt }
         return $0.event.stableId < $1.event.stableId
-      })
+      }
+      return CommanderWeekDay(
+        date: day,
+        summary: CommanderDaySummary.make(timeline: events, now: now),
+        overview: CommanderDayOverview.make(date: day, timeline: events, now: now),
+        events: events
+      )
     }
+  }
+
+  private static func stayDays(schedule: Schedule) -> [Date]? {
+    guard let from = schedule.stay["dateFrom"], let to = schedule.stay["dateTo"],
+          let start = try? NativeAlarmContract.dateTime(date: from, time: "00:00"),
+          let end = try? NativeAlarmContract.dateTime(date: to, time: "00:00"),
+          start <= end
+    else { return nil }
+    let calendar = CommanderScheduleCalendar.prague
+    guard let count = calendar.dateComponents([.day], from: start, to: end).day else { return nil }
+    return (0...count).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
   }
 }
 
@@ -51,6 +71,7 @@ public struct CommanderProcedureSummary: Equatable, Sendable {
   public let name: String
   public let completed: Int
   public let total: Int
+  public let representativeEvent: ScheduleEvent
 }
 
 public struct CommanderStayPresentation: Equatable, Sendable {
@@ -79,13 +100,14 @@ public struct CommanderStayPresentation: Equatable, Sendable {
         return CommanderProcedureSummary(
           name: name,
           completed: events.filter { completedIDs.contains($0.stableId) }.count,
-          total: events.count
+          total: events.count,
+          representativeEvent: events[0]
         )
       }
     )
   }
 
-  private static func period(stay: [String: String], now: Date) -> CommanderStayPeriod? {
+  public static func period(stay: [String: String], now: Date) -> CommanderStayPeriod? {
     guard let from = stay["dateFrom"], let to = stay["dateTo"],
           let start = try? NativeAlarmContract.dateTime(date: from, time: "00:00"),
           let end = try? NativeAlarmContract.dateTime(date: to, time: "00:00"),
@@ -113,8 +135,13 @@ public enum CommanderInfoPresentation {
     let keys = known + stay.keys.filter { !known.contains($0) }.sorted()
     return keys.compactMap { key in
       guard let value = stay[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }
-      return CommanderStayField(key: key, value: value)
+      return CommanderStayField(key: key, value: displayValue(value, key: key))
     }
+  }
+
+  private static func displayValue(_ value: String, key: String) -> String {
+    guard key == "dateFrom" || key == "dateTo" else { return value }
+    return CommanderDateText.numericDate(isoDate: value) ?? value
   }
 }
 
