@@ -376,6 +376,35 @@ private struct AdvancingScheduleSource: ScheduleServing {
   }
 }
 
+// Incident 2026-09-07: a post-departure screenshot with repair=1 and 0/0/0
+// does not prove a future alarm was repaired or the missed departure ever fired.
+@Test func postDepartureVerifiedCanReportOneRepairWithoutChangingFutureAlarms() async throws {
+  let meal = stabilizationSchedule().events[0]
+  let future = (0..<7).map { offset in
+    ScheduleEvent(stableId: "future-\(offset)", date: meal.date,
+      start: String(format: "%02d:30", 10 + offset), end: String(format: "%02d:40", 10 + offset),
+      title: "Procedura", location: "Balneo", kind: .procedure,
+      procedureType: nil, mealType: nil, leadTimeMinutes: nil)
+  }
+  let schedule = stabilizationSchedule(version: 5, events: [meal] + future)
+  let runtime = ContextRuntime()
+  let store = InMemoryAlarmStateStore()
+  let service = AlarmSyncService(scheduleService: StabilizationSource(schedule: schedule), store: store, adapter: runtime)
+  #expect(try await service.synchronize(now: stabilizationDate("09:00")).succeeded)
+  let before = await store.load().records
+  let elapsed = try #require(before[meal.stableId])
+  // Simulate an elapsed alarm no longer enumerated by the daemon. This makes no
+  // assertion about whether it rang: read-back after the deadline cannot tell us.
+  await runtime.cancel(platformAlarmID: elapsed.platformAlarmID)
+  let after = try await service.synchronize(now: stabilizationDate("10:16"))
+  #expect(after.succeeded && after.scheduleVersion == 5 && after.desiredAlarmCount == 7)
+  #expect(after.repairAttempts == 1)
+  #expect(after.appliedCreate == 0 && after.appliedUpdate == 0 && after.appliedCancel == 0)
+  let records = await store.load().records
+  #expect(records[meal.stableId] == nil)
+  for event in future { #expect(records[event.stableId] == before[event.stableId]) }
+}
+
 private func stabilizationDate(_ time: String) throws -> Date {
   let parts = time.split(separator: ":")
   let minute = try NativeAlarmContract.dateTime(date: "2026-09-06", time: parts.prefix(2).joined(separator: ":"))
