@@ -38,6 +38,7 @@ public protocol AlarmAdapting: Sendable {
   func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) async throws -> String
   func cancel(platformAlarmID: String) async throws
   func existingPlatformAlarmIDs() async throws -> Set<String>?
+  func existingPlatformAlertingAlarmIDs() async throws -> Set<String>
 
   /// Returns effective alert deadlines (fixed countdown start + preAlert, or observed fireDate),
   /// not raw fixed schedule dates. nil means this capability is unavailable in that adapter.
@@ -46,6 +47,7 @@ public protocol AlarmAdapting: Sendable {
 }
 
 public extension AlarmAdapting {
+  func existingPlatformAlertingAlarmIDs() async throws -> Set<String> { [] }
   func presentationContext(for alarm: NativeAlarm) async throws -> AlarmPresentationContext? { nil }
   func prepare(schedule: Schedule) async {}
   func prepare(schedule: Schedule, projectionRevision: Int) async {

@@ -113,6 +113,7 @@ public struct AlarmSyncService: Sendable {
     for alarm in desiredPayload.alarms {
       presentationContexts[alarm.stableId] = try await adapter.presentationContext(for: alarm)
     }
+    var protectedAlertingIDs = Set<String>()
     func reconciliation(_ state: ManagedAlarmState) -> AlarmReconciliationPlan {
       var plan = AlarmReconciler.reconcile(current: state.records.values.map(\.alarm), next: desiredPayload)
       let contextChanges = plan.unchanged.filter {
@@ -121,6 +122,9 @@ public struct AlarmSyncService: Sendable {
       let changedIDs = Set(contextChanges.map(\.stableId))
       plan.unchanged.removeAll { changedIDs.contains($0.stableId) }
       plan.update += contextChanges
+      plan.cancel.removeAll { change in
+        state.records[change.stableId].map { protectedAlertingIDs.contains($0.platformAlarmID) } == true
+      }
       return plan
     }
 
@@ -146,6 +150,24 @@ public struct AlarmSyncService: Sendable {
     case .denied:
       let plan = reconciliation(state)
       return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: AlarmAdapterError.authorizationDenied.localizedDescription, completedAt: nil, verified: false, repairs: 0)
+    }
+
+    // A foreground refresh is not a user stop action. Keep an already ringing,
+    // unchanged canonical event until it is stopped or the event has ended.
+    do {
+      let alerting = try await adapter.existingPlatformAlertingAlarmIDs()
+      let canonical = Dictionary(uniqueKeysWithValues: payload.alarms.map { ($0.stableId, $0) })
+      for record in state.records.values where alerting.contains(record.platformAlarmID) {
+        if canonical[record.stableId] == record.alarm,
+           try NativeAlarmContract.date(fromLocalISO: record.alarm.leaveAt) <= now,
+           try NativeAlarmContract.date(fromLocalISO: record.alarm.endAt) > now {
+          protectedAlertingIDs.insert(record.platformAlarmID)
+        }
+      }
+    } catch {
+      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload,
+        plan: reconciliation(state), created: 0, updated: 0, cancelled: 0,
+        error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0)
     }
 
     var repairs = 0
@@ -211,7 +233,7 @@ public struct AlarmSyncService: Sendable {
         try await store.save(state)
       }
 
-      if var verification = try await inspectPlatform(state: state) {
+      if var verification = try await inspectPlatform(state: state, protectedAlertingIDs: protectedAlertingIDs) {
         if !verification.invalidStableIDs.isEmpty || !verification.orphanPlatformIDs.isEmpty {
           repairs += 1
 
@@ -238,7 +260,7 @@ public struct AlarmSyncService: Sendable {
             try await store.save(state)
           }
 
-          guard let repairedVerification = try await inspectPlatform(state: state) else {
+          guard let repairedVerification = try await inspectPlatform(state: state, protectedAlertingIDs: protectedAlertingIDs) else {
             throw AlarmAdapterError.verificationFailed
           }
           verification = repairedVerification
@@ -292,15 +314,16 @@ public struct AlarmSyncService: Sendable {
     return invalid
   }
 
-  private func inspectPlatform(state: ManagedAlarmState) async throws -> (
+  private func inspectPlatform(state: ManagedAlarmState, protectedAlertingIDs: Set<String>) async throws -> (
     platformIDs: Set<String>,
     invalidStableIDs: Set<String>,
     orphanPlatformIDs: Set<String>
   )? {
     guard let platformIDs = try await adapter.existingPlatformAlarmIDs() else { return nil }
     let expectedIDs = Set(state.records.values.map(\.platformAlarmID))
-    let fixedAlertDates = try await adapter.existingPlatformFixedAlertDates(for: expectedIDs)
-    let invalid = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates)
+    let timingIDs = expectedIDs.subtracting(protectedAlertingIDs)
+    let fixedAlertDates = try await adapter.existingPlatformFixedAlertDates(for: timingIDs)
+    let invalid = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates, timingIDs: timingIDs)
     let orphanIDs = platformIDs.subtracting(expectedIDs)
     return (platformIDs, invalid, orphanIDs)
   }

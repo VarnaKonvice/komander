@@ -191,6 +191,10 @@ private actor ContextRuntime: AlarmAdapting {
   private var context: Schedule?
   private var overrides: LeadTimeOverrides?
   private var dates: [String: Date] = [:]
+  private var alerting: Set<String> = []
+  func beginAlerting() { alerting = Set(dates.keys) }
+  func stopAlerting() { for id in alerting { dates.removeValue(forKey: id) }; alerting = [] }
+  func existingPlatformAlertingAlarmIDs() -> Set<String> { alerting }
   func prepare(schedule: Schedule, projectionRevision: Int, overrides: LeadTimeOverrides?) {
     context = schedule; self.overrides = overrides
   }
@@ -205,10 +209,10 @@ private actor ContextRuntime: AlarmAdapting {
     dates[id] = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
     return id
   }
-  func cancel(platformAlarmID: String) { dates.removeValue(forKey: platformAlarmID) }
+  func cancel(platformAlarmID: String) { dates.removeValue(forKey: platformAlarmID); alerting.remove(platformAlarmID) }
   func existingPlatformAlarmIDs() -> Set<String>? { Set(dates.keys) }
   func existingPlatformFixedAlertDates(for platformAlarmIDs: Set<String>) -> [String: Date]? {
-    dates.filter { platformAlarmIDs.contains($0.key) }
+    dates.filter { platformAlarmIDs.contains($0.key) && !alerting.contains($0.key) }
   }
 }
 
@@ -255,6 +259,42 @@ private actor SerialProbe {
   #expect(try await service.synchronize(now: stabilizationDate("09:00")).succeeded)
   #expect(await runtime.ids.count == 1)
   #expect(await runtime.creates == 2)
+}
+
+
+@Test func foregroundReconciliationDoesNotSilenceRingingCanonicalAlarmOrRecreateStoppedAlarm() async throws {
+  let schedule = stabilizationSchedule(events: [stabilizationSchedule().events[0]])
+  let runtime = ContextRuntime()
+  let store = InMemoryAlarmStateStore()
+  let service = AlarmSyncService(scheduleService: StabilizationSource(schedule: schedule), store: store, adapter: runtime)
+  _ = try await service.synchronize(now: stabilizationDate("09:00"))
+  let original = await store.load().records
+  await runtime.beginAlerting()
+  for time in ["10:00", "10:05", "10:10"] {
+    let refreshed = try await service.synchronize(now: stabilizationDate(time))
+    #expect(refreshed.succeeded)
+    #expect(refreshed.appliedCancel == 0 && refreshed.appliedCreate == 0 && refreshed.appliedUpdate == 0)
+    #expect(await store.load().records == original)
+  }
+  await runtime.stopAlerting()
+  let stopped = try await service.synchronize(now: stabilizationDate("10:11"))
+  #expect(stopped.succeeded && stopped.appliedCreate == 0)
+  #expect(await store.load().records.isEmpty)
+}
+
+@Test func ringingProtectionDoesNotKeepRemovedOrFinishedCanonicalEvents() async throws {
+  for remove in [false, true] {
+    let schedule = stabilizationSchedule(events: [stabilizationSchedule().events[0]])
+    let runtime = ContextRuntime()
+    let store = InMemoryAlarmStateStore()
+    let service = AlarmSyncService(scheduleService: StabilizationSource(schedule: schedule), store: store, adapter: runtime)
+    _ = try await service.synchronize(now: stabilizationDate("09:00"))
+    await runtime.beginAlerting()
+    let next = remove ? stabilizationSchedule(version: 2, events: []) : schedule
+    let result = try await service.synchronize(schedule: next, now: stabilizationDate(remove ? "10:05" : "10:15"))
+    #expect(result.succeeded && result.appliedCancel == 1 && result.appliedCreate == 0)
+    #expect(await store.load().records.isEmpty)
+  }
 }
 
 private func stabilizationDate(_ time: String) throws -> Date {

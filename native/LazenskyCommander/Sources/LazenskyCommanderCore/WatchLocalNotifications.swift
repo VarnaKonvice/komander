@@ -62,6 +62,8 @@ public struct WatchLocalNotification: Codable, Equatable, Sendable {
 }
 
 public struct WatchNotificationPlan: Equatable, Sendable {
+  public init() {}
+
   public var create: [WatchLocalNotification] = []
   public var update: [WatchLocalNotification] = []
   public var cancel: [String] = []

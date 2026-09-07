@@ -466,6 +466,12 @@ actor AlarmKitAdapter: AlarmAdapting {
     return allIDs.intersection(e2eOwnedPlatformIDs())
   }
 
+  func existingPlatformAlertingAlarmIDs() async throws -> Set<String> {
+    let owned = try await existingPlatformAlarmIDs() ?? []
+    return Set(try AlarmManager.shared.alarms.filter { $0.state == .alerting }
+      .map { $0.id.uuidString }).intersection(owned)
+  }
+
   func existingPlatformFixedAlertDates() async throws -> [String: Date]? {
     try await existingPlatformFixedAlertDates(for: existingPlatformAlarmIDs() ?? [])
   }
