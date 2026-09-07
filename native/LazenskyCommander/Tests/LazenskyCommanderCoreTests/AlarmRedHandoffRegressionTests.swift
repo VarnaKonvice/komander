@@ -46,4 +46,35 @@ import Testing
   #expect(live.contains("VYRAZIT TEĎ"))
   #expect(live.contains("criticalRed"))
 }
+
+@Test func alertOnlyAlarmRequiresExistingVerifiedFreeTimeActivity() throws {
+  let repo = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+    .deletingLastPathComponent()
+
+  let adapter = try String(
+    contentsOf: repo.appendingPathComponent(
+      "native/LazenskyCommanderApp/LazenskyCommanderApp/AlarmKitAdapter.swift"
+    ),
+    encoding: .utf8
+  )
+
+  // A logical neighbour in the canonical schedule is not enough. The adapter must
+  // prove that the matching free-time Live Activity really exists before removing
+  // AlarmKit's own countdown presentation.
+  #expect(adapter.contains("let verifiedHandoff = hasVerifiedFreeTimeHandoff(for: alarm, now: now)"))
+  #expect(adapter.contains("Activity<CommanderProcedureLiveActivityAttributes>.activities.contains"))
+  #expect(adapter.contains("state.nextStableId == alarm.stableId"))
+  #expect(adapter.contains("state.nextStartAt.map { abs($0.timeIntervalSince(targetStart)) <= 1 } == true"))
+  #expect(adapter.contains("state.nextLeaveAt.map { abs($0.timeIntervalSince(targetLeave)) <= 1 } == true"))
+  #expect(adapter.contains("CommanderLiveActivityHandoff.retainsFreeTime("))
+  #expect(adapter.contains("Handoff chybí, používám vlastní countdown"))
+
+  // The old behaviour used schedule topology alone and could therefore suppress the
+  // system countdown even when the expected Live Activity was missing on the phone.
+  #expect(!adapter.contains("if hasFreeTimeHandoff(for: alarm)"))
+}
 #endif
