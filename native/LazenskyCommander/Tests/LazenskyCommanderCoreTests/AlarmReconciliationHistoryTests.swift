@@ -54,7 +54,7 @@ import Testing
     AlarmReconciliationHistoryEntry(
       scheduleVersion: 5,
       startedAt: try ledgerDate("2026-09-07T14:15:00"),
-      completedAt: try ledgerDate("2026-09-07T14:15:01"),
+      completedAt: try ledgerDate("2026-09-07T14:16:00"),
       desiredAlarmCount: 7,
       before: [],
       after: [],
