@@ -11,6 +11,33 @@ public struct AlarmSyncSummary: Equatable, Sendable {
   public let completedAt: Date?
   public let verified: Bool
   public let repairAttempts: Int
+  public let reconciliationHistory: [AlarmReconciliationHistoryEntry]
+
+  public init(
+    scheduleVersion: Int?,
+    desiredAlarmCount: Int,
+    plan: AlarmReconciliationPlan,
+    appliedCreate: Int,
+    appliedUpdate: Int,
+    appliedCancel: Int,
+    errorMessage: String?,
+    completedAt: Date?,
+    verified: Bool,
+    repairAttempts: Int,
+    reconciliationHistory: [AlarmReconciliationHistoryEntry] = []
+  ) {
+    self.scheduleVersion = scheduleVersion
+    self.desiredAlarmCount = desiredAlarmCount
+    self.plan = plan
+    self.appliedCreate = appliedCreate
+    self.appliedUpdate = appliedUpdate
+    self.appliedCancel = appliedCancel
+    self.errorMessage = errorMessage
+    self.completedAt = completedAt
+    self.verified = verified
+    self.repairAttempts = repairAttempts
+    self.reconciliationHistory = reconciliationHistory
+  }
 
   public var succeeded: Bool { errorMessage == nil && verified }
 }
@@ -128,13 +155,12 @@ public struct AlarmSyncService: Sendable {
       return plan
     }
 
-
     let availability = await adapter.availability()
     guard case .available = availability else {
       let plan = reconciliation(state)
       let message: String
       if case .unavailable(let reason) = availability { message = reason } else { message = "AlarmKit is unavailable." }
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: message, completedAt: nil, verified: false, repairs: 0)
+      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: message, completedAt: nil, verified: false, repairs: 0, history: state.reconciliationHistory)
     }
 
     switch await adapter.authorizationStatus() {
@@ -145,11 +171,11 @@ public struct AlarmSyncService: Sendable {
         try await adapter.requestAuthorization()
       } catch {
         let plan = reconciliation(state)
-        return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0)
+        return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0, history: state.reconciliationHistory)
       }
     case .denied:
       let plan = reconciliation(state)
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: AlarmAdapterError.authorizationDenied.localizedDescription, completedAt: nil, verified: false, repairs: 0)
+      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: AlarmAdapterError.authorizationDenied.localizedDescription, completedAt: nil, verified: false, repairs: 0, history: state.reconciliationHistory)
     }
 
     // A foreground refresh is not a user stop action. Keep an already ringing,
@@ -167,8 +193,22 @@ public struct AlarmSyncService: Sendable {
     } catch {
       return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload,
         plan: reconciliation(state), created: 0, updated: 0, cancelled: 0,
-        error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0)
+        error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0,
+        history: state.reconciliationHistory)
     }
+
+    let historyID = UUID()
+    let beforeHistory = await reconciliationHistoryObservations(payload: desiredPayload, state: state)
+    state.appendReconciliationHistory(
+      AlarmReconciliationHistoryEntry(
+        id: historyID,
+        scheduleVersion: schedule.scheduleVersion,
+        startedAt: now,
+        desiredAlarmCount: desiredPayload.alarms.count,
+        before: beforeHistory
+      )
+    )
+    try? await store.save(state)
 
     var repairs = 0
     // Updates/cancellations do not need the old timer's endpoint; verify their replacements below.
@@ -181,7 +221,17 @@ public struct AlarmSyncService: Sendable {
       fixedAlertDates = platformIDs == nil ? nil : try await adapter.existingPlatformFixedAlertDates(for: futurePlatformIDs)
     } catch {
       let plan = reconciliation(state)
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0)
+      state = await finalizedHistoryState(
+        state,
+        id: historyID,
+        payload: desiredPayload,
+        completedAt: nil,
+        repairs: repairs,
+        verified: false,
+        error: error.localizedDescription
+      )
+      try? await store.save(state)
+      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: 0, history: state.reconciliationHistory)
     }
 
     // Real AlarmKit exposes its daemon state, so production verifies persisted IDs and effective
@@ -206,7 +256,17 @@ public struct AlarmSyncService: Sendable {
       // Keep the ID when cancellation failed: creating a replacement could ring twice.
       try? await store.save(state)
       let plan = reconciliation(state)
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: repairs)
+      state = await finalizedHistoryState(
+        state,
+        id: historyID,
+        payload: desiredPayload,
+        completedAt: nil,
+        repairs: repairs,
+        verified: false,
+        error: error.localizedDescription
+      )
+      try? await store.save(state)
+      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: 0, updated: 0, cancelled: 0, error: error.localizedDescription, completedAt: nil, verified: false, repairs: repairs, history: state.reconciliationHistory)
     }
 
     let plan = reconciliation(state)
@@ -272,11 +332,29 @@ public struct AlarmSyncService: Sendable {
 
       state.lastSuccessfulPayload = desiredPayload
       state.lastSuccessfulSync = now
+      state = await finalizedHistoryState(
+        state,
+        id: historyID,
+        payload: desiredPayload,
+        completedAt: now,
+        repairs: repairs,
+        verified: true,
+        error: nil
+      )
       try await store.save(state)
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: created, updated: updated, cancelled: cancelled, error: nil, completedAt: now, verified: true, repairs: repairs)
+      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: created, updated: updated, cancelled: cancelled, error: nil, completedAt: now, verified: true, repairs: repairs, history: state.reconciliationHistory)
     } catch {
+      state = await finalizedHistoryState(
+        state,
+        id: historyID,
+        payload: desiredPayload,
+        completedAt: nil,
+        repairs: repairs,
+        verified: false,
+        error: error.localizedDescription
+      )
       try? await store.save(state)
-      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: created, updated: updated, cancelled: cancelled, error: error.localizedDescription, completedAt: nil, verified: false, repairs: repairs)
+      return summary(scheduleVersion: schedule.scheduleVersion, payload: desiredPayload, plan: plan, created: created, updated: updated, cancelled: cancelled, error: error.localizedDescription, completedAt: nil, verified: false, repairs: repairs, history: state.reconciliationHistory)
     }
   }
 
@@ -289,6 +367,83 @@ public struct AlarmSyncService: Sendable {
       scheduleVersion: payload.scheduleVersion,
       alarms: futureAlarms
     )
+  }
+
+  private func reconciliationHistoryObservations(
+    payload: NativeAlarmPayload,
+    state: ManagedAlarmState
+  ) async -> [AlarmReconciliationObservation] {
+    let desired = payload.alarms.sorted { lhs, rhs in
+      if lhs.leaveAt != rhs.leaveAt { return lhs.leaveAt < rhs.leaveAt }
+      return lhs.stableId < rhs.stableId
+    }
+    let managedIDs = Set(desired.compactMap { state.records[$0.stableId]?.platformAlarmID })
+
+    let platformIDs: Set<String>?
+    do {
+      platformIDs = try await adapter.existingPlatformAlarmIDs()
+    } catch {
+      return desired.map { alarm in
+        AlarmReconciliationObservation(
+          stableId: alarm.stableId,
+          title: alarm.title,
+          expectedLeaveAt: alarm.leaveAt,
+          platformAlarmID: state.records[alarm.stableId]?.platformAlarmID,
+          platformExists: nil,
+          actualLeaveAt: nil,
+          readbackError: "Stav alarmů se nepodařilo přečíst: \(error.localizedDescription)"
+        )
+      }
+    }
+
+    let dates: [String: Date]?
+    var timingError: String?
+    if platformIDs == nil || managedIDs.isEmpty {
+      dates = nil
+    } else {
+      do {
+        dates = try await adapter.existingPlatformFixedAlertDates(for: managedIDs)
+      } catch {
+        dates = nil
+        timingError = "Časy alarmů se nepodařilo přečíst: \(error.localizedDescription)"
+      }
+    }
+
+    return desired.map { alarm in
+      let platformID = state.records[alarm.stableId]?.platformAlarmID
+      let exists = platformID.flatMap { id in platformIDs.map { $0.contains(id) } }
+      return AlarmReconciliationObservation(
+        stableId: alarm.stableId,
+        title: alarm.title,
+        expectedLeaveAt: alarm.leaveAt,
+        platformAlarmID: platformID,
+        platformExists: exists,
+        actualLeaveAt: platformID.flatMap { dates?[$0] },
+        readbackError: platformID == nil ? nil : timingError
+      )
+    }
+  }
+
+  private func finalizedHistoryState(
+    _ state: ManagedAlarmState,
+    id: UUID,
+    payload: NativeAlarmPayload,
+    completedAt: Date?,
+    repairs: Int,
+    verified: Bool,
+    error: String?
+  ) async -> ManagedAlarmState {
+    var updated = state
+    let after = await reconciliationHistoryObservations(payload: payload, state: updated)
+    updated.updateReconciliationHistory(
+      id: id,
+      completedAt: completedAt,
+      after: after,
+      repairAttempts: repairs,
+      verified: verified,
+      errorMessage: error
+    )
+    return updated
   }
 
   private func invalidStableIDs(
@@ -341,7 +496,31 @@ public struct AlarmSyncService: Sendable {
     state.records.removeValue(forKey: change.stableId)
   }
 
-  private func summary(scheduleVersion: Int, payload: NativeAlarmPayload, plan: AlarmReconciliationPlan, created: Int, updated: Int, cancelled: Int, error: String?, completedAt: Date?, verified: Bool, repairs: Int) -> AlarmSyncSummary {
-    AlarmSyncSummary(scheduleVersion: scheduleVersion, desiredAlarmCount: payload.alarms.count, plan: plan, appliedCreate: created, appliedUpdate: updated, appliedCancel: cancelled, errorMessage: error, completedAt: completedAt, verified: verified, repairAttempts: repairs)
+  private func summary(
+    scheduleVersion: Int,
+    payload: NativeAlarmPayload,
+    plan: AlarmReconciliationPlan,
+    created: Int,
+    updated: Int,
+    cancelled: Int,
+    error: String?,
+    completedAt: Date?,
+    verified: Bool,
+    repairs: Int,
+    history: [AlarmReconciliationHistoryEntry]
+  ) -> AlarmSyncSummary {
+    AlarmSyncSummary(
+      scheduleVersion: scheduleVersion,
+      desiredAlarmCount: payload.alarms.count,
+      plan: plan,
+      appliedCreate: created,
+      appliedUpdate: updated,
+      appliedCancel: cancelled,
+      errorMessage: error,
+      completedAt: completedAt,
+      verified: verified,
+      repairAttempts: repairs,
+      reconciliationHistory: history
+    )
   }
 }
