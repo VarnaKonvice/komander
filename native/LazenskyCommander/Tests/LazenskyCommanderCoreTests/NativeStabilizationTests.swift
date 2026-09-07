@@ -240,6 +240,23 @@ private actor SerialProbe {
   func leave() { active -= 1; completed += 1 }
 }
 
+
+@Test func failedCancellationDuringPostWriteRepairKeepsNewIDForSafeRetry() async throws {
+  let schedule = stabilizationSchedule(events: [stabilizationSchedule().events[0]])
+  let alarm = try NativeAlarmContract.payload(schedule: schedule).alarms[0]
+  let runtime = CancelFailureRuntime(original: alarm, seedExisting: false, wrongFirstCreation: true)
+  let store = InMemoryAlarmStateStore()
+  let service = AlarmSyncService(scheduleService: StabilizationSource(schedule: schedule), store: store, adapter: runtime)
+  let failed = try await service.synchronize(now: stabilizationDate("09:00"))
+  #expect(!failed.succeeded)
+  #expect(await runtime.creates == 1)
+  #expect(await store.load().records[alarm.stableId]?.platformAlarmID == "replacement-1")
+  await runtime.allowCancellation()
+  #expect(try await service.synchronize(now: stabilizationDate("09:00")).succeeded)
+  #expect(await runtime.ids.count == 1)
+  #expect(await runtime.creates == 2)
+}
+
 private func stabilizationDate(_ time: String) throws -> Date {
   let parts = time.split(separator: ":")
   let minute = try NativeAlarmContract.dateTime(date: "2026-09-06", time: parts.prefix(2).joined(separator: ":"))
@@ -262,8 +279,13 @@ private actor CancelFailureRuntime: AlarmAdapting {
   var ids: Set<String> = ["original"]
   var creates = 0
   private var cancellationAllowed = false
+  private let wrongFirstCreation: Bool
   private let original: NativeAlarm
-  init(original: NativeAlarm) { self.original = original }
+  init(original: NativeAlarm, seedExisting: Bool = true, wrongFirstCreation: Bool = false) {
+    self.original = original
+    self.wrongFirstCreation = wrongFirstCreation
+    if !seedExisting { ids = [] }
+  }
   func allowCancellation() { cancellationAllowed = true }
   func availability() -> AlarmKitAvailability { .available }
   func authorizationStatus() -> AlarmAuthorizationStatus { .authorized }
@@ -282,7 +304,7 @@ private actor CancelFailureRuntime: AlarmAdapting {
   func existingPlatformFixedAlertDates(for platformAlarmIDs: Set<String>) throws -> [String: Date]? {
     let expected = try NativeAlarmContract.date(fromLocalISO: original.leaveAt)
     return Dictionary(uniqueKeysWithValues: ids.intersection(platformAlarmIDs).map {
-      ($0, $0 == "original" ? expected.addingTimeInterval(300) : expected)
+      ($0, ($0 == "original" || (wrongFirstCreation && $0 == "replacement-1")) ? expected.addingTimeInterval(300) : expected)
     })
   }
 }

@@ -222,6 +222,9 @@ final class CommanderViewModel: ObservableObject {
       watchTransferStatus = "Testovací kanál je od Watch oddělený"
     }
     await refreshAccess()
+    if latestSchedule != nil {
+      await synchronizeWithRecovery(maxAttempts: 3, automatic: true, source: .cached)
+    }
     await synchronizeWithRecovery(maxAttempts: 3, automatic: true)
   }
 
@@ -233,6 +236,9 @@ final class CommanderViewModel: ObservableObject {
     }
 #endif
     if let lastAutomaticAttempt, Date().timeIntervalSince(lastAutomaticAttempt) < 10 { return }
+    if latestSchedule != nil {
+      await synchronizeWithRecovery(maxAttempts: 3, automatic: true, source: .cached)
+    }
     await synchronizeWithRecovery(maxAttempts: 3, automatic: true)
   }
 

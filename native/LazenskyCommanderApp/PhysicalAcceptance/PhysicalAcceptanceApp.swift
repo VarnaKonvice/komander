@@ -56,7 +56,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
       var summary: AlarmSyncSummary?
       var syncAttempts = 0
       var procedurePrepared = false
-      status = "Ověřuji 2 systémové alarmy a 2 živé aktivity"
+      status = "Ověřuji 2 systémové alarmy a úvodní živou aktivitu"
       for tick in 0..<20 {
         if [0, 4, 10].contains(tick), syncAttempts < maxAttempts,
            summary?.succeeded != true || !procedurePrepared {

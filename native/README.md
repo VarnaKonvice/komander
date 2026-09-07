@@ -11,7 +11,7 @@ Open `LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj` in Xcode 26.6 or newe
 | `LazenskyCommanderWatchApp` | `com.varnakonvice.lazenskycommander.watchkitapp` | watchOS 26.0 |
 | `LazenskyCommanderWatchWidget` | `com.varnakonvice.lazenskycommander.watchkitapp.widget` | watchOS 26.0 |
 
-`LazenskyCommanderCore` supports iOS 26 and watchOS 26. The app requires iOS 26.1 because `AlarmPresentation.Alert` is available from that version. The Xcode project contains development team `2CCL69T42P`; physical-device builds still require valid local signing and provisioning for all targets and the Watch App Group.
+`LazenskyCommanderCore` supports iOS 26 and watchOS 26. Its macOS 13 minimum is for the Swift Testing suite and CoreCheck executable; this repository does not ship a macOS app. The explicit macOS deployment target covers the package's Swift concurrency and asynchronous URLSession usage instead of relying on SwiftPM's legacy default. Building still requires the declared Swift 6.2 tools or newer (and full Xcode for Apple app targets). See [Swift platform support](https://swift.org/platform-support/) and [SwiftPM deployment settings](https://docs.swift.org/package-manager/PackageDescription/PackageDescription.html). The app requires iOS 26.1 because `AlarmPresentation.Alert` is available from that version. The Xcode project contains development team `2CCL69T42P`; physical-device builds still require valid local signing and provisioning for all targets and the Watch App Group.
 
 The Watch app and widget share `group.com.varnakonvice.lazenskycommander.watch`. The iPhone app embeds the Live Activity extension and Watch app; the Watch app embeds its widget extension.
 

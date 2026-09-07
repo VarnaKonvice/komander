@@ -671,6 +671,7 @@ actor AlarmKitAdapter: AlarmAdapting {
       desiredRunning = [primary]
     }
 
+    var retainedRunningID: String?
     for activity in existing {
       let state = activity.content.state
       if let priorHandoff, activity.id == priorHandoff.id {
@@ -707,7 +708,8 @@ actor AlarmKitAdapter: AlarmAdapting {
           && abs(activity.attributes.startAt.timeIntervalSince(item.startAt)) <= 1
           && abs(activity.attributes.endAt.timeIntervalSince(item.endAt)) <= 1
       }
-      if let match {
+      if let match, Self.isOngoing(activity.activityState), retainedRunningID == nil {
+        retainedRunningID = activity.id
         await activity.update(ActivityContent(
           state: match.contentState,
           staleDate: match.endAt,

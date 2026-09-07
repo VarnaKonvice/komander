@@ -5,14 +5,20 @@ struct CommanderWeekView: View {
   @ObservedObject var model: CommanderViewModel
   @State private var expandedDays: Set<Date> = []
 
-  private var days: [CommanderWeekDay]? {
+  private func days(at now: Date) -> [CommanderWeekDay]? {
     guard let schedule = model.latestSchedule else { return nil }
     return try? CommanderWeekPresentation.make(
-      schedule: schedule, now: .now, overrides: model.leadTimeOverrides
+      schedule: schedule, now: now, overrides: model.leadTimeOverrides
     )
   }
 
   var body: some View {
+    TimelineView(.everyMinute) { context in
+      weekContent(days: days(at: context.date))
+    }
+  }
+
+  private func weekContent(days: [CommanderWeekDay]?) -> some View {
     ScrollViewReader { proxy in
       ScrollView {
         LazyVStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
