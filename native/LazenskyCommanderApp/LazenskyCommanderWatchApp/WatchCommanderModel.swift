@@ -37,18 +37,9 @@ final class WatchCommanderModel {
     self.alarmPreferences = preferences
     self.notificationService = service
     self.standaloneAlarmsEnabled = preferences.isEnabled
-    self.cache = cache ?? WatchCacheLocation.makeCache { snapshot in
+    self.cache = cache ?? WatchCacheLocation.makeCache { _ in
       WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.kind)
       WidgetCenter.shared.invalidateRelevance(ofKind: CommanderWatchWidgetContract.kind)
-      guard preferences.isEnabled,
-            await service.authorizationStatus() == .authorized
-      else { return }
-      _ = try? await service.reconcile(
-        schedule: snapshot.schedule,
-        enabled: true,
-        overrides: snapshot.leadTimeOverrides,
-        projectionRevision: snapshot.projectionRevision
-      )
     }
   }
 
@@ -73,6 +64,9 @@ final class WatchCommanderModel {
       snapshot = try await cache.load()
       schedule = snapshot?.schedule
       cacheError = nil
+      // One owner for notification writes and visible errors. An unchanged snapshot
+      // must also retry a previous failed write, not just acknowledge the cache.
+      await reconcileStandaloneAlarms(requestAuthorization: false)
     case .rejectedInvalid, .rejectedVersion:
       break
     }

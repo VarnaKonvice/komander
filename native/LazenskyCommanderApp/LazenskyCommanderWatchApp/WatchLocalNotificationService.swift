@@ -3,6 +3,16 @@ import LazenskyCommanderCore
 import UserNotifications
 
 actor WatchLocalNotificationService {
+  private enum VerificationError: LocalizedError {
+    case pendingRequestsDiffer
+    var errorDescription: String? { "Notifikace Watch se nepodařilo ověřit. Obnovte aplikaci pro další pokus." }
+  }
+
+  private struct PendingNotifications {
+    var items: [WatchLocalNotification] = []
+    var invalidIdentifiers: Set<String> = []
+  }
+
   private enum UserInfoKey {
     static let stableId = "stableId"
     static let scheduleVersion = "scheduleVersion"
@@ -61,24 +71,25 @@ actor WatchLocalNotificationService {
 
   private func apply(schedule: Schedule?, enabled: Bool, overrides: LeadTimeOverrides?,
                      projectionRevision: Int, now: Date) async throws -> WatchNotificationPlan {
-    // A queued cache callback must not re-enable notifications after the user disabled them.
+    // A queued reconciliation must not re-enable notifications after the user disabled them.
     let enabled = enabled && preferences.isEnabled
     let current = await managedPendingNotifications()
     if enabled, let schedule, let latestProjection,
        schedule.scheduleVersion == latestProjection.scheduleVersion,
        projectionRevision < latestProjection.projectionRevision {
       var stale = WatchNotificationPlan()
-      stale.unchanged = current
+      stale.unchanged = current.items
       stale.ignoredStaleSchedule = true
       return stale
     }
     let plan = try WatchNotificationReconciler.reconcile(
-      current: current,
+      current: current.items,
       schedule: schedule,
       enabled: enabled,
       now: now,
       overrides: overrides,
-      lastReconciledScheduleVersion: preferences.lastReconciledScheduleVersion
+      lastReconciledScheduleVersion: preferences.lastReconciledScheduleVersion,
+      invalidIdentifiers: current.invalidIdentifiers
     )
 
     guard !plan.ignoredStaleSchedule else { return plan }
@@ -90,6 +101,16 @@ actor WatchLocalNotificationService {
       try await center.add(request(for: notification))
     }
 
+    // Verify actual OS requests before recording success. A notification that became
+    // due while awaiting the OS must not be recreated as a past notification.
+    let observed = await managedPendingNotifications()
+    let remaining = try WatchNotificationReconciler.reconcile(
+      current: observed.items, schedule: schedule, enabled: enabled,
+      now: max(now, Date()), overrides: overrides,
+      invalidIdentifiers: observed.invalidIdentifiers
+    )
+    guard !remaining.hasChanges else { throw VerificationError.pendingRequestsDiffer }
+
     if enabled, let schedule {
       let previous = preferences.lastReconciledScheduleVersion ?? schedule.scheduleVersion
       preferences.lastReconciledScheduleVersion = max(previous, schedule.scheduleVersion)
@@ -99,20 +120,29 @@ actor WatchLocalNotificationService {
     return plan
   }
 
-  private func managedPendingNotifications() async -> [WatchLocalNotification] {
-    await center.pendingNotificationRequests().compactMap { request in
-      guard let stableId = WatchLeaveNotificationContract.stableId(from: request.identifier) else {
-        return nil
-      }
+  private func managedPendingNotifications() async -> PendingNotifications {
+    var pending = PendingNotifications()
+    for request in await center.pendingNotificationRequests() {
+      guard let stableId = WatchLeaveNotificationContract.stableId(from: request.identifier) else { continue }
       let info = request.content.userInfo
-      return WatchLocalNotification(
+      let item = WatchLocalNotification(
         stableId: stableId,
         scheduleVersion: info[UserInfoKey.scheduleVersion] as? Int ?? 0,
         leaveAt: info[UserInfoKey.leaveAt] as? String ?? "",
         title: info[UserInfoKey.eventTitle] as? String ?? "",
         location: info[UserInfoKey.location] as? String ?? ""
       )
+      pending.items.append(item)
+      let trigger = request.trigger as? UNCalendarNotificationTrigger
+      if !item.matchesObservedRequest(
+        title: request.content.title, body: request.content.body,
+        fireDate: trigger?.nextTriggerDate(), repeats: trigger?.repeats ?? true,
+        hasSound: request.content.sound != nil
+      ) {
+        pending.invalidIdentifiers.insert(request.identifier)
+      }
     }
+    return pending
   }
 
   private func request(for notification: WatchLocalNotification) throws -> UNNotificationRequest {

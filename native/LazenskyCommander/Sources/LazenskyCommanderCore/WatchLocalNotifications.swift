@@ -53,6 +53,15 @@ public struct WatchLocalNotification: Codable, Equatable, Sendable {
     return trimmedLocation.isEmpty ? title : "\(title) · \(trimmedLocation)"
   }
 
+  /// Metadata describes intent; only the actual request content and trigger prove it.
+  public func matchesObservedRequest(
+    title: String, body: String, fireDate: Date?, repeats: Bool, hasSound: Bool
+  ) -> Bool {
+    guard let fireDate, let expected = try? NativeAlarmContract.date(fromLocalISO: leaveAt) else { return false }
+    return title == notificationTitle && body == notificationBody
+      && !repeats && hasSound && abs(fireDate.timeIntervalSince(expected)) <= 1
+  }
+
   fileprivate func hasSameNotificationContent(as other: WatchLocalNotification) -> Bool {
     stableId == other.stableId
       && leaveAt == other.leaveAt
@@ -114,7 +123,8 @@ public enum WatchLocalNotificationPlanner {
 public enum WatchNotificationReconciler {
   public static func reconcile(
     current: [WatchLocalNotification],
-    next: [WatchLocalNotification]
+    next: [WatchLocalNotification],
+    invalidIdentifiers: Set<String> = []
   ) -> WatchNotificationPlan {
     var byID = Dictionary(uniqueKeysWithValues: current.map { ($0.stableId, $0) })
     var plan = WatchNotificationPlan()
@@ -124,7 +134,7 @@ public enum WatchNotificationReconciler {
         plan.create.append(item)
         continue
       }
-      if prior.hasSameNotificationContent(as: item) {
+      if !invalidIdentifiers.contains(prior.identifier), prior.hasSameNotificationContent(as: item) {
         plan.unchanged.append(prior)
       } else {
         plan.update.append(item)
@@ -141,7 +151,8 @@ public enum WatchNotificationReconciler {
     enabled: Bool,
     now: Date = Date(),
     overrides: LeadTimeOverrides? = nil,
-    lastReconciledScheduleVersion: Int? = nil
+    lastReconciledScheduleVersion: Int? = nil,
+    invalidIdentifiers: Set<String> = []
   ) throws -> WatchNotificationPlan {
     guard enabled, let schedule else {
       var plan = WatchNotificationPlan()
@@ -162,7 +173,7 @@ public enum WatchNotificationReconciler {
       now: now,
       overrides: overrides
     )
-    return reconcile(current: current, next: next)
+    return reconcile(current: current, next: next, invalidIdentifiers: invalidIdentifiers)
   }
 }
 

@@ -1,7 +1,7 @@
 #if canImport(Testing)
 import Foundation
 import Testing
-import LazenskyCommanderCore
+@testable import LazenskyCommanderCore
 
 @Test func stopDecisionPreservesRedUntilExactStartWithAndWithoutExistingCard() throws {
   let start = try stabilizationDate("10:30")
@@ -295,6 +295,50 @@ private actor SerialProbe {
     #expect(result.succeeded && result.appliedCancel == 1 && result.appliedCreate == 0)
     #expect(await store.load().records.isEmpty)
   }
+}
+
+@Test func watchReadbackChecksActualTriggerAndContentInsteadOfTrustingMetadata() throws {
+  let item = WatchLocalNotification(stableId: "meal", leaveAt: "2026-09-06T10:00:00", title: "Jídlo", location: "Jídelna")
+  let date = try stabilizationDate("10:00")
+  for delta in [-1.0, 0, 1] {
+    #expect(item.matchesObservedRequest(title: item.notificationTitle, body: item.notificationBody,
+      fireDate: date.addingTimeInterval(delta), repeats: false, hasSound: true))
+  }
+  for observed in [date.addingTimeInterval(-60), date.addingTimeInterval(60), nil] {
+    #expect(!item.matchesObservedRequest(title: item.notificationTitle, body: item.notificationBody,
+      fireDate: observed, repeats: false, hasSound: true))
+  }
+  #expect(!item.matchesObservedRequest(title: "Starý nadpis", body: item.notificationBody,
+    fireDate: date, repeats: false, hasSound: true))
+  #expect(!item.matchesObservedRequest(title: item.notificationTitle, body: "Staré místo",
+    fireDate: date, repeats: false, hasSound: true))
+  #expect(!item.matchesObservedRequest(title: item.notificationTitle, body: item.notificationBody,
+    fireDate: date, repeats: true, hasSound: true))
+  #expect(!item.matchesObservedRequest(title: item.notificationTitle, body: item.notificationBody,
+    fireDate: date, repeats: false, hasSound: false))
+}
+
+@Test func sameWatchPayloadRepairsInvalidRequestAndRetryStopsOnlyAfterReadbackMatches() throws {
+  let schedule = stabilizationSchedule()
+  let desired = try WatchLocalNotificationPlanner.notifications(schedule: schedule, now: stabilizationDate("09:00"))
+  let invalid = Set([desired[0].identifier])
+  let repair = WatchNotificationReconciler.reconcile(current: desired, next: desired, invalidIdentifiers: invalid)
+  #expect(repair.update == [desired[0]] && repair.unchanged == [desired[1]])
+  #expect(repair.create.isEmpty && repair.cancel.isEmpty)
+  // A write acknowledgement with unchanged bad OS content is still a failure.
+  #expect(WatchNotificationReconciler.reconcile(current: desired, next: desired, invalidIdentifiers: invalid).hasChanges)
+  #expect(!WatchNotificationReconciler.reconcile(current: desired, next: desired).hasChanges)
+}
+
+@Test func watchAppAndWidgetUseSameExpiryBoundaryWithoutDiscardingPersistedSchedule() throws {
+  let schedule = stabilizationSchedule()
+  let expiry = try #require(WatchScheduleExpiryPolicy.expirationDate(for: schedule))
+  for (date, expected): (Date, CommanderLiveState) in [(expiry.addingTimeInterval(-1), .dayDone), (expiry, .noSchedule)] {
+    let app = CommanderLiveStateCalculator.compute(schedule: WatchScheduleExpiryPolicy.activeSchedule(schedule, at: date), now: date)
+    let widget = try #require(WatchTimelinePlanner.points(schedule: schedule, now: date).first)
+    #expect(app.state == expected && widget.state == expected)
+  }
+  #expect(schedule.events.count == 2)
 }
 
 private func stabilizationDate(_ time: String) throws -> Date {
