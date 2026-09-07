@@ -39,10 +39,12 @@ import Testing
     encoding: .utf8
   )
   #expect(stabilization.contains("TARGET_BRANCH=\"lc/native-stabilization-v2\""))
+  #expect(stabilization.contains("REMOTE_COMMIT=\"$(/usr/bin/git -C \"$REPO_ROOT\" rev-parse"))
   #expect(stabilization.contains("LC_BUILD_BRANCH = %s"))
   #expect(stabilization.contains("LC_BUILD_COMMIT = %s"))
   #expect(stabilization.contains("XCODE_XCCONFIG_FILE=\"$TEMP_XCCONFIG\""))
   #expect(stabilization.contains("LC_REFRESH_TARGET_BRANCH=\"$TARGET_BRANCH\""))
   #expect(stabilization.contains("Pokud Diagnostika ukáže jinou identitu"))
+  #expect(!stabilization.contains("LC_REFRESH_TARGET_BRANCH:-main"))
 }
 #endif
