@@ -332,7 +332,7 @@ private actor SerialProbe {
 
 @Test func watchAppAndWidgetUseSameExpiryBoundaryWithoutDiscardingPersistedSchedule() throws {
   let schedule = stabilizationSchedule()
-  let expiry = try #require(WatchScheduleExpiryPolicy.expirationDate(for: schedule))
+  let expiry = try #require(try WatchScheduleExpiryPolicy.expirationDate(for: schedule))
   for (date, expected): (Date, CommanderLiveState) in [(expiry.addingTimeInterval(-1), .dayDone), (expiry, .noSchedule)] {
     let app = CommanderLiveStateCalculator.compute(schedule: WatchScheduleExpiryPolicy.activeSchedule(schedule, at: date), now: date)
     let widget = try #require(WatchTimelinePlanner.points(schedule: schedule, now: date).first)

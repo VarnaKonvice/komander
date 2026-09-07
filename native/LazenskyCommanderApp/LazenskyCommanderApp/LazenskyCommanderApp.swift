@@ -128,6 +128,7 @@ final class CommanderViewModel: ObservableObject {
   @Published private(set) var isSynchronizing = false
   @Published private(set) var latestSchedule: Schedule?
   @Published private(set) var watchTransferStatus = "Aktivuji WatchConnectivity…"
+  @Published private(set) var liveActivityIssue: String?
   @Published private(set) var recoveryStatus = "Čekám na první kontrolu"
   @Published private(set) var fallbackStatus = "Nevyužito"
   @Published private(set) var requiresUserAction = false
@@ -444,6 +445,7 @@ final class CommanderViewModel: ObservableObject {
         )
         latestSchedule = result.schedule
         summary = result.alarmSummary
+        liveActivityIssue = await adapter.liveActivityIssue
         watchTransferStatus = result.watchDeliveryStatus.diagnosticText
         recovery.recordAlarmVerification(succeeded: result.alarmSummary.succeeded)
 

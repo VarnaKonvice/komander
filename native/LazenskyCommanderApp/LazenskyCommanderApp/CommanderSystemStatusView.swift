@@ -62,6 +62,15 @@ struct CommanderSystemStatusView: View {
         LabeledContent("Automatické opravy", value: model.summary.map { String($0.repairAttempts) } ?? "0")
       }
 
+      if let issue = model.liveActivityIssue {
+        Section("Živé aktivity") {
+          Text(issue)
+          Text("Kontrola rozpisu nebo návrat do aplikace přípravu zopakuje. Ověření alarmů nepotvrzuje zobrazení živé aktivity.")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+        }
+      }
+
       if let detail = model.errorMessage, !model.requiresUserAction {
         Section("Technická diagnostika") {
           Text(detail)

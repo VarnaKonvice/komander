@@ -2,6 +2,7 @@ import ActivityKit
 import AlarmKit
 import AppIntents
 import Foundation
+import OSLog
 import SwiftUI
 import LazenskyCommanderCore
 
@@ -51,17 +52,18 @@ private enum CommanderRollingLiveActivity {
     )
   }
 
+  @discardableResult
   static func scheduleRunning(
     event: CommanderAlarmEventSnapshot,
     next: CommanderAlarmEventSnapshot?,
     scheduleVersion: Int,
     projectionRevision: Int = -1
-  ) async {
-    guard ActivityAuthorizationInfo().areActivitiesEnabled,
-          let startAt = date(event.startAt),
-          let endAt = date(event.endAt),
-          endAt > Date()
-    else { return }
+  ) async -> String? {
+    guard ActivityAuthorizationInfo().areActivitiesEnabled else { return "Živé aktivity nejsou povolené." }
+    guard let startAt = date(event.startAt), let endAt = date(event.endAt) else {
+      return "Živá aktivita má neplatný čas události."
+    }
+    guard endAt > Date() else { return nil }
 
     let exists = Activity<CommanderProcedureLiveActivityAttributes>.activities.contains {
       !$0.content.state.isDepartureStandby
@@ -70,7 +72,7 @@ private enum CommanderRollingLiveActivity {
         && abs($0.attributes.startAt.timeIntervalSince(startAt)) <= 1
         && AlarmKitAdapter.isOngoing($0.activityState)
     }
-    if exists { return }
+    if exists { return nil }
 
     let attributes = CommanderProcedureLiveActivityAttributes(
       stableId: event.stableId,
@@ -113,8 +115,12 @@ private enum CommanderRollingLiveActivity {
         )
       }
     } catch {
-      return
+      let message = "Živou aktivitu se nepodařilo připravit: " + error.localizedDescription
+      Logger(subsystem: Bundle.main.bundleIdentifier ?? "LazenskyCommander", category: "LiveActivity").error("\(message, privacy: .public)")
+      CommanderPhysicalAcceptanceDiagnostics.record(message)
+      return message
     }
+    return nil
   }
 }
 
@@ -261,6 +267,7 @@ actor AlarmKitAdapter: AlarmAdapting {
   fileprivate static let maximumCommanderActivities = 1
   private static let e2eOwnershipKey = "lazensky.commander.alarmkitOwned.e2e.v1"
   private let channel: ScheduleChannel
+  private(set) var liveActivityIssue: String?
   private var scheduleContext: Schedule?
   private var leadTimeOverridesContext: LeadTimeOverrides?
   private var physicalRunID: UUID?
@@ -300,6 +307,7 @@ actor AlarmKitAdapter: AlarmAdapting {
     projectionRevision: Int,
     overrides: LeadTimeOverrides?
   ) async {
+    liveActivityIssue = nil
     scheduleContext = schedule
     leadTimeOverridesContext = overrides
     guard channel == .production || physicalRunID != nil else { return }
@@ -628,7 +636,10 @@ actor AlarmKitAdapter: AlarmAdapting {
     overrides: LeadTimeOverrides?,
     now: Date = Date()
   ) async {
-    guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+    guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+      liveActivityIssue = "Živé aktivity nejsou povolené."
+      return
+    }
 
     let candidates: [ProcedureActivityCandidate] = schedule.events.compactMap { event in
       guard let startAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.start),
@@ -739,7 +750,7 @@ actor AlarmKitAdapter: AlarmAdapting {
     guard let schedule = scheduleContext,
           let event = eventSnapshot(item.event, startAt: item.startAt, endAt: item.endAt,
                                     schedule: schedule, overrides: leadTimeOverridesContext) else { return }
-    await CommanderRollingLiveActivity.scheduleRunning(
+    liveActivityIssue = await CommanderRollingLiveActivity.scheduleRunning(
       event: event,
       next: snapshotAfter(event: item.event, schedule: schedule, overrides: leadTimeOverridesContext),
       scheduleVersion: scheduleVersion,
