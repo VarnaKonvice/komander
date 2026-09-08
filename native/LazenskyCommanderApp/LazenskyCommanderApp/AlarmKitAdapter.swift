@@ -4,6 +4,7 @@ import AppIntents
 import Foundation
 import OSLog
 import SwiftUI
+import UIKit
 import LazenskyCommanderCore
 
 enum AlarmKitAdapterError: LocalizedError {
@@ -24,6 +25,20 @@ enum AlarmKitAdapterError: LocalizedError {
 
 @MainActor
 private enum CommanderRollingLiveActivity {
+  nonisolated static func isPrepared(event: CommanderAlarmEventSnapshot, scheduleVersion: Int) -> Bool {
+    guard let startAt = date(event.startAt), let endAt = date(event.endAt) else { return false }
+    return Activity<CommanderProcedureLiveActivityAttributes>.activities.contains {
+      !$0.content.state.isDepartureStandby && !$0.content.state.isDepartureBridge
+        && $0.attributes.stableId == event.stableId
+        && $0.attributes.scheduleVersion == scheduleVersion
+        && $0.attributes.title == event.title && $0.attributes.location == event.location
+        && $0.attributes.kind == event.kind && $0.attributes.iconKey == event.iconKey
+        && abs($0.attributes.startAt.timeIntervalSince(startAt)) <= 1
+        && abs($0.attributes.endAt.timeIntervalSince(endAt)) <= 1
+        && AlarmKitAdapter.isOngoing($0.activityState)
+    }
+  }
+
   nonisolated static func date(_ localISO: String) -> Date? {
     try? NativeAlarmContract.date(fromLocalISO: localISO)
   }
@@ -67,14 +82,10 @@ private enum CommanderRollingLiveActivity {
     }
     guard endAt > Date() else { return nil }
 
-    let exists = Activity<CommanderProcedureLiveActivityAttributes>.activities.contains {
-      !$0.content.state.isDepartureStandby
-        && !$0.content.state.isDepartureBridge
-        && $0.attributes.stableId == event.stableId
-        && abs($0.attributes.startAt.timeIntervalSince(startAt)) <= 1
-        && AlarmKitAdapter.isOngoing($0.activityState)
+    if isPrepared(event: event, scheduleVersion: scheduleVersion) { return nil }
+    guard UIApplication.shared.applicationState == .active else {
+      return "Chybí předem připravená živá aktivita: \(event.title). V backgroundu ji nelze vytvořit."
     }
-    if exists { return nil }
 
     let attributes = CommanderProcedureLiveActivityAttributes(
       stableId: event.stableId,
@@ -241,11 +252,13 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     }
 
     if let current = Self.decode(currentEventJSON) {
-      await CommanderRollingLiveActivity.scheduleRunning(
-        event: current,
-        next: Self.decode(nextEventJSON),
-        scheduleVersion: scheduleVersion
-      )
+      // The OS will start the pending activity. Stop only checks preparation;
+      // it must not depend on foreground-only Activity.request succeeding here.
+      if !CommanderRollingLiveActivity.isPrepared(event: current, scheduleVersion: scheduleVersion) {
+        let message = "Chybí předem připravená živá aktivita po Zastavit · \(stableId)"
+        Logger(subsystem: Bundle.main.bundleIdentifier ?? "LazenskyCommander", category: "LiveActivity").error("\(message, privacy: .public)")
+        CommanderPhysicalAcceptanceDiagnostics.record(message)
+      }
     }
 
     return .result()
@@ -266,7 +279,6 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
 }
 
 actor AlarmKitAdapter: AlarmAdapting {
-  fileprivate static let maximumCommanderActivities = 1
   private static let e2eOwnershipKey = "lazensky.commander.alarmkitOwned.e2e.v1"
   private let channel: ScheduleChannel
   private(set) var liveActivityIssue: String?
@@ -611,23 +623,22 @@ actor AlarmKitAdapter: AlarmAdapting {
   }
 
   func physicalProcedureActivityPrepared(run: PhysicalAcceptanceRun) -> Bool {
-    guard physicalRunID == run.id,
-          let first = run.schedule.events.sorted(by: Self.eventOrder).first,
-          let firstStart = try? NativeAlarmContract.dateTime(date: first.date, time: first.start)
-    else { return false }
-
+    guard physicalRunID == run.id else { return false }
+    let expected = CommanderLiveActivityHandoff.runningEvents(in: run.schedule, now: run.now)
     let activities = Activity<CommanderProcedureLiveActivityAttributes>.activities.filter {
       $0.attributes.stableId.hasPrefix(run.namespace) && Self.isOngoing($0.activityState)
     }
-    let running = activities.filter {
-      !$0.content.state.isDepartureStandby
-        && !$0.content.state.isDepartureBridge
-        && $0.attributes.stableId == first.stableId
-        && abs($0.attributes.startAt.timeIntervalSince(firstStart)) <= 1
-        && $0.content.state.projectionRevision == run.projectionRevision
+    return CommanderLiveActivityHandoff.hasCompleteRunningPreparation(
+      expectedIDs: expected.map(\.stableId), preparedIDs: activities.map { $0.attributes.stableId }
+    ) && expected.allSatisfy { event in
+      guard let start = try? NativeAlarmContract.dateTime(date: event.date, time: event.start),
+            let end = try? NativeAlarmContract.dateTime(date: event.date, time: event.end),
+            let snapshot = eventSnapshot(event, startAt: start, endAt: end,
+                                         schedule: run.schedule, overrides: run.overrides) else { return false }
+      return CommanderRollingLiveActivity.isPrepared(event: snapshot, scheduleVersion: run.schedule.scheduleVersion)
+        && activities.filter { $0.attributes.stableId == event.stableId
+          && $0.content.state.projectionRevision == run.projectionRevision }.count == 1
     }
-    return activities.count == Self.maximumCommanderActivities
-      && running.count == 1
   }
 
   static func clearPreviousPhysicalAcceptance(
@@ -686,7 +697,7 @@ actor AlarmKitAdapter: AlarmAdapting {
       return
     }
 
-    let candidates: [ProcedureActivityCandidate] = schedule.events.compactMap { event in
+    let candidates: [ProcedureActivityCandidate] = CommanderLiveActivityHandoff.runningEvents(in: schedule, now: now).compactMap { event in
       guard let startAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.start),
             let endAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.end),
             endAt > now
@@ -730,14 +741,10 @@ actor AlarmKitAdapter: AlarmAdapting {
         )
         && Self.isOngoing(activity.activityState)
     }
-    let desiredRunning: [ProcedureActivityCandidate]
-    if priorHandoff != nil {
-      desiredRunning = []
-    } else {
-      desiredRunning = [primary]
-    }
-
-    var retainedRunningID: String?
+    // A prior free-time/red card cannot substitute for the target event's
+    // scheduled activity. Keep one pending/running activity per canonical event.
+    let desiredRunning = candidates
+    var retainedRunningIDs = Set<String>()
     for activity in existing {
       let state = activity.content.state
       if let priorHandoff, activity.id == priorHandoff.id {
@@ -771,11 +778,12 @@ actor AlarmKitAdapter: AlarmAdapting {
           && activity.attributes.scheduleVersion == schedule.scheduleVersion
           && activity.attributes.title == item.event.title
           && activity.attributes.location == item.event.location
+          && activity.attributes.kind == item.event.kind
+          && activity.attributes.iconKey == (CommanderVisualAssets.icon(for: item.event)?.key ?? "")
           && abs(activity.attributes.startAt.timeIntervalSince(item.startAt)) <= 1
           && abs(activity.attributes.endAt.timeIntervalSince(item.endAt)) <= 1
       }
-      if let match, Self.isOngoing(activity.activityState), retainedRunningID == nil {
-        retainedRunningID = activity.id
+      if let match, Self.isOngoing(activity.activityState), retainedRunningIDs.insert(match.event.stableId).inserted {
         await activity.update(ActivityContent(
           state: match.contentState,
           staleDate: match.endAt,
@@ -799,12 +807,14 @@ actor AlarmKitAdapter: AlarmAdapting {
     guard let schedule = scheduleContext,
           let event = eventSnapshot(item.event, startAt: item.startAt, endAt: item.endAt,
                                     schedule: schedule, overrides: leadTimeOverridesContext) else { return }
-    liveActivityIssue = await CommanderRollingLiveActivity.scheduleRunning(
+    if let issue = await CommanderRollingLiveActivity.scheduleRunning(
       event: event,
       next: snapshotAfter(event: item.event, schedule: schedule, overrides: leadTimeOverridesContext),
       scheduleVersion: scheduleVersion,
       projectionRevision: item.contentState.projectionRevision
-    )
+    ) {
+      liveActivityIssue = liveActivityIssue.map { $0 + "\n" + issue } ?? issue
+    }
   }
 
   private func bridgeTarget(_ state: CommanderProcedureLiveActivityAttributes.ContentState) -> NativeAlarm? {

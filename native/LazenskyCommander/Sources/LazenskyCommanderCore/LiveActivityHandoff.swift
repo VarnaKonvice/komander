@@ -3,6 +3,24 @@ import Foundation
 /// Decisions shared by the real stop intent, reconciliation and acceptance preflight.
 /// ActivityKit remains responsible for rendering and scheduling these decisions.
 public enum CommanderLiveActivityHandoff {
+  /// Each event needs its own foreground-created activity: ActivityKit attributes
+  /// are immutable, and Stop must never create the next event's activity.
+  public static func runningEvents(in schedule: Schedule, now: Date) -> [ScheduleEvent] {
+    schedule.events.filter {
+      guard let end = try? NativeAlarmContract.dateTime(date: $0.date, time: $0.end) else { return false }
+      return end > now
+    }.sorted {
+      if $0.date != $1.date { return $0.date < $1.date }
+      if $0.start != $1.start { return $0.start < $1.start }
+      return $0.stableId < $1.stableId
+    }
+  }
+
+  public static func hasCompleteRunningPreparation(expectedIDs: [String], preparedIDs: [String]) -> Bool {
+    expectedIDs.count == preparedIDs.count && Set(expectedIDs) == Set(preparedIDs)
+      && Set(preparedIDs).count == preparedIDs.count
+  }
+
   public enum StopDisposition: Equatable, Sendable {
     case bridgeUntilStart
     case retainAlarmUntilStart
