@@ -177,7 +177,8 @@ import Testing
   #expect(repeated.succeeded && repeated.plan.unchanged.count == 2 && repeated.appliedUpdate == 0)
   let versionOnly = stabilizationSchedule(version: 3, events: changed.events)
   let sameContent = try await service.synchronize(schedule: versionOnly, now: stabilizationDate("09:00"))
-  #expect(sameContent.succeeded && sameContent.appliedUpdate == 0)
+  // Stop's canonical proof and the prepared immutable attributes must share the version.
+  #expect(sameContent.succeeded && sameContent.appliedUpdate == 2)
 }
 
 @Test func legacyAlarmPersistenceMigratesContextOnceWithoutChangingCanonicalPayload() async throws {

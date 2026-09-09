@@ -67,13 +67,11 @@ import Testing
   // AlarmKit's own countdown presentation.
   #expect(adapter.contains("let verifiedHandoff = hasVerifiedFreeTimeHandoff(for: alarm, now: now)"))
   #expect(adapter.contains("Activity<CommanderProcedureLiveActivityAttributes>.activities.contains"))
-  #expect(adapter.contains("bridgeTarget(state) == alarm"))
-  #expect(adapter.contains("CommanderLiveActivityHandoff.isCanonicalFreeTimeSource("))
+  #expect(adapter.contains("CommanderLiveActivityHandoff.identity(for: alarm, in: schedule)"))
+  #expect(adapter.contains("CommanderLiveActivityHandoff.matches(actual: identity(activity), expected: expected, now: now)"))
   #expect(adapter.components(separatedBy: "attributes: alertOnlyAttributes,").count == 2)
   #expect(adapter.contains("if !verifiedHandoff, countdownPlan.countdownWindow == 0"))
-  #expect(adapter.contains("state.nextStartAt.map { abs($0.timeIntervalSince(targetStart)) <= 1 } == true"))
-  #expect(adapter.contains("state.nextLeaveAt.map { abs($0.timeIntervalSince(targetLeave)) <= 1 } == true"))
-  #expect(adapter.contains("CommanderLiveActivityHandoff.retainsFreeTime("))
+  #expect(adapter.contains("CommanderRollingLiveActivity.matchesHandoff(activity, expected: expected, now: now)"))
   #expect(adapter.contains("Handoff chybí, používám vlastní countdown"))
 
   // The old behaviour used schedule topology alone and could therefore suppress the

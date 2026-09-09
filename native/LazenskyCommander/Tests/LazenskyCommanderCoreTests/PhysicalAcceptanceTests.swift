@@ -240,7 +240,8 @@ import Testing
   #expect(!stopIntent.contains("scheduleRunning("))
   #expect(stopIntent.contains("keptAlarmCard"))
   #expect(stopIntent.contains("currentEventJSON"))
-  #expect(stopIntent.contains("state.nextStableId == stableId"))
+  #expect(stopIntent.contains("CommanderRollingLiveActivity.matchesHandoff("))
+  #expect(stopIntent.contains("expected?.target.stableId == stableId"))
   #expect(adapter.range(of: "await physicalOwnership.remember(id.uuidString, runID: physicalRunID)")!.lowerBound < adapter.range(of: "let scheduled = try await AlarmManager.shared.schedule")!.lowerBound)
 
   let live = try String(contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderLiveActivity/LazenskyCommanderLiveActivity.swift"), encoding: .utf8)
@@ -287,6 +288,22 @@ private func acceptanceRun() throws -> PhysicalAcceptanceRun {
   try PhysicalAcceptanceRun(now: NativeAlarmContract.date(fromLocalISO: "2026-08-30T11:00:00").addingTimeInterval(17))
 }
 
+@Test func missingLiveActivitiesNeverBlockAlarmSafetyButRejectPhysicalReadiness() async throws {
+  let run = try acceptanceRun()
+  let adapter = AcceptanceTestAdapter(now: run.now, preparedHandoffAvailable: false)
+  let session = PhysicalAcceptanceSession(run: run, adapter: adapter)
+  let result = try await session.synchronize(now: run.now)
+  #expect(result.succeeded)
+  let readings = await adapter.readings()
+  #expect(readings.count == 2)
+  #expect(readings.allSatisfy { ($0.preAlert ?? 0) > 0 })
+  let check = try await PhysicalAcceptancePreflight(run: run, observations: readings,
+    managed: session.alarmStore.load(), syncVerified: true, procedureActivityPrepared: false,
+    verifiedHandoffStableIDs: [], now: run.now)
+  #expect(check.verifiedAlarmCount == 2)
+  #expect(!check.ready)
+}
+
 private func acceptanceSetup() async throws -> (PhysicalAcceptanceRun, PhysicalAcceptanceSession, AcceptanceTestAdapter) {
   let run = try acceptanceRun()
   let adapter = AcceptanceTestAdapter(now: run.now)
@@ -302,10 +319,14 @@ private func acceptanceCheck(_ run: PhysicalAcceptanceRun, _ readings: [Physical
 
 private actor AcceptanceTestAdapter: AlarmAdapting {
   let now: Date
+  let preparedHandoffAvailable: Bool
   private var context: Schedule?
   private var projectionRevision = 0
   private var observations: [String: PhysicalAlarmObservation] = [:]
-  init(now: Date) { self.now = now }
+  init(now: Date, preparedHandoffAvailable: Bool = true) {
+    self.now = now
+    self.preparedHandoffAvailable = preparedHandoffAvailable
+  }
   func prepare(schedule: Schedule, projectionRevision: Int) { context = schedule; self.projectionRevision = projectionRevision }
   func availability() -> AlarmKitAvailability { .available }
   func authorizationStatus() -> AlarmAuthorizationStatus { .authorized }
@@ -314,7 +335,7 @@ private actor AcceptanceTestAdapter: AlarmAdapting {
     let schedule = try #require(context)
     let plan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
     let id = UUID().uuidString
-    let usesPreparedHandoff = hasPriorHandoffSource(for: alarm, schedule: schedule)
+    let usesPreparedHandoff = preparedHandoffAvailable && hasPriorHandoffSource(for: alarm, schedule: schedule)
     observations[id] = PhysicalAlarmObservation(
       platformID: id,
       stableID: alarm.stableId,

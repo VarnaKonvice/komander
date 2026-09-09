@@ -56,7 +56,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
       var summary: AlarmSyncSummary?
       var syncAttempts = 0
       var procedurePrepared = false
-      status = "Ověřuji 2 systémové alarmy a úvodní živou aktivitu"
+      status = "Ověřuji 2 systémové alarmy a obě živé aktivity"
       for tick in 0..<20 {
         if [0, 4, 10].contains(tick), syncAttempts < maxAttempts,
            summary?.succeeded != true || !procedurePrepared {
@@ -103,6 +103,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
     stopIntentStatus = CommanderPhysicalAcceptanceDiagnostics.read()
       ?? "Zastavit zatím nebylo provedeno"
     guard let run, !isBusy, expectedRunID == nil || run.id == expectedRunID, let adapter else { return }
+    await adapter.cleanupFinishedLiveActivities()
     do {
       let readings = try await adapter.physicalObservations()
       guard self.run?.id == run.id else { return }
@@ -114,6 +115,12 @@ final class PhysicalAcceptanceModel: ObservableObject {
         status = "Test probíhá – výsledek potvrďte fyzicky"
       }
     } catch { self.error = error.localizedDescription }
+  }
+
+  func resume() async {
+    guard let run, let adapter, !isBusy else { return }
+    await adapter.prepare(schedule: run.schedule, projectionRevision: run.projectionRevision, overrides: run.overrides)
+    await refreshObservations(expectedRunID: run.id)
   }
 
   var report: String {
@@ -266,7 +273,7 @@ struct PhysicalAcceptanceApp: App {
       PhysicalAcceptanceView(model: model)
         .preferredColorScheme(.dark)
         .onChange(of: scenePhase) { _, phase in
-          if phase == .active { Task { await model.refreshObservations() } }
+          if phase == .active { Task { await model.resume() } }
         }
     }
   }

@@ -36,9 +36,9 @@ Po potvrzení oprávnění a úklidu se zachytí `Date()` jako testovací `now`.
 | Událost | Začátek | Konec | Lead time | leaveAt | Countdown |
 | --- | --- | --- | --- | --- | --- |
 | TEST – Jídlo | T+6 min | T+8 min | 2 min z event override | T+4 min | Okamžitý `schedule=nil`, zbývající čas do leaveAt |
-| TEST – Magnetoterapie | T+13 min | T+15 min | 2 min z event override | T+11 min | Přímý `.fixed(leaveAt)` bez preAlert; volno odpočítává předchozí Live Activity |
+| TEST – Magnetoterapie | T+13 min | T+15 min | 2 min z event override | T+11 min | Vlastní AlarmKit countdown, pokud při plánování není skutečně ověřený canonical handoff |
 
-První alarm nastane přibližně za 4–5 minut, druhý za 11–12 minut. Úvodní živá aktivita je připravená na začátek jídla v T+6. Po konci jídla v T+8 její karta přejde na volno před procedurou. Stop druhého alarmu předá červenou kartu do T+13 a připraví zelenou aktivitu procedury. Oznámení „Jídlo začíná“ / „Procedura začíná“ **není** odchodový AlarmKit alarm. Generátor odmítne běh, jehož konec v T+15 by překročil půlnoc.
+První alarm nastane přibližně za 4–5 minut, druhý za 11–12 minut. Obě živé aktivity se připraví ve foregroundu: jídlo na T+6 a procedura na T+13. Po konci jídla v T+8 její karta přejde na volno před procedurou. Stop druhého alarmu předá červenou kartu do T+13; nevytváří žádnou novou aktivitu. Oznámení „Jídlo začíná“ / „Procedura začíná“ **není** odchodový AlarmKit alarm. Generátor odmítne běh, jehož konec v T+15 by překročil půlnoc.
 
 Všechny odchody a priority pocházejí z `NativeAlarmContract`. `resolvedLeadTime` vrací hodnotu a zdroj ve stejné prioritní cestě jako `effectiveLeadTime`; stejně velký local override tedy není zaměnitelný za hodnotu z rozpisu. Samotný self-test žádný lokální override nepřijímá.
 
@@ -46,11 +46,11 @@ Všechny odchody a priority pocházejí z `NativeAlarmContract`. `resolvedLeadTi
 
 Používá se existující canonical-first `CommanderScheduleSyncCoordinator`, `AlarmSyncService`, read-back, self-recovery, `projectionRevision` a fronta `CommanderSynchronizationRequestQueue`. Zdroj je lokální `ScheduleServing`, nikoli URLSession. Během úvodního preflightu jsou nejvýše tři sync pokusy a nejvýše dvacet sekund read-back čekání.
 
-Před READY jsou vyžadovány dvě unikátní, správně mapované skutečné AlarmKit ID, správná uložená délka countdownu, správné schedule/state a shoda výsledného fire time s canonical leaveAt v existující toleranci jedné sekundy. Okamžitý alarm musí být `.countdown` a mít dostupný systémový `fireDate`; druhý alarm musí být `.scheduled` přímo na canonical leaveAt bez preAlert, protože volno vlastní předchozí živá aktivita. Raw `.fixed` datum se nikdy samostatně nepovažuje za leaveAt. Právě jedna připravená úvodní živá aktivita jídla a ověřená reconciliation jsou také povinné. Do prvního alarmu musí při READY zbývat alespoň minuta.
+Před READY jsou vyžadovány dvě unikátní, správně mapované skutečné AlarmKit ID, správná uložená délka countdownu, správné schedule/state a shoda výsledného fire time s canonical leaveAt v existující toleranci jedné sekundy. Okamžitý alarm musí být `.countdown` a mít dostupný systémový `fireDate`. Druhý alarm používá vlastní countdown, není-li při plánování skutečně ověřený canonical handoff; pouhá pending aktivita ani sousedství v rozpisu nestačí. Raw `.fixed` datum se nikdy samostatně nepovažuje za leaveAt. Přesně obě připravené aktivity se správnou identitou a ověřená reconciliation jsou také povinné. Do prvního alarmu musí při READY zbývat alespoň minuta.
 
 Obrazovka ukazuje run ID/now, stableId/title, hodnotu i zdroj předstihu, canonical leaveAt, očekávaný start a konec countdownu, platform ID, uložený preAlert/postAlert, fixed schedule, Alarm.state, dostupný systémový fireDate a expected/verified/actual počty.
 
-Po READY už self-test alarmy neopravuje ani znovu neplánuje. Změny čte přes `alarmUpdates` a při návratu do foregroundu; žádný background síťový timer neběží. Preflight je označený časem svého ověření, aktuální read-back samostatně. iOS může aplikaci na zamčené obrazovce suspendovat, proto chybějící zachycený stav `alerting` není automatickým důkazem, že alarm nezazvonil.
+Po READY už self-test alarmy neopravuje ani znovu neplánuje. Změny čte přes `alarmUpdates` a při návratu do foregroundu; dostupná execution současně používá sdílený úklid skončených Live Activities. Návrat do foregroundu provede i společnou přípravu omezené fronty. Žádný background síťový timer neběží. Preflight je označený časem svého ověření, aktuální read-back samostatně. iOS může aplikaci na zamčené obrazovce suspendovat, proto chybějící zachycený stav `alerting` není automatickým důkazem, že alarm nezazvonil.
 
 NOT READY je **neplatná příprava testu**, ne automatický závěr o nefunkčnosti AlarmKitu. Alarmy po neúspěšném preflightu mohou existovat; další stisk tlačítka uklidí předchozí evidovaný běh před vytvořením nového.
 
@@ -66,11 +66,23 @@ NOT READY je **neplatná příprava testu**, ne automatický závěr o nefunkčn
 | T+4 | Skutečný AlarmKit alarm a červené `VYRAZIT TEĎ` |
 | Po Stop do T+6 | Červený stav zůstane; nesmí vzniknout mezera ani předčasná zelená |
 | T+6 až T+8 | Zelené `PRÁVĚ PROBÍHÁ` pro jídlo |
-| T+8 až T+11 | Volno / odpočet do dalšího odchodu, bez druhého souběžného countdown vlastníka |
+| T+8 až T+11 | Volno / odpočet do dalšího odchodu; bezpečnostní AlarmKit countdown zůstává, pokud handoff nebyl při plánování ověřen |
 | T+11 | Druhý skutečný AlarmKit alarm a červené `VYRAZIT TEĎ` |
 | Po Stop do T+13 | Červená karta zůstane až do začátku procedury |
 | T+13 až T+15 | Zelené `PRÁVĚ PROBÍHÁ` pro proceduru |
 | Po T+15 | Žádná stará červená karta; žádný opakovaný odchodový alarm |
+
+4. Po konci procedury je bez další execution povolen stav `Skončilo`. Poté otevřít **Commander Test**, nechat dokončit návratový průchod a znovu zamknout telefon: skončená testovací karta musí být pryč. Nevyžaduje se její samovolné zmizení přesně v T+15.
+
+## Lokální lifecycle kontrakt
+
+- Foreground fronta obsahuje nejvýše tři nejbližší probíhající/budoucí události, jídla i procedury. Každá má vlastní immutable attributes a systémový scheduled start. Rozpis ani počet AlarmKit alarmů se tím neomezuje.
+- Navíc může dočasně zůstat jediná canonical karta předchozí události pro volno/červený handoff. Ve startAt následující události její důvod existence končí. Pending aktivity také spotřebovávají systémový limit; tři je aplikační strategie, nikoli garantovaná kapacita iOS.
+- Plánování i Stop používají shodnou úplnou identitu předání: verzi rozpisu, předchůdce včetně jeho údajů a časů a celý cílový NativeAlarm. Identita v Stop intentu je snapshot vytvořený při canonical plánování. Změna kontraktu/verze/předání vynutí obnovu lokální konfigurace alarmu bez změny jeho leaveAt.
+- Červenou vlastní jediná ověřená handoff karta; bez ní konkrétní systémová AlarmKit karta. Již existující červená má přednost při opakovaném Stopu. Používá se finální obsah s `.after(startAt)`, nikoli nový background request.
+- `staleDate` pouze umožní zobrazení konce/volna. Neukončuje aktivitu. Při skutečné execution se nepotřebné skončené karty ukončí přes `.immediate`; živé canonical volno/červené předání je z této kontroly vyňato pouze do cílového startAt.
+- Reconciliation zachovává jednu platnou pending/active aktivitu na událost ve frontě, odstraní duplicity a neplatné záznamy a ve foregroundu doplní další události. Bez dalšího foregroundu nelze slíbit doplnění událostí za třetím připraveným místem.
+- Odmítnutí přípravy iOS je diagnostická chyba, nikdy důvod vypnout AlarmKit. Preflight odmítne test, pokud chybí kterákoliv z jeho dvou aktivit. APNs ani serverová závislost nejsou zavedeny.
 
 **PASS:** platný READY preflight, oba skutečné systémové alarmy zazvoní ve zobrazených leaveAt časech a celý výše uvedený tok proběhne se schváleným vzhledem. Slyšitelný alarm ani reálnou viditelnost UI nelze potvrdit jen úspěšným SDK read-backem. Výsledek zaznamenat spolu s commit SHA, iOS verzí a modelem iPhonu; při problému sdílet diagnostiku. Jde o jediný závěrečný acceptance běh, nikoli požadavek opakovat dříve ověřené mezikroky.
 

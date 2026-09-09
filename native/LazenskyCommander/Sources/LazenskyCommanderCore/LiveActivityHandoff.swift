@@ -3,17 +3,78 @@ import Foundation
 /// Decisions shared by the real stop intent, reconciliation and acceptance preflight.
 /// ActivityKit remains responsible for rendering and scheduling these decisions.
 public enum CommanderLiveActivityHandoff {
+  public static let maximumPreparedActivities = 3
+
   /// Each event needs its own foreground-created activity: ActivityKit attributes
   /// are immutable, and Stop must never create the next event's activity.
   public static func runningEvents(in schedule: Schedule, now: Date) -> [ScheduleEvent] {
-    schedule.events.filter {
+    Array(schedule.events.filter {
       guard let end = try? NativeAlarmContract.dateTime(date: $0.date, time: $0.end) else { return false }
       return end > now
     }.sorted {
       if $0.date != $1.date { return $0.date < $1.date }
       if $0.start != $1.start { return $0.start < $1.start }
       return $0.stableId < $1.stableId
+    }.prefix(maximumPreparedActivities))
+  }
+
+  /// A schedule-derived proof carried by the alarm's Stop intent, not a second schedule.
+  public struct Identity: Codable, Equatable, Sendable {
+    public let scheduleVersion: Int
+    public let sourceStableId: String
+    public let sourceTitle: String
+    public let sourceLocation: String
+    public let sourceKind: ScheduleKind
+    public let sourceStartAt: Date
+    public let sourceEndAt: Date
+    public let target: NativeAlarm
+
+    public init(scheduleVersion: Int, sourceStableId: String, sourceTitle: String,
+                sourceLocation: String, sourceKind: ScheduleKind,
+                sourceStartAt: Date, sourceEndAt: Date, target: NativeAlarm) {
+      self.scheduleVersion = scheduleVersion
+      self.sourceStableId = sourceStableId
+      self.sourceTitle = sourceTitle
+      self.sourceLocation = sourceLocation
+      self.sourceKind = sourceKind
+      self.sourceStartAt = sourceStartAt
+      self.sourceEndAt = sourceEndAt
+      self.target = target
     }
+  }
+
+  public static func identity(for alarm: NativeAlarm, in schedule: Schedule) -> Identity? {
+    let sources = schedule.events.filter { event in
+      guard let end = try? NativeAlarmContract.dateTime(date: event.date, time: event.end) else { return false }
+      return isCanonicalFreeTimeSource(stableId: event.stableId, endAt: end, for: alarm, in: schedule)
+    }.sorted {
+      if $0.end != $1.end { return $0.end > $1.end }
+      return $0.stableId < $1.stableId
+    }
+    guard let source = sources.first,
+          let start = try? NativeAlarmContract.dateTime(date: source.date, time: source.start),
+          let end = try? NativeAlarmContract.dateTime(date: source.date, time: source.end) else { return nil }
+    return Identity(scheduleVersion: schedule.scheduleVersion, sourceStableId: source.stableId,
+      sourceTitle: source.title, sourceLocation: source.location, sourceKind: source.kind,
+      sourceStartAt: start, sourceEndAt: end, target: alarm)
+  }
+
+  public static func matches(actual: Identity?, expected: Identity?, now: Date) -> Bool {
+    guard let actual, let expected, actual == expected,
+          let start = try? NativeAlarmContract.date(fromLocalISO: expected.target.startAt),
+          let leave = try? NativeAlarmContract.date(fromLocalISO: expected.target.leaveAt),
+          expected.sourceEndAt <= leave else { return false }
+    return retainsFreeTime(previousEnd: expected.sourceEndAt, targetStart: start, now: now)
+  }
+
+  public static func retainPrepared(stableId: String, matchesCanonical: Bool, ongoing: Bool,
+                                    retainedIDs: inout Set<String>) -> Bool {
+    matchesCanonical && ongoing && retainedIDs.insert(stableId).inserted
+  }
+
+  /// Staleness is not an end signal. An expired event may still own a verified handoff.
+  public static func needsCleanup(endAt: Date, hasVerifiedHandoff: Bool, now: Date) -> Bool {
+    endAt <= now && !hasVerifiedHandoff
   }
 
   public static func hasCompleteRunningPreparation(expectedIDs: [String], preparedIDs: [String]) -> Bool {
@@ -88,6 +149,9 @@ public enum CommanderLiveActivityHandoff {
 /// Persisted adapter context outside the canonical payload. A neighbour change can alter
 /// an alarm's countdown ownership or stop intent without changing its own leaveAt.
 public struct AlarmPresentationContext: Codable, Equatable, Sendable {
+  public let liveActivityContractRevision: Int?
+  public let liveActivityScheduleVersion: Int?
+  public let handoffIdentity: CommanderLiveActivityHandoff.Identity?
   public let countdownWindow: TimeInterval
   public let hasFreeTimeSource: Bool
   public let procedureType: String?
@@ -97,6 +161,9 @@ public struct AlarmPresentationContext: Codable, Equatable, Sendable {
   public let nextMealType: String?
 
   public init(alarm: NativeAlarm, schedule: Schedule, overrides: LeadTimeOverrides?) throws {
+    liveActivityContractRevision = 1
+    liveActivityScheduleVersion = schedule.scheduleVersion
+    handoffIdentity = CommanderLiveActivityHandoff.identity(for: alarm, in: schedule)
     countdownWindow = try AlarmCountdown.countdownWindow(for: alarm, in: schedule)
     hasFreeTimeSource = CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: schedule)
     let current = schedule.events.first { $0.stableId == alarm.stableId }
