@@ -45,7 +45,9 @@ private enum CommanderRollingLiveActivity {
 
   nonisolated static func matchesHandoff(_ activity: Activity<CommanderProcedureLiveActivityAttributes>,
     expected: CommanderLiveActivityHandoff.Identity?, now: Date) -> Bool {
-    !activity.content.state.isDepartureStandby
+    activity.attributes.departureHolder != true
+      && !activity.content.state.isDepartureHolder
+      && !activity.content.state.isDepartureStandby
       && CommanderLiveActivityHandoff.matches(actual: identity(activity), expected: expected, now: now)
   }
 
@@ -60,7 +62,8 @@ private enum CommanderRollingLiveActivity {
   nonisolated static func isPrepared(event: CommanderAlarmEventSnapshot, scheduleVersion: Int) -> Bool {
     guard let startAt = date(event.startAt), let endAt = date(event.endAt) else { return false }
     return Activity<CommanderProcedureLiveActivityAttributes>.activities.contains {
-      !$0.content.state.isDepartureStandby && !$0.content.state.isDepartureBridge
+      $0.attributes.departureHolder != true && !$0.content.state.isDepartureHolder
+        && !$0.content.state.isDepartureStandby && !$0.content.state.isDepartureBridge
         && $0.attributes.stableId == event.stableId
         && $0.attributes.scheduleVersion == scheduleVersion
         && $0.attributes.title == event.title && $0.attributes.location == event.location
@@ -167,6 +170,76 @@ private enum CommanderRollingLiveActivity {
     }
     return nil
   }
+  nonisolated static func holderIdentity(_ activity: Activity<CommanderProcedureLiveActivityAttributes>) -> CommanderDepartureHolder.Identity? {
+    let a = activity.attributes
+    guard a.departureHolder == true,
+          activity.content.state.isDepartureHolder || activity.content.state.isDepartureBridge,
+          let target = target(activity.content.state),
+          a.stableId == target.stableId + ".departureHolder",
+          a.title == target.title, a.location == target.location, a.kind == target.kind,
+          a.iconKey == activity.content.state.nextIconKey,
+          a.startAt == date(target.leaveAt), a.endAt == date(target.startAt)
+    else { return nil }
+    return .init(scheduleVersion: a.scheduleVersion, target: target, iconKey: a.iconKey)
+  }
+
+  nonisolated static func holderObservations(_ activities: [Activity<CommanderProcedureLiveActivityAttributes>]) -> [CommanderDepartureHolder.Observation] {
+    activities.filter { $0.attributes.departureHolder == true || $0.content.state.isDepartureHolder }.map { activity in
+      let state: CommanderDepartureHolder.State
+      switch activity.activityState {
+      case .pending: state = .pending
+      case .active: state = .active
+      case .stale: state = .stale
+      case .ended: state = .ended
+      case .dismissed: state = .dismissed
+      @unknown default: state = .dismissed
+      }
+      return .init(id: activity.id, identity: holderIdentity(activity), state: state,
+                   isRed: activity.content.state.isDepartureBridge)
+    }
+  }
+
+  static func reconcileHolder(expected: CommanderDepartureHolder.Identity?,
+                              event: CommanderAlarmEventSnapshot?, projectionRevision: Int) async -> String? {
+    let now = Date()
+    let activities = Activity<CommanderProcedureLiveActivityAttributes>.activities
+    let runningPrepared = event.map { isPrepared(event: $0, scheduleVersion: expected?.scheduleVersion ?? -1) } ?? false
+    let plan = CommanderDepartureHolder.reconcile(expected: expected,
+      observed: holderObservations(activities), now: now,
+      foreground: UIApplication.shared.applicationState == .active, runningPrepared: runningPrepared)
+    for activity in activities where plan.removeIDs.contains(activity.id) {
+      await activity.end(nil, dismissalPolicy: .immediate)
+    }
+    guard plan.create, let expected, let event,
+          let leaveAt = date(event.leaveAt), let startAt = date(event.startAt), let endAt = date(event.endAt)
+    else { return nil }
+    // This is a visible foreground request, never reached from Stop.
+    guard UIApplication.shared.applicationState == .active else { return nil }
+    let attributes = CommanderProcedureLiveActivityAttributes(
+      stableId: event.stableId + ".departureHolder", scheduleVersion: expected.scheduleVersion,
+      iconKey: event.iconKey, title: event.title, location: event.location, kind: event.kind,
+      startAt: leaveAt, endAt: startAt, departureHolder: true)
+    let content = ActivityContent(state: CommanderProcedureLiveActivityAttributes.ContentState(
+      projectionRevision: projectionRevision, phase: .departureHolder,
+      nextStableId: event.stableId, nextTitle: event.title, nextLocation: event.location,
+      nextKind: event.kind, nextIconKey: event.iconKey,
+      nextStartAt: startAt, nextEndAt: endAt, nextLeaveAt: leaveAt),
+      staleDate: startAt, relevanceScore: 1)
+    do {
+      let holder = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+        attributes: attributes, content: content, pushType: nil, style: .standard)
+      guard CommanderDepartureHolder.verified(expected: expected,
+        observed: holderObservations(Activity<CommanderProcedureLiveActivityAttributes>.activities),
+        now: Date(), runningPrepared: runningPrepared) else {
+        await holder.end(nil, dismissalPolicy: .immediate)
+        return "Departure holder není ověřený; AlarmKit použije vlastní countdown."
+      }
+    } catch {
+      return "Departure holder nelze připravit; AlarmKit použije vlastní countdown: " + error.localizedDescription
+    }
+    return nil
+  }
+
 }
 
 struct CommanderAlarmStopIntent: LiveActivityIntent {
@@ -182,6 +255,7 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
   @Parameter(title: "Událost alarmu") var currentEventJSON: String
   @Parameter(title: "Další událost") var nextEventJSON: String
   @Parameter(title: "Canonical předání") var handoffJSON: String
+  @Parameter(title: "První odchod") var departureHolderJSON: String
 
   init() {
     alarmID = ""
@@ -191,9 +265,11 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     currentEventJSON = ""
     nextEventJSON = ""
     handoffJSON = ""
+    departureHolderJSON = ""
   }
 
-  init(alarmID: UUID, metadata: CommanderAlarmMetadata, handoff: CommanderLiveActivityHandoff.Identity?) {
+  init(alarmID: UUID, metadata: CommanderAlarmMetadata, handoff: CommanderLiveActivityHandoff.Identity?,
+       departureHolder: CommanderDepartureHolder.Identity? = nil) {
     self.alarmID = alarmID.uuidString
     stableId = metadata.stableId
     scheduleVersion = metadata.scheduleVersion
@@ -211,6 +287,7 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     currentEventJSON = Self.encode(current)
     nextEventJSON = Self.encode(metadata.nextEvent)
     handoffJSON = Self.encode(handoff)
+    departureHolderJSON = Self.encode(departureHolder)
   }
 
   func perform() async throws -> some IntentResult {
@@ -225,10 +302,17 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     let expected = handoffJSON.data(using: .utf8).flatMap {
       try? JSONDecoder().decode(CommanderLiveActivityHandoff.Identity.self, from: $0)
     }
+    let expectedHolder = departureHolderJSON.data(using: .utf8).flatMap {
+      try? JSONDecoder().decode(CommanderDepartureHolder.Identity.self, from: $0)
+    }
+    let holderID = expectedHolder?.target.stableId == stableId
+      && expectedHolder?.scheduleVersion == scheduleVersion && expectedHolder?.target.startAt == startAt
+      ? CommanderDepartureHolder.stopHolderID(expected: expectedHolder,
+          observed: CommanderRollingLiveActivity.holderObservations(activities), now: now) : nil
     let matches = activities.filter {
-      expected?.target.stableId == stableId && expected?.scheduleVersion == scheduleVersion
+      $0.id == holderID || (expected?.target.stableId == stableId && expected?.scheduleVersion == scheduleVersion
         && expected?.target.startAt == startAt
-        && CommanderRollingLiveActivity.matchesHandoff($0, expected: expected, now: now)
+        && CommanderRollingLiveActivity.matchesHandoff($0, expected: expected, now: now))
     }.sorted { $0.id < $1.id }
     let existingRed = matches.first {
       $0.content.state.isDepartureBridge && $0.activityState != .dismissed
@@ -380,7 +464,9 @@ actor AlarmKitAdapter: AlarmAdapting {
 
   func presentationContext(for alarm: NativeAlarm) throws -> AlarmPresentationContext? {
     guard let schedule = scheduleContext else { return nil }
-    return try AlarmPresentationContext(alarm: alarm, schedule: schedule, overrides: leadTimeOverridesContext)
+    let expected = departureHolderIdentity(for: alarm, now: Date())
+    return try AlarmPresentationContext(alarm: alarm, schedule: schedule, overrides: leadTimeOverridesContext,
+      departureHolderVerified: expected == nil ? nil : hasVerifiedDepartureHolder(for: alarm, now: Date()))
   }
 
   func availability() async -> AlarmKitAvailability {
@@ -453,11 +539,13 @@ actor AlarmKitAdapter: AlarmAdapting {
       tintColor: .teal
     )
     let stopIntent = CommanderAlarmStopIntent(alarmID: id, metadata: metadata,
-      handoff: schedule.flatMap { CommanderLiveActivityHandoff.identity(for: alarm, in: $0) })
+      handoff: schedule.flatMap { CommanderLiveActivityHandoff.identity(for: alarm, in: $0) },
+      departureHolder: departureHolderIdentity(for: alarm, now: Date()))
 
     let now = Date()
     guard leaveAt > now else { throw AlarmKitAdapterError.departureDeadlinePassed }
     let verifiedHandoff = hasVerifiedFreeTimeHandoff(for: alarm, now: now)
+      || hasVerifiedDepartureHolder(for: alarm, now: now)
     var countdownPlan: AlarmCountdownPlan
     if let schedule {
       countdownPlan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
@@ -592,9 +680,27 @@ actor AlarmKitAdapter: AlarmAdapting {
       let id = observed.id.uuidString
       guard let expected = alarms[id],
             (observed.countdownDuration?.preAlert ?? 0) <= 0,
-            !hasVerifiedFreeTimeHandoff(for: expected, now: now) else { return nil }
+            !hasVerifiedFreeTimeHandoff(for: expected, now: now),
+            !hasVerifiedDepartureHolder(for: expected, now: now) else { return nil }
       return id
     })
+  }
+
+  private func departureHolderIdentity(for alarm: NativeAlarm, now: Date) -> CommanderDepartureHolder.Identity? {
+    guard let schedule = scheduleContext,
+          let event = schedule.events.first(where: { $0.stableId == alarm.stableId }) else { return nil }
+    return CommanderDepartureHolder.identity(for: alarm, in: schedule,
+      iconKey: CommanderVisualAssets.icon(for: event)?.key ?? "", now: now)
+  }
+
+  private func hasVerifiedDepartureHolder(for alarm: NativeAlarm, now: Date) -> Bool {
+    guard let expected = departureHolderIdentity(for: alarm, now: now) else { return false }
+    let event = CommanderAlarmEventSnapshot(stableId: alarm.stableId, iconKey: expected.iconKey,
+      title: alarm.title, location: alarm.location, kind: alarm.kind,
+      startAt: alarm.startAt, endAt: alarm.endAt, leaveAt: alarm.leaveAt)
+    return CommanderDepartureHolder.verified(expected: expected,
+      observed: CommanderRollingLiveActivity.holderObservations(Activity<CommanderProcedureLiveActivityAttributes>.activities),
+      now: now, runningPrepared: CommanderRollingLiveActivity.isPrepared(event: event, scheduleVersion: expected.scheduleVersion))
   }
 
   private func hasVerifiedFreeTimeHandoff(for alarm: NativeAlarm, now: Date) -> Bool {
@@ -671,15 +777,19 @@ actor AlarmKitAdapter: AlarmAdapting {
   func physicalVerifiedHandoffStableIDs(run: PhysicalAcceptanceRun) throws -> Set<String> {
     guard physicalRunID == run.id else { return [] }
     let now = Date()
-    return Set(try run.payload().alarms.filter { hasVerifiedFreeTimeHandoff(for: $0, now: now) }.map(\.stableId))
+    return Set(try run.payload().alarms.filter { hasVerifiedFreeTimeHandoff(for: $0, now: now) || hasVerifiedDepartureHolder(for: $0, now: now) }.map(\.stableId))
   }
 
   func physicalProcedureActivityPrepared(run: PhysicalAcceptanceRun) -> Bool {
     guard physicalRunID == run.id else { return false }
     let expected = CommanderLiveActivityHandoff.runningEvents(in: run.schedule, now: run.now)
     let activities = Activity<CommanderProcedureLiveActivityAttributes>.activities.filter {
-      $0.attributes.stableId.hasPrefix(run.namespace) && Self.isOngoing($0.activityState)
+      $0.attributes.stableId.hasPrefix(run.namespace) && $0.attributes.departureHolder != true
+        && !$0.content.state.isDepartureHolder && Self.isOngoing($0.activityState)
     }
+    // READY for this regression also needs the first visible departure holder.
+    guard let payload = try? run.payload(), let firstAlarm = payload.alarms.first,
+          hasVerifiedDepartureHolder(for: firstAlarm, now: Date()) else { return false }
     return CommanderLiveActivityHandoff.hasCompleteRunningPreparation(
       expectedIDs: expected.map(\.stableId), preparedIDs: activities.map { $0.attributes.stableId }
     ) && expected.allSatisfy { event in
@@ -800,6 +910,8 @@ actor AlarmKitAdapter: AlarmAdapting {
     var retainedBridge = false
     for activity in existing {
       let state = activity.content.state
+      // The first-departure holder has its own strict reconciliation below.
+      if activity.attributes.departureHolder == true || state.isDepartureHolder { continue }
       if let priorHandoff, activity.id == priorHandoff.id {
         // The retained card must use the newly accepted schedule and local lead time.
         let next = eventSnapshot(primary.event, startAt: primary.startAt, endAt: primary.endAt,
@@ -849,6 +961,13 @@ actor AlarmKitAdapter: AlarmAdapting {
 
     for item in desiredRunning {
       await prepareRunning(item, scheduleVersion: schedule.scheduleVersion, now: now)
+    }
+    let holderIdentity = primaryAlarm.flatMap { departureHolderIdentity(for: $0, now: now) }
+    let holderEvent = eventSnapshot(primary.event, startAt: primary.startAt, endAt: primary.endAt,
+      schedule: schedule, overrides: overrides)
+    if let issue = await CommanderRollingLiveActivity.reconcileHolder(expected: holderIdentity,
+      event: holderEvent, projectionRevision: projectionRevision) {
+      liveActivityIssue = liveActivityIssue.map { $0 + "\n" + issue } ?? issue
     }
   }
 

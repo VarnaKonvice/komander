@@ -172,7 +172,9 @@ public struct PhysicalAcceptancePreflight: Sendable {
       let matches = observations.filter { $0.stableID == alarm.stableId }
       let actual = matches.count == 1 ? matches.first : nil
       let plan = try AlarmCountdown.plan(for: alarm, in: run.schedule, now: actual?.configuredAt ?? run.now)
-      let usesPreparedHandoff = verifiedHandoffStableIDs.contains(alarm.stableId) && CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: run.schedule)
+      let usesPreparedHandoff = verifiedHandoffStableIDs.contains(alarm.stableId)
+        && (CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: run.schedule)
+          || CommanderDepartureHolder.identity(for: alarm, in: run.schedule, iconKey: "", now: run.now) != nil)
       var errors: [String] = []
 
       if let actual, let configuredAt = actual.configuredAt {

@@ -149,6 +149,7 @@ public enum CommanderLiveActivityHandoff {
 /// Persisted adapter context outside the canonical payload. A neighbour change can alter
 /// an alarm's countdown ownership or stop intent without changing its own leaveAt.
 public struct AlarmPresentationContext: Codable, Equatable, Sendable {
+  public let departureHolderVerified: Bool?
   public let liveActivityContractRevision: Int?
   public let liveActivityScheduleVersion: Int?
   public let handoffIdentity: CommanderLiveActivityHandoff.Identity?
@@ -160,7 +161,8 @@ public struct AlarmPresentationContext: Codable, Equatable, Sendable {
   public let nextProcedureType: String?
   public let nextMealType: String?
 
-  public init(alarm: NativeAlarm, schedule: Schedule, overrides: LeadTimeOverrides?) throws {
+  public init(alarm: NativeAlarm, schedule: Schedule, overrides: LeadTimeOverrides?, departureHolderVerified: Bool? = nil) throws {
+    self.departureHolderVerified = departureHolderVerified
     liveActivityContractRevision = 1
     liveActivityScheduleVersion = schedule.scheduleVersion
     handoffIdentity = CommanderLiveActivityHandoff.identity(for: alarm, in: schedule)

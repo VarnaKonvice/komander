@@ -72,6 +72,7 @@ enum CommanderPhysicalAcceptanceDiagnostics {
 
 enum CommanderProcedureLiveActivityPhase: String, Codable, Hashable, Sendable {
   case departureStandby
+  case departureHolder
   case departureBridge
 }
 
@@ -112,6 +113,7 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
       self.nextLeaveAt = nextLeaveAt
     }
 
+    var isDepartureHolder: Bool { phase == .departureHolder }
     var isDepartureStandby: Bool { phase == .departureStandby }
     var isDepartureBridge: Bool { phase == .departureBridge }
   }
@@ -124,4 +126,6 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
   let kind: ScheduleKind
   let startAt: Date
   let endAt: Date
+  // Optional for decoding activities created by earlier builds.
+  var departureHolder: Bool? = nil
 }

@@ -36,8 +36,10 @@ import Testing
   #expect(stopIntent.contains("dismissalPolicy: .after(startDate)"))
   #expect(stopIntent.contains("Červená karta předána"))
 
-  // If there is no existing handoff card (for example the first event of the day),
-  // keep the AlarmKit alert itself visible as the fallback until the event starts.
+  // Legacy best effort remains when no Commander holder exists, but is NOT a
+  // physical guarantee of red after Stop. The first event now selects its own holder.
+  #expect(stopIntent.contains("CommanderDepartureHolder.stopHolderID("))
+  #expect(stopIntent.contains("departureHolderJSON"))
   #expect(stopIntent.contains("await alarmActivity.end(alarmActivity.content, dismissalPolicy: .after(startDate))"))
   #expect(stopIntent.contains("Červená AlarmKit karta ponechána"))
 

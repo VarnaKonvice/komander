@@ -144,6 +144,33 @@ import Testing
   #expect(!unproven.ready)
 }
 
+@Test func physicalPreflightAcceptsFirstAlertOnlyAlarmOnlyWithVerifiedDepartureHolder() async throws {
+  let (run, session, adapter) = try await acceptanceSetup()
+  let state = await session.alarmStore.load()
+  let readings = await adapter.readings()
+  let firstAlarm = try run.payload().alarms[0]
+  let first = try #require(readings.first { $0.stableID == firstAlarm.stableId })
+  let second = try #require(readings.first { $0.stableID != firstAlarm.stableId })
+  let alertOnly = PhysicalAlarmObservation(platformID: first.platformID, stableID: first.stableID,
+    configuredAt: first.configuredAt, scheduleKind: "fixed",
+    fixedScheduleAt: try NativeAlarmContract.date(fromLocalISO: firstAlarm.leaveAt),
+    preAlert: nil, postAlert: nil, state: "scheduled", fireDate: nil)
+  let proofs = Set(run.schedule.events.map(\.stableId))
+  let ready = try PhysicalAcceptancePreflight(run: run, observations: [alertOnly, second], managed: state,
+    syncVerified: true, procedureActivityPrepared: true, verifiedHandoffStableIDs: proofs, now: run.now)
+  #expect(ready.ready && ready.verifiedAlarmCount == 2)
+  let missing = try PhysicalAcceptancePreflight(run: run, observations: [alertOnly, second], managed: state,
+    syncVerified: true, procedureActivityPrepared: true,
+    verifiedHandoffStableIDs: [run.schedule.events[1].stableId], now: run.now)
+  #expect(!missing.ready && missing.verifiedAlarmCount == 1)
+  let duplicateCountdown = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state,
+    syncVerified: true, procedureActivityPrepared: true, verifiedHandoffStableIDs: proofs, now: run.now)
+  #expect(!duplicateCountdown.ready && duplicateCountdown.verifiedAlarmCount == 1)
+  let missingRunning = try PhysicalAcceptancePreflight(run: run, observations: [alertOnly, second], managed: state,
+    syncVerified: true, procedureActivityPrepared: false, verifiedHandoffStableIDs: proofs, now: run.now)
+  #expect(!missingRunning.ready && missingRunning.verifiedAlarmCount == 2)
+}
+
 @Test func physicalPreflightRejectsHistoricalFixedLeaveAtPlusPreAlertRegression() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let readings = await adapter.readings()
