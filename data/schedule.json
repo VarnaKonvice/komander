@@ -1,27 +1,26 @@
 {
   "schemaVersion": 1,
-  "scheduleVersion": 5,
-  "updatedAt": "2026-09-07T06:52:00.000Z",
+  "scheduleVersion": 6,
+  "updatedAt": "2026-09-12T14:16:00.000Z",
   "stay": {
-    "spa": "Lázeňský Commander – zkušební pobyt",
-    "dateFrom": "2026-09-07",
-    "dateTo": "2026-09-08",
+    "spa": "Lázeňský Commander – simulace pobytu",
+    "dateFrom": "2026-09-12",
+    "dateTo": "2026-09-13",
     "room": "208",
     "doctor": "MUDr. Commander",
-    "mealShift": "II. směna"
+    "mealShift": "Testovací režim"
   },
   "events": [
-    {"stableId":"demo-0907-logopedie","date":"2026-09-07","start":"09:30","end":"10:00","title":"Logopedie","location":"Logopedie","kind":"procedure","procedureType":"Logopedie"},
-    {"stableId":"demo-0907-magnet","date":"2026-09-07","start":"10:45","end":"11:05","title":"Magnetoterapie","location":"Elektroléčba","kind":"procedure","procedureType":"Magnetoterapie"},
-    {"stableId":"demo-0907-lunch","date":"2026-09-07","start":"12:00","end":"12:45","title":"Oběd","location":"Jídelna","kind":"meal","mealType":"Oběd"},
-    {"stableId":"demo-0907-massage","date":"2026-09-07","start":"14:00","end":"14:20","title":"Masáž","location":"Rehabilitace","kind":"procedure","procedureType":"Masáž"},
-    {"stableId":"demo-0907-dinner","date":"2026-09-07","start":"17:30","end":"18:00","title":"Večeře","location":"Jídelna","kind":"meal","mealType":"Večeře"},
-    {"stableId":"demo-0908-breakfast","date":"2026-09-08","start":"07:30","end":"08:00","title":"Snídaně","location":"Jídelna","kind":"meal","mealType":"Snídaně"},
-    {"stableId":"demo-0908-exercise","date":"2026-09-08","start":"09:00","end":"09:30","title":"Individuální rehabilitace","location":"Rehabilitace","kind":"procedure","procedureType":"Individuální rehabilitace"},
-    {"stableId":"demo-0908-bath","date":"2026-09-08","start":"10:30","end":"11:00","title":"Jodobromová koupel","location":"Balneo","kind":"procedure","procedureType":"Jodobromová koupel"},
-    {"stableId":"demo-0908-lunch","date":"2026-09-08","start":"12:00","end":"12:45","title":"Oběd","location":"Jídelna","kind":"meal","mealType":"Oběd"},
-    {"stableId":"demo-0908-hydrojet","date":"2026-09-08","start":"14:00","end":"14:20","title":"Hydrojet","location":"Rehabilitace","kind":"procedure","procedureType":"Hydrojet"},
-    {"stableId":"demo-0908-dinner","date":"2026-09-08","start":"17:30","end":"18:00","title":"Večeře","location":"Jídelna","kind":"meal","mealType":"Večeře"}
+    {"stableId":"sim-0912-iodobrom","date":"2026-09-12","start":"17:10","end":"17:30","title":"Jodobromová koupel","location":"Balneo","kind":"procedure","procedureType":"Jodobromová koupel"},
+    {"stableId":"sim-0912-dinner","date":"2026-09-12","start":"18:15","end":"18:45","title":"Večeře","location":"Jídelna","kind":"meal","mealType":"Večeře"},
+    {"stableId":"sim-0912-magnet","date":"2026-09-12","start":"19:40","end":"20:00","title":"Magnetoterapie","location":"Elektroléčba","kind":"procedure","procedureType":"Magnetoterapie"},
+    {"stableId":"sim-0913-breakfast","date":"2026-09-13","start":"10:45","end":"11:15","title":"Snídaně","location":"Jídelna","kind":"meal","mealType":"Snídaně"},
+    {"stableId":"sim-0913-rehab","date":"2026-09-13","start":"11:45","end":"12:05","title":"Individuální rehabilitace","location":"Rehabilitace","kind":"procedure","procedureType":"Individuální rehabilitace"},
+    {"stableId":"sim-0913-massage","date":"2026-09-13","start":"12:40","end":"13:00","title":"Masáž","location":"Rehabilitace","kind":"procedure","procedureType":"Masáž"},
+    {"stableId":"sim-0913-lunch","date":"2026-09-13","start":"13:30","end":"14:15","title":"Oběd","location":"Jídelna","kind":"meal","mealType":"Oběd"},
+    {"stableId":"sim-0913-hydrojet","date":"2026-09-13","start":"14:45","end":"15:05","title":"Hydrojet","location":"Rehabilitace","kind":"procedure","procedureType":"Hydrojet"},
+    {"stableId":"sim-0913-magnet","date":"2026-09-13","start":"15:45","end":"16:05","title":"Magnetoterapie","location":"Elektroléčba","kind":"procedure","procedureType":"Magnetoterapie"},
+    {"stableId":"sim-0913-dinner","date":"2026-09-13","start":"17:30","end":"18:00","title":"Večeře","location":"Jídelna","kind":"meal","mealType":"Večeře"}
   ],
   "settings": {
     "defaultLeadTimeMinutes": 10,
