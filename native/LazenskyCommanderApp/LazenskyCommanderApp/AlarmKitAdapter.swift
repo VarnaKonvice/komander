@@ -219,12 +219,13 @@ private enum CommanderRollingLiveActivity {
       stableId: event.stableId + ".departureHolder", scheduleVersion: expected.scheduleVersion,
       iconKey: event.iconKey, title: event.title, location: event.location, kind: event.kind,
       startAt: leaveAt, endAt: startAt, departureHolder: true)
+    let staleDate = CommanderDepartureHolder.countdownBeginsAt(expected) ?? leaveAt
     let content = ActivityContent(state: CommanderProcedureLiveActivityAttributes.ContentState(
       projectionRevision: projectionRevision, phase: .departureHolder,
       nextStableId: event.stableId, nextTitle: event.title, nextLocation: event.location,
       nextKind: event.kind, nextIconKey: event.iconKey,
       nextStartAt: startAt, nextEndAt: endAt, nextLeaveAt: leaveAt),
-      staleDate: startAt, relevanceScore: 1)
+      staleDate: staleDate, relevanceScore: 1)
     do {
       let holder = try Activity<CommanderProcedureLiveActivityAttributes>.request(
         attributes: attributes, content: content, pushType: nil, style: .standard)

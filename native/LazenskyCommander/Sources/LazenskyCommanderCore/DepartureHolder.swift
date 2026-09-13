@@ -36,7 +36,15 @@ public enum CommanderDepartureHolder {
           let leave = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt),
           let start = try? NativeAlarmContract.date(fromLocalISO: alarm.startAt),
           leave < start, now < start else { return nil }
+
     return Identity(scheduleVersion: schedule.scheduleVersion, target: alarm, iconKey: iconKey)
+  }
+
+  /// The first-departure holder may exist earlier in the day, but it must stay
+  /// neutral until the same bounded window AlarmKit uses for its own countdown.
+  public static func countdownBeginsAt(_ identity: Identity) -> Date? {
+    guard let leave = try? NativeAlarmContract.date(fromLocalISO: identity.target.leaveAt) else { return nil }
+    return leave.addingTimeInterval(-AlarmCountdown.maximumWindow)
   }
 
   public static func reconcile(expected: Identity?, observed: [Observation], now: Date,

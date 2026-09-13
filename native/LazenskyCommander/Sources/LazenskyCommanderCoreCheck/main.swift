@@ -6,7 +6,9 @@ enum LazenskyCommanderCoreCheck {
   static func main() async {
     do {
       let root = try repositoryRoot()
-      let schedule = try decode(Schedule.self, from: root.appendingPathComponent("data/schedule.json"))
+      let publishedSchedule = try decode(Schedule.self, from: root.appendingPathComponent("data/schedule.json"))
+      try NativeAlarmContract.validateCanonical(publishedSchedule)
+      let schedule = try decode(Schedule.self, from: root.appendingPathComponent("tests/fixtures/canonical-schedule-v4.json"))
       let fixture = try decode(Fixture.self, from: root.appendingPathComponent("tests/fixtures/native-alarm-reconciliation-v1.json"))
       let appInfo = try PropertyListSerialization.propertyList(from: Data(contentsOf: root.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp/Info.plist")), options: [], format: nil) as? [String: Any]
       let usageDescription = appInfo?["NSAlarmKitUsageDescription"] as? String

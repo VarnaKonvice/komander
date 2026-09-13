@@ -3,8 +3,8 @@ import Foundation
 import Testing
 @testable import LazenskyCommanderCore
 
-@Test func decodesProductionScheduleAndBuildsPayload() throws {
-  let schedule = try decodeSchedule(named: "data/schedule.json")
+@Test func decodesCanonicalScheduleFixtureAndBuildsPayload() throws {
+  let schedule = try decodeSchedule(named: "tests/fixtures/canonical-schedule-v4.json")
   let payload = try NativeAlarmContract.payload(schedule: schedule)
   #expect(payload.contractVersion == 1)
   #expect(payload.scheduleVersion == 4)
@@ -12,8 +12,17 @@ import Testing
   #expect(payload.alarms.first(where: { $0.stableId == "synthetic-0815-bath" })?.leaveAt == "2026-08-15T09:30:00")
 }
 
+
+@Test func publishedScheduleValidatesWithoutFixedVersionOrEventNames() throws {
+  let schedule = try decodeSchedule(named: "data/schedule.json")
+  try NativeAlarmContract.validateCanonical(schedule)
+  #expect(schedule.scheduleVersion > 0)
+  #expect(schedule.events.contains { $0.kind == .meal })
+  #expect(schedule.events.contains { $0.kind == .procedure })
+}
+
 @Test func invalidScheduleAndDuplicateStableIDAreRejected() throws {
-  let decoded = try decodeSchedule(named: "data/schedule.json")
+  let decoded = try decodeSchedule(named: "tests/fixtures/canonical-schedule-v4.json")
   let schedule = Schedule(schemaVersion: decoded.schemaVersion, scheduleVersion: decoded.scheduleVersion, updatedAt: decoded.updatedAt, stay: decoded.stay, events: [decoded.events[0], decoded.events[0]], settings: decoded.settings)
   #expect(throws: ScheduleValidationError.duplicateStableId("synthetic-0815-breakfast")) {
     try NativeAlarmContract.validate(schedule)
@@ -43,7 +52,7 @@ import Testing
 }
 
 @Test func secondSuccessfulSyncIsIdempotent() async throws {
-  let schedule = try decodeSchedule(named: "data/schedule.json")
+  let schedule = try decodeSchedule(named: "tests/fixtures/canonical-schedule-v4.json")
   let store = InMemoryAlarmStateStore()
   let adapter = RecordingAlarmAdapter()
   let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: store, adapter: adapter)
@@ -182,8 +191,8 @@ import Testing
   #expect(await watchDelivery.receivedSnapshot()?.schedule == schedule)
 }
 
-@Test func productionVersionFourHasNoDesiredAlarmsOnAugustTwentySecond() async throws {
-  let schedule = try decodeSchedule(named: "data/schedule.json")
+@Test func canonicalFixtureHasNoDesiredAlarmsAfterItsStay() async throws {
+  let schedule = try decodeSchedule(named: "tests/fixtures/canonical-schedule-v4.json")
   let canonicalPayload = try NativeAlarmContract.payload(schedule: schedule)
   let adapter = RecordingAlarmAdapter()
   let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: InMemoryAlarmStateStore(), adapter: adapter)
@@ -233,7 +242,7 @@ import Testing
 }
 
 @Test func deniedAuthorizationDoesNotPersistFalseSuccess() async throws {
-  let schedule = try decodeSchedule(named: "data/schedule.json")
+  let schedule = try decodeSchedule(named: "tests/fixtures/canonical-schedule-v4.json")
   let store = InMemoryAlarmStateStore()
   let adapter = RecordingAlarmAdapter(authorization: .denied)
   let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: store, adapter: adapter)
@@ -245,7 +254,7 @@ import Testing
 }
 
 @Test func missingPastSystemAlarmIsPrunedWithoutCancelAttempt() async throws {
-  let schedule = try decodeSchedule(named: "data/schedule.json")
+  let schedule = try decodeSchedule(named: "tests/fixtures/canonical-schedule-v4.json")
   let stale = NativeAlarm(stableId: "stale", kind: .procedure, title: "Stale", location: "Room", startAt: "2026-08-20T10:00:00", endAt: "2026-08-20T10:30:00", effectiveLeadTimeMinutes: 0, leaveAt: "2026-08-20T10:00:00")
   let store = InMemoryAlarmStateStore(ManagedAlarmState(records: ["stale": ManagedAlarmRecord(stableId: "stale", platformAlarmID: UUID().uuidString, alarm: stale)]))
   let adapter = RecordingAlarmAdapter(existingIDs: [])
@@ -260,7 +269,7 @@ import Testing
 }
 
 @Test func syncPersistsCreateThenAppliesUpdateAndCancel() async throws {
-  let original = try decodeSchedule(named: "data/schedule.json")
+  let original = try decodeSchedule(named: "tests/fixtures/canonical-schedule-v4.json")
   let source = MutableScheduleService(schedule: original)
   let store = InMemoryAlarmStateStore()
   let adapter = RecordingAlarmAdapter()
@@ -324,7 +333,7 @@ import Testing
 }
 
 @Test func scheduleCoordinatorFetchesOnceAndPublishesOneValidatedSchedule() async throws {
-  let schedule = try decodeSchedule(named: "data/schedule.json")
+  let schedule = try decodeSchedule(named: "tests/fixtures/canonical-schedule-v4.json")
   let source = CountingScheduleService(schedule: schedule)
   let alarmStore = InMemoryAlarmStateStore()
   let scheduleStore = InMemoryScheduleSnapshotStore()
@@ -367,7 +376,7 @@ import Testing
 
 @Test func failedAlarmProjectionKeepsNewCanonicalScheduleAccepted() async throws {
   let previous = try liveSchedule(lead: 10)
-  let incoming = try decodeSchedule(named: "data/schedule.json")
+  let incoming = try decodeSchedule(named: "tests/fixtures/canonical-schedule-v4.json")
   let source = CountingScheduleService(schedule: incoming)
   let scheduleStore = InMemoryScheduleSnapshotStore(previous)
   let adapter = RecordingAlarmAdapter(authorization: .denied)
@@ -534,7 +543,7 @@ import Testing
 }
 
 @Test func watchTransportFailureKeepsCanonicalAcceptedAndIPhoneSyncVerified() async throws {
-  let schedule = try decodeSchedule(named: "data/schedule.json")
+  let schedule = try decodeSchedule(named: "tests/fixtures/canonical-schedule-v4.json")
   let source = CountingScheduleService(schedule: schedule)
   let alarmStore = InMemoryAlarmStateStore()
   let scheduleStore = InMemoryScheduleSnapshotStore()

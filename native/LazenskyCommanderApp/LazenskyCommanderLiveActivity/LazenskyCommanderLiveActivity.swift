@@ -68,9 +68,7 @@ struct LazenskyCommanderLiveActivityBundle: WidgetBundle {
 struct LazenskyCommanderAlarmLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: AlarmAttributes<CommanderAlarmMetadata>.self) { context in
-      CommanderAlarmLockScreenView(context: context)
-        .activityBackgroundTint(CommanderActivityTokens.background)
-        .activitySystemActionForegroundColor(CommanderActivityTokens.textPrimary)
+      CommanderAlarmActivityContent(context: context)
     } dynamicIsland: { context in
       let metadata = context.attributes.metadata
       let title = metadata?.title ?? "Lázeňský Commander"
@@ -111,7 +109,7 @@ struct LazenskyCommanderAlarmLiveActivity: Widget {
           )
         }
       } compactLeading: {
-        CommanderActivityBrandMark(size: 22)
+        CommanderIslandStateGlyph(symbol: "figure.walk", accent: departureAccent)
       } compactTrailing: {
         CommanderAlarmCountdownContext(
           mode: context.state.mode,
@@ -119,25 +117,18 @@ struct LazenskyCommanderAlarmLiveActivity: Widget {
           size: .compact
         )
       } minimal: {
-        CommanderActivityBrandMark(size: 20)
+        CommanderIslandStateGlyph(symbol: "figure.walk", accent: departureAccent)
       }
       .keylineTint(departureAccent)
     }
+    .supplementalActivityFamilies([.small])
   }
 }
 
 struct LazenskyCommanderProcedureLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: CommanderProcedureLiveActivityAttributes.self) { context in
-      Group {
-        if context.state.isDepartureStandby {
-          EmptyView()
-        } else {
-          CommanderProcedureLockScreenView(context: context)
-            .activityBackgroundTint(CommanderActivityTokens.background)
-            .activitySystemActionForegroundColor(CommanderActivityTokens.textPrimary)
-        }
-      }
+      CommanderProcedureActivityContent(context: context)
     } dynamicIsland: { context in
       let isStandby = context.state.isDepartureStandby
       let isDepartureBridge = context.state.isDepartureBridge
@@ -191,7 +182,7 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
         ? .clear
         : (isDepartureBridge
           ? CommanderActivityTokens.criticalRed
-          : (isDepartureHolder ? CommanderActivityTokens.amber : (context.isStale
+          : (isDepartureHolder ? (context.isStale ? CommanderActivityTokens.amber : CommanderActivityTokens.primaryPurple) : (context.isStale
             ? (hasHandoff ? CommanderActivityTokens.freeBlue : CommanderActivityTokens.textSecondary)
             : CommanderActivityTokens.runningGreen)))
 
@@ -213,7 +204,11 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
             if isDepartureBridge {
               CommanderDepartureBridgeTiming(startAt: bridgeStartAt, size: .regular)
             } else if isDepartureHolder, let leaveAt = context.state.nextLeaveAt {
-              CommanderDepartureBridgeTiming(startAt: leaveAt, size: .regular, isDepartureCountdown: true)
+              if context.isStale {
+                CommanderDepartureBridgeTiming(startAt: leaveAt, size: .regular, isDepartureCountdown: true)
+              } else {
+                CommanderUpcomingTiming(startAt: bridgeStartAt, size: .regular)
+              }
             } else if hasHandoff, let leaveAt = context.state.nextLeaveAt {
               CommanderNextDepartureTiming(leaveAt: leaveAt, size: .regular)
             } else {
@@ -239,7 +234,8 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
               )
             } else if isDepartureHolder {
               CommanderIslandDetails(location: context.attributes.location,
-                status: "Odchod za", statusAccent: CommanderActivityTokens.amber,
+                status: context.isStale ? "Odchod za" : "Následuje",
+                statusAccent: context.isStale ? CommanderActivityTokens.amber : CommanderActivityTokens.primaryPurple,
                 timeLabel: "Začátek", timeValue: bridgeStartAt.formatted(date: .omitted, time: .shortened),
                 timeAccent: currentAccent)
             } else if hasHandoff {
@@ -267,13 +263,23 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
           }
         }
       } compactLeading: {
-        if !isStandby { CommanderActivityBrandMark(size: 22) }
+        if !isStandby {
+          CommanderIslandStateGlyph(
+            symbol: isDepartureBridge || isDepartureHolder || hasHandoff
+              ? "figure.walk" : (context.isStale ? "checkmark" : displaySymbol),
+            accent: stateAccent
+          )
+        }
       } compactTrailing: {
         if !isStandby {
           if isDepartureBridge {
             CommanderDepartureBridgeTiming(startAt: bridgeStartAt, size: .compact)
           } else if isDepartureHolder, let leaveAt = context.state.nextLeaveAt {
-            CommanderDepartureBridgeTiming(startAt: leaveAt, size: .compact, isDepartureCountdown: true)
+            if context.isStale {
+              CommanderDepartureBridgeTiming(startAt: leaveAt, size: .compact, isDepartureCountdown: true)
+            } else {
+              CommanderUpcomingTiming(startAt: bridgeStartAt, size: .compact)
+            }
           } else if hasHandoff, let leaveAt = context.state.nextLeaveAt {
             CommanderNextDepartureTiming(leaveAt: leaveAt, size: .compact)
           } else {
@@ -286,9 +292,182 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
           }
         }
       } minimal: {
-        if !isStandby { CommanderActivityBrandMark(size: 20) }
+        if !isStandby {
+          CommanderIslandStateGlyph(
+            symbol: isDepartureBridge || isDepartureHolder || hasHandoff
+              ? "figure.walk" : (context.isStale ? "checkmark" : displaySymbol),
+            accent: stateAccent
+          )
+        }
       }
       .keylineTint(isStandby ? .clear : stateAccent)
+    }
+    .supplementalActivityFamilies([.small])
+  }
+}
+
+private struct CommanderAlarmActivityContent: View {
+  @Environment(\.activityFamily) private var activityFamily
+  let context: ActivityViewContext<AlarmAttributes<CommanderAlarmMetadata>>
+
+  @ViewBuilder
+  var body: some View {
+    if activityFamily == .small {
+      CommanderAlarmWatchLiveActivityView(context: context)
+    } else {
+      CommanderAlarmLockScreenView(context: context)
+        .activityBackgroundTint(CommanderActivityTokens.background)
+        .activitySystemActionForegroundColor(CommanderActivityTokens.textPrimary)
+    }
+  }
+}
+
+private struct CommanderProcedureActivityContent: View {
+  @Environment(\.activityFamily) private var activityFamily
+  let context: ActivityViewContext<CommanderProcedureLiveActivityAttributes>
+
+  @ViewBuilder
+  var body: some View {
+    if context.state.isDepartureStandby {
+      EmptyView()
+    } else if activityFamily == .small {
+      CommanderProcedureWatchLiveActivityView(context: context)
+    } else {
+      CommanderProcedureLockScreenView(context: context)
+        .activityBackgroundTint(CommanderActivityTokens.background)
+        .activitySystemActionForegroundColor(CommanderActivityTokens.textPrimary)
+    }
+  }
+}
+
+private struct CommanderAlarmWatchLiveActivityView: View {
+  let context: ActivityViewContext<AlarmAttributes<CommanderAlarmMetadata>>
+
+  private var metadata: CommanderAlarmMetadata? { context.attributes.metadata }
+  private var title: String { metadata?.title ?? "Lázeňský Commander" }
+  private var accent: Color { CommanderActivityTokens.departureAccent(for: context.state.mode) }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 5) {
+      HStack(spacing: 6) {
+        CommanderActivityBrandMark(size: 20)
+        Text(context.state.mode.isAlert ? "VYRAZIT TEĎ" : "Odchod za")
+          .font(.caption2.bold())
+          .foregroundStyle(accent)
+          .lineLimit(1)
+        Spacer(minLength: 0)
+      }
+      Text(title)
+        .font(.headline.weight(.semibold))
+        .foregroundStyle(CommanderActivityTokens.textPrimary)
+        .lineLimit(1)
+        .minimumScaleFactor(0.72)
+      if context.state.mode.isAlert {
+        Text(CommanderAlarmTime.startTime(from: metadata?.startAt))
+          .font(.title3.bold().monospacedDigit())
+          .foregroundStyle(accent)
+      } else {
+        CommanderAlarmCountdown(mode: context.state.mode)
+          .font(.title3.bold().monospacedDigit())
+          .foregroundStyle(accent)
+      }
+      if let location = metadata?.location, !location.isEmpty {
+        Label(location, systemImage: "location.fill")
+          .font(.caption2)
+          .foregroundStyle(CommanderActivityTokens.locationBlue)
+          .lineLimit(1)
+      }
+    }
+    .padding(10)
+    .containerBackground(CommanderActivityTokens.backgroundGradient, for: .widget)
+  }
+}
+
+private struct CommanderProcedureWatchLiveActivityView: View {
+  let context: ActivityViewContext<CommanderProcedureLiveActivityAttributes>
+
+  private var isBridge: Bool { context.state.isDepartureBridge }
+  private var isHolder: Bool { context.attributes.departureHolder == true && context.state.isDepartureHolder }
+  private var hasHandoff: Bool {
+    !isHolder && !isBridge && context.isStale
+      && context.state.nextTitle != nil && context.state.nextLeaveAt != nil
+  }
+  private var title: String {
+    isBridge || hasHandoff ? (context.state.nextTitle ?? context.attributes.title) : context.attributes.title
+  }
+  private var location: String {
+    isBridge || hasHandoff ? (context.state.nextLocation ?? context.attributes.location) : context.attributes.location
+  }
+  private var accent: Color {
+    if isBridge { return CommanderActivityTokens.criticalRed }
+    if isHolder { return context.isStale ? CommanderActivityTokens.amber : CommanderActivityTokens.primaryPurple }
+    if hasHandoff { return CommanderActivityTokens.freeBlue }
+    if context.isStale { return CommanderActivityTokens.textSecondary }
+    return CommanderActivityTokens.runningGreen
+  }
+  private var status: String {
+    if isBridge { return "VYRAZIT TEĎ" }
+    if isHolder { return context.isStale ? "Odchod za" : "Následuje" }
+    if hasHandoff { return "Právě volno" }
+    if context.isStale { return "Skončilo" }
+    return context.attributes.kind == .meal ? "Právě jídlo" : "Právě probíhá"
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 5) {
+      HStack(spacing: 6) {
+        CommanderActivityBrandMark(size: 20)
+        Text(status)
+          .font(.caption2.bold())
+          .foregroundStyle(accent)
+          .lineLimit(1)
+        Spacer(minLength: 0)
+      }
+      Text(title)
+        .font(.headline.weight(.semibold))
+        .foregroundStyle(CommanderActivityTokens.textPrimary)
+        .lineLimit(1)
+        .minimumScaleFactor(0.7)
+      timing
+      if !location.isEmpty {
+        Label(location, systemImage: "location.fill")
+          .font(.caption2)
+          .foregroundStyle(CommanderActivityTokens.locationBlue)
+          .lineLimit(1)
+      }
+    }
+    .padding(10)
+    .containerBackground(CommanderActivityTokens.backgroundGradient, for: .widget)
+  }
+
+  @ViewBuilder
+  private var timing: some View {
+    if isBridge, let startAt = context.state.nextStartAt {
+      Text(startAt, style: .timer)
+        .font(.title3.bold().monospacedDigit())
+        .foregroundStyle(accent)
+    } else if isHolder {
+      if context.isStale, let leaveAt = context.state.nextLeaveAt {
+        Text(leaveAt, style: .timer)
+          .font(.title3.bold().monospacedDigit())
+          .foregroundStyle(accent)
+      } else if let startAt = context.state.nextStartAt {
+        Text(startAt, style: .time)
+          .font(.title3.bold().monospacedDigit())
+          .foregroundStyle(accent)
+      }
+    } else if hasHandoff, let leaveAt = context.state.nextLeaveAt {
+      Text(leaveAt, style: .timer)
+        .font(.title3.bold().monospacedDigit())
+        .foregroundStyle(accent)
+    } else if context.isStale {
+      Text(context.attributes.endAt, style: .time)
+        .font(.title3.bold().monospacedDigit())
+        .foregroundStyle(accent)
+    } else {
+      Text(context.attributes.endAt, style: .timer)
+        .font(.title3.bold().monospacedDigit())
+        .foregroundStyle(accent)
     }
   }
 }
@@ -392,7 +571,7 @@ private struct CommanderProcedureLockScreenView: View {
   }
   private var stateAccent: Color {
     if isDepartureBridge { return CommanderActivityTokens.criticalRed }
-    if isDepartureHolder { return CommanderActivityTokens.amber }
+    if isDepartureHolder { return context.isStale ? CommanderActivityTokens.amber : CommanderActivityTokens.primaryPurple }
     return context.isStale
       ? (hasHandoff ? CommanderActivityTokens.freeBlue : CommanderActivityTokens.textSecondary)
       : CommanderActivityTokens.runningGreen
@@ -413,12 +592,21 @@ private struct CommanderProcedureLockScreenView: View {
           timeAccent: CommanderActivityTokens.criticalRed
         )
       } else if isDepartureHolder, let leaveAt = context.state.nextLeaveAt {
-        CommanderDepartureBridgeHero(startAt: leaveAt, isDepartureCountdown: true)
-        CommanderActivityDivider(accent: CommanderActivityTokens.amber)
-        CommanderActivityEventFooter(title: context.attributes.title, location: context.attributes.location,
-          symbol: currentSymbol, eventAccent: currentAccent, timeLabel: "Začátek",
-          timeValue: bridgeStartAt.formatted(date: .omitted, time: .shortened),
-          timeAccent: CommanderActivityTokens.amber)
+        if context.isStale {
+          CommanderDepartureBridgeHero(startAt: leaveAt, isDepartureCountdown: true)
+          CommanderActivityDivider(accent: CommanderActivityTokens.amber)
+          CommanderActivityEventFooter(title: context.attributes.title, location: context.attributes.location,
+            symbol: currentSymbol, eventAccent: currentAccent, timeLabel: "Začátek",
+            timeValue: bridgeStartAt.formatted(date: .omitted, time: .shortened),
+            timeAccent: CommanderActivityTokens.amber)
+        } else {
+          CommanderUpcomingHero(startAt: bridgeStartAt)
+          CommanderActivityDivider(accent: CommanderActivityTokens.primaryPurple)
+          CommanderActivityEventFooter(title: context.attributes.title, location: context.attributes.location,
+            symbol: currentSymbol, eventAccent: currentAccent, timeLabel: "Začátek",
+            timeValue: bridgeStartAt.formatted(date: .omitted, time: .shortened),
+            timeAccent: currentAccent)
+        }
       } else if hasHandoff, let leaveAt = context.state.nextLeaveAt {
         CommanderTransitionHero(leaveAt: leaveAt)
         CommanderActivityDivider(accent: CommanderActivityTokens.freeBlue)
@@ -564,6 +752,46 @@ private struct CommanderDepartureBridgeHero: View {
             .foregroundStyle(CommanderActivityTokens.textSecondary)
             .multilineTextAlignment(.center)
             .lineLimit(2)
+        }
+        .frame(width: 72, alignment: .trailing)
+      }
+    }
+    .frame(minHeight: CommanderActivityTokens.heroMinHeight)
+  }
+}
+
+private struct CommanderUpcomingHero: View {
+  let startAt: Date
+
+  var body: some View {
+    ZStack {
+      VStack(spacing: 1) {
+        Text("Následuje")
+          .font(.system(size: 16, weight: .bold, design: .rounded))
+          .foregroundStyle(CommanderActivityTokens.primaryPurple)
+          .lineLimit(1)
+        Text(startAt, style: .time)
+          .font(.system(size: 42, weight: .heavy, design: .rounded).monospacedDigit())
+          .foregroundStyle(CommanderActivityTokens.textPrimary)
+          .lineLimit(1)
+      }
+      .frame(width: CommanderActivityTokens.heroWidth, alignment: .center)
+      .multilineTextAlignment(.center)
+      .frame(maxWidth: .infinity)
+
+      HStack(spacing: 0) {
+        CommanderActivityBrandMark(size: 74)
+          .frame(width: 82, alignment: .leading)
+        Spacer(minLength: 0)
+        VStack(spacing: 2) {
+          Image(systemName: "clock")
+            .font(.system(size: 27, weight: .semibold))
+            .foregroundStyle(CommanderActivityTokens.primaryPurple)
+            .frame(height: 31)
+          Text("Začátek")
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(CommanderActivityTokens.textSecondary)
+            .lineLimit(1)
         }
         .frame(width: 72, alignment: .trailing)
       }
@@ -771,6 +999,19 @@ private struct CommanderActivityTimeBlock: View {
     .lineLimit(1)
     .minimumScaleFactor(0.78)
     .fixedSize(horizontal: true, vertical: false)
+  }
+}
+
+private struct CommanderIslandStateGlyph: View {
+  let symbol: String
+  let accent: Color
+
+  var body: some View {
+    Image(systemName: symbol)
+      .font(.system(size: 13, weight: .bold))
+      .foregroundStyle(accent)
+      .frame(width: 20, height: 20)
+      .accessibilityHidden(true)
   }
 }
 
@@ -982,6 +1223,29 @@ private struct CommanderDepartureBridgeTiming: View {
     Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startAt, showsHours: false))
       .font(timingFont)
       .foregroundStyle(isDepartureCountdown ? CommanderActivityTokens.amber : CommanderActivityTokens.criticalRed)
+      .lineLimit(1)
+      .minimumScaleFactor(0.72)
+      .fixedSize(horizontal: true, vertical: false)
+      .layoutPriority(1)
+  }
+
+  private var timingFont: Font {
+    switch size {
+    case .compact: return .caption2.weight(.bold).monospacedDigit()
+    case .regular: return .subheadline.weight(.heavy).monospacedDigit()
+    case .large: return .title2.weight(.heavy).monospacedDigit()
+    }
+  }
+}
+
+private struct CommanderUpcomingTiming: View {
+  let startAt: Date
+  let size: CommanderTimingSize
+
+  var body: some View {
+    Text(startAt, style: .time)
+      .font(timingFont)
+      .foregroundStyle(CommanderActivityTokens.primaryPurple)
       .lineLimit(1)
       .minimumScaleFactor(0.72)
       .fixedSize(horizontal: true, vertical: false)

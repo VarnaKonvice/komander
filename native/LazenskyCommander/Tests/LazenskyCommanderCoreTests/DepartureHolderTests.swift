@@ -90,6 +90,25 @@ import Testing
   }
 }
 
+@Test func overnightFirstHolderStaysPreparedButCountdownStartsOnlyNearDeparture() throws {
+  var calendar = Calendar(identifier: .gregorian)
+  calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+  let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 12, hour: 20)))
+  let event = ScheduleEvent(stableId: "tomorrow-breakfast", date: "2026-09-13", start: "10:45", end: "11:15",
+    title: "Snídaně", location: "Jídelna", kind: .meal, procedureType: nil, mealType: "Snídaně", leadTimeMinutes: 10)
+  let schedule = Schedule(schemaVersion: 1, scheduleVersion: 99, updatedAt: ISO8601DateFormatter().string(from: now),
+    stay: ["spa": "Test"], events: [event],
+    settings: ScheduleSettings(defaultLeadTimeMinutes: 10, procedureTypeOverrides: [:], mealOverrides: ["Snídaně": 10]))
+  let alarm = try #require(NativeAlarmContract.payload(schedule: schedule).alarms.first)
+  let identity = try #require(CommanderDepartureHolder.identity(for: alarm, in: schedule, iconKey: "meal_breakfast", now: now))
+  let countdownStart = try #require(CommanderDepartureHolder.countdownBeginsAt(identity))
+  let leave = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+  #expect(countdownStart == leave.addingTimeInterval(-AlarmCountdown.maximumWindow))
+  #expect(countdownStart > now)
+  #expect(CommanderDepartureHolder.reconcile(expected: identity, observed: [], now: now,
+    foreground: true, runningPrepared: true).create)
+}
+
 @Test func holderReconciliationRemovesDuplicatesInvalidAndObsoleteCards() throws {
   let f = try HolderFixture()
   let observed = [f.observation(id: "b"), f.observation(id: "a"),
@@ -149,7 +168,11 @@ import Testing
   #expect(!stop.contains(".request(") && !stop.contains("reconcileHolder(") && !stop.contains("scheduleRunning("))
   let live = try String(contentsOf: root.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderLiveActivity/LazenskyCommanderLiveActivity.swift"), encoding: .utf8)
   #expect(live.contains("CommanderDepartureBridgeHero(startAt: leaveAt, isDepartureCountdown: true)"))
+  #expect(live.contains("context.isStale ? \"Odchod za\" : \"Následuje\""))
+  #expect(live.contains("supplementalActivityFamilies([.small])"))
+  #expect(live.contains("CommanderIslandStateGlyph"))
   #expect(live.contains("isDepartureCountdown ? \"Odchod za\" : \"VYRAZIT TEĎ\""))
+  #expect(adapter.contains("CommanderDepartureHolder.countdownBeginsAt(expected)"))
   #expect(adapter.contains("phase: .departureHolder"))
   #expect(adapter.contains("|| hasVerifiedDepartureHolder(for: alarm, now: now)"))
 }
