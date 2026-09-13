@@ -50,9 +50,9 @@ Klasifikaci událostí stále provádí existující PWA vizuální kontrakt. `a
 
 | Icon key | Google `colorId` |
 | --- | --- |
-| `meal_breakfast` | `6` |
-| `meal_lunch` | `6` |
-| `meal_dinner` | `6` |
+| `meal_breakfast` | `10` |
+| `meal_lunch` | `10` |
+| `meal_dinner` | `10` |
 | `pool` | `7` |
 | `iodobrom` | `5` |
 | `whirlpool` | `7` |

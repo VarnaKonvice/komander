@@ -148,7 +148,7 @@ await test('procedure icon contract remains unchanged and separate from branding
     'peat_wrap', 'imoove', 'massage', 'hydrojet', 'electro_therapy', 'individual_rehab'
   ]);
   assert.deepEqual(colors.procedures, {
-    meal: '#F59E0B',
+    meal: '#50B863',
     pool: '#0EA5B7',
     iodobrom: '#B27A2C',
     whirlpool: '#38BDF8',

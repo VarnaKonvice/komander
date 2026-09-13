@@ -12,8 +12,8 @@
       "key": "meal_breakfast",
       "label": "Snídaně",
       "watchLabel": "Snídaně",
-      "accent": "#F59E0B",
-      "googleCalendarColorId": "6",
+      "accent": "#50B863",
+      "googleCalendarColorId": "10",
       "priority": 300,
       "keywords": [
         "snídaně",
@@ -24,8 +24,8 @@
       "key": "meal_lunch",
       "label": "Oběd",
       "watchLabel": "Oběd",
-      "accent": "#F59E0B",
-      "googleCalendarColorId": "6",
+      "accent": "#50B863",
+      "googleCalendarColorId": "10",
       "priority": 300,
       "keywords": [
         "oběd",
@@ -36,8 +36,8 @@
       "key": "meal_dinner",
       "label": "Večeře",
       "watchLabel": "Večeře",
-      "accent": "#F59E0B",
-      "googleCalendarColorId": "6",
+      "accent": "#50B863",
+      "googleCalendarColorId": "10",
       "priority": 300,
       "keywords": [
         "večeře",
