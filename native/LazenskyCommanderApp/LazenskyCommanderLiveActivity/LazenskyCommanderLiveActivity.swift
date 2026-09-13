@@ -450,11 +450,7 @@ private struct CommanderProcedureWatchLiveActivityView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 3) {
       HStack(spacing: 5) {
-        Image(systemName: eventSymbol)
-          .font(.caption.bold())
-          .foregroundStyle(eventAccent)
-          .frame(width: 18, height: 18)
-          .background(eventAccent.opacity(0.14), in: RoundedRectangle(cornerRadius: 5))
+        CommanderActivityBrandMark(size: 16)
         Text(status)
           .font(.caption2.bold())
           .foregroundStyle(accent)
@@ -462,11 +458,18 @@ private struct CommanderProcedureWatchLiveActivityView: View {
         Spacer(minLength: 4)
         timing
       }
-      Text(title)
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(CommanderActivityTokens.textPrimary)
-        .lineLimit(1)
-        .minimumScaleFactor(0.7)
+      HStack(spacing: 5) {
+        Image(systemName: eventSymbol)
+          .font(.caption2.bold())
+          .foregroundStyle(eventAccent)
+          .frame(width: 16, height: 16)
+          .background(eventAccent.opacity(0.14), in: RoundedRectangle(cornerRadius: 4))
+        Text(title)
+          .font(.subheadline.weight(.semibold))
+          .foregroundStyle(CommanderActivityTokens.textPrimary)
+          .lineLimit(1)
+          .minimumScaleFactor(0.7)
+      }
       if !location.isEmpty {
         Label(location, systemImage: "location.fill")
           .font(.caption2)

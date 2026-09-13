@@ -77,11 +77,11 @@ private func activityDate(_ time: String) throws -> Date {
   let schedule = Schedule(schemaVersion: base.schemaVersion, scheduleVersion: base.scheduleVersion,
     updatedAt: base.updatedAt, stay: base.stay, events: (base.events + future).reversed(), settings: base.settings)
   let prepared = CommanderLiveActivityHandoff.runningEvents(in: schedule, now: run.now)
-  #expect(CommanderLiveActivityHandoff.maximumPreparedActivities == 3)
-  #expect(prepared.map(\.stableId) == base.events.map(\.stableId) + ["event-16"])
+  #expect(CommanderLiveActivityHandoff.maximumPreparedActivities == 2)
+  #expect(prepared.map(\.stableId) == base.events.map(\.stableId))
   #expect(CommanderLiveActivityHandoff.runningEvents(in: schedule, now: try activityDate("14:35:00"))
-    .map(\.stableId) == ["event-16", "event-17", "event-18"])
-  #expect(prepared.count == 3) // Time passing alone does not refill the foreground queue.
+    .map(\.stableId) == ["event-16", "event-17"])
+  #expect(prepared.count == 2) // Time passing alone does not refill the foreground queue.
   #expect(try NativeAlarmContract.payload(schedule: schedule).alarms.count == 7)
 }
 

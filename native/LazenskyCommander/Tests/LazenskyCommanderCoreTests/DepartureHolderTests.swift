@@ -177,10 +177,15 @@ import Testing
   #expect(live.contains("isDepartureCountdown ? \"Odchod za\" : \"VYRAZIT TEĎ\""))
   #expect(adapter.contains("CommanderDepartureHolder.countdownBeginsAt(expected)"))
   #expect(adapter.contains("phase: .departureHolder"))
-  #expect(adapter.contains("|| hasVerifiedDepartureHolder(for: alarm, now: now)"))
+  let scheduleMethod = try #require(adapter.range(of: "func schedule(_ alarm: NativeAlarm"))
+  let cancelMethod = try #require(adapter.range(of: "func cancel(platformAlarmID:"))
+  let scheduling = String(adapter[scheduleMethod.lowerBound..<cancelMethod.lowerBound])
+  #expect(scheduling.contains("if countdownPlan.countdownWindow > 0"))
+  #expect(scheduling.contains("countdownDuration: Alarm.CountdownDuration("))
+  #expect(!scheduling.contains("if verifiedHandoff"))
 }
 
-@Test func rollingWindowSelectsFourthEventAfterThreePreparedSlots() throws {
+@Test func rollingWindowRefillsAfterTwoPreparedSlots() throws {
   let now = try #require(ISO8601DateFormatter().date(from: "2026-09-13T08:00:00Z"))
   let day = "2026-09-13"
   let events = (1...5).map { index in
@@ -198,9 +203,9 @@ import Testing
     settings: ScheduleSettings(defaultLeadTimeMinutes: 10, procedureTypeOverrides: [:], mealOverrides: [:])
   )
   #expect(CommanderLiveActivityHandoff.event(after: events[0], steps: 1, in: schedule)?.stableId == "event-2")
-  #expect(CommanderLiveActivityHandoff.event(after: events[0], steps: CommanderLiveActivityHandoff.maximumPreparedActivities, in: schedule)?.stableId == "event-4")
-  #expect(CommanderLiveActivityHandoff.event(after: events[1], steps: CommanderLiveActivityHandoff.maximumPreparedActivities, in: schedule)?.stableId == "event-5")
-  #expect(CommanderLiveActivityHandoff.event(after: events[2], steps: CommanderLiveActivityHandoff.maximumPreparedActivities, in: schedule) == nil)
+  #expect(CommanderLiveActivityHandoff.event(after: events[0], steps: CommanderLiveActivityHandoff.maximumPreparedActivities, in: schedule)?.stableId == "event-3")
+  #expect(CommanderLiveActivityHandoff.event(after: events[1], steps: CommanderLiveActivityHandoff.maximumPreparedActivities, in: schedule)?.stableId == "event-4")
+  #expect(CommanderLiveActivityHandoff.event(after: events[3], steps: CommanderLiveActivityHandoff.maximumPreparedActivities, in: schedule) == nil)
 }
 
 private struct HolderFixture {

@@ -3,7 +3,7 @@ import Foundation
 /// Decisions shared by the real stop intent, reconciliation and acceptance preflight.
 /// ActivityKit remains responsible for rendering and scheduling these decisions.
 public enum CommanderLiveActivityHandoff {
-  public static let maximumPreparedActivities = 3
+  public static let maximumPreparedActivities = 2
 
   /// Each event needs its own foreground-created activity: ActivityKit attributes
   /// are immutable, and Stop must never create the next event's activity.
@@ -115,8 +115,8 @@ public enum CommanderLiveActivityHandoff {
   }
 
   /// Returns the Nth later canonical event on the same day. Used by the rolling
-  /// Live Activity window so stopping event 1 can replenish event 4 when three
-  /// activities are already prepared.
+  /// Live Activity window so stopping event 1 can replenish event 4 when the bounded
+  /// rolling window is already fully prepared.
   public static func event(after event: ScheduleEvent, steps: Int, in schedule: Schedule) -> ScheduleEvent? {
     guard steps > 0,
           let end = try? NativeAlarmContract.dateTime(date: event.date, time: event.end)

@@ -628,9 +628,7 @@ actor AlarmKitAdapter: AlarmAdapting {
 
     let now = Date()
     guard leaveAt > now else { throw AlarmKitAdapterError.departureDeadlinePassed }
-    let verifiedHandoff = hasVerifiedFreeTimeHandoff(for: alarm, now: now)
-      || hasVerifiedDepartureHolder(for: alarm, now: now)
-    var countdownPlan: AlarmCountdownPlan
+    let countdownPlan: AlarmCountdownPlan
     if let schedule {
       countdownPlan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
     } else {
@@ -641,22 +639,12 @@ actor AlarmKitAdapter: AlarmAdapting {
       )
     }
 
-    // A zero gap in the schedule is not evidence of a visible handoff either.
-    if !verifiedHandoff, countdownPlan.countdownWindow == 0 {
-      countdownPlan = AlarmCountdown.plan(leaveAt: leaveAt, countdownWindow: AlarmCountdown.maximumWindow, now: now)
-    }
+    // AlarmKit is the safety-critical owner of the departure alert. A verified Commander
+    // Live Activity may enrich the experience, but it must never disable AlarmKit's own
+    // pre-alert countdown. This keeps the departure visible/audible even when iOS chooses
+    // another Live Activity (for example a sports score) for the Lock Screen or Dynamic Island.
     let configuration: AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>
-    if verifiedHandoff {
-      configuration = .alarm(
-        schedule: .fixed(countdownPlan.scheduledAlertAt),
-        attributes: alertOnlyAttributes,
-        stopIntent: stopIntent,
-        sound: .default
-      )
-    } else if countdownPlan.countdownWindow > 0 {
-      if let schedule, CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: schedule) {
-        CommanderPhysicalAcceptanceDiagnostics.record("Handoff chybí, používám vlastní countdown · \(alarm.stableId)")
-      }
+    if countdownPlan.countdownWindow > 0 {
       configuration = AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>(
         countdownDuration: Alarm.CountdownDuration(
           preAlert: countdownPlan.countdownWindow,
@@ -668,7 +656,14 @@ actor AlarmKitAdapter: AlarmAdapting {
         sound: .default
       )
     } else {
-      throw AlarmKitAdapterError.departureDeadlinePassed
+      // No free interval exists before departure. The fixed AlarmKit alert still fires
+      // at leaveAt and remains independent of Commander Live Activity visibility.
+      configuration = .alarm(
+        schedule: .fixed(countdownPlan.scheduledAlertAt),
+        attributes: alertOnlyAttributes,
+        stopIntent: stopIntent,
+        sound: .default
+      )
     }
 
     if let physicalRunID, let physicalOwnership {
@@ -759,14 +754,17 @@ actor AlarmKitAdapter: AlarmAdapting {
   }
 
   func invalidPlatformPresentationAlarmIDs(for alarms: [String: NativeAlarm]) async throws -> Set<String> {
-    let now = Date()
+    guard let schedule = scheduleContext else { return [] }
     return Set(try AlarmManager.shared.alarms.compactMap { observed in
       let id = observed.id.uuidString
-      guard let expected = alarms[id],
-            (observed.countdownDuration?.preAlert ?? 0) <= 0,
-            !hasVerifiedFreeTimeHandoff(for: expected, now: now),
-            !hasVerifiedDepartureHolder(for: expected, now: now) else { return nil }
-      return id
+      guard let expected = alarms[id] else { return nil }
+      let requiredWindow = (try? AlarmCountdown.countdownWindow(for: expected, in: schedule))
+        ?? AlarmCountdown.maximumWindow
+      let actualWindow = observed.countdownDuration?.preAlert ?? 0
+      if requiredWindow > 0 {
+        return actualWindow.isFinite && abs(actualWindow - requiredWindow) <= 1 ? nil : id
+      }
+      return actualWindow <= 0 ? nil : id
     })
   }
 

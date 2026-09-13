@@ -117,16 +117,18 @@ import Testing
   let payload = try run.payload()
   let secondPlan = try AlarmCountdown.plan(for: payload.alarms[1], in: run.schedule, now: run.now)
   #expect(first.preAlert != nil)
-  #expect(second.preAlert == nil)
+  #expect(second.preAlert.map { abs($0 - secondPlan.countdownWindow) <= 1 } == true)
   #expect(second.scheduleKind == "fixed")
-  #expect(second.fixedScheduleAt.map { abs($0.timeIntervalSince(secondPlan.scheduledAlertAt)) <= 1 } == true)
+  #expect(second.fixedScheduleAt.map { start in
+    secondPlan.scheduledStartAt.map { abs(start.timeIntervalSince($0)) <= 1 } == true
+  } == true)
   #expect(try !acceptanceCheck(run, [readings[0]], state).ready)
   #expect(try !acceptanceCheck(run, [readings[0], readings[0]], state).ready)
   #expect(try !acceptanceCheck(run, readings + [readings[1]], state).ready)
   #expect(try !acceptanceCheck(run, readings, ManagedAlarmState()).ready)
 }
 
-@Test func physicalPreflightUsesOwnCountdownUntilHandoffActuallyExists() async throws {
+@Test func physicalPreflightOwnsCountdownRegardlessOfCommanderHandoffProof() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let state = await session.alarmStore.load()
   let readings = await adapter.readings()
@@ -139,12 +141,12 @@ import Testing
   let ready = try PhysicalAcceptancePreflight(run: run, observations: [first, countdown], managed: state,
     syncVerified: true, procedureActivityPrepared: true, now: run.now)
   #expect(ready.ready)
-  let unproven = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state,
+  let withoutProof = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state,
     syncVerified: true, procedureActivityPrepared: true, now: run.now)
-  #expect(!unproven.ready)
+  #expect(withoutProof.ready)
 }
 
-@Test func physicalPreflightAcceptsFirstAlertOnlyAlarmOnlyWithVerifiedDepartureHolder() async throws {
+@Test func physicalPreflightRejectsAlertOnlyAlarmEvenWithVerifiedCommanderHandoff() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let state = await session.alarmStore.load()
   let readings = await adapter.readings()
@@ -156,19 +158,14 @@ import Testing
     fixedScheduleAt: try NativeAlarmContract.date(fromLocalISO: firstAlarm.leaveAt),
     preAlert: nil, postAlert: nil, state: "scheduled", fireDate: nil)
   let proofs = Set(run.schedule.events.map(\.stableId))
-  let ready = try PhysicalAcceptancePreflight(run: run, observations: [alertOnly, second], managed: state,
+  let check = try PhysicalAcceptancePreflight(run: run, observations: [alertOnly, second], managed: state,
     syncVerified: true, procedureActivityPrepared: true, verifiedHandoffStableIDs: proofs, now: run.now)
-  #expect(ready.ready && ready.verifiedAlarmCount == 2)
-  let missing = try PhysicalAcceptancePreflight(run: run, observations: [alertOnly, second], managed: state,
-    syncVerified: true, procedureActivityPrepared: true,
-    verifiedHandoffStableIDs: [run.schedule.events[1].stableId], now: run.now)
-  #expect(!missing.ready && missing.verifiedAlarmCount == 1)
-  let duplicateCountdown = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state,
+  #expect(!check.ready && check.verifiedAlarmCount == 1)
+  #expect(check.rows[0].issues.contains("Nesouhlasí uložený preAlert."))
+
+  let healthy = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state,
     syncVerified: true, procedureActivityPrepared: true, verifiedHandoffStableIDs: proofs, now: run.now)
-  #expect(!duplicateCountdown.ready && duplicateCountdown.verifiedAlarmCount == 1)
-  let missingRunning = try PhysicalAcceptancePreflight(run: run, observations: [alertOnly, second], managed: state,
-    syncVerified: true, procedureActivityPrepared: false, verifiedHandoffStableIDs: proofs, now: run.now)
-  #expect(!missingRunning.ready && missingRunning.verifiedAlarmCount == 2)
+  #expect(healthy.ready && healthy.verifiedAlarmCount == 2)
 }
 
 @Test func physicalPreflightRejectsHistoricalFixedLeaveAtPlusPreAlertRegression() async throws {
@@ -188,22 +185,18 @@ import Testing
   #expect(check.rows[0].issues.contains("Výsledný čas alarmu neodpovídá času odchodu."))
 }
 
-@Test func physicalPreflightRejectsDuplicatePreAlertWhenPreparedHandoffOwnsFreeTime() async throws {
+@Test func physicalPreflightRequiresSystemPreAlertEvenWhenCommanderHandoffIsPrepared() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let readings = await adapter.readings()
-  let first = try #require(readings.first { $0.state == "countdown" })
-  let second = try #require(readings.first { $0.stableID == run.schedule.events[1].stableId })
-  let payload = try run.payload()
-  let alarm = payload.alarms[1]
-  let plan = try AlarmCountdown.plan(for: alarm, in: run.schedule, now: run.now)
-  let duplicated = PhysicalAlarmObservation(
-    platformID: second.platformID, stableID: second.stableID, configuredAt: second.configuredAt,
-    scheduleKind: "fixed", fixedScheduleAt: plan.scheduledStartAt,
-    preAlert: plan.countdownWindow, postAlert: nil, state: "scheduled", fireDate: nil
-  )
-  let check = try await acceptanceCheck(run, [first, duplicated], session.alarmStore.load())
-  #expect(!check.ready && check.verifiedAlarmCount == 1)
-  #expect(check.rows[1].issues.contains("Alarm po připraveném volnu nemá mít duplicitní systémový předodpočet."))
+  let state = await session.alarmStore.load()
+  let proofs = Set(run.schedule.events.map(\.stableId))
+  let check = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state,
+    syncVerified: true, procedureActivityPrepared: true, verifiedHandoffStableIDs: proofs, now: run.now)
+  #expect(check.ready && check.verifiedAlarmCount == 2)
+  #expect(check.rows.allSatisfy { row in
+    row.expectedPlan.countdownWindow == 0 ||
+      row.actual?.preAlert.map { abs($0 - row.expectedPlan.countdownWindow) <= 1 } == true
+  })
 }
 
 @Test func physicalPreflightRejectsMissingImmediateSystemFireDateOrWrongStateOrDuration() async throws {
@@ -250,7 +243,12 @@ import Testing
   #expect(adapter.contains("for alarm in alarms where cleanup.cancelIDs.contains(alarm.id.uuidString)"))
   #expect(adapter.contains("CommanderLiveActivityHandoff.hasCompleteRunningPreparation("))
   #expect(adapter.contains("let desiredRunning = candidates"))
-  #expect(adapter.contains("let verifiedHandoff = hasVerifiedFreeTimeHandoff(for: alarm, now: now)"))
+  let scheduleMethod = try #require(adapter.range(of: "func schedule(_ alarm: NativeAlarm"))
+  let cancelMethod = try #require(adapter.range(of: "func cancel(platformAlarmID:"))
+  let scheduling = String(adapter[scheduleMethod.lowerBound..<cancelMethod.lowerBound])
+  #expect(scheduling.contains("if countdownPlan.countdownWindow > 0"))
+  #expect(scheduling.contains("preAlert: countdownPlan.countdownWindow"))
+  #expect(!scheduling.contains("let verifiedHandoff"))
   #expect(!adapter.contains("if hasFreeTimeHandoff(for: alarm)"))
   #expect(!adapter.contains("phase: .departureStandby"))
   #expect(!adapter.contains("prepareStandby("))
@@ -317,7 +315,7 @@ private func acceptanceRun() throws -> PhysicalAcceptanceRun {
 
 @Test func missingLiveActivitiesNeverBlockAlarmSafetyButRejectPhysicalReadiness() async throws {
   let run = try acceptanceRun()
-  let adapter = AcceptanceTestAdapter(now: run.now, preparedHandoffAvailable: false)
+  let adapter = AcceptanceTestAdapter(now: run.now)
   let session = PhysicalAcceptanceSession(run: run, adapter: adapter)
   let result = try await session.synchronize(now: run.now)
   #expect(result.succeeded)
@@ -346,13 +344,11 @@ private func acceptanceCheck(_ run: PhysicalAcceptanceRun, _ readings: [Physical
 
 private actor AcceptanceTestAdapter: AlarmAdapting {
   let now: Date
-  let preparedHandoffAvailable: Bool
   private var context: Schedule?
   private var projectionRevision = 0
   private var observations: [String: PhysicalAlarmObservation] = [:]
-  init(now: Date, preparedHandoffAvailable: Bool = true) {
+  init(now: Date) {
     self.now = now
-    self.preparedHandoffAvailable = preparedHandoffAvailable
   }
   func prepare(schedule: Schedule, projectionRevision: Int) { context = schedule; self.projectionRevision = projectionRevision }
   func availability() -> AlarmKitAvailability { .available }
@@ -362,17 +358,17 @@ private actor AcceptanceTestAdapter: AlarmAdapting {
     let schedule = try #require(context)
     let plan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
     let id = UUID().uuidString
-    let usesPreparedHandoff = preparedHandoffAvailable && hasPriorHandoffSource(for: alarm, schedule: schedule)
+    let hasCountdown = plan.countdownWindow > 0
     observations[id] = PhysicalAlarmObservation(
       platformID: id,
       stableID: alarm.stableId,
       configuredAt: now,
-      scheduleKind: usesPreparedHandoff ? "fixed" : (plan.scheduledStartAt == nil ? "none" : "fixed"),
-      fixedScheduleAt: usesPreparedHandoff ? plan.scheduledAlertAt : plan.scheduledStartAt,
-      preAlert: usesPreparedHandoff ? nil : plan.countdownWindow,
+      scheduleKind: hasCountdown ? (plan.scheduledStartAt == nil ? "none" : "fixed") : "fixed",
+      fixedScheduleAt: hasCountdown ? plan.scheduledStartAt : plan.scheduledAlertAt,
+      preAlert: hasCountdown ? plan.countdownWindow : nil,
       postAlert: nil,
-      state: usesPreparedHandoff ? "scheduled" : (plan.scheduledStartAt == nil ? "countdown" : "scheduled"),
-      fireDate: usesPreparedHandoff ? nil : (plan.scheduledStartAt == nil ? now.addingTimeInterval(plan.countdownWindow) : nil)
+      state: hasCountdown && plan.scheduledStartAt == nil ? "countdown" : "scheduled",
+      fireDate: hasCountdown && plan.scheduledStartAt == nil ? now.addingTimeInterval(plan.countdownWindow) : nil
     )
     return id
   }
@@ -384,17 +380,5 @@ private actor AcceptanceTestAdapter: AlarmAdapting {
   func readings() -> [PhysicalAlarmObservation] { observations.values.sorted { ($0.stableID ?? "") < ($1.stableID ?? "") } }
   func revision() -> Int { projectionRevision }
 
-  private func hasPriorHandoffSource(for alarm: NativeAlarm, schedule: Schedule) -> Bool {
-    guard let event = schedule.events.first(where: { $0.stableId == alarm.stableId }),
-          let leaveAt = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
-    else { return false }
-    return schedule.events.contains { candidate in
-      guard candidate.stableId != event.stableId,
-            candidate.date == event.date,
-            let endAt = try? NativeAlarmContract.dateTime(date: candidate.date, time: candidate.end)
-      else { return false }
-      return endAt <= leaveAt
-    }
-  }
 }
 #endif

@@ -49,7 +49,7 @@ import Testing
   #expect(live.contains("criticalRed"))
 }
 
-@Test func alertOnlyAlarmRequiresExistingVerifiedFreeTimeActivity() throws {
+@Test func commanderHandoffNeverSuppressesAlarmKitSystemCountdown() throws {
   let repo = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
     .deletingLastPathComponent()
@@ -64,20 +64,21 @@ import Testing
     encoding: .utf8
   )
 
-  // A logical neighbour in the canonical schedule is not enough. The adapter must
-  // prove that the matching free-time Live Activity really exists before removing
-  // AlarmKit's own countdown presentation.
-  #expect(adapter.contains("let verifiedHandoff = hasVerifiedFreeTimeHandoff(for: alarm, now: now)"))
-  #expect(adapter.contains("Activity<CommanderProcedureLiveActivityAttributes>.activities.contains"))
-  #expect(adapter.contains("CommanderLiveActivityHandoff.identity(for: alarm, in: schedule)"))
-  #expect(adapter.contains("CommanderLiveActivityHandoff.matches(actual: identity(activity), expected: expected, now: now)"))
-  #expect(adapter.components(separatedBy: "attributes: alertOnlyAttributes,").count == 2)
-  #expect(adapter.contains("if !verifiedHandoff, countdownPlan.countdownWindow == 0"))
-  #expect(adapter.contains("CommanderRollingLiveActivity.matchesHandoff(activity, expected: expected, now: now)"))
-  #expect(adapter.contains("Handoff chybí, používám vlastní countdown"))
+  let scheduleMethod = try #require(adapter.range(of: "func schedule(_ alarm: NativeAlarm"))
+  let cancelMethod = try #require(adapter.range(of: "func cancel(platformAlarmID:"))
+  let scheduling = String(adapter[scheduleMethod.lowerBound..<cancelMethod.lowerBound])
 
-  // The old behaviour used schedule topology alone and could therefore suppress the
-  // system countdown even when the expected Live Activity was missing on the phone.
-  #expect(!adapter.contains("if hasFreeTimeHandoff(for: alarm)"))
+  // Commander Live Activity is presentation only. It must never select an alert-only
+  // AlarmKit configuration when a real pre-alert window exists.
+  #expect(scheduling.contains("if countdownPlan.countdownWindow > 0"))
+  #expect(scheduling.contains("countdownDuration: Alarm.CountdownDuration("))
+  #expect(scheduling.contains("preAlert: countdownPlan.countdownWindow"))
+  #expect(!scheduling.contains("if verifiedHandoff"))
+  #expect(!scheduling.contains("let verifiedHandoff"))
+
+  // The direct alert-only branch remains only for a genuine zero-length interval.
+  #expect(scheduling.contains("schedule: .fixed(countdownPlan.scheduledAlertAt)"))
+  #expect(scheduling.contains("attributes: alertOnlyAttributes"))
 }
+
 #endif

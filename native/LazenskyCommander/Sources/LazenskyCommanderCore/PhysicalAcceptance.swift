@@ -172,9 +172,9 @@ public struct PhysicalAcceptancePreflight: Sendable {
       let matches = observations.filter { $0.stableID == alarm.stableId }
       let actual = matches.count == 1 ? matches.first : nil
       let plan = try AlarmCountdown.plan(for: alarm, in: run.schedule, now: actual?.configuredAt ?? run.now)
-      let usesPreparedHandoff = verifiedHandoffStableIDs.contains(alarm.stableId)
-        && (CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarm, in: run.schedule)
-          || CommanderDepartureHolder.identity(for: alarm, in: run.schedule, iconKey: "", now: run.now) != nil)
+      // AlarmKit is safety-critical and must own its platform countdown regardless of
+      // any prepared Commander Live Activity. Handoff proofs are informational only.
+      _ = verifiedHandoffStableIDs
       var errors: [String] = []
 
       if let actual, let configuredAt = actual.configuredAt {
@@ -182,13 +182,7 @@ public struct PhysicalAcceptancePreflight: Sendable {
         if managed.records[alarm.stableId]?.platformAlarmID != actual.platformID { errors.append("Nesouhlasí spravované ID.") }
         if actual.postAlert != nil { errors.append("Neočekávaný postAlert.") }
 
-        if usesPreparedHandoff {
-          if actual.preAlert != nil { errors.append("Alarm po připraveném volnu nemá mít duplicitní systémový předodpočet.") }
-          if actual.scheduleKind != "fixed" || actual.fixedScheduleAt.map({ abs($0.timeIntervalSince(plan.scheduledAlertAt)) <= 1 }) != true {
-            errors.append("Přímý alarm není naplánovaný přesně na čas odchodu.")
-          }
-          if actual.state != "scheduled" { errors.append("Přímý budoucí alarm není naplánovaný.") }
-        } else {
+        if plan.countdownWindow > 0 {
           if let preAlert = actual.preAlert, preAlert.isFinite, abs(preAlert - plan.countdownWindow) <= 1 {} else {
             errors.append("Nesouhlasí uložený preAlert.")
           }
@@ -201,6 +195,12 @@ public struct PhysicalAcceptancePreflight: Sendable {
             if actual.scheduleKind != "none" || actual.fixedScheduleAt != nil { errors.append("Okamžitý odpočet nemá schedule=nil.") }
             if actual.state != "countdown" || actual.fireDate == nil { errors.append("Systém nepotvrdil okamžitý odpočet a jeho čas alarmu.") }
           }
+        } else {
+          if actual.preAlert != nil { errors.append("Přímý alarm bez časového okna nemá mít preAlert.") }
+          if actual.scheduleKind != "fixed" || actual.fixedScheduleAt.map({ abs($0.timeIntervalSince(plan.scheduledAlertAt)) <= 1 }) != true {
+            errors.append("Přímý alarm není naplánovaný přesně na čas odchodu.")
+          }
+          if actual.state != "scheduled" { errors.append("Přímý budoucí alarm není naplánovaný.") }
         }
 
         let endpoint = AlarmCountdown.effectiveAlertDate(
@@ -219,9 +219,9 @@ public struct PhysicalAcceptancePreflight: Sendable {
         alarm: alarm,
         leadTime: resolution,
         expectedPlan: plan,
-        expectedCountdownStart: usesPreparedHandoff
-          ? plan.scheduledAlertAt
-          : (plan.scheduledStartAt ?? actual?.configuredAt ?? run.now),
+        expectedCountdownStart: plan.countdownWindow > 0
+          ? (plan.scheduledStartAt ?? actual?.configuredAt ?? run.now)
+          : plan.scheduledAlertAt,
         actual: actual,
         issues: errors
       )
