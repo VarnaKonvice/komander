@@ -25,6 +25,8 @@ struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
   let leaveAt: String
   let endAt: String?
   let nextEvent: CommanderAlarmEventSnapshot?
+  let refillEvent: CommanderAlarmEventSnapshot?
+  let refillFollowingEvent: CommanderAlarmEventSnapshot?
 
   init(
     stableId: String,
@@ -36,7 +38,9 @@ struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
     startAt: String,
     leaveAt: String,
     endAt: String? = nil,
-    nextEvent: CommanderAlarmEventSnapshot? = nil
+    nextEvent: CommanderAlarmEventSnapshot? = nil,
+    refillEvent: CommanderAlarmEventSnapshot? = nil,
+    refillFollowingEvent: CommanderAlarmEventSnapshot? = nil
   ) {
     self.stableId = stableId
     self.scheduleVersion = scheduleVersion
@@ -48,6 +52,8 @@ struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
     self.leaveAt = leaveAt
     self.endAt = endAt
     self.nextEvent = nextEvent
+    self.refillEvent = refillEvent
+    self.refillFollowingEvent = refillFollowingEvent
   }
 }
 

@@ -7,10 +7,16 @@ struct CommanderNextEventView: View {
   var title = "Co následuje"
 
   private var detail: String {
-    let target = item.leaveAt > now ? item.leaveAt : item.startAt
-    let prefix = item.leaveAt > now ? "Odchod za" : "Začátek za"
-    let minutes = max(0, Int(ceil(target.timeIntervalSince(now) / 60)))
-    return "\(prefix) \(minutes) min"
+    if item.leaveAt.timeIntervalSince(now) > 30 * 60 {
+      let minutes = max(0, Int(ceil(item.startAt.timeIntervalSince(now) / 60)))
+      return "Následuje za \(minutes) min"
+    }
+    if item.leaveAt > now {
+      let minutes = max(0, Int(ceil(item.leaveAt.timeIntervalSince(now) / 60)))
+      return "Odchod za \(minutes) min"
+    }
+    let minutes = max(0, Int(ceil(item.startAt.timeIntervalSince(now) / 60)))
+    return "Začátek za \(minutes) min"
   }
 
   var body: some View {

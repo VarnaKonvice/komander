@@ -135,7 +135,7 @@ private enum CommanderRollingLiveActivity {
     let content = ActivityContent(
       state: state(projectionRevision: projectionRevision, next: next),
       staleDate: endAt,
-      relevanceScore: 1
+      relevanceScore: startAt <= Date() ? 1 : 0.2
     )
 
     do {
@@ -170,6 +170,66 @@ private enum CommanderRollingLiveActivity {
     }
     return nil
   }
+
+  /// LiveActivityIntent is allowed to replenish the rolling future activity window while the app is backgrounded.
+  /// This must never be the only owner of the current red handoff; it prepares only the *next* event.
+  static func scheduleNextFromStop(
+    event: CommanderAlarmEventSnapshot,
+    following: CommanderAlarmEventSnapshot?,
+    scheduleVersion: Int,
+    projectionRevision: Int = -1
+  ) async -> String? {
+    guard ActivityAuthorizationInfo().areActivitiesEnabled else { return "Živé aktivity nejsou povolené." }
+    guard let startAt = date(event.startAt), let endAt = date(event.endAt), endAt > Date() else { return nil }
+    if isPrepared(event: event, scheduleVersion: scheduleVersion) { return nil }
+
+    let attributes = CommanderProcedureLiveActivityAttributes(
+      stableId: event.stableId,
+      scheduleVersion: scheduleVersion,
+      iconKey: event.iconKey,
+      title: event.title,
+      location: event.location,
+      kind: event.kind,
+      startAt: startAt,
+      endAt: endAt
+    )
+    let content = ActivityContent(
+      state: state(projectionRevision: projectionRevision, next: following),
+      staleDate: endAt,
+      relevanceScore: startAt <= Date() ? 1 : 0.2
+    )
+
+    do {
+      if startAt <= Date() {
+        _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+          attributes: attributes,
+          content: content,
+          pushType: nil,
+          style: .standard
+        )
+      } else {
+        let alert = ActivityKit.AlertConfiguration(
+          title: LocalizedStringResource(stringLiteral: event.kind == .meal ? "Jídlo začíná" : "Procedura začíná"),
+          body: LocalizedStringResource(stringLiteral: event.title),
+          sound: .default
+        )
+        _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+          attributes: attributes,
+          content: content,
+          pushType: nil,
+          style: .standard,
+          alertConfiguration: alert,
+          start: startAt
+        )
+      }
+      return nil
+    } catch {
+      let message = "Další živou aktivitu se po Zastavit nepodařilo připravit: " + error.localizedDescription
+      Logger(subsystem: Bundle.main.bundleIdentifier ?? "LazenskyCommander", category: "LiveActivity").error("\(message, privacy: .public)")
+      return message
+    }
+  }
+
   nonisolated static func holderIdentity(_ activity: Activity<CommanderProcedureLiveActivityAttributes>) -> CommanderDepartureHolder.Identity? {
     let a = activity.attributes
     guard a.departureHolder == true,
@@ -255,6 +315,8 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
   @Parameter(title: "Začátek") var startAt: String
   @Parameter(title: "Událost alarmu") var currentEventJSON: String
   @Parameter(title: "Další událost") var nextEventJSON: String
+  @Parameter(title: "Doplnit událost") var refillEventJSON: String
+  @Parameter(title: "Doplnit následnou") var refillFollowingEventJSON: String
   @Parameter(title: "Canonical předání") var handoffJSON: String
   @Parameter(title: "První odchod") var departureHolderJSON: String
 
@@ -265,6 +327,8 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     startAt = ""
     currentEventJSON = ""
     nextEventJSON = ""
+    refillEventJSON = ""
+    refillFollowingEventJSON = ""
     handoffJSON = ""
     departureHolderJSON = ""
   }
@@ -287,6 +351,8 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     )
     currentEventJSON = Self.encode(current)
     nextEventJSON = Self.encode(metadata.nextEvent)
+    refillEventJSON = Self.encode(metadata.refillEvent)
+    refillFollowingEventJSON = Self.encode(metadata.refillFollowingEvent)
     handoffJSON = Self.encode(handoff)
     departureHolderJSON = Self.encode(departureHolder)
   }
@@ -379,12 +445,23 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     }
 
     if let current = Self.decode(currentEventJSON) {
-      // The OS will start the pending activity. Stop only checks preparation;
-      // it must not depend on foreground-only Activity.request succeeding here.
       if !CommanderRollingLiveActivity.isPrepared(event: current, scheduleVersion: scheduleVersion) {
         let message = "Chybí předem připravená živá aktivita po Zastavit · \(stableId)"
         Logger(subsystem: Bundle.main.bundleIdentifier ?? "LazenskyCommander", category: "LiveActivity").error("\(message, privacy: .public)")
         CommanderPhysicalAcceptanceDiagnostics.record(message)
+      }
+    }
+
+    // Replenish one future slot while the user is already interacting with the alarm.
+    // Failure here must never disturb the already-established red handoff above.
+    if let refill = Self.decode(refillEventJSON) {
+      let following = Self.decode(refillFollowingEventJSON)
+      if let issue = await CommanderRollingLiveActivity.scheduleNextFromStop(
+        event: refill,
+        following: following,
+        scheduleVersion: scheduleVersion
+      ) {
+        CommanderPhysicalAcceptanceDiagnostics.record(issue)
       }
     }
 
@@ -503,19 +580,23 @@ actor AlarmKitAdapter: AlarmAdapting {
     let schedule = scheduleContext
     let event = schedule?.events.first(where: { $0.stableId == alarm.stableId })
     let iconKey = event.flatMap { CommanderVisualAssets.icon(for: $0)?.key } ?? ""
+    let tintColor = event.map { Color(commanderAlarmHex: CommanderVisualAssets.accent(for: $0)) } ?? .teal
     let countdown = AlarmPresentation.Countdown(
       title: LocalizedStringResource(stringLiteral: "Odchod za \(alarm.title)")
     )
     let eventEndAt = event.map { Self.localISO(date: $0.date, time: $0.end) }
     let nextSnapshot: CommanderAlarmEventSnapshot?
+    let refillSnapshot: CommanderAlarmEventSnapshot?
+    let refillFollowingSnapshot: CommanderAlarmEventSnapshot?
     if let event, let schedule {
-      nextSnapshot = snapshotAfter(
-        event: event,
-        schedule: schedule,
-        overrides: leadTimeOverridesContext
-      )
+      nextSnapshot = snapshotAfter(event: event, schedule: schedule, overrides: leadTimeOverridesContext)
+      let refill = CommanderLiveActivityHandoff.event(after: event, steps: CommanderLiveActivityHandoff.maximumPreparedActivities, in: schedule)
+      refillSnapshot = refill.flatMap { snapshotFor($0, schedule: schedule, overrides: leadTimeOverridesContext) }
+      refillFollowingSnapshot = refill.flatMap { snapshotAfter(event: $0, schedule: schedule, overrides: leadTimeOverridesContext) }
     } else {
       nextSnapshot = nil
+      refillSnapshot = nil
+      refillFollowingSnapshot = nil
     }
     let metadata = CommanderAlarmMetadata(
       stableId: alarm.stableId,
@@ -527,17 +608,19 @@ actor AlarmKitAdapter: AlarmAdapting {
       startAt: alarm.startAt,
       leaveAt: alarm.leaveAt,
       endAt: eventEndAt,
-      nextEvent: nextSnapshot
+      nextEvent: nextSnapshot,
+      refillEvent: refillSnapshot,
+      refillFollowingEvent: refillFollowingSnapshot
     )
     let countdownAttributes = AlarmAttributes(
       presentation: AlarmPresentation(alert: alert, countdown: countdown),
       metadata: metadata,
-      tintColor: .teal
+      tintColor: tintColor
     )
     let alertOnlyAttributes = AlarmAttributes(
       presentation: AlarmPresentation(alert: alert),
       metadata: metadata,
-      tintColor: .teal
+      tintColor: tintColor
     )
     let stopIntent = CommanderAlarmStopIntent(alarmID: id, metadata: metadata,
       handoff: schedule.flatMap { CommanderLiveActivityHandoff.identity(for: alarm, in: $0) },
@@ -953,7 +1036,7 @@ actor AlarmKitAdapter: AlarmAdapting {
         await activity.update(ActivityContent(
           state: match.contentState,
           staleDate: match.endAt,
-          relevanceScore: 1
+          relevanceScore: match.startAt <= now ? 1 : 0.2
         ))
       } else {
         await activity.end(nil, dismissalPolicy: .immediate)
@@ -1023,6 +1106,14 @@ actor AlarmKitAdapter: AlarmAdapting {
       nextEndAt: next.endAt,
       nextLeaveAt: next.startAt.addingTimeInterval(TimeInterval(-lead * 60))
     )
+  }
+
+  private func snapshotFor(
+    _ event: ScheduleEvent, schedule: Schedule, overrides: LeadTimeOverrides?
+  ) -> CommanderAlarmEventSnapshot? {
+    guard let start = try? NativeAlarmContract.dateTime(date: event.date, time: event.start),
+          let end = try? NativeAlarmContract.dateTime(date: event.date, time: event.end) else { return nil }
+    return eventSnapshot(event, startAt: start, endAt: end, schedule: schedule, overrides: overrides)
   }
 
   private func snapshotAfter(
@@ -1114,5 +1205,18 @@ actor AlarmKitAdapter: AlarmAdapting {
   static var hasUsageDescription: Bool {
     let value = Bundle.main.object(forInfoDictionaryKey: "NSAlarmKitUsageDescription") as? String
     return !(value?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+  }
+}
+
+private extension Color {
+  init(commanderAlarmHex hex: String) {
+    let value = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+    var rgb: UInt64 = 0
+    Scanner(string: value).scanHexInt64(&rgb)
+    self.init(
+      red: Double((rgb >> 16) & 0xff) / 255,
+      green: Double((rgb >> 8) & 0xff) / 255,
+      blue: Double(rgb & 0xff) / 255
+    )
   }
 }

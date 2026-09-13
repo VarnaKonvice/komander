@@ -11,14 +11,14 @@ struct WatchCommanderView: View {
         now: context.date,
         overrides: model.leadTimeOverrides
       )
-      WatchCommanderStateView(liveState: liveState, model: model)
+      WatchCommanderStateView(liveState: liveState, now: context.date)
     }
   }
 }
 
 private struct WatchCommanderStateView: View {
   let liveState: CommanderLiveStateResult
-  let model: WatchCommanderModel
+  let now: Date
 
   private var icon: CommanderIconMap.Icon? {
     WatchVisualAssets.icon(for: liveState.event)
@@ -28,13 +28,34 @@ private struct WatchCommanderStateView: View {
     Color(hex: WatchVisualAssets.colors?.brand.commanderPurple ?? "#6E56CF")
   }
 
-  private var accent: Color {
+  private var eventAccent: Color {
     Color(hex: WatchVisualAssets.accent(for: liveState.event))
+  }
+
+  private var stateAccent: Color {
+    switch liveState.state {
+    case .upcoming:
+      if let leaveAt = liveState.leaveAt, leaveAt.timeIntervalSince(now) <= 30 * 60 {
+        return Color(hex: "#F2A93B")
+      }
+      return eventAccent
+    case .leaveNow:
+      return Color(hex: "#FF5A52")
+    case .inProgress:
+      return Color(hex: "#50B863")
+    case .dayDone, .noSchedule:
+      return Color.white.opacity(0.72)
+    }
   }
 
   var body: some View {
     ZStack {
-      commanderPurple.ignoresSafeArea()
+      LinearGradient(
+        colors: [Color(hex: "#0E1530"), commanderPurple.opacity(0.40)],
+        startPoint: .top,
+        endPoint: .bottom
+      )
+      .ignoresSafeArea()
       ScrollView {
         VStack(spacing: 8) {
           stateHeader
@@ -43,7 +64,6 @@ private struct WatchCommanderStateView: View {
           } else {
             emptyContent
           }
-          standaloneAlarmControls
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 8)
@@ -53,55 +73,19 @@ private struct WatchCommanderStateView: View {
     .foregroundStyle(.white)
   }
 
-  private var standaloneAlarmControls: some View {
-    VStack(spacing: 5) {
-      Divider().overlay(.white.opacity(0.28))
-      Toggle(
-        "Samostatné alarmy Watch",
-        isOn: Binding(
-          get: { model.standaloneAlarmsEnabled },
-          set: { enabled in
-            Task { await model.setStandaloneAlarmsEnabled(enabled) }
-          }
-        )
-      )
-      .font(.caption2)
-      .disabled(model.isUpdatingStandaloneAlarms)
-
-      Text(standaloneAlarmStatus)
-        .font(.caption2)
-        .foregroundStyle(standaloneAlarmStatusColor)
-        .multilineTextAlignment(.center)
-    }
-    .padding(.top, 4)
-  }
-
-  private var standaloneAlarmStatus: String {
-    if let error = model.notificationError { return error }
-    guard model.standaloneAlarmsEnabled else { return "Samostatné alarmy vypnuty" }
-    switch model.notificationAuthorization {
-    case .authorized:
-      return "Samostatné alarmy zapnuty"
-    case .denied:
-      return "Notifikace nejsou povoleny"
-    case .notDetermined:
-      return "Čeká na povolení notifikací"
-    }
-  }
-
-  private var standaloneAlarmStatusColor: Color {
-    model.standaloneAlarmState.isOperational ? .white.opacity(0.78) : .yellow
-  }
-
   @ViewBuilder
   private var stateHeader: some View {
     switch liveState.state {
     case .upcoming:
-      status("NADCHÁZÍ", prominent: false)
+      if let leaveAt = liveState.leaveAt, leaveAt.timeIntervalSince(now) <= 30 * 60 {
+        status("ODCHOD ZA", prominent: false)
+      } else {
+        status("NÁSLEDUJE", prominent: false)
+      }
     case .leaveNow:
-      status("VYRAZIT", prominent: true)
+      status("VYRAZIT TEĎ", prominent: true)
     case .inProgress:
-      status("Právě probíhá", prominent: false)
+      status(liveState.event?.kind == .meal ? "Právě jídlo" : "Právě probíhá", prominent: false)
     case .dayDone:
       status("PROGRAM DOKONČEN", prominent: false)
     case .noSchedule:
@@ -112,29 +96,30 @@ private struct WatchCommanderStateView: View {
   private func status(_ text: String, prominent: Bool) -> some View {
     VStack(spacing: 5) {
       Capsule()
-        .fill(accent)
+        .fill(stateAccent)
         .frame(width: 44, height: 3)
       Text(text)
         .font(prominent ? .headline.bold() : .caption.bold())
         .multilineTextAlignment(.center)
-        .foregroundStyle(prominent ? accent : .white.opacity(0.88))
+        .foregroundStyle(prominent ? stateAccent : .white.opacity(0.88))
     }
   }
 
   private func eventContent(_ event: ScheduleEvent) -> some View {
     VStack(spacing: 6) {
-      if let icon {
-        Image(icon.key, bundle: .main)
-          .resizable()
-          .scaledToFit()
-          .frame(width: 54, height: 54)
-          .background(.white)
-          .clipShape(RoundedRectangle(cornerRadius: 8))
-          .overlay {
-            RoundedRectangle(cornerRadius: 8).stroke(accent, lineWidth: 2)
-          }
-          .accessibilityHidden(true)
+      Image(systemName: CommanderBrandAssets.procedureSymbol(
+        iconKey: icon?.key,
+        title: event.title,
+        isMeal: event.kind == .meal
+      ))
+      .font(.system(size: 31, weight: .semibold))
+      .foregroundStyle(eventAccent)
+      .frame(width: 54, height: 54)
+      .background(eventAccent.opacity(0.14), in: RoundedRectangle(cornerRadius: 12))
+      .overlay {
+        RoundedRectangle(cornerRadius: 12).stroke(eventAccent.opacity(0.72), lineWidth: 1.5)
       }
+      .accessibilityHidden(true)
 
       Text(event.title)
         .font(.headline)
@@ -158,9 +143,13 @@ private struct WatchCommanderStateView: View {
   private var eventTiming: some View {
     switch liveState.state {
     case .upcoming:
-      countdown(label: "Odchod za", target: liveState.leaveAt, secondaryLabel: "Začátek", secondaryDate: liveState.startAt)
+      if let leaveAt = liveState.leaveAt, leaveAt.timeIntervalSince(now) <= 30 * 60 {
+        countdown(label: "Odchod za", target: leaveAt, secondaryLabel: "Začátek", secondaryDate: liveState.startAt)
+      } else {
+        countdown(label: "Následuje za", target: liveState.startAt, secondaryLabel: "Začátek", secondaryDate: liveState.startAt)
+      }
     case .leaveNow:
-      countdown(label: "Začátek za", target: liveState.startAt, secondaryLabel: "Začátek", secondaryDate: liveState.startAt)
+      countdown(label: "VYRAZIT TEĎ", target: liveState.startAt, secondaryLabel: "Začátek", secondaryDate: liveState.startAt)
     case .inProgress:
       countdown(label: "Do konce", target: liveState.endAt, secondaryLabel: "Konec", secondaryDate: liveState.endAt)
     case .dayDone, .noSchedule:
@@ -176,6 +165,7 @@ private struct WatchCommanderStateView: View {
       if let target {
         Text(target, style: .timer)
           .font(.title3.bold().monospacedDigit())
+          .foregroundStyle(stateAccent)
           .lineLimit(1)
           .minimumScaleFactor(0.7)
       }

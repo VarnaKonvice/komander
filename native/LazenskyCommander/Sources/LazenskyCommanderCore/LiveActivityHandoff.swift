@@ -111,8 +111,17 @@ public enum CommanderLiveActivityHandoff {
   }
 
   public static func nextEvent(after event: ScheduleEvent, in schedule: Schedule) -> ScheduleEvent? {
-    guard let end = try? NativeAlarmContract.dateTime(date: event.date, time: event.end) else { return nil }
-    return schedule.events.filter { candidate in
+    CommanderLiveActivityHandoff.event(after: event, steps: 1, in: schedule)
+  }
+
+  /// Returns the Nth later canonical event on the same day. Used by the rolling
+  /// Live Activity window so stopping event 1 can replenish event 4 when three
+  /// activities are already prepared.
+  public static func event(after event: ScheduleEvent, steps: Int, in schedule: Schedule) -> ScheduleEvent? {
+    guard steps > 0,
+          let end = try? NativeAlarmContract.dateTime(date: event.date, time: event.end)
+    else { return nil }
+    let later = schedule.events.filter { candidate in
       guard candidate.stableId != event.stableId, candidate.date == event.date,
             let start = try? NativeAlarmContract.dateTime(date: candidate.date, time: candidate.start)
       else { return false }
@@ -120,7 +129,9 @@ public enum CommanderLiveActivityHandoff {
     }.sorted {
       if $0.start != $1.start { return $0.start < $1.start }
       return $0.stableId < $1.stableId
-    }.first
+    }
+    let index = steps - 1
+    return later.indices.contains(index) ? later[index] : nil
   }
 
   public static func isCanonicalFreeTimeSource(

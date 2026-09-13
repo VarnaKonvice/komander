@@ -108,8 +108,13 @@ struct CommanderTodayLiveCard: View {
     return Color(commanderHex: CommanderVisualAssets.accent(for: item.event))
   }
 
+  private var isBeforeFirstEvent: Bool {
+    presentation.mode == .upcoming && !presentation.timeline.contains { $0.phase == .past }
+  }
+
   private var statusColor: Color {
     switch presentation.mode {
+    case .upcoming: return isBeforeFirstEvent ? eventAccent : CommanderDesignTokens.Colors.freeBlue
     case .leaveNow: return CommanderDesignTokens.Colors.criticalRed
     case .inProgress: return CommanderDesignTokens.Colors.mealGreen
     default: return CommanderDesignTokens.Colors.freeBlue
@@ -118,7 +123,7 @@ struct CommanderTodayLiveCard: View {
 
   private var statusTitle: String {
     switch presentation.mode {
-    case .upcoming: return "Právě volno"
+    case .upcoming: return isBeforeFirstEvent ? "Následuje" : "Právě volno"
     case .leaveNow: return "Čas vyrazit"
     case .inProgress: return item?.event.kind == .meal ? "Právě jídlo" : "Právě probíhá"
     case .dayDone: return "Pro dnešek hotovo"
@@ -290,15 +295,15 @@ struct CommanderTodayLiveCard: View {
     if !item.event.location.isEmpty {
       Label(item.event.location, systemImage: "mappin.circle.fill")
         .commanderFont(.location)
-        .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
+        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(CommanderDesignTokens.Spacing.small)
-        .background(CommanderDesignTokens.Colors.locationBlue.opacity(0.08))
+        .background(CommanderDesignTokens.Colors.panelStroke.opacity(0.10))
         .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
         .overlay {
           RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-            .strokeBorder(CommanderDesignTokens.Colors.locationBlue.opacity(0.45), lineWidth: 1)
+            .strokeBorder(CommanderDesignTokens.Colors.panelStroke.opacity(0.28), lineWidth: 1)
         }
     }
   }
@@ -328,12 +333,24 @@ struct CommanderTodayLiveCard: View {
   private func countdown(_ item: CommanderDashboardEvent) -> some View {
     switch presentation.mode {
     case .upcoming:
-      if let minutes = presentation.liveState.minutesUntilLeave {
-        Label("Odchod za \(minutes) min", systemImage: "clock")
-          .commanderFont(.countdown)
-          .monospacedDigit()
-          .foregroundStyle(CommanderDesignTokens.Colors.amber)
-          .fixedSize(horizontal: false, vertical: true)
+      if item.leaveAt.timeIntervalSince(presentation.now) > 30 * 60 {
+        HStack(spacing: 7) {
+          Image(systemName: "clock")
+          Text("Následuje za")
+          Text(item.startAt, style: .timer).monospacedDigit()
+        }
+        .commanderFont(.countdown)
+        .foregroundStyle(CommanderDashboardPalette.eventAccent(for: item.event))
+        .fixedSize(horizontal: false, vertical: true)
+      } else {
+        HStack(spacing: 7) {
+          Image(systemName: "clock")
+          Text("Odchod za")
+          Text(item.leaveAt, style: .timer).monospacedDigit()
+        }
+        .commanderFont(.countdown)
+        .foregroundStyle(CommanderDesignTokens.Colors.amber)
+        .fixedSize(horizontal: false, vertical: true)
       }
     case .leaveNow:
       Label("Vyrazit právě teď", systemImage: "clock.badge.exclamationmark")
@@ -341,12 +358,14 @@ struct CommanderTodayLiveCard: View {
         .foregroundStyle(CommanderDesignTokens.Colors.criticalRed)
         .fixedSize(horizontal: false, vertical: true)
     case .inProgress:
-      let minutes = max(0, Int(ceil(item.endAt.timeIntervalSince(presentation.now) / 60)))
-      Label("Do konce \(minutes) min", systemImage: "clock")
-        .commanderFont(.countdown)
-        .monospacedDigit()
-        .foregroundStyle(statusColor)
-        .fixedSize(horizontal: false, vertical: true)
+      HStack(spacing: 7) {
+        Image(systemName: "clock")
+        Text("Do konce")
+        Text(item.endAt, style: .timer).monospacedDigit()
+      }
+      .commanderFont(.countdown)
+      .foregroundStyle(statusColor)
+      .fixedSize(horizontal: false, vertical: true)
     default:
       EmptyView()
     }

@@ -233,11 +233,22 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
                 timeAccent: bridgeAccent
               )
             } else if isDepartureHolder {
-              CommanderIslandDetails(location: context.attributes.location,
-                status: context.isStale ? "Odchod za" : "Následuje za",
-                statusAccent: context.isStale ? CommanderActivityTokens.amber : currentAccent,
-                timeLabel: "Začátek", timeValue: bridgeStartAt.formatted(date: .omitted, time: .shortened),
-                timeAccent: currentAccent)
+              if context.isStale, let leaveAt = context.state.nextLeaveAt {
+                CommanderIslandDetails(
+                  location: context.attributes.location,
+                  status: "Odchod za",
+                  statusAccent: CommanderActivityTokens.amber,
+                  timeLabel: "Začátek",
+                  timeValue: bridgeStartAt.formatted(date: .omitted, time: .shortened),
+                  timeAccent: currentAccent
+                )
+              } else {
+                CommanderIslandUpcomingDetails(
+                  location: context.attributes.location,
+                  startAt: bridgeStartAt,
+                  accent: currentAccent
+                )
+              }
             } else if hasHandoff {
               CommanderIslandDetails(
                 location: context.state.nextLocation,
@@ -293,11 +304,19 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
         }
       } minimal: {
         if !isStandby {
-          CommanderIslandStateGlyph(
-            symbol: isDepartureBridge || hasHandoff || (isDepartureHolder && context.isStale)
-              ? "figure.walk" : (context.isStale && !isDepartureHolder ? "checkmark" : displaySymbol),
-            accent: stateAccent
-          )
+          if isDepartureHolder, !context.isStale {
+            Text(bridgeStartAt, style: .timer)
+              .font(.caption2.bold().monospacedDigit())
+              .foregroundStyle(currentAccent)
+              .lineLimit(1)
+              .minimumScaleFactor(0.65)
+          } else {
+            CommanderIslandStateGlyph(
+              symbol: isDepartureBridge || hasHandoff || (isDepartureHolder && context.isStale)
+                ? "figure.walk" : (context.isStale && !isDepartureHolder ? "checkmark" : displaySymbol),
+              accent: stateAccent
+            )
+          }
         }
       }
       .keylineTint(isStandby ? .clear : stateAccent)
@@ -461,9 +480,10 @@ private struct CommanderProcedureWatchLiveActivityView: View {
           .font(.subheadline.bold().monospacedDigit())
           .foregroundStyle(accent)
       } else if let startAt = context.state.nextStartAt {
-        Text(startAt, style: .relative)
+        Text(startAt, style: .timer)
           .font(.subheadline.bold().monospacedDigit())
           .foregroundStyle(accent)
+          .lineLimit(1)
       }
     } else if hasHandoff, let leaveAt = context.state.nextLeaveAt {
       Text(leaveAt, style: .timer)
@@ -780,10 +800,11 @@ private struct CommanderUpcomingHero: View {
           .font(.system(size: 16, weight: .bold, design: .rounded))
           .foregroundStyle(accent)
           .lineLimit(1)
-        Text(startAt, style: .relative)
+        Text(startAt, style: .timer)
           .font(.system(size: 42, weight: .heavy, design: .rounded).monospacedDigit())
           .foregroundStyle(accent)
           .lineLimit(1)
+          .minimumScaleFactor(0.72)
       }
       .frame(width: CommanderActivityTokens.heroWidth, alignment: .center)
       .multilineTextAlignment(.center)
@@ -1045,6 +1066,51 @@ private struct CommanderIslandEventTitle: View {
   }
 }
 
+private struct CommanderIslandUpcomingDetails: View {
+  let location: String?
+  let startAt: Date
+  let accent: Color
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 5) {
+      HStack(spacing: 8) {
+        Text("Následuje za")
+          .font(.caption.bold())
+          .foregroundStyle(accent)
+        Spacer(minLength: 8)
+        Text(startAt, style: .timer)
+          .font(.subheadline.bold().monospacedDigit())
+          .foregroundStyle(accent)
+          .lineLimit(1)
+      }
+      HStack(spacing: 6) {
+        if let location, !location.isEmpty {
+          Label(location, systemImage: "mappin.circle.fill")
+            .foregroundStyle(CommanderActivityTokens.textSecondary)
+            .lineLimit(1)
+        }
+        Spacer(minLength: 8)
+        Image(systemName: "clock.fill")
+          .foregroundStyle(accent)
+        Text("Začátek")
+          .foregroundStyle(CommanderActivityTokens.textSecondary)
+        Text(startAt, style: .time)
+          .fontWeight(.bold)
+          .monospacedDigit()
+          .foregroundStyle(CommanderActivityTokens.textPrimary)
+      }
+      .font(.caption)
+    }
+    .padding(.horizontal, 8)
+    .padding(.vertical, 6)
+    .background(CommanderActivityTokens.panel.opacity(0.72), in: RoundedRectangle(cornerRadius: 10))
+    .overlay {
+      RoundedRectangle(cornerRadius: 10)
+        .strokeBorder(accent.opacity(0.42), lineWidth: 1)
+    }
+  }
+}
+
 private struct CommanderIslandDetails: View {
   let location: String?
   let status: String?
@@ -1254,7 +1320,7 @@ private struct CommanderUpcomingTiming: View {
   let size: CommanderTimingSize
 
   var body: some View {
-    Text(startAt, style: .relative)
+    Text(startAt, style: .timer)
       .font(timingFont)
       .foregroundStyle(accent)
       .lineLimit(1)

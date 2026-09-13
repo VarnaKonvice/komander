@@ -166,17 +166,41 @@ import Testing
   #expect(stop.contains("CommanderDepartureHolder.stopHolderID("))
   #expect(stop.contains("await handoff.end("))
   #expect(!stop.contains(".request(") && !stop.contains("reconcileHolder(") && !stop.contains("scheduleRunning("))
+  #expect(stop.contains("scheduleNextFromStop("))
   let live = try String(contentsOf: root.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderLiveActivity/LazenskyCommanderLiveActivity.swift"), encoding: .utf8)
   #expect(live.contains("CommanderDepartureBridgeHero(startAt: leaveAt, isDepartureCountdown: true)"))
   #expect(live.contains("context.isStale ? \"Odchod za\" : \"Následuje za\""))
   #expect(live.contains("supplementalActivityFamilies([.small])"))
-  #expect(live.contains("Text(startAt, style: .relative)"))
+  #expect(live.contains("Text(startAt, style: .timer)"))
   #expect(live.contains("CommanderUpcomingTiming(startAt: bridgeStartAt, accent: currentAccent"))
   #expect(live.contains("CommanderIslandStateGlyph"))
   #expect(live.contains("isDepartureCountdown ? \"Odchod za\" : \"VYRAZIT TEĎ\""))
   #expect(adapter.contains("CommanderDepartureHolder.countdownBeginsAt(expected)"))
   #expect(adapter.contains("phase: .departureHolder"))
   #expect(adapter.contains("|| hasVerifiedDepartureHolder(for: alarm, now: now)"))
+}
+
+@Test func rollingWindowSelectsFourthEventAfterThreePreparedSlots() throws {
+  let now = try #require(ISO8601DateFormatter().date(from: "2026-09-13T08:00:00Z"))
+  let day = "2026-09-13"
+  let events = (1...5).map { index in
+    ScheduleEvent(
+      stableId: "event-\(index)", date: day,
+      start: String(format: "%02d:00", 9 + index),
+      end: String(format: "%02d:20", 9 + index),
+      title: "Event \(index)", location: "Test", kind: .procedure,
+      procedureType: "Test", mealType: nil, leadTimeMinutes: 10
+    )
+  }
+  let schedule = Schedule(
+    schemaVersion: 1, scheduleVersion: 1, updatedAt: ISO8601DateFormatter().string(from: now),
+    stay: ["spa": "Test"], events: events,
+    settings: ScheduleSettings(defaultLeadTimeMinutes: 10, procedureTypeOverrides: [:], mealOverrides: [:])
+  )
+  #expect(CommanderLiveActivityHandoff.event(after: events[0], steps: 1, in: schedule)?.stableId == "event-2")
+  #expect(CommanderLiveActivityHandoff.event(after: events[0], steps: CommanderLiveActivityHandoff.maximumPreparedActivities, in: schedule)?.stableId == "event-4")
+  #expect(CommanderLiveActivityHandoff.event(after: events[1], steps: CommanderLiveActivityHandoff.maximumPreparedActivities, in: schedule)?.stableId == "event-5")
+  #expect(CommanderLiveActivityHandoff.event(after: events[2], steps: CommanderLiveActivityHandoff.maximumPreparedActivities, in: schedule) == nil)
 }
 
 private struct HolderFixture {

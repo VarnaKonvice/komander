@@ -63,7 +63,7 @@
       "label": "Jodobrom",
       "watchLabel": "Jodobrom",
       "accent": "#B27A2C",
-      "googleCalendarColorId": "5",
+      "googleCalendarColorId": "6",
       "priority": 220,
       "keywords": [
         "jodobrom",
@@ -131,7 +131,7 @@
       "label": "Masáž",
       "watchLabel": "Masáž",
       "accent": "#65A30D",
-      "googleCalendarColorId": "10",
+      "googleCalendarColorId": "5",
       "priority": 10,
       "keywords": [
         "masáž",
@@ -177,7 +177,7 @@
       "label": "Individuální rehab",
       "watchLabel": "Rehab",
       "accent": "#22A06B",
-      "googleCalendarColorId": "10",
+      "googleCalendarColorId": "2",
       "priority": 100,
       "keywords": [
         "ltv",
