@@ -36,7 +36,7 @@ struct CommanderHeroView: View {
             Text("Začátek za")
               .font(.subheadline.weight(.semibold))
               .foregroundStyle(.white.opacity(0.72))
-            Text(startAt, style: .timer)
+            Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
               .font(.largeTitle.bold().monospacedDigit())
               .foregroundStyle(CommanderDashboardPalette.timeGold)
           }
@@ -49,7 +49,7 @@ struct CommanderHeroView: View {
             Text("Do konce")
               .font(.subheadline.weight(.semibold))
               .foregroundStyle(.white.opacity(0.72))
-            Text(endAt, style: .timer)
+            Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<endAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
               .font(.largeTitle.bold().monospacedDigit())
               .foregroundStyle(.white)
           }

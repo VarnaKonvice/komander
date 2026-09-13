@@ -127,17 +127,20 @@ private struct CommanderWatchWidgetView: View {
 
   var body: some View {
     HStack(spacing: 7) {
-      if let icon {
-        Image(icon.key, bundle: .main)
-          .resizable()
-          .scaledToFit()
-          .frame(width: 38, height: 38)
-          .background(.white)
-          .clipShape(RoundedRectangle(cornerRadius: 6))
-          .overlay {
-            RoundedRectangle(cornerRadius: 6).stroke(accent, lineWidth: 1.5)
-          }
-          .accessibilityHidden(true)
+      if let event = entry.liveState.event {
+        Image(systemName: CommanderBrandAssets.procedureSymbol(
+          iconKey: icon?.key,
+          title: event.title,
+          isMeal: event.kind == .meal
+        ))
+        .font(.system(size: 21, weight: .semibold))
+        .foregroundStyle(accent)
+        .frame(width: 36, height: 36)
+        .background(accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 8))
+        .overlay {
+          RoundedRectangle(cornerRadius: 8).stroke(accent.opacity(0.72), lineWidth: 1.2)
+        }
+        .accessibilityHidden(true)
       }
 
       VStack(alignment: .leading, spacing: 1) {
@@ -191,7 +194,11 @@ private struct CommanderWatchWidgetView: View {
   private var timing: some View {
     switch entry.liveState.state {
     case .upcoming:
-      timer(label: "Odchod za", target: entry.liveState.leaveAt, clock: entry.liveState.startAt)
+      if let leaveAt = entry.liveState.leaveAt, leaveAt.timeIntervalSince(entry.date) <= 30 * 60 {
+        timer(label: "Odchod za", target: leaveAt, clock: entry.liveState.startAt)
+      } else {
+        timer(label: "Následuje za", target: entry.liveState.startAt, clock: entry.liveState.startAt)
+      }
     case .leaveNow:
       timer(label: "Začátek za", target: entry.liveState.startAt, clock: nil)
     case .inProgress:
@@ -211,8 +218,13 @@ private struct CommanderWatchWidgetView: View {
     HStack(spacing: 3) {
       Text(label)
       if let target {
-        Text(target, style: .timer)
-          .monospacedDigit()
+        Text(.currentDate, format: .timer(
+          countingDownIn: Date.distantPast..<target,
+          showsHours: true,
+          maxFieldCount: 2,
+          maxPrecision: .seconds(1)
+        ))
+        .monospacedDigit()
       }
       if let clock {
         Text(clock, style: .time)

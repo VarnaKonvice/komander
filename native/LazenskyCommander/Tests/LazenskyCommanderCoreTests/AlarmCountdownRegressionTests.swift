@@ -120,7 +120,7 @@ import Testing
   #expect(adapter.contains("if let visibleIDs, !visibleIDs.contains(platformID) { continue }"))
   #expect(!adapter.contains("countdown(id:"))
   #expect(widget.contains("ActivityConfiguration(for: AlarmAttributes<CommanderAlarmMetadata>.self)"))
-  #expect(widget.contains("Text(countdown.fireDate, style: .timer)"))
+  #expect(widget.contains("countingDownIn: Date.distantPast..<countdown.fireDate, showsHours: true, maxFieldCount: 2"))
 }
 
 private func regressionDate(_ time: String) throws -> Date {

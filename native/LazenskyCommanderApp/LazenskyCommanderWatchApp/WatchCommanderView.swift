@@ -67,7 +67,8 @@ private struct WatchCommanderStateView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.top, 16)
+        .padding(.bottom, 6)
       }
     }
     .foregroundStyle(.white)
@@ -163,7 +164,7 @@ private struct WatchCommanderStateView: View {
         .font(.caption2)
         .foregroundStyle(.white.opacity(0.76))
       if let target {
-        Text(target, style: .timer)
+        Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<target, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
           .font(.title3.bold().monospacedDigit())
           .foregroundStyle(stateAccent)
           .lineLimit(1)

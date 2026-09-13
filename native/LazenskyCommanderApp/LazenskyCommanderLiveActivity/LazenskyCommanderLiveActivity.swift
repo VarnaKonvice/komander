@@ -305,7 +305,7 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
       } minimal: {
         if !isStandby {
           if isDepartureHolder, !context.isStale {
-            Text(bridgeStartAt, style: .timer)
+            Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<bridgeStartAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
               .font(.caption2.bold().monospacedDigit())
               .foregroundStyle(currentAccent)
               .lineLimit(1)
@@ -420,9 +420,16 @@ private struct CommanderProcedureWatchLiveActivityView: View {
   }
   private var eventAccent: Color {
     CommanderActivityTokens.eventAccent(
-      kind: context.attributes.kind,
-      iconKey: context.attributes.iconKey,
-      title: context.attributes.title
+      kind: isBridge || hasHandoff ? context.state.nextKind : context.attributes.kind,
+      iconKey: isBridge || hasHandoff ? context.state.nextIconKey : context.attributes.iconKey,
+      title: title
+    )
+  }
+  private var eventSymbol: String {
+    CommanderActivityTokens.eventSymbol(
+      kind: isBridge || hasHandoff ? context.state.nextKind : context.attributes.kind,
+      iconKey: isBridge || hasHandoff ? context.state.nextIconKey : context.attributes.iconKey,
+      title: title
     )
   }
   private var accent: Color {
@@ -434,7 +441,7 @@ private struct CommanderProcedureWatchLiveActivityView: View {
   }
   private var status: String {
     if isBridge { return "VYRAZIT TEĎ" }
-    if isHolder { return context.isStale ? "Odchod za" : "Následuje za" }
+    if isHolder { return context.isStale ? "Odchod za" : "Následuje" }
     if hasHandoff { return "Právě volno" }
     if context.isStale { return "Skončilo" }
     return context.attributes.kind == .meal ? "Právě jídlo" : "Právě probíhá"
@@ -443,7 +450,11 @@ private struct CommanderProcedureWatchLiveActivityView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 3) {
       HStack(spacing: 5) {
-        CommanderActivityBrandMark(size: 16)
+        Image(systemName: eventSymbol)
+          .font(.caption.bold())
+          .foregroundStyle(eventAccent)
+          .frame(width: 18, height: 18)
+          .background(eventAccent.opacity(0.14), in: RoundedRectangle(cornerRadius: 5))
         Text(status)
           .font(.caption2.bold())
           .foregroundStyle(accent)
@@ -471,22 +482,22 @@ private struct CommanderProcedureWatchLiveActivityView: View {
   @ViewBuilder
   private var timing: some View {
     if isBridge, let startAt = context.state.nextStartAt {
-      Text(startAt, style: .timer)
+      Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
         .font(.subheadline.bold().monospacedDigit())
         .foregroundStyle(accent)
     } else if isHolder {
       if context.isStale, let leaveAt = context.state.nextLeaveAt {
-        Text(leaveAt, style: .timer)
+        Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<leaveAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
           .font(.subheadline.bold().monospacedDigit())
           .foregroundStyle(accent)
       } else if let startAt = context.state.nextStartAt {
-        Text(startAt, style: .timer)
+        Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
           .font(.subheadline.bold().monospacedDigit())
           .foregroundStyle(accent)
           .lineLimit(1)
       }
     } else if hasHandoff, let leaveAt = context.state.nextLeaveAt {
-      Text(leaveAt, style: .timer)
+      Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<leaveAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
         .font(.subheadline.bold().monospacedDigit())
         .foregroundStyle(accent)
     } else if context.isStale {
@@ -494,7 +505,7 @@ private struct CommanderProcedureWatchLiveActivityView: View {
         .font(.subheadline.bold().monospacedDigit())
         .foregroundStyle(accent)
     } else {
-      Text(context.attributes.endAt, style: .timer)
+      Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<context.attributes.endAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
         .font(.subheadline.bold().monospacedDigit())
         .foregroundStyle(accent)
     }
@@ -689,7 +700,7 @@ private struct CommanderAlarmHero: View {
 
         if mode.isAlert {
           if let startDate = CommanderAlarmTime.startDate(from: startAt) {
-            Text(startDate, style: .timer)
+            Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startDate, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
               .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
               .foregroundStyle(accent)
               .lineLimit(1)
@@ -757,7 +768,7 @@ private struct CommanderDepartureBridgeHero: View {
           .font(.system(size: isDepartureCountdown ? 16 : 19, weight: .bold, design: .rounded))
           .foregroundStyle(accent)
           .lineLimit(1)
-        Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startAt, showsHours: false))
+        Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
           .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
           .foregroundStyle(accent)
           .lineLimit(1)
@@ -800,7 +811,7 @@ private struct CommanderUpcomingHero: View {
           .font(.system(size: 16, weight: .bold, design: .rounded))
           .foregroundStyle(accent)
           .lineLimit(1)
-        Text(startAt, style: .timer)
+        Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
           .font(.system(size: 42, weight: .heavy, design: .rounded).monospacedDigit())
           .foregroundStyle(accent)
           .lineLimit(1)
@@ -851,7 +862,7 @@ private struct CommanderProcedureHero: View {
             .foregroundStyle(CommanderActivityTokens.textPrimary)
             .lineLimit(1)
         } else {
-          Text(endAt, style: .timer)
+          Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<endAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
             .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
             .foregroundStyle(accent)
             .lineLimit(1)
@@ -890,7 +901,7 @@ private struct CommanderTransitionHero: View {
           .font(.system(size: 16, weight: .bold, design: .rounded))
           .foregroundStyle(CommanderActivityTokens.freeBlue)
           .lineLimit(1)
-        Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<leaveAt, showsHours: false))
+        Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<leaveAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
           .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
           .foregroundStyle(CommanderActivityTokens.freeBlue)
           .lineLimit(1)
@@ -942,7 +953,7 @@ private struct CommanderProcedureSideStatus: View {
           .font(.system(size: 11, weight: .semibold))
           .foregroundStyle(CommanderActivityTokens.textSecondary)
           .lineLimit(1)
-        Text(endAt, style: .timer)
+        Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<endAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
           .font(.system(size: 18, weight: .bold).monospacedDigit())
           .foregroundStyle(accent)
           .lineLimit(1)
@@ -1078,7 +1089,7 @@ private struct CommanderIslandUpcomingDetails: View {
           .font(.caption.bold())
           .foregroundStyle(accent)
         Spacer(minLength: 8)
-        Text(startAt, style: .timer)
+        Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
           .font(.subheadline.bold().monospacedDigit())
           .foregroundStyle(accent)
           .lineLimit(1)
@@ -1269,7 +1280,7 @@ private struct CommanderProcedureTiming: View {
               .font(.caption.weight(.semibold))
               .foregroundStyle(CommanderActivityTokens.textSecondary)
           }
-          Text(endAt, style: .timer)
+          Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<endAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
             .font(timingFont)
             .foregroundStyle(accent)
             .lineLimit(1)
@@ -1296,7 +1307,7 @@ private struct CommanderDepartureBridgeTiming: View {
   var isDepartureCountdown = false
 
   var body: some View {
-    Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startAt, showsHours: false))
+    Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
       .font(timingFont)
       .foregroundStyle(isDepartureCountdown ? CommanderActivityTokens.amber : CommanderActivityTokens.criticalRed)
       .lineLimit(1)
@@ -1320,7 +1331,7 @@ private struct CommanderUpcomingTiming: View {
   let size: CommanderTimingSize
 
   var body: some View {
-    Text(startAt, style: .timer)
+    Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<startAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
       .font(timingFont)
       .foregroundStyle(accent)
       .lineLimit(1)
@@ -1343,7 +1354,7 @@ private struct CommanderNextDepartureTiming: View {
   let size: CommanderTimingSize
 
   var body: some View {
-    Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<leaveAt, showsHours: false))
+    Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<leaveAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
       .font(timingFont)
       .foregroundStyle(CommanderActivityTokens.freeBlue)
       .lineLimit(1)
@@ -1379,7 +1390,7 @@ private struct CommanderAlarmCountdown: View {
   var body: some View {
     switch mode {
     case .countdown(let countdown):
-      Text(countdown.fireDate, style: .timer)
+      Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<countdown.fireDate, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1)))
     case .paused(let paused):
       Text(CommanderAlarmTime.duration(paused.totalCountdownDuration - paused.previouslyElapsedDuration))
     case .alert:

@@ -337,7 +337,7 @@ struct CommanderTodayLiveCard: View {
         HStack(spacing: 7) {
           Image(systemName: "clock")
           Text("Následuje za")
-          Text(item.startAt, style: .timer).monospacedDigit()
+          Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<item.startAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1))).monospacedDigit()
         }
         .commanderFont(.countdown)
         .foregroundStyle(CommanderDashboardPalette.eventAccent(for: item.event))
@@ -346,7 +346,7 @@ struct CommanderTodayLiveCard: View {
         HStack(spacing: 7) {
           Image(systemName: "clock")
           Text("Odchod za")
-          Text(item.leaveAt, style: .timer).monospacedDigit()
+          Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<item.leaveAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1))).monospacedDigit()
         }
         .commanderFont(.countdown)
         .foregroundStyle(CommanderDesignTokens.Colors.amber)
@@ -361,7 +361,7 @@ struct CommanderTodayLiveCard: View {
       HStack(spacing: 7) {
         Image(systemName: "clock")
         Text("Do konce")
-        Text(item.endAt, style: .timer).monospacedDigit()
+        Text(.currentDate, format: .timer(countingDownIn: Date.distantPast..<item.endAt, showsHours: true, maxFieldCount: 2, maxPrecision: .seconds(1))).monospacedDigit()
       }
       .commanderFont(.countdown)
       .foregroundStyle(statusColor)
