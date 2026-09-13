@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "scheduleVersion": 7,
-  "updatedAt": "2026-09-13T08:09:33Z",
+  "scheduleVersion": 8,
+  "updatedAt": "2026-09-13T12:18:24Z",
   "stay": {
     "spa": "Lázeňský Commander – simulace pobytu",
     "dateFrom": "2026-09-12",
@@ -44,8 +44,8 @@
     {
       "stableId": "sim-0913-breakfast",
       "date": "2026-09-13",
-      "start": "11:45",
-      "end": "12:15",
+      "start": "15:45",
+      "end": "16:15",
       "title": "Snídaně",
       "location": "Jídelna",
       "kind": "meal",
@@ -54,8 +54,8 @@
     {
       "stableId": "sim-0913-rehab",
       "date": "2026-09-13",
-      "start": "12:45",
-      "end": "13:05",
+      "start": "16:35",
+      "end": "16:55",
       "title": "Individuální rehabilitace",
       "location": "Rehabilitace",
       "kind": "procedure",
@@ -64,8 +64,8 @@
     {
       "stableId": "sim-0913-massage",
       "date": "2026-09-13",
-      "start": "13:40",
-      "end": "14:00",
+      "start": "17:15",
+      "end": "17:35",
       "title": "Masáž",
       "location": "Rehabilitace",
       "kind": "procedure",
@@ -74,8 +74,8 @@
     {
       "stableId": "sim-0913-lunch",
       "date": "2026-09-13",
-      "start": "14:30",
-      "end": "15:15",
+      "start": "17:55",
+      "end": "18:40",
       "title": "Oběd",
       "location": "Jídelna",
       "kind": "meal",
@@ -84,8 +84,8 @@
     {
       "stableId": "sim-0913-hydrojet",
       "date": "2026-09-13",
-      "start": "15:45",
-      "end": "16:05",
+      "start": "19:00",
+      "end": "19:20",
       "title": "Hydrojet",
       "location": "Rehabilitace",
       "kind": "procedure",
@@ -94,8 +94,8 @@
     {
       "stableId": "sim-0913-magnet",
       "date": "2026-09-13",
-      "start": "16:45",
-      "end": "17:05",
+      "start": "19:40",
+      "end": "20:00",
       "title": "Magnetoterapie",
       "location": "Elektroléčba",
       "kind": "procedure",
@@ -104,8 +104,8 @@
     {
       "stableId": "sim-0913-dinner",
       "date": "2026-09-13",
-      "start": "18:30",
-      "end": "19:00",
+      "start": "20:30",
+      "end": "21:00",
       "title": "Večeře",
       "location": "Jídelna",
       "kind": "meal",
