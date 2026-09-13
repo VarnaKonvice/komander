@@ -1259,6 +1259,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.varnakonvice.lazenskycommander;
 				INFOPLIST_KEY_WKSupportsLiveActivityLaunchAttributeTypes = (
+					CommanderProcedureLiveActivityAttributes,
 				);
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
@@ -1288,6 +1289,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.varnakonvice.lazenskycommander;
 				INFOPLIST_KEY_WKSupportsLiveActivityLaunchAttributeTypes = (
+					CommanderProcedureLiveActivityAttributes,
 				);
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
