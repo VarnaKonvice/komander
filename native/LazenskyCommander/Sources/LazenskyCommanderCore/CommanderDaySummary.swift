@@ -51,7 +51,7 @@ public struct CommanderDaySummary: Equatable, Sendable {
     )
   }
 
-  private static func isDinner(_ event: ScheduleEvent) -> Bool {
+  fileprivate static func isDinner(_ event: ScheduleEvent) -> Bool {
     guard event.kind == .meal else { return false }
     let type = event.mealType?.trimmingCharacters(in: .whitespacesAndNewlines)
     let name = type.flatMap { $0.isEmpty ? nil : $0 } ?? event.title
@@ -59,7 +59,7 @@ public struct CommanderDaySummary: Equatable, Sendable {
       .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "cs_CZ")) == "vecere"
   }
 
-  private static func freeInterval(
+  fileprivate static func freeInterval(
     before dinner: CommanderDashboardEvent,
     notBefore start: Date,
     timeline: [CommanderDashboardEvent]
@@ -72,5 +72,38 @@ public struct CommanderDaySummary: Equatable, Sendable {
     let freeStart = max(start, occupiedUntil)
     guard freeStart < dinner.startAt else { return nil }
     return DateInterval(start: freeStart, end: dinner.startAt)
+  }
+}
+
+public struct CommanderDayOverview: Equatable, Sendable {
+  public let date: Date
+  public let procedureCount: Int
+  public let procedureEndAt: Date?
+  public let dinnerStartAt: Date?
+  public let freeBeforeDinner: DateInterval?
+  public let firstRelevantStartAt: Date?
+  public let firstRelevantTitle: String?
+
+  public var freeBeforeDinnerMinutes: Int? {
+    freeBeforeDinner.map { Int(ceil($0.duration / 60)) }
+  }
+
+  public static func make(date: Date, timeline: [CommanderDashboardEvent], now: Date) -> Self {
+    let summary = CommanderDaySummary.make(timeline: timeline, now: now)
+    let dinner = timeline.first { CommanderDaySummary.isDinner($0.event) }
+    let freeBeforeDinner = summary.lastProcedureEndAt.flatMap { procedureEnd in
+      dinner.flatMap { CommanderDaySummary.freeInterval(before: $0, notBefore: procedureEnd, timeline: timeline) }
+    }
+    let firstRelevant = timeline.first { $0.phase != .past } ?? timeline.first
+
+    return Self(
+      date: date,
+      procedureCount: summary.procedureCount,
+      procedureEndAt: summary.lastProcedureEndAt,
+      dinnerStartAt: summary.dinnerStartAt,
+      freeBeforeDinner: freeBeforeDinner,
+      firstRelevantStartAt: firstRelevant?.startAt,
+      firstRelevantTitle: firstRelevant?.event.title
+    )
   }
 }

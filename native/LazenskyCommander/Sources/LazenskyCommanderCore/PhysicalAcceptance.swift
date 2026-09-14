@@ -28,12 +28,12 @@ public struct PhysicalAcceptanceRun: Equatable, Sendable {
   public init(now: Date, id: UUID = UUID()) throws {
     self.id = id
     self.now = now
-    // Canonical times have minute precision. Keep 2-3 minutes for preflight, then
-    // a one-minute scheduled countdown ending 5-6 minutes after generation.
+    // Keep this human-observable: the first alarm is roughly 4-5 minutes after
+    // generation and the full two-event sequence takes about a quarter hour.
     let anchor = Date(timeIntervalSince1970: ceil(now.timeIntervalSince1970 / 60) * 60)
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
-    guard calendar.isDate(now, inSameDayAs: anchor.addingTimeInterval(7 * 60)) else {
+    guard calendar.isDate(now, inSameDayAs: anchor.addingTimeInterval(15 * 60)) else {
       throw PhysicalAcceptanceError.midnightBoundary
     }
     let formatter = DateFormatter()
@@ -45,9 +45,9 @@ public struct PhysicalAcceptanceRun: Equatable, Sendable {
     func time(_ minute: Int) -> String { formatter.string(from: anchor.addingTimeInterval(Double(minute * 60))) }
     let prefix = Self.stableIDPrefix + id.uuidString
     schedule = Schedule(schemaVersion: 1, scheduleVersion: 1, updatedAt: ISO8601DateFormatter().string(from: now), stay: ["spa": "Lokální fyzický test"], events: [
-      ScheduleEvent(stableId: prefix + ".meal", date: day, start: time(3), end: time(4), title: "TEST – Snídaně", location: "Testovací jídelna", kind: .meal, procedureType: nil, mealType: "Snídaně", leadTimeMinutes: nil),
-      ScheduleEvent(stableId: prefix + ".procedure", date: day, start: time(6), end: time(7), title: "TEST – Magnetoterapie", location: "Testovací elektroléčba", kind: .procedure, procedureType: "Magnetoterapie", mealType: nil, leadTimeMinutes: 1)
-    ], settings: ScheduleSettings(defaultLeadTimeMinutes: 1, procedureTypeOverrides: [:], mealOverrides: ["Snídaně": 1]))
+      ScheduleEvent(stableId: prefix + ".meal", date: day, start: time(6), end: time(8), title: "TEST – Jídlo", location: "Testovací jídelna", kind: .meal, procedureType: nil, mealType: "Oběd", leadTimeMinutes: 2),
+      ScheduleEvent(stableId: prefix + ".procedure", date: day, start: time(13), end: time(15), title: "TEST – Magnetoterapie", location: "Testovací elektroléčba", kind: .procedure, procedureType: "Magnetoterapie", mealType: nil, leadTimeMinutes: 2)
+    ], settings: ScheduleSettings(defaultLeadTimeMinutes: 2, procedureTypeOverrides: [:], mealOverrides: ["Oběd": 2]))
     try NativeAlarmContract.validateCanonical(schedule)
   }
 
@@ -65,8 +65,6 @@ public struct PhysicalAcceptanceCleanupPlan: Equatable, Sendable {
   }
 }
 
-/// Only this private suite is opened; production/E2E UserDefaults are not dependencies.
-/// The ledger survives app termination between schedule() and ManagedAlarmState persistence.
 public actor PhysicalAcceptanceOwnershipStore {
   public static let ownershipKey = "ownedPlatformAlarms.v1"
   private let defaults: UserDefaults
@@ -99,8 +97,6 @@ private struct LocalAcceptanceSchedule: ScheduleServing {
   func fetchSchedule() async throws -> Schedule { schedule }
 }
 
-/// A fresh instance owns fresh in-memory snapshot and managed state for exactly one run.
-/// Uses the production canonical-first coordinator/reconciliation, never a remote feed.
 public struct PhysicalAcceptanceSession: Sendable {
   public let run: PhysicalAcceptanceRun
   public let alarmStore = InMemoryAlarmStateStore()
@@ -161,37 +157,82 @@ public struct PhysicalAcceptancePreflight: Sendable {
     checkedAt = now
     let payload = try run.payload()
     var problems: [String] = []
-    if !syncVerified { problems.append("Reconciliation dosud není ověřená.") }
-    if !procedureActivityPrepared { problems.append("Produkční procedure Live Activity není připravená.") }
+    if !syncVerified { problems.append("Synchronizace zatím není ověřená.") }
+    if !procedureActivityPrepared { problems.append("Živé aktivity pro testovací události nejsou připravené.") }
     if observations.count != 2 || Set(observations.map(\.platformID)).count != 2 || Set(observations.map(\.platformID)) != Set(managed.records.values.map(\.platformAlarmID)) {
-      problems.append("Počet nebo identita systémových alarmů neodpovídá dvěma managed alarmům.")
+      problems.append("Počet nebo identita systémových alarmů neodpovídá dvěma spravovaným alarmům.")
     }
     if let first = payload.alarms.first, try NativeAlarmContract.date(fromLocalISO: first.leaveAt).timeIntervalSince(now) < 60 {
-      problems.append("Do prvního alarmu zbývá méně než minuta. Tento běh není READY.")
+      problems.append("Do prvního alarmu zbývá méně než minuta. Tento běh není připravený.")
     }
+
+    func hasPriorHandoffSource(for event: ScheduleEvent, leaveAt: Date) -> Bool {
+      run.schedule.events.contains { candidate in
+        guard candidate.stableId != event.stableId,
+              candidate.date == event.date,
+              let candidateEnd = try? NativeAlarmContract.dateTime(date: candidate.date, time: candidate.end)
+        else { return false }
+        return candidateEnd <= leaveAt
+      }
+    }
+
     rows = try payload.alarms.map { alarm in
       let event = run.schedule.events.first { $0.stableId == alarm.stableId }!
       let resolution = try NativeAlarmContract.resolvedLeadTime(event: event, schedule: run.schedule, overrides: run.overrides)
       let matches = observations.filter { $0.stableID == alarm.stableId }
       let actual = matches.count == 1 ? matches.first : nil
       let plan = try AlarmCountdown.plan(for: alarm, in: run.schedule, now: actual?.configuredAt ?? run.now)
+      let usesPreparedHandoff = procedureActivityPrepared && hasPriorHandoffSource(for: event, leaveAt: plan.scheduledAlertAt)
       var errors: [String] = []
+
       if let actual, let configuredAt = actual.configuredAt {
         if configuredAt < run.now || configuredAt > now { errors.append("Neplatný čas konfigurace.") }
-        if managed.records[alarm.stableId]?.platformAlarmID != actual.platformID { errors.append("Nesouhlasí managed ID.") }
+        if managed.records[alarm.stableId]?.platformAlarmID != actual.platformID { errors.append("Nesouhlasí spravované ID.") }
         if actual.postAlert != nil { errors.append("Neočekávaný postAlert.") }
-        if let preAlert = actual.preAlert, preAlert.isFinite, abs(preAlert - plan.countdownWindow) <= 1 {} else { errors.append("Nesouhlasí uložený preAlert.") }
-        if let start = plan.scheduledStartAt {
-          if actual.scheduleKind != "fixed" || actual.fixedScheduleAt.map({ abs($0.timeIntervalSince(start)) <= 1 }) != true { errors.append("Nesouhlasí fixed začátek countdownu.") }
-          if actual.state != "scheduled" { errors.append("Budoucí countdown není scheduled.") }
+
+        if usesPreparedHandoff {
+          if actual.preAlert != nil { errors.append("Alarm po připraveném volnu nemá mít duplicitní systémový předodpočet.") }
+          if actual.scheduleKind != "fixed" || actual.fixedScheduleAt.map({ abs($0.timeIntervalSince(plan.scheduledAlertAt)) <= 1 }) != true {
+            errors.append("Přímý alarm není naplánovaný přesně na čas odchodu.")
+          }
+          if actual.state != "scheduled" { errors.append("Přímý budoucí alarm není naplánovaný.") }
         } else {
-          if actual.scheduleKind != "none" || actual.fixedScheduleAt != nil { errors.append("Okamžitý countdown nemá schedule=nil.") }
-          if actual.state != "countdown" || actual.fireDate == nil { errors.append("Systém nepotvrdil okamžitý countdown a jeho fireDate.") }
+          if let preAlert = actual.preAlert, preAlert.isFinite, abs(preAlert - plan.countdownWindow) <= 1 {} else {
+            errors.append("Nesouhlasí uložený preAlert.")
+          }
+          if let start = plan.scheduledStartAt {
+            if actual.scheduleKind != "fixed" || actual.fixedScheduleAt.map({ abs($0.timeIntervalSince(start)) <= 1 }) != true {
+              errors.append("Nesouhlasí pevný začátek odpočtu.")
+            }
+            if actual.state != "scheduled" { errors.append("Budoucí odpočet není naplánovaný.") }
+          } else {
+            if actual.scheduleKind != "none" || actual.fixedScheduleAt != nil { errors.append("Okamžitý odpočet nemá schedule=nil.") }
+            if actual.state != "countdown" || actual.fireDate == nil { errors.append("Systém nepotvrdil okamžitý odpočet a jeho čas alarmu.") }
+          }
         }
-        let endpoint = AlarmCountdown.effectiveAlertDate(fixedScheduleAt: actual.fixedScheduleAt, preAlert: actual.preAlert, countdownFireDate: actual.fireDate)
-        if endpoint.map({ abs($0.timeIntervalSince(plan.scheduledAlertAt)) <= 1 }) != true { errors.append("Výsledný fire time neodpovídá canonical leaveAt.") }
-      } else { errors.append("Chybí jednoznačný systémový read-back a čas konfigurace.") }
-      return PhysicalPreflightRow(alarm: alarm, leadTime: resolution, expectedPlan: plan, expectedCountdownStart: plan.scheduledStartAt ?? actual?.configuredAt ?? run.now, actual: actual, issues: errors)
+
+        let endpoint = AlarmCountdown.effectiveAlertDate(
+          fixedScheduleAt: actual.fixedScheduleAt,
+          preAlert: actual.preAlert,
+          countdownFireDate: actual.fireDate
+        )
+        if endpoint.map({ abs($0.timeIntervalSince(plan.scheduledAlertAt)) <= 1 }) != true {
+          errors.append("Výsledný čas alarmu neodpovídá času odchodu.")
+        }
+      } else {
+        errors.append("Chybí jednoznačné systémové ověření a čas konfigurace.")
+      }
+
+      return PhysicalPreflightRow(
+        alarm: alarm,
+        leadTime: resolution,
+        expectedPlan: plan,
+        expectedCountdownStart: usesPreparedHandoff
+          ? plan.scheduledAlertAt
+          : (plan.scheduledStartAt ?? actual?.configuredAt ?? run.now),
+        actual: actual,
+        issues: errors
+      )
     }
     issues = problems
   }

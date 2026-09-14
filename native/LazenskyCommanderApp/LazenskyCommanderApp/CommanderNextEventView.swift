@@ -16,31 +16,47 @@ struct CommanderNextEventView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
       CommanderSectionTitle(title: title, systemImage: "arrow.right.circle")
-      HStack(alignment: .center, spacing: 12) {
-        CommanderEventIconView(event: item.event, size: 48)
-        VStack(alignment: .leading, spacing: 3) {
-          Text(item.event.title)
-            .font(.headline)
-            .foregroundStyle(.white)
-            .fixedSize(horizontal: false, vertical: true)
-          if !item.event.location.isEmpty {
-            Text(item.event.location)
-              .font(.subheadline)
-              .foregroundStyle(.white.opacity(0.68))
+      VStack(alignment: .leading, spacing: 12) {
+        HStack(alignment: .top, spacing: 12) {
+          CommanderEventIconView(event: item.event, size: 54)
+          VStack(alignment: .leading, spacing: 6) {
+            Text(detail)
+              .font(.title2.weight(.heavy).monospacedDigit())
+              .foregroundStyle(accent)
+              .fixedSize(horizontal: false, vertical: true)
+            Text(item.event.title)
+              .font(.headline.weight(.bold))
+              .foregroundStyle(.white)
+              .fixedSize(horizontal: false, vertical: true)
           }
-          Text(detail)
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(CommanderDashboardPalette.waterBlue)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          Text(item.startAt, format: .dateTime.hour().minute())
+            .font(.title3.bold().monospacedDigit())
+            .foregroundStyle(.white)
         }
-        Spacer(minLength: 8)
-        Text(item.startAt, format: .dateTime.hour().minute())
-          .font(.title3.bold().monospacedDigit())
-          .foregroundStyle(.white)
+        if !item.event.location.isEmpty {
+          Label(item.event.location, systemImage: "mappin.and.ellipse")
+            .font(.headline.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(accent.opacity(0.22))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
       }
-      .padding(14)
-      .background(CommanderDashboardPalette.surface)
+      .padding(16)
+      .background(CommanderDashboardPalette.glass)
+      .overlay {
+        RoundedRectangle(cornerRadius: 8)
+          .stroke(accent.opacity(0.45), lineWidth: 1)
+      }
       .clipShape(RoundedRectangle(cornerRadius: 8))
     }
     .accessibilityElement(children: .combine)
+  }
+
+  private var accent: Color {
+    CommanderDashboardPalette.eventAccent(for: item.event)
   }
 }

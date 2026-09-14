@@ -20,9 +20,13 @@ struct CommanderAppTabs: View {
     }
     .tint(CommanderDashboardPalette.commanderPurpleLight)
     .environmentObject(renewal)
-    .task { await renewal.refresh() }
+    .task {
+      guard !CommanderRuntime.alarmFreeVisualTest else { return }
+      await renewal.refresh()
+    }
     .onChange(of: scenePhase) { _, phase in
-      if phase == .active { Task { await renewal.refresh() } }
+      guard phase == .active, !CommanderRuntime.alarmFreeVisualTest else { return }
+      Task { await renewal.refresh() }
     }
   }
 }
@@ -39,7 +43,7 @@ struct CommanderScheduleEmptyView: View {
     }
     .padding(24)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(CommanderDashboardPalette.background)
+    .background(CommanderDashboardPalette.backgroundGradient.ignoresSafeArea())
   }
 }
 

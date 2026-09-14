@@ -12,6 +12,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
   @Published private(set) var error: String?
   @Published private(set) var isBusy = false
   @Published private(set) var readAt: Date?
+  @Published private(set) var stopIntentStatus = "Zastavit zatím nebylo provedeno"
   private let ownership = PhysicalAcceptanceOwnershipStore()
   private var adapter: AlarmKitAdapter?
   private var observationTask: Task<Void, Never>?
@@ -38,6 +39,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
     observationTask?.cancel()
     observationTask = nil
     run = nil; preflight = nil; observations = []; error = nil; readAt = nil
+    stopIntentStatus = "Zastavit zatím nebylo provedeno"
     status = "Ověřuji oprávnění a čistý testovací stav"
     do {
       let runID = UUID()
@@ -48,15 +50,13 @@ final class PhysicalAcceptanceModel: ObservableObject {
         throw AlarmAdapterError.unavailable("Živé aktivity nejsou povolené pro Commander Test.")
       }
       try await AlarmKitAdapter.clearPreviousPhysicalAcceptance(ownership: ownership)
-      // Generate only after permission prompts and cleanup, not when the app was installed/opened.
       let run = try PhysicalAcceptanceRun(now: Date(), id: runID)
       self.run = run
       let session = PhysicalAcceptanceSession(run: run, adapter: adapter)
       var summary: AlarmSyncSummary?
       var syncAttempts = 0
       var procedurePrepared = false
-      status = "PREFLIGHT – ověřuji 2 systémové alarmy"
-      // Bounded startup recovery only. After READY, all app observations are read-only.
+      status = "Ověřuji 2 systémové alarmy a 2 živé aktivity"
       for tick in 0..<20 {
         if [0, 4, 10].contains(tick), syncAttempts < maxAttempts,
            summary?.succeeded != true || !procedurePrepared {
@@ -74,17 +74,17 @@ final class PhysicalAcceptanceModel: ObservableObject {
         preflight = check
         readAt = now
         if check.ready {
-          status = "READY – 2/2 ověřeno. Zamkněte telefon."
+          status = "PŘIPRAVENO – 2/2 ověřeno. Zamkněte telefon."
           startReadOnlyObservations(runID: runID)
           return
         }
         try await Task.sleep(for: .seconds(1))
       }
-      status = "NOT READY – tento běh není platný test"
+      status = "NEPŘIPRAVENO – tento běh není platný test"
       error = summary?.errorMessage
       startReadOnlyObservations(runID: runID)
     } catch {
-      status = "NOT READY – test nebyl ověřen"
+      status = "NEPŘIPRAVENO – test nebyl ověřen"
       self.error = error.localizedDescription
     }
   }
@@ -99,6 +99,8 @@ final class PhysicalAcceptanceModel: ObservableObject {
   }
 
   func refreshObservations(expectedRunID: UUID? = nil) async {
+    stopIntentStatus = CommanderPhysicalAcceptanceDiagnostics.read()
+      ?? "Zastavit zatím nebylo provedeno"
     guard let run, !isBusy, expectedRunID == nil || run.id == expectedRunID, let adapter else { return }
     do {
       let readings = try await adapter.physicalObservations()
@@ -108,20 +110,20 @@ final class PhysicalAcceptanceModel: ObservableObject {
       if preflight?.ready == true,
          let first = preflight?.rows.first?.expectedPlan.scheduledAlertAt,
          Date() >= first {
-        status = "Běh zahájen s READY preflightem – výsledek potvrďte fyzicky"
+        status = "Test probíhá – výsledek potvrďte fyzicky"
       }
     } catch { self.error = error.localizedDescription }
   }
 
   var report: String {
-    var lines = [status, "Režim: physicalAcceptance; síť: nepoužita; Watch delivery: vypnuto", "Lokální overrides: žádné (nová prázdná hodnota, bez čtení preferences)"]
+    var lines = [status, "Režim: physicalAcceptance; síť: nepoužita; Watch delivery: vypnuto", "Lokální overrides: žádné (nová prázdná hodnota, bez čtení preferences)", "Akce po Zastavit: \(stopIntentStatus)"]
     if let run {
       lines += ["Run ID: \(run.id)", "now: \(Self.time(run.now))", "namespace: \(run.namespace)", "projectionRevision: \(run.projectionRevision)"]
     }
     if let preflight {
-      lines += ["Preflight: \(Self.time(preflight.checkedAt))", "Expected: 2; verified: \(preflight.verifiedAlarmCount)", "Actual alarms at latest read: \(observations.count)"]
+      lines += ["Ověřeno: \(Self.time(preflight.checkedAt))", "Očekávané alarmy: 2; ověřené: \(preflight.verifiedAlarmCount)", "Skutečné alarmy při posledním čtení: \(observations.count)"]
       for row in preflight.rows {
-        lines += ["\(row.alarm.stableId) | \(row.alarm.title)", "lead: \(row.leadTime.minutes) min; source: \(Self.source(row.leadTime.source))", "canonical leaveAt / expected fire: \(row.alarm.leaveAt)", "expected countdown start: \(Self.time(row.expectedCountdownStart))"]
+        lines += ["\(row.alarm.stableId) | \(row.alarm.title)", "lead: \(row.leadTime.minutes) min; source: \(Self.source(row.leadTime.source))", "canonical leaveAt / expected fire: \(row.alarm.leaveAt)", "expected visible/system transition: \(Self.time(row.expectedCountdownStart))"]
         if let actual = observations.first(where: { $0.stableID == row.alarm.stableId }) ?? row.actual {
           lines += ["AlarmKit ID: \(actual.platformID)", "state: \(actual.state); fixed: \(Self.time(actual.fixedScheduleAt)); schedule: \(actual.scheduleKind)", "preAlert: \(Self.duration(actual.preAlert)); postAlert: \(Self.duration(actual.postAlert)); system fireDate: \(Self.time(actual.fireDate))"]
         }
@@ -130,7 +132,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
       lines += preflight.issues
     }
     if let error { lines.append(error) }
-    lines.append("READY je ověřený preflight, nikoli automatický důkaz zvuku nebo viditelnosti Live Activity.")
+    lines.append("Stav PŘIPRAVENO potvrzuje konfiguraci, nikoli automaticky zvuk nebo viditelnost živé aktivity.")
     return lines.joined(separator: "\n")
   }
 
@@ -167,7 +169,7 @@ struct PhysicalAcceptanceView: View {
           CommanderBrandAssets.circularMark.resizable().scaledToFit().frame(width: 48, height: 48)
           VStack(alignment: .leading) {
             Text("Commander Test").font(.headline)
-            Text("physicalAcceptance").font(.caption).foregroundStyle(.secondary)
+            Text("Fyzický test alarmů a živých aktivit").font(.caption).foregroundStyle(.secondary)
           }
         }
         Button(action: model.start) {
@@ -177,47 +179,69 @@ struct PhysicalAcceptanceView: View {
         if model.isBusy { ProgressView() }
         if let error = model.error { Text(error).foregroundStyle(.red) }
       }
+
       if let run = model.run {
+        Section("Časový plán – sledujte v tomto pořadí") {
+          if let check = model.preflight {
+            ForEach(check.rows, id: \.alarm.stableId) { row in
+              if let event = run.schedule.events.first(where: { $0.stableId == row.alarm.stableId }),
+                 let start = try? NativeAlarmContract.dateTime(date: event.date, time: event.start),
+                 let end = try? NativeAlarmContract.dateTime(date: event.date, time: event.end) {
+                VStack(alignment: .leading, spacing: 5) {
+                  Text(event.title).font(.headline)
+                  Text("Odchod / alarm: \(PhysicalAcceptanceModel.time(row.expectedPlan.scheduledAlertAt))")
+                    .font(.title3.bold()).foregroundStyle(.orange)
+                  Text("Začátek: \(PhysicalAcceptanceModel.time(start)) · konec: \(PhysicalAcceptanceModel.time(end))")
+                    .font(.subheadline)
+                }
+                .padding(.vertical, 4)
+              }
+            }
+            Text("Sled: Odchod za → alarm → VYRAZIT TEĎ → Právě jídlo → Právě volno → alarm → VYRAZIT TEĎ → Právě probíhá.")
+              .font(.footnote)
+              .foregroundStyle(.secondary)
+          } else {
+            Text("Časy se objeví po systémovém ověření běhu.")
+              .foregroundStyle(.secondary)
+          }
+        }
+
         Section("Izolovaný běh") {
           field("Run ID", run.id.uuidString)
-          field("Testovací now", PhysicalAcceptanceModel.time(run.now))
-          field("Lokální overrides", "Žádné; preferences se nečtou")
-          field("projectionRevision", String(run.projectionRevision))
-          field("Watch delivery", "Vypnuto; neblokuje test")
+          field("Testovací čas", PhysicalAcceptanceModel.time(run.now))
+          field("Lokální změny časů", "Žádné; uložené preference se nečtou")
+          field("Revize", String(run.projectionRevision))
+          field("Apple Watch", "Předávání vypnuto")
           field("Síť / GitHub", "Nepoužito")
+          field("Akce po Zastavit", model.stopIntentStatus)
         }
       }
+
       if let check = model.preflight {
-        Section("Preflight") {
-          field("Expected alarms", "2")
-          field("Verified alarms", "\(check.verifiedAlarmCount)")
-          field("Actual alarms", "\(model.observations.count)")
+        Section("Předběžná kontrola") {
+          field("Očekávané alarmy", "2")
+          field("Ověřené alarmy", "\(check.verifiedAlarmCount)")
+          field("Skutečné alarmy", "\(model.observations.count)")
           field("Ověřeno v", PhysicalAcceptanceModel.time(check.checkedAt))
           ForEach(check.issues, id: \.self) { Text($0).foregroundStyle(.red) }
         }
         ForEach(check.rows, id: \.alarm.stableId) { row in
           Section(row.alarm.title) {
-            field("stableId", row.alarm.stableId)
-            field("Effective lead", "\(row.leadTime.minutes) min")
-            field("Zdroj lead time", PhysicalAcceptanceModel.source(row.leadTime.source))
-            field("Canonical leaveAt", row.alarm.leaveAt)
-            field("Očekávaný countdown start", PhysicalAcceptanceModel.time(row.expectedCountdownStart))
-            field("Očekávaný fire time", PhysicalAcceptanceModel.time(row.expectedPlan.scheduledAlertAt))
+            field("Čas na odchod", row.alarm.leaveAt)
+            field("Přechod k alarmu", PhysicalAcceptanceModel.time(row.expectedCountdownStart))
+            field("Čas alarmu", PhysicalAcceptanceModel.time(row.expectedPlan.scheduledAlertAt))
+            field("Předstih", "\(row.leadTime.minutes) min")
             if let actual = model.observations.first(where: { $0.stableID == row.alarm.stableId }) {
-              field("AlarmKit ID", actual.platformID)
-              field("Alarm.state", actual.state)
-              field("Schedule", actual.scheduleKind)
-              field("Fixed schedule", PhysicalAcceptanceModel.time(actual.fixedScheduleAt))
-              field("Uložený preAlert", PhysicalAcceptanceModel.duration(actual.preAlert))
-              field("Uložený postAlert", PhysicalAcceptanceModel.duration(actual.postAlert))
-              field("Systémový fireDate", PhysicalAcceptanceModel.time(actual.fireDate))
+              field("Stav alarmu", actual.state)
+              field("Pevný začátek", PhysicalAcceptanceModel.time(actual.fixedScheduleAt))
+              field("Systémový čas alarmu", PhysicalAcceptanceModel.time(actual.fireDate))
             } else { Text("Alarm již není v aktuálním systémovém seznamu.").foregroundStyle(.secondary) }
             ForEach(row.issues, id: \.self) { Text($0).foregroundStyle(.red) }
           }
         }
         Section {
-          field("Poslední read-back", PhysicalAcceptanceModel.time(model.readAt))
-          Text("READY potvrzuje konfiguraci. PASS vyžaduje oba skutečné alarmy v uvedených časech a viditelnou Live Activity / Dynamic Island.").font(.footnote)
+          field("Poslední systémové ověření", PhysicalAcceptanceModel.time(model.readAt))
+          Text("Stav PŘIPRAVENO potvrzuje konfiguraci. Úspěšný fyzický test vyžaduje oba skutečné alarmy a viditelné živé stavy ve výše uvedených časech.").font(.footnote)
           ShareLink(item: model.report) { Label("Sdílet diagnostiku", systemImage: "square.and.arrow.up") }
         }
       }
