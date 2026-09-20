@@ -215,10 +215,10 @@ public struct AlarmSyncService: Sendable {
     let retainedStableIDs = Set(reconciliation(state).unchanged.map(\.stableId))
     let futurePlatformIDs = Set(state.records.values.filter { retainedStableIDs.contains($0.stableId) }.map(\.platformAlarmID))
     let platformIDs: Set<String>?
-    let fixedAlertDates: [String: Date]?
+    let timingObservations: [String: PlatformAlarmTimingObservation]?
     do {
       platformIDs = try await adapter.existingPlatformAlarmIDs()
-      fixedAlertDates = platformIDs == nil ? nil : try await adapter.existingPlatformFixedAlertDates(for: futurePlatformIDs)
+      timingObservations = platformIDs == nil ? nil : try await adapter.existingPlatformTimingObservations(for: futurePlatformIDs)
     } catch {
       let plan = reconciliation(state)
       state = await finalizedHistoryState(
@@ -239,7 +239,7 @@ public struct AlarmSyncService: Sendable {
     // platform-specific observation; their unit tests then exercise reconciliation only.
     do {
       if let platformIDs {
-        let invalidBeforeWrite = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates, timingIDs: futurePlatformIDs)
+        let invalidBeforeWrite = try invalidStableIDs(in: state, platformIDs: platformIDs, timingObservations: timingObservations, timingIDs: futurePlatformIDs)
         if !invalidBeforeWrite.isEmpty {
           repairs += 1
           for stableID in invalidBeforeWrite {
@@ -396,15 +396,15 @@ public struct AlarmSyncService: Sendable {
       }
     }
 
-    let dates: [String: Date]?
+    let timings: [String: PlatformAlarmTimingObservation]?
     var timingError: String?
     if platformIDs == nil || managedIDs.isEmpty {
-      dates = nil
+      timings = nil
     } else {
       do {
-        dates = try await adapter.existingPlatformFixedAlertDates(for: managedIDs)
+        timings = try await adapter.existingPlatformTimingObservations(for: managedIDs)
       } catch {
-        dates = nil
+        timings = nil
         timingError = "Časy alarmů se nepodařilo přečíst: \(error.localizedDescription)"
       }
     }
@@ -418,8 +418,9 @@ public struct AlarmSyncService: Sendable {
         expectedLeaveAt: alarm.leaveAt,
         platformAlarmID: platformID,
         platformExists: exists,
-        actualLeaveAt: platformID.flatMap { dates?[$0] },
-        readbackError: platformID == nil ? nil : timingError
+        actualLeaveAt: platformID.flatMap { timings?[$0]?.effectiveAlertDate },
+        readbackError: platformID == nil ? nil : timingError,
+        timingReadbackLimited: platformID.flatMap { timings?[$0]?.isImmediateCountdownWithoutFireDate }
       )
     }
   }
@@ -449,7 +450,7 @@ public struct AlarmSyncService: Sendable {
   private func invalidStableIDs(
     in state: ManagedAlarmState,
     platformIDs: Set<String>,
-    fixedAlertDates: [String: Date]?,
+    timingObservations: [String: PlatformAlarmTimingObservation]?,
     timingIDs: Set<String>? = nil
   ) throws -> Set<String> {
     var invalid = Set<String>()
@@ -458,10 +459,16 @@ public struct AlarmSyncService: Sendable {
         invalid.insert(record.stableId)
         continue
       }
-      guard let fixedAlertDates else { continue }
+      guard let timingObservations else { continue }
       if let timingIDs, !timingIDs.contains(record.platformAlarmID) { continue }
+      guard let observation = timingObservations[record.platformAlarmID] else {
+        invalid.insert(record.stableId)
+        continue
+      }
+      if observation.isImmediateCountdownWithoutFireDate { continue }
       let expected = try NativeAlarmContract.date(fromLocalISO: record.alarm.leaveAt)
-      guard let actual = fixedAlertDates[record.platformAlarmID], abs(actual.timeIntervalSince(expected)) <= 1 else {
+      guard let actual = observation.effectiveAlertDate,
+            abs(actual.timeIntervalSince(expected)) <= 1 else {
         invalid.insert(record.stableId)
         continue
       }
@@ -477,8 +484,8 @@ public struct AlarmSyncService: Sendable {
     guard let platformIDs = try await adapter.existingPlatformAlarmIDs() else { return nil }
     let expectedIDs = Set(state.records.values.map(\.platformAlarmID))
     let timingIDs = expectedIDs.subtracting(protectedAlertingIDs)
-    let fixedAlertDates = try await adapter.existingPlatformFixedAlertDates(for: timingIDs)
-    let invalid = try invalidStableIDs(in: state, platformIDs: platformIDs, fixedAlertDates: fixedAlertDates, timingIDs: timingIDs)
+    let timings = try await adapter.existingPlatformTimingObservations(for: timingIDs)
+    let invalid = try invalidStableIDs(in: state, platformIDs: platformIDs, timingObservations: timings, timingIDs: timingIDs)
     let orphanIDs = platformIDs.subtracting(expectedIDs)
     return (platformIDs, invalid, orphanIDs)
   }

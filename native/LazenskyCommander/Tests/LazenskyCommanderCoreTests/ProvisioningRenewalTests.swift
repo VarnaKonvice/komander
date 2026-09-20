@@ -225,11 +225,11 @@ func localSignedProfileMatchesSecurityCMSDecodedMetadata() throws {
   #expect(!ProvisioningReminderRequest.identifier.hasPrefix("lazensky.commander.iphone.fallback."))
   let tabs = try String(contentsOf: app.appendingPathComponent("CommanderAppTabs.swift"), encoding: .utf8)
   #expect(tabs.contains(".task {"))
-  #expect(tabs.contains("guard !CommanderRuntime.alarmFreeVisualTest else { return }"))
   #expect(tabs.contains("await renewal.refresh()"))
   #expect(tabs.contains(".onChange(of: scenePhase)"))
-  #expect(tabs.contains("guard phase == .active, !CommanderRuntime.alarmFreeVisualTest else { return }"))
+  #expect(tabs.contains("guard phase == .active else { return }"))
   #expect(tabs.contains("Task { await renewal.refresh() }"))
+  #expect(!tabs.contains("CommanderRuntime"))
 }
 
 private let provisioningBundle = "com.varnakonvice.lazenskycommander"

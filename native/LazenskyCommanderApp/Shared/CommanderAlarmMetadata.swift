@@ -17,6 +17,7 @@ struct CommanderAlarmEventSnapshot: Codable, Hashable, Sendable {
 struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
   let stableId: String
   let scheduleVersion: Int
+  let projectionRevision: Int?
   let iconKey: String
   let title: String
   let location: String
@@ -29,6 +30,7 @@ struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
   init(
     stableId: String,
     scheduleVersion: Int,
+    projectionRevision: Int? = nil,
     iconKey: String,
     title: String,
     location: String,
@@ -40,6 +42,7 @@ struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
   ) {
     self.stableId = stableId
     self.scheduleVersion = scheduleVersion
+    self.projectionRevision = projectionRevision
     self.iconKey = iconKey
     self.title = title
     self.location = location
@@ -52,68 +55,75 @@ struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
 }
 
 enum CommanderPhysicalAcceptanceDiagnostics {
-  private static let key = "lazensky.commander.physicalAcceptance.stopIntent.v1"
+  private static let legacyKey = "lazensky.commander.physicalAcceptance.stopIntent.v1"
+  private static let timelineKey = "lazensky.commander.physicalAcceptance.timeline.v2"
+  private static let maximumEntries = 64
 
-  static func record(_ text: String) {
+  static func record(_ text: String, at date: Date = Date()) {
     guard Bundle.main.bundleIdentifier == PhysicalAcceptanceRun.bundleID else { return }
-    UserDefaults.standard.set(text, forKey: key)
+    let defaults = UserDefaults.standard
+    let stamp = ISO8601DateFormatter().string(from: date)
+    var entries = defaults.stringArray(forKey: timelineKey) ?? []
+    entries.append("\(stamp) · \(text)")
+    if entries.count > maximumEntries {
+      entries.removeFirst(entries.count - maximumEntries)
+    }
+    defaults.set(entries, forKey: timelineKey)
+    defaults.set(text, forKey: legacyKey)
   }
 
   static func read() -> String? {
     guard Bundle.main.bundleIdentifier == PhysicalAcceptanceRun.bundleID else { return nil }
-    return UserDefaults.standard.string(forKey: key)
+    let defaults = UserDefaults.standard
+    if let entries = defaults.stringArray(forKey: timelineKey), !entries.isEmpty {
+      return entries.joined(separator: "\n")
+    }
+    return defaults.string(forKey: legacyKey)
   }
 
   static func clear() {
     guard Bundle.main.bundleIdentifier == PhysicalAcceptanceRun.bundleID else { return }
-    UserDefaults.standard.removeObject(forKey: key)
+    let defaults = UserDefaults.standard
+    defaults.removeObject(forKey: timelineKey)
+    defaults.removeObject(forKey: legacyKey)
   }
-}
-
-enum CommanderProcedureLiveActivityPhase: String, Codable, Hashable, Sendable {
-  case departureStandby
-  case departureBridge
 }
 
 struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
   struct ContentState: Codable, Hashable {
+    let scheduleVersion: Int
     let projectionRevision: Int
-    let phase: CommanderProcedureLiveActivityPhase?
-    let nextStableId: String?
-    let nextTitle: String?
-    let nextLocation: String?
-    let nextKind: ScheduleKind?
-    let nextIconKey: String?
-    let nextStartAt: Date?
-    let nextEndAt: Date?
-    let nextLeaveAt: Date?
+    let events: [CommanderAlarmEventSnapshot]
 
-    init(
-      projectionRevision: Int,
-      phase: CommanderProcedureLiveActivityPhase? = nil,
-      nextStableId: String? = nil,
-      nextTitle: String? = nil,
-      nextLocation: String? = nil,
-      nextKind: ScheduleKind? = nil,
-      nextIconKey: String? = nil,
-      nextStartAt: Date? = nil,
-      nextEndAt: Date? = nil,
-      nextLeaveAt: Date? = nil
-    ) {
-      self.projectionRevision = projectionRevision
-      self.phase = phase
-      self.nextStableId = nextStableId
-      self.nextTitle = nextTitle
-      self.nextLocation = nextLocation
-      self.nextKind = nextKind
-      self.nextIconKey = nextIconKey
-      self.nextStartAt = nextStartAt
-      self.nextEndAt = nextEndAt
-      self.nextLeaveAt = nextLeaveAt
+    private enum CodingKeys: String, CodingKey {
+      case scheduleVersion
+      case projectionRevision
+      case events
     }
 
-    var isDepartureStandby: Bool { phase == .departureStandby }
-    var isDepartureBridge: Bool { phase == .departureBridge }
+    init(
+      scheduleVersion: Int = 0,
+      projectionRevision: Int = 0,
+      events: [CommanderAlarmEventSnapshot] = []
+    ) {
+      self.scheduleVersion = scheduleVersion
+      self.projectionRevision = projectionRevision
+      self.events = events
+    }
+
+    init(from decoder: Decoder) throws {
+      let container = try decoder.container(keyedBy: CodingKeys.self)
+      scheduleVersion = try container.decodeIfPresent(Int.self, forKey: .scheduleVersion) ?? 0
+      projectionRevision = try container.decodeIfPresent(Int.self, forKey: .projectionRevision) ?? 0
+      events = try container.decodeIfPresent([CommanderAlarmEventSnapshot].self, forKey: .events) ?? []
+    }
+
+    func encode(to encoder: Encoder) throws {
+      var container = encoder.container(keyedBy: CodingKeys.self)
+      try container.encode(scheduleVersion, forKey: .scheduleVersion)
+      try container.encode(projectionRevision, forKey: .projectionRevision)
+      try container.encode(events, forKey: .events)
+    }
   }
 
   let stableId: String
@@ -122,6 +132,38 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
   let title: String
   let location: String
   let kind: ScheduleKind
+  let leaveAt: Date
   let startAt: Date
   let endAt: Date
+  let nextEvent: CommanderAlarmEventSnapshot?
+}
+
+enum CommanderProcedureLiveActivityPolicy {
+  static let maximumQueuedEvents = 6
+  // ActivityKit caps static + dynamic payload at 4 KB. Keep deliberate headroom.
+  static let targetCombinedEncodedBytes = 3_600
+
+  static func contentState(
+    scheduleVersion: Int,
+    projectionRevision: Int,
+    events: [CommanderAlarmEventSnapshot],
+    attributes: CommanderProcedureLiveActivityAttributes
+  ) -> CommanderProcedureLiveActivityAttributes.ContentState {
+    var bounded = Array(events.prefix(maximumQueuedEvents))
+    while true {
+      let state = CommanderProcedureLiveActivityAttributes.ContentState(
+        scheduleVersion: scheduleVersion,
+        projectionRevision: max(0, projectionRevision),
+        events: bounded
+      )
+      guard bounded.count > 1 else { return state }
+      let encoder = JSONEncoder()
+      let attributesSize = (try? encoder.encode(attributes).count) ?? 0
+      let stateSize = (try? encoder.encode(state).count) ?? 0
+      if attributesSize + stateSize <= targetCombinedEncodedBytes {
+        return state
+      }
+      bounded.removeLast()
+    }
+  }
 }

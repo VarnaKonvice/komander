@@ -21,11 +21,10 @@ struct CommanderAppTabs: View {
     .tint(CommanderDashboardPalette.commanderPurpleLight)
     .environmentObject(renewal)
     .task {
-      guard !CommanderRuntime.alarmFreeVisualTest else { return }
       await renewal.refresh()
     }
     .onChange(of: scenePhase) { _, phase in
-      guard phase == .active, !CommanderRuntime.alarmFreeVisualTest else { return }
+      guard phase == .active else { return }
       Task { await renewal.refresh() }
     }
   }

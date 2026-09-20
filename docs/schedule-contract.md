@@ -66,7 +66,7 @@ Na hranici `endAt` se hledá další událost. Po půlnoci se stav vyhodnocuje p
 
 Implementovaný nativní tok je:
 
-`data/schedule.json -> NativeAlarmContract -> iPhone Live Card + AlarmKit -> WatchScheduleSnapshot -> WatchConnectivity updateApplicationContext -> validovaná App Group cache -> Watch app + WidgetKit + lokální Watch notifikace`
+`data/schedule.json -> NativeAlarmContract -> AlarmKit odchodová vrstva + CommanderProcedureLiveActivityCoordinator -> WatchScheduleSnapshot -> WatchConnectivity updateApplicationContext -> validovaná App Group cache -> Watch app + WidgetKit + lokální Watch notifikace`
 
 `WatchScheduleSnapshot` obsahuje celý canonical `Schedule`, nikoli pouze aktuální den. Watch cache používá jedinou version policy: identický snapshot je idempotentní, nižší nebo konfliktní verze se odmítne a uloží se jen vyšší validní verze. Uložení je atomické. Widget timeline obsahuje přechody dne, countdownu, `leaveAt`, `startAt`, `endAt` a expirace, takže další den funguje ze stejné cache bez nového spojení s iPhonem.
 

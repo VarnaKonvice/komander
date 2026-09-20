@@ -22,6 +22,7 @@ public struct AlarmReconciliationObservation: Codable, Equatable, Sendable, Iden
   public let platformExists: Bool?
   public let actualLeaveAt: Date?
   public let readbackError: String?
+  public let timingReadbackLimited: Bool?
 
   public var id: String { stableId }
 
@@ -32,7 +33,8 @@ public struct AlarmReconciliationObservation: Codable, Equatable, Sendable, Iden
     platformAlarmID: String?,
     platformExists: Bool?,
     actualLeaveAt: Date?,
-    readbackError: String? = nil
+    readbackError: String? = nil,
+    timingReadbackLimited: Bool? = nil
   ) {
     self.stableId = stableId
     self.title = title
@@ -41,13 +43,15 @@ public struct AlarmReconciliationObservation: Codable, Equatable, Sendable, Iden
     self.platformExists = platformExists
     self.actualLeaveAt = actualLeaveAt
     self.readbackError = readbackError
+    self.timingReadbackLimited = timingReadbackLimited
   }
 
   public var hasMismatch: Bool {
     if readbackError != nil { return true }
-    guard let platformAlarmID else { return false }
+    guard platformAlarmID != nil else { return false }
     if platformExists == false { return true }
     guard platformExists == true else { return false }
+    if timingReadbackLimited == true { return false }
     guard let actualLeaveAt,
           let expected = try? NativeAlarmContract.date(fromLocalISO: expectedLeaveAt)
     else { return true }
@@ -59,6 +63,9 @@ public struct AlarmReconciliationObservation: Codable, Equatable, Sendable, Iden
     guard platformAlarmID != nil else { return nil }
     if platformExists == false { return "Systém tento alarm nenašel." }
     guard platformExists == true else { return "Stav alarmu se nepodařilo přečíst." }
+    if timingReadbackLimited == true {
+      return "AlarmKit countdown běží; systém neposkytl přesný fireDate."
+    }
     guard let actualLeaveAt,
           let expected = try? NativeAlarmContract.date(fromLocalISO: expectedLeaveAt)
     else { return "Čas alarmu se nepodařilo doložit." }

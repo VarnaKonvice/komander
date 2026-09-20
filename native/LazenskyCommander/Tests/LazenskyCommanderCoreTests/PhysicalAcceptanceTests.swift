@@ -117,9 +117,9 @@ import Testing
   let payload = try run.payload()
   let secondPlan = try AlarmCountdown.plan(for: payload.alarms[1], in: run.schedule, now: run.now)
   #expect(first.preAlert != nil)
-  #expect(second.preAlert == nil)
+  #expect(second.preAlert.map { abs($0 - secondPlan.countdownWindow) <= 1 } == true)
   #expect(second.scheduleKind == "fixed")
-  #expect(second.fixedScheduleAt.map { abs($0.timeIntervalSince(secondPlan.scheduledAlertAt)) <= 1 } == true)
+  #expect(second.fixedScheduleAt.map { abs($0.timeIntervalSince(secondPlan.scheduledStartAt!)) <= 1 } == true)
   #expect(try !acceptanceCheck(run, [readings[0]], state).ready)
   #expect(try !acceptanceCheck(run, [readings[0], readings[0]], state).ready)
   #expect(try !acceptanceCheck(run, readings + [readings[1]], state).ready)
@@ -143,42 +143,42 @@ import Testing
   #expect(check.rows[0].issues.contains("Výsledný čas alarmu neodpovídá času odchodu."))
 }
 
-@Test func physicalPreflightRejectsDuplicatePreAlertWhenPreparedHandoffOwnsFreeTime() async throws {
+@Test func physicalPreflightAcceptsAlarmKitCountdownForBothEventsEvenWhenCommanderActivitiesArePrepared() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let readings = await adapter.readings()
-  let first = try #require(readings.first { $0.state == "countdown" })
-  let second = try #require(readings.first { $0.stableID == run.schedule.events[1].stableId })
-  let payload = try run.payload()
-  let alarm = payload.alarms[1]
-  let plan = try AlarmCountdown.plan(for: alarm, in: run.schedule, now: run.now)
-  let duplicated = PhysicalAlarmObservation(
-    platformID: second.platformID, stableID: second.stableID, configuredAt: second.configuredAt,
-    scheduleKind: "fixed", fixedScheduleAt: plan.scheduledStartAt,
-    preAlert: plan.countdownWindow, postAlert: nil, state: "scheduled", fireDate: nil
-  )
-  let check = try await acceptanceCheck(run, [first, duplicated], session.alarmStore.load())
-  #expect(!check.ready && check.verifiedAlarmCount == 1)
-  #expect(check.rows[1].issues.contains("Alarm po připraveném volnu nemá mít duplicitní systémový předodpočet."))
+  let check = try await acceptanceCheck(run, readings, session.alarmStore.load())
+  #expect(check.ready)
+  #expect(check.rows.allSatisfy { $0.actual?.preAlert != nil })
 }
 
-@Test func physicalPreflightRejectsMissingImmediateSystemFireDateOrWrongStateOrDuration() async throws {
+@Test func physicalPreflightAcceptsMissingImmediateFireDateButRejectsWrongStateDurationOrEndpoint() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let readings = await adapter.readings()
   let first = try #require(readings.first { $0.state == "countdown" })
   let future = try #require(readings.first { $0.stableID == run.schedule.events[1].stableId })
+  let limited = PhysicalAlarmObservation(
+    platformID: first.platformID, stableID: first.stableID, configuredAt: first.configuredAt,
+    scheduleKind: "none", fixedScheduleAt: nil, preAlert: first.preAlert,
+    postAlert: nil, state: "countdown", fireDate: nil
+  )
+  #expect(try await acceptanceCheck(run, [limited, future], session.alarmStore.load()).ready)
+
   for (preAlert, state, fire) in [
-    (first.preAlert, "countdown", nil as Date?),
     (first.preAlert, "scheduled", first.fireDate),
     (nil as TimeInterval?, "countdown", first.fireDate),
     (first.preAlert, "countdown", first.fireDate?.addingTimeInterval(60))
   ] {
-    let bad = PhysicalAlarmObservation(platformID: first.platformID, stableID: first.stableID, configuredAt: first.configuredAt, scheduleKind: "none", fixedScheduleAt: nil, preAlert: preAlert, postAlert: nil, state: state, fireDate: fire)
+    let bad = PhysicalAlarmObservation(
+      platformID: first.platformID, stableID: first.stableID, configuredAt: first.configuredAt,
+      scheduleKind: "none", fixedScheduleAt: nil, preAlert: preAlert,
+      postAlert: nil, state: state, fireDate: fire
+    )
     let check = try await acceptanceCheck(run, [bad, future], session.alarmStore.load())
     #expect(!check.ready && check.verifiedAlarmCount == 1)
   }
 }
 
-@Test func physicalPreflightNeverClaimsReadyAfterSlowPreparationOrWithoutProcedureActivity() async throws {
+@Test func physicalPreflightRequiresAlarmReadinessButNotPrecreatedCommanderActivity() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let readings = await adapter.readings(), state = await session.alarmStore.load()
   let payload = try run.payload()
@@ -186,7 +186,9 @@ import Testing
   let late = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state, syncVerified: true, procedureActivityPrepared: true, now: lastMoment)
   let missingActivity = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state, syncVerified: true, procedureActivityPrepared: false, now: run.now)
   let unverified = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state, syncVerified: false, procedureActivityPrepared: true, now: run.now)
-  #expect(!late.ready && !missingActivity.ready && !unverified.ready)
+  #expect(!late.ready)
+  #expect(missingActivity.ready)
+  #expect(!unverified.ready)
 }
 
 @Test func physicalAppHasNoProductionModelNetworkPreferencesOrWatchEntryPoint() throws {
@@ -197,35 +199,40 @@ import Testing
   }
   #expect(source.contains("CommanderSynchronizationRequestQueue"))
   #expect(source.contains("AlarmManager.shared.alarmUpdates"))
-  #expect(source.contains("VYRAZIT TEĎ"))
+  #expect(source.contains("Commander ZAČÍNÁ ZA → v startu PRÁVĚ… → po konci DALŠÍ / Skončilo"))
 
   let adapter = try String(contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp/AlarmKitAdapter.swift"), encoding: .utf8)
+  let coordinator = try String(contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp/CommanderProcedureLiveActivityCoordinator.swift"), encoding: .utf8)
   #expect(adapter.contains("guard Bundle.main.bundleIdentifier == PhysicalAcceptanceRun.bundleID"))
-  #expect(adapter.contains("guard channel == .production || physicalRunID != nil"))
   #expect(adapter.contains("for alarm in alarms where cleanup.cancelIDs.contains(alarm.id.uuidString)"))
-  #expect(adapter.contains("maximumCommanderActivities = 1"))
-  #expect(adapter.contains("let verifiedHandoff = hasVerifiedFreeTimeHandoff(for: alarm, now: now)"))
-  #expect(!adapter.contains("if hasFreeTimeHandoff(for: alarm)"))
+  #expect(!adapter.contains("maximumCommanderActivities"))
+  #expect(!adapter.contains("hasVerifiedFreeTimeHandoff"))
   #expect(!adapter.contains("phase: .departureStandby"))
-  #expect(!adapter.contains("prepareStandby("))
-  #expect(adapter.contains("await alarmActivity.end(alarmActivity.content, dismissalPolicy: .after(startDate))"))
-  #expect(adapter.contains("await handoff.end(nil, dismissalPolicy: .immediate)"))
   #expect(adapter.contains("presentation: AlarmPresentation(alert: alert)"))
   #expect(adapter.contains("presentation: AlarmPresentation(alert: alert, countdown: countdown)"))
   #expect(!adapter.contains("Activity<AlarmAttributes<CommanderAlarmMetadata>>.request"))
   #expect(adapter.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
+  #expect(coordinator.contains("maximumConcurrentActivities = 1"))
+  #expect(coordinator.contains("CommanderProcedureLiveActivityPolicy.maximumQueuedEvents"))
+  #expect(!coordinator.contains("start: candidate.leaveAt"))
+  #expect(coordinator.contains("if let keeper = existing.first"))
+  #expect(coordinator.contains("for duplicate in existing.dropFirst()"))
+  #expect(!coordinator.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
+  #expect(!coordinator.contains("CommanderSilentAlert.wav"))
   let stopStart = try #require(adapter.range(of: "struct CommanderAlarmStopIntent"))
   let actorStart = try #require(adapter.range(of: "actor AlarmKitAdapter"))
   let stopIntent = String(adapter[stopStart.lowerBound..<actorStart.lowerBound])
-  #expect(!stopIntent.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
-  #expect(stopIntent.contains("keptAlarmCard"))
-  #expect(stopIntent.contains("currentEventJSON"))
-  #expect(stopIntent.contains("state.nextStableId == stableId"))
+  #expect(stopIntent.contains("CommanderProcedureLiveActivityAttributes"))
+  #expect(stopIntent.contains("Activity<CommanderProcedureLiveActivityAttributes>"))
+  #expect(stopIntent.contains("activityPayload"))
+  #expect(stopIntent.contains("metadata.nextEvent"))
+  #expect(stopIntent.contains("return .result()"))
   #expect(adapter.range(of: "await physicalOwnership.remember(id.uuidString, runID: physicalRunID)")!.lowerBound < adapter.range(of: "let scheduled = try await AlarmManager.shared.schedule")!.lowerBound)
 
   let live = try String(contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderLiveActivity/LazenskyCommanderLiveActivity.swift"), encoding: .utf8)
-  #expect(live.contains("countingDownIn: Date.distantPast..<leaveAt"))
-  #expect(live.contains("countingDownIn: Date.distantPast..<startAt"))
+  #expect(live.contains("CommanderCompactBrandEventMark"))
+  #expect(live.contains("CommanderAlarmIslandCountdown(mode: context.state.mode, size: .minimal)"))
+  #expect(!live.contains("isDepartureBridge"))
 }
 
 @Test func physicalXcodeTargetsShareRealExtensionSourcesButNoProductionEntryOrWatchDependency() throws {
@@ -248,7 +255,7 @@ import Testing
   #expect(try files(ext, phase: "PBXSourcesBuildPhase") == files(productionExtension, phase: "PBXSourcesBuildPhase"))
   #expect(try files(ext, phase: "PBXResourcesBuildPhase") == files(productionExtension, phase: "PBXResourcesBuildPhase"))
   let appPaths = try files(app, phase: "PBXSourcesBuildPhase").compactMap { objects[$0]?["path"] as? String }
-  #expect(Set(appPaths) == ["PhysicalAcceptanceApp.swift", "AlarmKitAdapter.swift", "CommanderVisualAssets.swift", "CommanderAlarmMetadata.swift", "CommanderBrandAssets.swift"])
+  #expect(Set(appPaths) == ["PhysicalAcceptanceApp.swift", "AlarmKitAdapter.swift", "CommanderProcedureLiveActivityCoordinator.swift", "CommanderVisualAssets.swift", "CommanderAlarmMetadata.swift", "CommanderBrandAssets.swift"])
   let deps = try #require(app["dependencies"] as? [String])
   #expect(deps.count == 1)
   let targetID = try #require(objects[deps[0]]?["target"] as? String)
@@ -294,17 +301,16 @@ private actor AcceptanceTestAdapter: AlarmAdapting {
     let schedule = try #require(context)
     let plan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
     let id = UUID().uuidString
-    let usesPreparedHandoff = hasPriorHandoffSource(for: alarm, schedule: schedule)
     observations[id] = PhysicalAlarmObservation(
       platformID: id,
       stableID: alarm.stableId,
       configuredAt: now,
-      scheduleKind: usesPreparedHandoff ? "fixed" : (plan.scheduledStartAt == nil ? "none" : "fixed"),
-      fixedScheduleAt: usesPreparedHandoff ? plan.scheduledAlertAt : plan.scheduledStartAt,
-      preAlert: usesPreparedHandoff ? nil : plan.countdownWindow,
+      scheduleKind: plan.scheduledStartAt == nil ? "none" : "fixed",
+      fixedScheduleAt: plan.scheduledStartAt,
+      preAlert: plan.countdownWindow,
       postAlert: nil,
-      state: usesPreparedHandoff ? "scheduled" : (plan.scheduledStartAt == nil ? "countdown" : "scheduled"),
-      fireDate: usesPreparedHandoff ? nil : (plan.scheduledStartAt == nil ? now.addingTimeInterval(plan.countdownWindow) : nil)
+      state: plan.scheduledStartAt == nil ? "countdown" : "scheduled",
+      fireDate: plan.scheduledStartAt == nil ? now.addingTimeInterval(plan.countdownWindow) : nil
     )
     return id
   }
@@ -316,17 +322,5 @@ private actor AcceptanceTestAdapter: AlarmAdapting {
   func readings() -> [PhysicalAlarmObservation] { observations.values.sorted { ($0.stableID ?? "") < ($1.stableID ?? "") } }
   func revision() -> Int { projectionRevision }
 
-  private func hasPriorHandoffSource(for alarm: NativeAlarm, schedule: Schedule) -> Bool {
-    guard let event = schedule.events.first(where: { $0.stableId == alarm.stableId }),
-          let leaveAt = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
-    else { return false }
-    return schedule.events.contains { candidate in
-      guard candidate.stableId != event.stableId,
-            candidate.date == event.date,
-            let endAt = try? NativeAlarmContract.dateTime(date: candidate.date, time: candidate.end)
-      else { return false }
-      return endAt <= leaveAt
-    }
-  }
 }
 #endif

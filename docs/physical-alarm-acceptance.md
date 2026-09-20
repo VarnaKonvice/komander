@@ -36,9 +36,9 @@ Po potvrzení oprávnění a úklidu se zachytí `Date()` jako testovací `now`.
 | Událost | Začátek | Konec | Lead time | leaveAt | Countdown |
 | --- | --- | --- | --- | --- | --- |
 | TEST – Jídlo | T+6 min | T+8 min | 2 min z event override | T+4 min | Okamžitý `schedule=nil`, zbývající čas do leaveAt |
-| TEST – Magnetoterapie | T+13 min | T+15 min | 2 min z event override | T+11 min | Přímý `.fixed(leaveAt)` bez preAlert; volno odpočítává předchozí Live Activity |
+| TEST – Magnetoterapie | T+13 min | T+15 min | 2 min z event override | T+11 min | `.fixed(T+8)` + `preAlert = 3 min`; AlarmKit vlastní celé volno od konce jídla do odchodu |
 
-První alarm nastane přibližně za 4–5 minut, druhý za 11–12 minut. Úvodní živá aktivita je připravená na začátek jídla v T+6. Po konci jídla v T+8 její karta přejde na volno před procedurou. Stop druhého alarmu předá červenou kartu do T+13 a připraví zelenou aktivitu procedury. Oznámení „Jídlo začíná“ / „Procedura začíná“ **není** odchodový AlarmKit alarm. Generátor odmítne běh, jehož konec v T+15 by překročil půlnoc.
+První alarm nastane přibližně za 4–5 minut, druhý za 11–12 minut. AlarmKit je jediný vlastník odchodového countdownu a alertu. Před prvním alarmem **žádná Commander Live Activity předem nevzniká**. První stisk **Stop** vytvoří jednu Commander aktivitu s frontou `TEST – Jídlo → TEST – Magnetoterapie`; druhý Stop už nevytváří další aktivitu, pouze aktualizuje `ContentState` té stejné. V `startAt` a `endAt` se UI lokálně přepíná přes explicitní `TimelineView`. Generátor odmítne běh, jehož konec v T+15 by překročil půlnoc.
 
 Všechny odchody a priority pocházejí z `NativeAlarmContract`. `resolvedLeadTime` vrací hodnotu a zdroj ve stejné prioritní cestě jako `effectiveLeadTime`; stejně velký local override tedy není zaměnitelný za hodnotu z rozpisu. Samotný self-test žádný lokální override nepřijímá.
 
@@ -46,7 +46,9 @@ Všechny odchody a priority pocházejí z `NativeAlarmContract`. `resolvedLeadTi
 
 Používá se existující canonical-first `CommanderScheduleSyncCoordinator`, `AlarmSyncService`, read-back, self-recovery, `projectionRevision` a fronta `CommanderSynchronizationRequestQueue`. Zdroj je lokální `ScheduleServing`, nikoli URLSession. Během úvodního preflightu jsou nejvýše tři sync pokusy a nejvýše dvacet sekund read-back čekání.
 
-Před READY jsou vyžadovány dvě unikátní, správně mapované skutečné AlarmKit ID, správná uložená délka countdownu, správné schedule/state a shoda výsledného fire time s canonical leaveAt v existující toleranci jedné sekundy. Okamžitý alarm musí být `.countdown` a mít dostupný systémový `fireDate`; druhý alarm musí být `.scheduled` přímo na canonical leaveAt bez preAlert, protože volno vlastní předchozí živá aktivita. Raw `.fixed` datum se nikdy samostatně nepovažuje za leaveAt. Právě jedna připravená úvodní živá aktivita jídla a ověřená reconciliation jsou také povinné. Do prvního alarmu musí při READY zbývat alespoň minuta.
+Před READY se nejdřív provede samostatný **Live Activity primer** mimo časovaný běh. Vytvoří krátkou okamžitou testovací aktivitu, aby případný první systémový dotaz `Povolit živé aktivity z aplikace Commander Test?` proběhl ještě před vytvořením časů ostrého testu. Teprve po vyřízení dialogu a následném potvrzení v Commander Testu smí vzniknout vlastní `PhysicalAcceptanceRun`.
+
+Před READY jsou vyžadovány dvě unikátní, správně mapované skutečné AlarmKit ID, správná uložená délka countdownu, správné schedule/state a shoda výsledného fire time s canonical leaveAt v existující toleranci jedné sekundy. První alarm musí být okamžitý `.countdown` se `schedule=nil`; přesný endpoint se ověřuje z `fireDate`, případně z pozorovaného času konfigurace + `preAlert`, pokud iOS `fireDate` neposkytne. Druhý alarm musí být `.scheduled` s pevným začátkem countdownu T+8 a `preAlert = 3 min`, takže výsledný endpoint je canonical T+11. Raw `.fixed` datum se nikdy samostatně nepovažuje za leaveAt. Commander není podmínkou READY a před prvním Stop má být jeho počet **0**; Live Activity primer ověřuje pouze systémové povolení. Do prvního alarmu musí při READY zbývat alespoň minuta. Diagnostika ukládá časovou osu READY, AlarmKit snapshotů, stav jediné Commander aktivity a všechny zaznamenané Stopy.
 
 Obrazovka ukazuje run ID/now, stableId/title, hodnotu i zdroj předstihu, canonical leaveAt, očekávaný start a konec countdownu, platform ID, uložený preAlert/postAlert, fixed schedule, Alarm.state, dostupný systémový fireDate a expected/verified/actual počty.
 
@@ -57,24 +59,28 @@ NOT READY je **neplatná příprava testu**, ne automatický závěr o nefunkčn
 ## Jediný fyzický postup pro Petra
 
 1. Nainstalovat podepsaný target `LazenskyCommanderPhysicalAcceptance` se zabalenou `LazenskyCommanderPhysicalLiveActivity`. Běžný produkční obnovovací launcher tento target neinstaluje. Podepisuje se obojí stejným Personal Teamem; Watch target se nebuildí ani neinstaluje.
-2. Otevřít **Commander Test**, stisknout **Spustit fyzický test**. Při prvním spuštění potvrdit systémové povolení AlarmKitu; Živé aktivity musí být povolené pro tuto novou aplikaci. Vyčkat na **READY / 2 ze 2** a přečíst zobrazené časy.
+2. Otevřít **Commander Test**. Nejprve stisknout **Připravit Live Activities**, vyřídit případný systémový dialog `Povolit / Nepovolovat` a potom stisknout **Potvrdit povolení a spustit test**. Případné povolení AlarmKitu se vyřídí ještě v úvodní přípravě. Teprve potom vyčkat na **READY / 2 ze 2** a přečíst zobrazené časy.
 3. Zamknout iPhone a sledovat celý jediný běh (asi 15–16 minut). U obou odchodů zastavit skutečné zvonění systémovým ovládáním. Aplikaci během běhu není potřeba znovu otevírat ani synchronizovat.
 
 | Čas | Co fyzicky pozorovat na Lock Screen / Dynamic Island |
 | --- | --- |
-| Do T+4 | Odpočet do prvního odchodu |
-| T+4 | Skutečný AlarmKit alarm a červené `VYRAZIT TEĎ` |
-| Po Stop do T+6 | Červený stav zůstane; nesmí vzniknout mezera ani předčasná zelená |
-| T+6 až T+8 | Zelené `PRÁVĚ PROBÍHÁ` pro jídlo |
-| T+8 až T+11 | Volno / odpočet do dalšího odchodu, bez druhého souběžného countdown vlastníka |
-| T+11 | Druhý skutečný AlarmKit alarm a červené `VYRAZIT TEĎ` |
-| Po Stop do T+13 | Červená karta zůstane až do začátku procedury |
-| T+13 až T+15 | Zelené `PRÁVĚ PROBÍHÁ` pro proceduru |
-| Po T+15 | Žádná stará červená karta; žádný opakovaný odchodový alarm |
+| Do T+4 | AlarmKit odpočet do prvního odchodu |
+| T+4 | Skutečný AlarmKit alarm a `VYRAZIT TEĎ` |
+| Po Stop do T+6 | Alarm je zastaven; Commander musí bez hluché mezery ukázat `ZAČÍNÁ ZA` pro jídlo. **Nesmí vzniknout červený handoff.** |
+| T+6 až T+8 | Tatáž Commander prezentace se přepne na `PRÁVĚ JÍDLO`, s odpočtem do konce |
+| T+8 až T+11 | Tatáž Commander aktivita po konci jídla automaticky ukazuje magnetoterapii jako `ZAČÍNÁ ZA`; AlarmKit současně vlastní odchodový countdown do T+11 |
+| T+11 | Druhý skutečný AlarmKit alarm a `VYRAZIT TEĎ` |
+| Po druhém Stop do T+13 | Alarm je zastaven; **nevzniká nová Commander aktivita**. Tatáž karta pokračuje jako `ZAČÍNÁ ZA` pro magnetoterapii. |
+| T+13 až T+15 | Tatáž Commander prezentace se přepne na `PRÁVĚ PROBÍHÁ` pro magnetoterapii, s odpočtem do konce |
+| Po T+15 | Commander aktivita musí přejít do systémového `stale` stavu a zobrazit `Skončilo`; nesmí dál odpočítávat jako probíhající. Okamžité odstranění karty není v lokální Personal Team variantě garantováno. |
 
-**PASS:** platný READY preflight, oba skutečné systémové alarmy zazvoní ve zobrazených leaveAt časech a celý výše uvedený tok proběhne se schváleným vzhledem. Slyšitelný alarm ani reálnou viditelnost UI nelze potvrdit jen úspěšným SDK read-backem. Výsledek zaznamenat spolu s commit SHA, iOS verzí a modelem iPhonu; při problému sdílet diagnostiku. Jde o jediný závěrečný acceptance běh, nikoli požadavek opakovat dříve ověřené mezikroky.
+Commander používá jednu chronologickou frontu událostí uvnitř `ContentState`, nikoli více ActivityKit instancí řazených přes `relevanceScore`. Při překryvu zůstává nahoře dříve zahájená stále probíhající událost a následující událost je zobrazena pod ní; po konci první se druhá automaticky stane hlavní. Stejný obsah se replikuje i na Watch.
+
+**PASS:** platný READY preflight, oba skutečné systémové alarmy zazvoní ve zobrazených `leaveAt` časech, po Stop není hluchá mezera ani červený handoff, Commander ukazuje `Začíná za …`, v `startAt` se přepne na `Právě…` a v `endAt` na další událost / `Skončilo` místo dalšího odpočtu. Slyšitelný alarm ani reálnou viditelnost UI nelze potvrdit jen úspěšným SDK read-backem. Výsledek zaznamenat spolu s commit SHA, iOS verzí a modelem iPhonu; při problému sdílet diagnostiku. Jde o jediný závěrečný acceptance běh, nikoli požadavek opakovat dříve ověřené mezikroky.
 
 Tato izolovaná aplikace neprokazuje doručení Watch notifikace, WatchConnectivity na párovaných zařízeních, Personal Team obnovu produkčního profilu ani přístupnost všech produkčních obrazovek. Tyto hranice se nesmějí skrýt za její PASS.
+
+Tento dvouudálostní acceptance stále **neprokazuje celý den s libovolným počtem událostí**, ale důvod už není systémový slot pro více Commander aktivit. Produkce drží jedinou Commander Live Activity; každý další Stop rozšiřuje/aktualizuje její frontu a foreground reconciliation ji může naplnit až šesti nejbližšími neskončenými událostmi, aby dynamický stav zůstal bezpečně pod limitem ActivityKit. Samostatně je proto potřeba hlídat velikost `ContentState` a dlouhý celodenní běh, nikoli refill dalších ActivityKit instancí.
 
 **FAIL:** po platném READY některý alarm nezazvoní, zazvoní posunutě nebo očekávaná Live Activity/Dynamic Island chybí či odpočítává jinam. Zaznamenat skutečný čas a sdílet diagnostiku. Aplikace sama nikdy nevydá automatický fyzický PASS.
 
