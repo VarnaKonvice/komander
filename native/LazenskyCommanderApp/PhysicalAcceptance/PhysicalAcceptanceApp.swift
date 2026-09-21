@@ -5,6 +5,7 @@ import LazenskyCommanderCore
 
 private actor PhysicalAcceptanceLiveActivityPrimer {
   static let stableID = "physicalAcceptance.permissionProbe"
+  static let visualProbeID = "physicalAcceptance.visualProbe"
 
   func prepare() async throws {
     await clear()
@@ -35,6 +36,47 @@ private actor PhysicalAcceptanceLiveActivityPrimer {
       pushType: nil,
       style: .standard
     )
+  }
+
+  func startVisualProbe() async throws {
+    await clearVisualProbe()
+    guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+      throw AlarmAdapterError.unavailable("Live Activities jsou v systému vypnuté.")
+    }
+
+    let now = Date()
+    let startAt = now.addingTimeInterval(5 * 60)
+    let endAt = now.addingTimeInterval(10 * 60)
+    let attributes = CommanderProcedureLiveActivityAttributes(
+      stableId: Self.visualProbeID,
+      scheduleVersion: 0,
+      iconKey: "electro_therapy",
+      title: "TEST – Magnetoterapie",
+      location: "Vizuální test",
+      kind: .procedure,
+      leaveAt: now,
+      startAt: startAt,
+      endAt: endAt,
+      nextEvent: nil
+    )
+    let content = ActivityContent(
+      state: CommanderProcedureLiveActivityAttributes.ContentState(),
+      staleDate: endAt,
+      relevanceScore: 1_000
+    )
+    _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+      attributes: attributes,
+      content: content,
+      pushType: nil,
+      style: .standard
+    )
+  }
+
+  func clearVisualProbe() async {
+    for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
+      where activity.attributes.stableId == Self.visualProbeID {
+      await activity.end(nil, dismissalPolicy: .immediate)
+    }
   }
 
   func confirmAndClear() async -> Bool {
@@ -92,6 +134,22 @@ final class PhysicalAcceptanceModel: ObservableObject {
     if liveActivitiesPrimed { return "Spustit fyzický test" }
     if permissionProbeRequested { return "Potvrdit povolení a spustit test" }
     return "Připravit Live Activities"
+  }
+
+  func startVisualProbe() {
+    guard !isBusy else { return }
+    isBusy = true
+    error = nil
+    Task {
+      do {
+        try await liveActivityPrimer.startVisualProbe()
+        liveActivityPrimerStatus = "Krátký test aktivní"
+        status = "VIZUÁLNÍ TEST BĚŽÍ – přejděte na plochu, zamkněte telefon a zkontrolujte hodinky."
+      } catch {
+        self.error = error.localizedDescription
+      }
+      isBusy = false
+    }
   }
 
   func start() {
@@ -155,6 +213,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
   }
 
   private func perform(maxAttempts: Int) async {
+    await liveActivityPrimer.clearVisualProbe()
     observationTask?.cancel()
     observationTask = nil
     activityStateTasks.forEach { $0.cancel() }
@@ -390,6 +449,9 @@ struct PhysicalAcceptanceView: View {
             Text("Fyzický test alarmů a živých aktivit").font(.caption).foregroundStyle(.secondary)
           }
         }
+        Button(action: model.startVisualProbe) {
+          Label("Krátký test Dynamic Island + Watch", systemImage: "sparkles")
+        }.disabled(model.isBusy)
         Button(action: model.start) {
           Label(model.primaryActionTitle, systemImage: "play.fill")
         }.disabled(model.isBusy)
@@ -490,7 +552,9 @@ struct PhysicalAcceptanceApp: App {
       PhysicalAcceptanceView(model: model)
         .preferredColorScheme(.dark)
         .task {
-          if ProcessInfo.processInfo.arguments.contains("--auto-run") {
+          if ProcessInfo.processInfo.arguments.contains("--visual-probe") {
+            model.startVisualProbe()
+          } else if ProcessInfo.processInfo.arguments.contains("--auto-run") {
             model.start()
           }
         }

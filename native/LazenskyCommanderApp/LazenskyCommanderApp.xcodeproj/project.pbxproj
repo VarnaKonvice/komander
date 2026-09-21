@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AC2000000000000000000001 /* icon-map.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000013 /* icon-map.json */; };
+		AC2000000000000000000002 /* colors.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000014 /* colors.json */; };
+		AC2000000000000000000003 /* icon-map.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000013 /* icon-map.json */; };
+		AC2000000000000000000004 /* colors.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000014 /* colors.json */; };
+
 		CB1000000000000000000007 /* CommanderProvisioningRenewal.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000017 /* CommanderProvisioningRenewal.swift */; };
 		CB1000000000000000000006 /* CommanderDaySummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000016 /* CommanderDaySummaryView.swift */; };
 		CB1000000000000000000001 /* CommanderAppTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000011 /* CommanderAppTabs.swift */; };
@@ -912,6 +917,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AC2000000000000000000001,
+				AC2000000000000000000002,
 				H80000000000000000000008 /* BrandAssets.xcassets in Resources */,
 				B20000000000000000000006 /* electro_therapy.png in Resources */,
 				B20000000000000000000007 /* hydrojet.png in Resources */,
@@ -1001,6 +1008,8 @@
 			isa = "PBXResourcesBuildPhase";
 			buildActionMask = "2147483647";
 			files = (
+				AC2000000000000000000003,
+				AC2000000000000000000004,
 				"CA000000000000000000002B",
 				"CA000000000000000000002C",
 				"CA000000000000000000002D",
@@ -1265,6 +1274,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Lázeňský Commander";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.varnakonvice.lazenskycommander;
+			INFOPLIST_KEY_WKSupportsLiveActivityLaunchAttributeTypes = "";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.varnakonvice.lazenskycommander.watchkitapp;
@@ -1292,6 +1302,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Lázeňský Commander";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.varnakonvice.lazenskycommander;
+			INFOPLIST_KEY_WKSupportsLiveActivityLaunchAttributeTypes = "";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.varnakonvice.lazenskycommander.watchkitapp;

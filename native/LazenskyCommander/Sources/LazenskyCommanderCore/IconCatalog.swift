@@ -19,7 +19,12 @@ public struct CommanderIconMap: Codable, Equatable, Sendable {
   public let fallback: Fallback
 
   public func classify(_ event: ScheduleEvent) -> Icon? {
-    let source = normalized([event.title, event.procedureType ?? "", event.mealType ?? ""].joined(separator: " "))
+    classify(title: [event.title, event.procedureType ?? "", event.mealType ?? ""].joined(separator: " "))
+  }
+
+  /// Uses the same approved classification for ActivityKit snapshots containing a title.
+  public func classify(title: String) -> Icon? {
+    let source = normalized(title)
     let matches = icons.enumerated().compactMap { index, icon -> (icon: Icon, keywordLength: Int, index: Int)? in
       let keywordLength = icon.keywords
         .map(normalized)

@@ -72,12 +72,12 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     }
 
     await CommanderAlarmStopHandoffGate.shared.run {
-      await Self.applyHandoff(metadata: metadata)
+      await Self.applyHandoff(metadata: metadata, alarmID: alarmID)
     }
     return .result()
   }
 
-  private static func applyHandoff(metadata: CommanderAlarmMetadata) async {
+  private static func applyHandoff(metadata: CommanderAlarmMetadata, alarmID: String) async {
     guard let endISO = metadata.endAt,
           let leaveAt = try? NativeAlarmContract.date(fromLocalISO: metadata.leaveAt),
           let startAt = try? NativeAlarmContract.date(fromLocalISO: metadata.startAt),
@@ -114,6 +114,14 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
       leaveAt: metadata.leaveAt
     )
     let incomingEvents = [currentEvent, metadata.nextEvent].compactMap { $0 }
+
+    // AlarmKit still owns an AlarmAttributes Live Activity while the Stop intent runs.
+    // Starting a second Live Activity from this background intent can fail with
+    // ActivityAuthorizationError.visibility ("Target is not foreground") until the
+    // AlarmKit activity has actually left its ongoing state. Retire the stopped
+    // AlarmKit activity first; later Stops then update the existing Commander activity.
+    await Self.retireStoppedAlarmActivity(alarmID: alarmID)
+
     let ongoing = Activity<CommanderProcedureLiveActivityAttributes>.activities
       .filter { Self.isOngoing($0.activityState) }
       .sorted { Self.retentionRank($0.activityState) < Self.retentionRank($1.activityState) }
@@ -166,6 +174,39 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     } catch {
       CommanderPhysicalAcceptanceDiagnostics.record("Stop → Commander chyba · \(error.localizedDescription)")
     }
+  }
+
+  private static func retireStoppedAlarmActivity(alarmID: String) async {
+    guard let stoppedAlarmID = UUID(uuidString: alarmID) else {
+      CommanderPhysicalAcceptanceDiagnostics.record("Stop → neplatné AlarmKit ID · \(alarmID)")
+      return
+    }
+
+    let matching = Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities.filter {
+      $0.content.state.alarmID == stoppedAlarmID && Self.isOngoing($0.activityState)
+    }
+    guard !matching.isEmpty else { return }
+
+    for activity in matching {
+      await activity.end(nil, dismissalPolicy: .immediate)
+    }
+
+    // ActivityKit state propagation is asynchronous. A short bounded wait keeps the
+    // handoff inside the same Stop intent while avoiding a race with Activity.request.
+    for _ in 0..<12 {
+      let stillOngoing = Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities.contains {
+        $0.content.state.alarmID == stoppedAlarmID && Self.isOngoing($0.activityState)
+      }
+      if !stillOngoing {
+        CommanderPhysicalAcceptanceDiagnostics.record("Stop → AlarmKit karta ukončena před Commanderem")
+        return
+      }
+      try? await Task.sleep(for: .milliseconds(75))
+    }
+
+    CommanderPhysicalAcceptanceDiagnostics.record(
+      "Stop → AlarmKit karta se nestihla ukončit před Commanderem"
+    )
   }
 
   private static func seedEvents(
