@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		ABCD00000000000000000002 /* CommanderSilentAlert.wav in Resources */ = {isa = PBXBuildFile; fileRef = ABCD00000000000000000001 /* CommanderSilentAlert.wav */; };
+		ABCD00000000000000000003 /* CommanderSilentAlert.wav in Resources */ = {isa = PBXBuildFile; fileRef = ABCD00000000000000000001 /* CommanderSilentAlert.wav */; };
 		CB1000000000000000000007 /* CommanderProvisioningRenewal.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000017 /* CommanderProvisioningRenewal.swift */; };
 		CB1000000000000000000006 /* CommanderDaySummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000016 /* CommanderDaySummaryView.swift */; };
 		CB1000000000000000000001 /* CommanderAppTabs.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000011 /* CommanderAppTabs.swift */; };
@@ -16,6 +18,8 @@
 		CB1000000000000000000005 /* CommanderSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000015 /* CommanderSettingsView.swift */; };
 		A10000000000000000000001 /* LazenskyCommanderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* LazenskyCommanderApp.swift */; };
 		A10000000000000000000002 /* AlarmKitAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* AlarmKitAdapter.swift */; };
+		J10000000000000000000001 /* CommanderProcedureLiveActivityCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = J10000000000000000000011 /* CommanderProcedureLiveActivityCoordinator.swift */; };
+		J10000000000000000000002 /* CommanderProcedureLiveActivityCoordinator.swift in PhysicalAcceptance Sources */ = {isa = PBXBuildFile; fileRef = J10000000000000000000011 /* CommanderProcedureLiveActivityCoordinator.swift */; };
 		A10000000000000000000003 /* LazenskyCommanderCore in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000000031 /* LazenskyCommanderCore */; };
 		B20000000000000000000001 /* CommanderAlarmMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000011 /* CommanderAlarmMetadata.swift */; };
 		B20000000000000000000002 /* CommanderAlarmMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000011 /* CommanderAlarmMetadata.swift */; };
@@ -363,6 +367,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		ABCD00000000000000000001 /* CommanderSilentAlert.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = CommanderSilentAlert.wav; sourceTree = "<group>"; };
 		CB1000000000000000000017 /* CommanderProvisioningRenewal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderProvisioningRenewal.swift; sourceTree = "<group>"; };
 		CB1000000000000000000016 /* CommanderDaySummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDaySummaryView.swift; sourceTree = "<group>"; };
 		CB1000000000000000000011 /* CommanderAppTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderAppTabs.swift; sourceTree = "<group>"; };
@@ -373,6 +378,7 @@
 		A10000000000000000000010 /* LazenskyCommanderApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LazenskyCommanderApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000011 /* LazenskyCommanderApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazenskyCommanderApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000012 /* AlarmKitAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitAdapter.swift; sourceTree = "<group>"; };
+		J10000000000000000000011 /* CommanderProcedureLiveActivityCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderProcedureLiveActivityCoordinator.swift; sourceTree = "<group>"; };
 		A10000000000000000000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B20000000000000000000010 /* LazenskyCommanderLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LazenskyCommanderLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B20000000000000000000011 /* CommanderAlarmMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderAlarmMetadata.swift; sourceTree = "<group>"; };
@@ -527,6 +533,8 @@
 			children = (
 				A10000000000000000000011 /* LazenskyCommanderApp.swift */,
 				A10000000000000000000012 /* AlarmKitAdapter.swift */,
+				J10000000000000000000011 /* CommanderProcedureLiveActivityCoordinator.swift */,
+				ABCD00000000000000000001 /* CommanderSilentAlert.wav */,
 				E50000000000000000000011 /* IPhoneWatchConnectivityCoordinator.swift */,
 				C30000000000000000000011 /* CommanderLiveCard.swift */,
 				C30000000000000000000012 /* CommanderVisualAssets.swift */,
@@ -885,6 +893,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ABCD00000000000000000002 /* CommanderSilentAlert.wav in Resources */,
 				H80000000000000000000005 /* AppAssets.xcassets in Resources */,
 				H80000000000000000000007 /* BrandAssets.xcassets in Resources */,
 				C30000000000000000000003 /* icon-map.json in Resources */,
@@ -973,6 +982,7 @@
 			isa = "PBXResourcesBuildPhase";
 			buildActionMask = "2147483647";
 			files = (
+				"ABCD00000000000000000003",
 				"CA000000000000000000000E",
 				"CA000000000000000000000F",
 				"CA0000000000000000000010",
@@ -1021,6 +1031,7 @@
 			files = (
 				A10000000000000000000001 /* LazenskyCommanderApp.swift in Sources */,
 				A10000000000000000000002 /* AlarmKitAdapter.swift in Sources */,
+				J10000000000000000000001 /* CommanderProcedureLiveActivityCoordinator.swift in Sources */,
 				E50000000000000000000001 /* IPhoneWatchConnectivityCoordinator.swift in Sources */,
 				C30000000000000000000001 /* CommanderLiveCard.swift in Sources */,
 				C30000000000000000000002 /* CommanderVisualAssets.swift in Sources */,
@@ -1087,6 +1098,7 @@
 			files = (
 				"CA000000000000000000000D",
 				"CA0000000000000000000008",
+				J10000000000000000000002 /* CommanderProcedureLiveActivityCoordinator.swift in PhysicalAcceptance Sources */,
 				"CA0000000000000000000009",
 				"CA000000000000000000000A",
 				"CA000000000000000000000B",

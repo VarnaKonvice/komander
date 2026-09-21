@@ -1,6 +1,6 @@
 # Lázeňský Commander – runtime kontrakt v1
 
-Pracovní větev: `lc/native-stabilization-v2`.
+Pracovní větev: `lc/liveactivity-rebuild-v1`; základní HEAD rekonstrukce `b8cd52a`. Změny tohoto průchodu jsou do fyzického acceptance záměrně necommitnuté.
 
 Tento kontrakt odděluje zdroj pravdy, projekce, jejich ověření a systémové limity. Cílem je, aby fyzický stav iPhonu byl dokazatelný a aby zelený stav aplikace neznamenal více, než skutečně ověřila.
 
@@ -45,7 +45,7 @@ Read-back musí proběhnout po zápisu. Pouhé uložení lokálního mapování 
 
 Musí být vyhodnocena samostatně. `AlarmKit ověřeno` nesmí implicitně znamenat, že existuje správná Live Activity.
 
-Pokud AlarmKit konfigurace spoléhá na existující kartu volna/handoff, musí být tato konkrétní karta skutečně doložena. Pouhá existence předchozí události v rozpisu není dostatečný důvod k použití alert-only AlarmKit konfigurace.
+AlarmKit konfigurace nesmí spoléhat na Commander kartu volna ani Stop handoff. AlarmKit vlastní celý odchodový countdown a alert. Commander kontext procedury/jídla se připravuje samostatně se scheduled startem v `leaveAt`; do `startAt` ukazuje následující událost jako `Začíná za`, od `startAt` `Právě…`. Pro jeden projekční průchod musí AlarmKit, Commander Live Activity a Watch používat stejné zachycené `LeadTimeOverrides` a stejnou `projectionRevision`; změna lokálního předstihu během `await` se nesmí promítnout jen do jedné projekce. Jeho existence ani selhání nesmí měnit ověření AlarmKitu.
 
 ### Watch synchronizovány
 
@@ -85,16 +85,18 @@ Záznam musí vznikat před opravnou mutací i po ní, aby následný foreground
 - Již jednou ověřené systémové AlarmKit alarmy musí fungovat bez běžící aplikace.
 - Nový canonical rozpis během suspendování vyžaduje samostatný garantovaný transport/probuzení; dokud není implementován, aplikace to nesmí tvrdit.
 
-## 6. Handoff a Live Activity
+## 6. AlarmKit a Commander Live Activity
 
-Schválený fyzický tok zůstává:
+Schválený fyzický tok je:
 
-1. před odchodem jantarový stav / odpočet,
-2. v `leaveAt` červený `VYRAZIT TEĎ`,
-3. po Stop zůstává červený stav až do začátku události,
-4. od startu zelený `PRÁVĚ PROBÍHÁ`.
+1. před odchodem AlarmKit vlastní systémový countdown,
+2. v `leaveAt` AlarmKit vlastní `VYRAZIT TEĎ` a skutečný alarm,
+3. Stop pouze zastaví AlarmKit; **nevytváří ani neprodlužuje Commander Live Activity**,
+4. po Stop má být už připravený Commander kontext viditelný bez hluché mezery a do `startAt` ukazovat `Začíná za …`,
+5. v `startAt` se tatáž Commander prezentace lokálně přepne na `PRÁVĚ JÍDLO` / `PRÁVĚ PROBÍHÁ` a ukazuje čas do `endAt`,
+6. v `endAt` přejde přes `staleDate` a časovou fázi na embedded další událost, případně na `Skončilo`; lokální Personal Team varianta negarantuje okamžitý skutečný end/dismissal bez dalšího execution time.
 
-Pokud není možné prokázat existenci handoff karty, AlarmKit nesmí být nakonfigurován tak, že právě tato karta je jediným vlastníkem předodchodové prezentace.
+Produkční coordinator drží malý rolling window nejvýše dvou nejbližších neskončených Commander aktivit. Celé reconciliation operace jsou serializované i přes jejich interní `await`; z více současných odpovídajících instancí stejného canonical `stableId` se ponechá jediná preferovaná aktivní/pending instance a ostatní se ukončí. V této dvojici má pozdější událost vyšší `relevanceScore`, ale správnost UI na něm nesmí stát: pokud předchozí aktivita po `endAt` zůstane `.stale`, její embedded `nextEvent` se časově překlopí na stejný relevantní následující program. Budoucí aktivity používají ActivityKit scheduled start v `leaveAt`. Protože lokální scheduled start vyžaduje `AlertConfiguration`, používá se tichý bundled zvuk; iOS ale může systémový start alert vizuálně zobrazit. `staleDate` samo aktivitu neukončuje a nesmí být vydáváno za přesný lokální scheduler endu. Při každém návratu aplikace do `.active` proběhne nejdřív čistě lokální reconciliation Commander aktivit; teprve potom se uplatní desetisekundový throttle dražší cached/remote synchronizace. Skončené karty se tak uklidí a rolling window doplní i při rychlém foregroundu bez zbytečného síťového nebo AlarmKit průchodu.
 
 ## 7. Provisioning / obnova aplikace
 
@@ -124,5 +126,7 @@ Fyzický PASS vzniká až skutečným průchodem na zařízení. CI/build ani di
 ## 9. Co není zatím garantováno
 
 Dokud nebude výslovně doplněn systémový background/push transport, není garantováno, že změna `schedule.json` během dlouhodobě suspendované aplikace sama probudí iPhone a okamžitě přepíše jeho lokální alarmy.
+
+Stejná hranice platí pro refill Commander Live Activities. Lokální coordinator záměrně připravuje nejvýše dvě nejbližší neskončené události, protože pending/active Live Activities sdílejí systémový limit. Bez dalšího execution time aplikace není garantováno, že po prvních dvou připravených aktivitách vznikne třetí a další. Projekt výslovně přijímá tento bezplatný Personal Team kontrakt s foreground refillem; backend/APNs ani placené Apple Developer členství nejsou součástí cílové architektury. Celodenní garantovanou upozorňovací vrstvou proto zůstává AlarmKit, ne Commander Live Activity.
 
 Tato mez nesnižuje spolehlivost již jednou ověřených budoucích AlarmKit alarmů; odděluje pouze distribuci nové canonical verze od jejího lokálního provedení.

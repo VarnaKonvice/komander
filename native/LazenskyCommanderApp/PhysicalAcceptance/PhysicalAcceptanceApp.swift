@@ -3,25 +3,138 @@ import AlarmKit
 import SwiftUI
 import LazenskyCommanderCore
 
+private actor PhysicalAcceptanceLiveActivityPrimer {
+  static let stableID = "physicalAcceptance.permissionProbe"
+
+  func prepare() async throws {
+    await clear()
+    guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+      throw AlarmAdapterError.unavailable("Live Activities jsou v systému vypnuté.")
+    }
+    let now = Date()
+    let attributes = CommanderProcedureLiveActivityAttributes(
+      stableId: Self.stableID,
+      scheduleVersion: 0,
+      iconKey: "",
+      title: "Commander Test – příprava",
+      location: "Ověření Live Activities",
+      kind: .procedure,
+      leaveAt: now,
+      startAt: now,
+      endAt: now.addingTimeInterval(5 * 60),
+      nextEvent: nil
+    )
+    let content = ActivityContent(
+      state: CommanderProcedureLiveActivityAttributes.ContentState(),
+      staleDate: now.addingTimeInterval(5 * 60),
+      relevanceScore: 0
+    )
+    _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+      attributes: attributes,
+      content: content,
+      pushType: nil,
+      style: .standard
+    )
+  }
+
+  func confirmAndClear() async -> Bool {
+    for _ in 0..<10 {
+      guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+        await clear()
+        return false
+      }
+      let probes = Activity<CommanderProcedureLiveActivityAttributes>.activities.filter {
+        $0.attributes.stableId == Self.stableID
+      }
+      if !probes.isEmpty {
+        for activity in probes { await activity.end(nil, dismissalPolicy: .immediate) }
+        return true
+      }
+      try? await Task.sleep(for: .milliseconds(200))
+    }
+    await clear()
+    return false
+  }
+
+  func clear() async {
+    for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
+      where activity.attributes.stableId == Self.stableID {
+      await activity.end(nil, dismissalPolicy: .immediate)
+    }
+  }
+}
+
 @MainActor
 final class PhysicalAcceptanceModel: ObservableObject {
   @Published private(set) var run: PhysicalAcceptanceRun?
   @Published private(set) var preflight: PhysicalAcceptancePreflight?
   @Published private(set) var observations: [PhysicalAlarmObservation] = []
-  @Published private(set) var status = "Připraveno ke spuštění"
+  @Published private(set) var preparedCommanderStableIDs: Set<String> = []
+  @Published private(set) var readyCommanderStableIDs: Set<String> = []
+  @Published private(set) var status = "Nejdřív připravte Live Activities"
   @Published private(set) var error: String?
   @Published private(set) var isBusy = false
   @Published private(set) var readAt: Date?
-  @Published private(set) var stopIntentStatus = "Zastavit zatím nebylo provedeno"
+  @Published private(set) var diagnosticTimeline = "Zatím žádné diagnostické události"
+  @Published private(set) var liveActivityPrimerStatus = "Nevyzkoušeno"
   private let ownership = PhysicalAcceptanceOwnershipStore()
+  private let liveActivityPrimer = PhysicalAcceptanceLiveActivityPrimer()
   private var adapter: AlarmKitAdapter?
+  private var procedureActivities: CommanderProcedureLiveActivityCoordinator?
+  private var permissionProbeRequested = false
+  private var liveActivitiesPrimed = false
   private var observationTask: Task<Void, Never>?
+  private var activityStateTasks: [Task<Void, Never>] = []
+  private var lastSnapshotFingerprint: String?
   private var requests = CommanderSynchronizationRequestQueue()
+
+  var primaryActionTitle: String {
+    if liveActivitiesPrimed { return "Spustit fyzický test" }
+    if permissionProbeRequested { return "Potvrdit povolení a spustit test" }
+    return "Připravit Live Activities"
+  }
 
   func start() {
     guard !isBusy else { return }
+    if !liveActivitiesPrimed {
+      isBusy = true
+      Task { await prepareOrConfirmLiveActivities() }
+      return
+    }
+    beginTimedRun()
+  }
+
+  private func beginTimedRun() {
     isBusy = true
     Task { await startQueued() }
+  }
+
+  private func prepareOrConfirmLiveActivities() async {
+    error = nil
+    do {
+      if permissionProbeRequested {
+        guard await liveActivityPrimer.confirmAndClear() else {
+          permissionProbeRequested = false
+          liveActivityPrimerStatus = "Live Activities nejsou povolené"
+          throw AlarmAdapterError.unavailable("Povolte Live Activities pro Commander Test a spusťte přípravu znovu.")
+        }
+        permissionProbeRequested = false
+        liveActivitiesPrimed = true
+        liveActivityPrimerStatus = "Ověřeno před časovaným během"
+        status = "Live Activities připravené – spouštím časovaný test"
+        beginTimedRun()
+        return
+      }
+
+      try await liveActivityPrimer.prepare()
+      permissionProbeRequested = true
+      liveActivityPrimerStatus = "Vyřiďte systémové Povolit / Nepovolovat"
+      status = "Nejdřív vyřiďte systémové povolení Live Activities, potom znovu stiskněte tlačítko."
+      isBusy = false
+    } catch {
+      self.error = error.localizedDescription
+      isBusy = false
+    }
   }
 
   private func startQueued() async {
@@ -38,13 +151,18 @@ final class PhysicalAcceptanceModel: ObservableObject {
   private func perform(maxAttempts: Int) async {
     observationTask?.cancel()
     observationTask = nil
-    run = nil; preflight = nil; observations = []; error = nil; readAt = nil
-    stopIntentStatus = "Zastavit zatím nebylo provedeno"
+    activityStateTasks.forEach { $0.cancel() }
+    activityStateTasks = []
+    lastSnapshotFingerprint = nil
+    run = nil; preflight = nil; observations = []; preparedCommanderStableIDs = []; readyCommanderStableIDs = []; error = nil; readAt = nil
+    diagnosticTimeline = "Zatím žádné diagnostické události"
     status = "Ověřuji oprávnění a čistý testovací stav"
     do {
       let runID = UUID()
       let adapter = try AlarmKitAdapter(physicalAcceptanceRunID: runID, ownership: ownership)
+      let procedureActivities = CommanderProcedureLiveActivityCoordinator()
       self.adapter = adapter
+      self.procedureActivities = procedureActivities
       if await adapter.authorizationStatus() != .authorized { try await adapter.requestAuthorization() }
       guard ActivityAuthorizationInfo().areActivitiesEnabled else {
         throw AlarmAdapterError.unavailable("Živé aktivity nejsou povolené pro Commander Test.")
@@ -52,19 +170,30 @@ final class PhysicalAcceptanceModel: ObservableObject {
       try await AlarmKitAdapter.clearPreviousPhysicalAcceptance(ownership: ownership)
       let run = try PhysicalAcceptanceRun(now: Date(), id: runID)
       self.run = run
+      recordDiagnostic("RUN vytvořen · \(runID.uuidString)")
       let session = PhysicalAcceptanceSession(run: run, adapter: adapter)
       var summary: AlarmSyncSummary?
       var syncAttempts = 0
       var procedurePrepared = false
-      status = "Ověřuji 2 systémové alarmy a úvodní živou aktivitu"
+      status = "Ověřuji 2 systémové alarmy a 2 Commander aktivity"
       for tick in 0..<20 {
         if [0, 4, 10].contains(tick), syncAttempts < maxAttempts,
            summary?.succeeded != true || !procedurePrepared {
           summary = try await session.synchronize(now: Date()).alarmSummary
           syncAttempts += 1
         }
+        await procedureActivities.reconcile(
+          schedule: run.schedule,
+          overrides: run.overrides,
+          projectionRevision: run.projectionRevision
+        )
         observations = try await adapter.physicalObservations()
-        procedurePrepared = await adapter.physicalProcedureActivityPrepared(run: run)
+        preparedCommanderStableIDs = await procedureActivities.preparedStableIDs(
+          schedule: run.schedule,
+          overrides: run.overrides,
+          projectionRevision: run.projectionRevision
+        )
+        procedurePrepared = preparedCommanderStableIDs.count == CommanderProcedureLiveActivityCoordinator.maximumPreparedActivities
         let now = Date()
         let check = try await PhysicalAcceptancePreflight(
           run: run, observations: observations, managed: session.alarmStore.load(),
@@ -74,6 +203,10 @@ final class PhysicalAcceptanceModel: ObservableObject {
         preflight = check
         readAt = now
         if check.ready {
+          readyCommanderStableIDs = preparedCommanderStableIDs
+          recordDiagnostic("READY · alarmy 2/2 · Commander Activity 2/2")
+          recordSnapshot(run: run, readings: observations)
+          startActivityStateObservers(run: run)
           status = "PŘIPRAVENO – 2/2 ověřeno. Zamkněte telefon."
           startReadOnlyObservations(runID: runID)
           return
@@ -98,30 +231,90 @@ final class PhysicalAcceptanceModel: ObservableObject {
     }
   }
 
+  private func recordDiagnostic(_ text: String) {
+    CommanderPhysicalAcceptanceDiagnostics.record(text)
+    diagnosticTimeline = CommanderPhysicalAcceptanceDiagnostics.read()
+      ?? "Zatím žádné diagnostické události"
+  }
+
+  private func startActivityStateObservers(run: PhysicalAcceptanceRun) {
+    activityStateTasks.forEach { $0.cancel() }
+    activityStateTasks = []
+    let activities = Activity<CommanderProcedureLiveActivityAttributes>.activities.filter {
+      $0.attributes.stableId.hasPrefix(run.namespace + ".")
+    }
+    for activity in activities {
+      let label = Self.shortStableID(activity.attributes.stableId)
+      recordDiagnostic("Activity \(label) · \(Self.activityStateName(activity.activityState))")
+      activityStateTasks.append(Task { [weak self] in
+        for await state in activity.activityStateUpdates {
+          guard !Task.isCancelled, let self, self.run?.id == run.id else { return }
+          self.recordDiagnostic("Activity \(label) · \(Self.activityStateName(state))")
+        }
+      })
+    }
+  }
+
+  private func recordSnapshot(run: PhysicalAcceptanceRun, readings: [PhysicalAlarmObservation]) {
+    let alarmPart = readings.sorted { ($0.stableID ?? $0.platformID) < ($1.stableID ?? $1.platformID) }
+      .map { "\(Self.shortStableID($0.stableID ?? $0.platformID))=\($0.state)" }
+      .joined(separator: ", ")
+    let activityPart = Activity<CommanderProcedureLiveActivityAttributes>.activities
+      .filter { $0.attributes.stableId.hasPrefix(run.namespace + ".") }
+      .sorted { $0.attributes.stableId < $1.attributes.stableId }
+      .map { "\(Self.shortStableID($0.attributes.stableId))=\(Self.activityStateName($0.activityState))" }
+      .joined(separator: ", ")
+    let fingerprint = "A[\(alarmPart)]|L[\(activityPart)]"
+    guard fingerprint != lastSnapshotFingerprint else { return }
+    lastSnapshotFingerprint = fingerprint
+    recordDiagnostic("SNAPSHOT · AlarmKit [\(alarmPart)] · Commander [\(activityPart)]")
+  }
+
+  private func reconcileOwnership(with readings: [PhysicalAlarmObservation]) async {
+    let platformIDs = Set(readings.map(\.platformID))
+    for id in await ownership.allIDs() where !platformIDs.contains(id) {
+      await ownership.forget(id)
+    }
+  }
+
   func refreshObservations(expectedRunID: UUID? = nil) async {
-    stopIntentStatus = CommanderPhysicalAcceptanceDiagnostics.read()
-      ?? "Zastavit zatím nebylo provedeno"
-    guard let run, !isBusy, expectedRunID == nil || run.id == expectedRunID, let adapter else { return }
+    diagnosticTimeline = CommanderPhysicalAcceptanceDiagnostics.read()
+      ?? "Zatím žádné diagnostické události"
+    guard let run, !isBusy, expectedRunID == nil || run.id == expectedRunID,
+          let adapter, let procedureActivities else { return }
     do {
       let readings = try await adapter.physicalObservations()
       guard self.run?.id == run.id else { return }
       observations = readings
+      preparedCommanderStableIDs = await procedureActivities.preparedStableIDs(
+        schedule: run.schedule,
+        overrides: run.overrides,
+        projectionRevision: run.projectionRevision
+      )
+      await reconcileOwnership(with: readings)
+      recordSnapshot(run: run, readings: readings)
       readAt = Date()
-      if preflight?.ready == true,
-         let first = preflight?.rows.first?.expectedPlan.scheduledAlertAt,
-         Date() >= first {
+      let now = Date()
+      let finalEnd = run.schedule.events.compactMap {
+        try? NativeAlarmContract.dateTime(date: $0.date, time: $0.end)
+      }.max()
+      if preflight?.ready == true, let finalEnd, now >= finalEnd {
+        status = "TEST DOKONČEN – zkontrolujte diagnostickou časovou osu"
+      } else if preflight?.ready == true,
+                let first = preflight?.rows.first?.expectedPlan.scheduledAlertAt,
+                now >= first {
         status = "Test probíhá – výsledek potvrďte fyzicky"
       }
     } catch { self.error = error.localizedDescription }
   }
 
   var report: String {
-    var lines = [status, "Režim: physicalAcceptance; síť: nepoužita; Watch delivery: vypnuto", "Lokální overrides: žádné (nová prázdná hodnota, bez čtení preferences)", "Akce po Zastavit: \(stopIntentStatus)"]
+    var lines = [status, "Režim: physicalAcceptance; síť: nepoužita; Watch delivery: vypnuto", "Lokální overrides: žádné (nová prázdná hodnota, bez čtení preferences)", "Live Activity primer: \(liveActivityPrimerStatus)", "Diagnostická časová osa:\n\(diagnosticTimeline)"]
     if let run {
       lines += ["Run ID: \(run.id)", "now: \(Self.time(run.now))", "namespace: \(run.namespace)", "projectionRevision: \(run.projectionRevision)"]
     }
     if let preflight {
-      lines += ["Ověřeno: \(Self.time(preflight.checkedAt))", "Očekávané alarmy: 2; ověřené: \(preflight.verifiedAlarmCount)", "Skutečné alarmy při posledním čtení: \(observations.count)"]
+      lines += ["Ověřeno: \(Self.time(preflight.checkedAt))", "Očekávané alarmy: 2; ověřené: \(preflight.verifiedAlarmCount)", "Skutečné alarmy při posledním čtení: \(observations.count)", "Commander Activity při READY: \(readyCommanderStableIDs.count)/2; aktuálně: \(preparedCommanderStableIDs.count)/2"]
       for row in preflight.rows {
         lines += ["\(row.alarm.stableId) | \(row.alarm.title)", "lead: \(row.leadTime.minutes) min; source: \(Self.source(row.leadTime.source))", "canonical leaveAt / expected fire: \(row.alarm.leaveAt)", "expected visible/system transition: \(Self.time(row.expectedCountdownStart))"]
         if let actual = observations.first(where: { $0.stableID == row.alarm.stableId }) ?? row.actual {
@@ -134,6 +327,21 @@ final class PhysicalAcceptanceModel: ObservableObject {
     if let error { lines.append(error) }
     lines.append("Stav PŘIPRAVENO potvrzuje konfiguraci, nikoli automaticky zvuk nebo viditelnost živé aktivity.")
     return lines.joined(separator: "\n")
+  }
+
+  static func shortStableID(_ value: String) -> String {
+    value.split(separator: ".").last.map(String.init) ?? value
+  }
+
+  static func activityStateName(_ state: ActivityState) -> String {
+    switch state {
+    case .pending: "pending"
+    case .active: "active"
+    case .stale: "stale"
+    case .ended: "ended"
+    case .dismissed: "dismissed"
+    @unknown default: "unknown"
+    }
   }
 
   static func time(_ date: Date?) -> String {
@@ -173,8 +381,9 @@ struct PhysicalAcceptanceView: View {
           }
         }
         Button(action: model.start) {
-          Label("Spustit fyzický test", systemImage: "play.fill")
+          Label(model.primaryActionTitle, systemImage: "play.fill")
         }.disabled(model.isBusy)
+        field("Live Activity primer", model.liveActivityPrimerStatus)
         Text(model.status).font(.headline).foregroundStyle(model.preflight?.ready == true ? .green : .primary)
         if model.isBusy { ProgressView() }
         if let error = model.error { Text(error).foregroundStyle(.red) }
@@ -197,7 +406,7 @@ struct PhysicalAcceptanceView: View {
                 .padding(.vertical, 4)
               }
             }
-            Text("Sled: Odchod za → alarm → VYRAZIT TEĎ → Právě jídlo → Právě volno → alarm → VYRAZIT TEĎ → Právě probíhá.")
+            Text("Sled: Odchod za → alarm → Zastavit → Commander ZAČÍNÁ ZA → v startu PRÁVĚ… → po konci DALŠÍ / Skončilo; stejně pro druhou událost.")
               .font(.footnote)
               .foregroundStyle(.secondary)
           } else {
@@ -213,7 +422,6 @@ struct PhysicalAcceptanceView: View {
           field("Revize", String(run.projectionRevision))
           field("Apple Watch", "Předávání vypnuto")
           field("Síť / GitHub", "Nepoužito")
-          field("Akce po Zastavit", model.stopIntentStatus)
         }
       }
 
@@ -222,6 +430,8 @@ struct PhysicalAcceptanceView: View {
           field("Očekávané alarmy", "2")
           field("Ověřené alarmy", "\(check.verifiedAlarmCount)")
           field("Skutečné alarmy", "\(model.observations.count)")
+          field("Commander Activity při READY", "\(model.readyCommanderStableIDs.count)/2")
+          field("Commander Activity aktuálně", "\(model.preparedCommanderStableIDs.count)/2")
           field("Ověřeno v", PhysicalAcceptanceModel.time(check.checkedAt))
           ForEach(check.issues, id: \.self) { Text($0).foregroundStyle(.red) }
         }
@@ -238,6 +448,12 @@ struct PhysicalAcceptanceView: View {
             } else { Text("Alarm již není v aktuálním systémovém seznamu.").foregroundStyle(.secondary) }
             ForEach(row.issues, id: \.self) { Text($0).foregroundStyle(.red) }
           }
+        }
+        Section("Diagnostická časová osa") {
+          Text(model.diagnosticTimeline)
+            .font(.caption.monospaced())
+            .textSelection(.enabled)
+            .fixedSize(horizontal: false, vertical: true)
         }
         Section {
           field("Poslední systémové ověření", PhysicalAcceptanceModel.time(model.readAt))

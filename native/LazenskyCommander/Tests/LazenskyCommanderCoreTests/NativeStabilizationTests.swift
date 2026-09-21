@@ -3,62 +3,37 @@ import Foundation
 import Testing
 @testable import LazenskyCommanderCore
 
-@Test func stopDecisionPreservesRedUntilExactStartWithAndWithoutExistingCard() throws {
-  let start = try stabilizationDate("10:30")
-  for hasHandoff in [false, true] {
-    for seconds in [-600.0, -1, -0.001] {
-      #expect(CommanderLiveActivityHandoff.stopDisposition(hasHandoff: hasHandoff, startAt: start,
-        now: start.addingTimeInterval(seconds)) == (hasHandoff ? .bridgeUntilStart : .retainAlarmUntilStart))
-    }
-    for seconds in [0.0, 0.001, 60] {
-      #expect(CommanderLiveActivityHandoff.stopDisposition(hasHandoff: hasHandoff, startAt: start,
-        now: start.addingTimeInterval(seconds)) == .dismiss)
-    }
-  }
+@Test func alarmPresentationContextIgnoresFollowingEventChanges() throws {
+  let original = stabilizationSchedule()
+  let originalMeal = try NativeAlarmContract.payload(schedule: original).alarms[0]
+  let originalContext = try AlarmPresentationContext(alarm: originalMeal, schedule: original)
+  let changedProcedure = ScheduleEvent(
+    stableId: "procedure", date: "2026-09-06", start: "10:35", end: "10:45",
+    title: "Nová procedura", location: "Jiné místo", kind: .procedure,
+    procedureType: "Magnetoterapie", mealType: nil, leadTimeMinutes: nil
+  )
+  let changed = stabilizationSchedule(version: 2, events: [original.events[0], changedProcedure])
+  let changedMeal = try NativeAlarmContract.payload(schedule: changed).alarms[0]
+  #expect(changedMeal == originalMeal)
+  #expect(try AlarmPresentationContext(alarm: changedMeal, schedule: changed) == originalContext)
 }
 
-@Test func foregroundCleanupRetainsEndedRedCardOnlyForCurrentCanonicalDeparture() throws {
-  let schedule = stabilizationSchedule()
-  let alarm = try NativeAlarmContract.payload(schedule: schedule).alarms[1]
-  for time in ["10:20", "10:25", "10:29:59"] {
-    #expect(CommanderLiveActivityHandoff.retainsBridge(storedTarget: alarm, currentTarget: alarm,
-      now: try stabilizationDate(time)))
-  }
-  for time in ["10:19:59", "10:30", "10:40"] {
-    #expect(!CommanderLiveActivityHandoff.retainsBridge(storedTarget: alarm, currentTarget: alarm,
-      now: try stabilizationDate(time)))
-  }
-  let updated = try NativeAlarmContract.payload(schedule: schedule,
-    overrides: LeadTimeOverrides(defaultLeadTimeMinutes: 15)).alarms[1]
-  #expect(!CommanderLiveActivityHandoff.retainsBridge(storedTarget: alarm, currentTarget: updated,
-    now: try stabilizationDate("10:25")))
-  #expect(!CommanderLiveActivityHandoff.retainsBridge(storedTarget: alarm, currentTarget: nil,
-    now: try stabilizationDate("10:25")))
-}
+@Test func alarmPresentationContextTracksPreviousEventCountdownWindow() throws {
+  let original = stabilizationSchedule()
+  let originalProcedure = try NativeAlarmContract.payload(schedule: original).alarms[1]
+  let originalContext = try AlarmPresentationContext(alarm: originalProcedure, schedule: original)
+  #expect(originalContext.countdownWindow == 5 * 60)
+  #expect(originalContext.procedureType == "Magnetoterapie")
 
-@Test func freeTimeOwnerCannotSuppressGreenActivityAtNextStart() throws {
-  let end = try stabilizationDate("10:15")
-  let start = try stabilizationDate("10:30")
-  for (time, expected) in [("10:14:59", false), ("10:15", true), ("10:25", true), ("10:29:59", true), ("10:30", false), ("10:31", false)] {
-    #expect(CommanderLiveActivityHandoff.retainsFreeTime(previousEnd: end, targetStart: start,
-      now: try stabilizationDate(time)) == expected)
-  }
-}
-
-@Test func sharedHandoffSelectionRejectsSkippedAndCrossDaySources() throws {
-  let schedule = stabilizationSchedule()
-  let alarms = try NativeAlarmContract.payload(schedule: schedule).alarms
-  #expect(!CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarms[0], in: schedule))
-  #expect(CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarms[1], in: schedule))
-  #expect(CommanderLiveActivityHandoff.nextEvent(after: schedule.events[0], in: schedule)?.stableId == "procedure")
-  let reversed = stabilizationSchedule(events: schedule.events.reversed())
-  #expect(CommanderLiveActivityHandoff.nextEvent(after: schedule.events[0], in: reversed)?.stableId == "procedure")
-  let inserted = ScheduleEvent(stableId: "intervening", date: "2026-09-06", start: "10:16", end: "10:25", title: "Kontrola", location: "A", kind: .procedure, procedureType: nil, mealType: nil, leadTimeMinutes: 0)
-  let crowded = stabilizationSchedule(events: schedule.events + [inserted])
-  #expect(!CommanderLiveActivityHandoff.hasFreeTimeSource(for: alarms[1], in: crowded))
-  let tomorrow = ScheduleEvent(stableId: "tomorrow", date: "2026-09-07", start: "10:30", end: "10:40", title: "Zítra", location: "A", kind: .procedure, procedureType: nil, mealType: nil, leadTimeMinutes: nil)
-  let multiDay = stabilizationSchedule(events: [schedule.events[0], tomorrow])
-  #expect(CommanderLiveActivityHandoff.nextEvent(after: schedule.events[0], in: multiDay) == nil)
+  let laterMealEnd = ScheduleEvent(
+    stableId: "meal", date: "2026-09-06", start: "10:10", end: "10:18",
+    title: "Jídlo", location: "Jídelna", kind: .meal,
+    procedureType: nil, mealType: "Oběd", leadTimeMinutes: nil
+  )
+  let changed = stabilizationSchedule(version: 2, events: [laterMealEnd, original.events[1]])
+  let changedProcedure = try NativeAlarmContract.payload(schedule: changed).alarms[1]
+  #expect(changedProcedure == originalProcedure)
+  #expect(try AlarmPresentationContext(alarm: changedProcedure, schedule: changed).countdownWindow == 2 * 60)
 }
 
 @Test func entireAlarmFlowAgreesAcrossDashboardWatchAndCanonicalBoundaries() throws {
@@ -145,7 +120,7 @@ import Testing
 }
 
 
-@Test func neighbourChangeRefreshesStopIntentWithoutChangingOwnAlarmDeadline() async throws {
+@Test func followingEventChangeDoesNotRefreshUnrelatedAlarm() async throws {
   let first = stabilizationSchedule()
   let runtime = ContextRuntime()
   let store = InMemoryAlarmStateStore()
@@ -156,11 +131,11 @@ import Testing
   let changedEvent = ScheduleEvent(stableId: "procedure", date: "2026-09-06", start: "10:35", end: "10:45", title: "Nová procedura", location: "Jiné místo", kind: .procedure, procedureType: "Magnetoterapie", mealType: nil, leadTimeMinutes: nil)
   let changed = stabilizationSchedule(version: 2, events: [first.events[0], changedEvent])
   let updated = try await service.synchronize(schedule: changed, now: stabilizationDate("09:00"))
-  #expect(updated.succeeded && updated.appliedUpdate == 2)
+  #expect(updated.succeeded && updated.appliedUpdate == 1)
   let records = await store.load().records
   #expect(records["meal"]?.alarm == old["meal"]?.alarm)
-  #expect(records["meal"]?.platformAlarmID != old["meal"]?.platformAlarmID)
-  #expect(records["meal"]?.presentationContext?.nextAlarm?.title == "Nová procedura")
+  #expect(records["meal"]?.platformAlarmID == old["meal"]?.platformAlarmID)
+  #expect(records["procedure"]?.platformAlarmID != old["procedure"]?.platformAlarmID)
   let repeated = try await service.synchronize(schedule: changed, now: stabilizationDate("09:00"))
   #expect(repeated.succeeded && repeated.plan.unchanged.count == 2 && repeated.appliedUpdate == 0)
   let versionOnly = stabilizationSchedule(version: 3, events: changed.events)
@@ -189,17 +164,16 @@ import Testing
 
 private actor ContextRuntime: AlarmAdapting {
   private var context: Schedule?
-  private var overrides: LeadTimeOverrides?
   private var dates: [String: Date] = [:]
   private var alerting: Set<String> = []
   func beginAlerting() { alerting = Set(dates.keys) }
   func stopAlerting() { for id in alerting { dates.removeValue(forKey: id) }; alerting = [] }
   func existingPlatformAlertingAlarmIDs() -> Set<String> { alerting }
   func prepare(schedule: Schedule, projectionRevision: Int, overrides: LeadTimeOverrides?) {
-    context = schedule; self.overrides = overrides
+    context = schedule
   }
   func presentationContext(for alarm: NativeAlarm) throws -> AlarmPresentationContext? {
-    try context.map { try AlarmPresentationContext(alarm: alarm, schedule: $0, overrides: overrides) }
+    try context.map { try AlarmPresentationContext(alarm: alarm, schedule: $0) }
   }
   func availability() -> AlarmKitAvailability { .available }
   func authorizationStatus() -> AlarmAuthorizationStatus { .authorized }

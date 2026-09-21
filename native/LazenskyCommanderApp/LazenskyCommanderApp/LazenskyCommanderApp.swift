@@ -85,8 +85,10 @@ private enum AlarmFreeVisualActivityReconciler {
       title: running.title,
       location: running.location,
       kind: running.kind,
+      leaveAt: startAt,
       startAt: startAt,
-      endAt: endAt
+      endAt: endAt,
+      nextEvent: nil
     )
 
     do {
@@ -108,12 +110,117 @@ private enum AlarmFreeVisualActivityReconciler {
     }
   }
 }
+
+private enum AlarmFreeVisualPriorityPairReconciler {
+  private static let prefix = "alarm-free-priority-"
+
+  private static func localISO(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(identifier: "Europe/Prague")
+    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+    return formatter.string(from: date)
+  }
+
+  static func reconcile(now: Date, projectionRevision: Int) async -> AlarmFreeVisualActivityOutcome {
+    guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG multi-LA · Live Activities nejsou povolené",
+        errorMessage: nil
+      )
+    }
+
+    for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities where
+      activity.attributes.stableId.hasPrefix(prefix)
+        || activity.attributes.stableId.hasPrefix(AlarmFreeVisualTestSchedule.stableIDPrefix) {
+      await activity.end(nil, dismissalPolicy: .immediate)
+    }
+
+    let state = CommanderProcedureLiveActivityAttributes.ContentState(
+      projectionRevision: projectionRevision
+    )
+    let olderEnd = now.addingTimeInterval(1)
+    let newerEnd = now.addingTimeInterval(20 * 60)
+
+    do {
+      _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+        attributes: CommanderProcedureLiveActivityAttributes(
+          stableId: prefix + "older-meal",
+          scheduleVersion: 990_002,
+          iconKey: "meal_lunch",
+          title: "TEST – Staré jídlo",
+          location: "Testovací jídelna",
+          kind: .meal,
+          leaveAt: now.addingTimeInterval(-7 * 60),
+          startAt: now.addingTimeInterval(-5 * 60),
+          endAt: olderEnd,
+          nextEvent: CommanderAlarmEventSnapshot(
+            stableId: prefix + "newer-procedure",
+            iconKey: "electro_therapy",
+            title: "TEST – Nová magnetoterapie",
+            location: "Testovací elektroléčba",
+            kind: .procedure,
+            startAt: localISO(now.addingTimeInterval(2 * 60)),
+            endAt: localISO(newerEnd),
+            leaveAt: localISO(now)
+          )
+        ),
+        content: ActivityContent(
+          state: state,
+          staleDate: olderEnd,
+          relevanceScore: 100
+        ),
+        pushType: nil,
+        style: .standard
+      )
+      try? await Task.sleep(for: .milliseconds(300))
+      _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+        attributes: CommanderProcedureLiveActivityAttributes(
+          stableId: prefix + "newer-procedure",
+          scheduleVersion: 990_002,
+          iconKey: "electro_therapy",
+          title: "TEST – Nová magnetoterapie",
+          location: "Testovací elektroléčba",
+          kind: .procedure,
+          leaveAt: now,
+          startAt: now.addingTimeInterval(2 * 60),
+          endAt: newerEnd,
+          nextEvent: nil
+        ),
+        content: ActivityContent(
+          state: state,
+          staleDate: newerEnd,
+          relevanceScore: 200
+        ),
+        pushType: nil,
+        style: .standard
+      )
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG multi-LA · stará 100 / nová 200",
+        errorMessage: nil
+      )
+    } catch {
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG multi-LA · nepodařilo se vytvořit dvojici",
+        errorMessage: error.localizedDescription
+      )
+    }
+  }
+}
 #endif
 
 enum CommanderRuntime {
+  static var multiActivityVisualTest: Bool {
+#if DEBUG
+    ProcessInfo.processInfo.arguments.contains("--multi-liveactivity-visual-test")
+#else
+    false
+#endif
+  }
+
   static var alarmFreeVisualTest: Bool {
 #if DEBUG
-    ProcessInfo.processInfo.arguments.contains("--alarm-free-visual-test")
+    ProcessInfo.processInfo.arguments.contains("--alarm-free-visual-test") || multiActivityVisualTest
 #else
     false
 #endif
@@ -137,6 +244,7 @@ final class CommanderViewModel: ObservableObject {
   @Published private(set) var leadTimeProjectionRevision = 0
 
   private let adapter: AlarmKitAdapter
+  private let procedureActivities: CommanderProcedureLiveActivityCoordinator
   private let service: AlarmSyncService
   private let scheduleSync: CommanderScheduleSyncCoordinator
   private let watchConnectivity: IPhoneWatchConnectivityCoordinator
@@ -149,7 +257,10 @@ final class CommanderViewModel: ObservableObject {
 
   init() {
     let configuration = AppConfiguration()
-    let adapter = AlarmKitAdapter(procedureLiveActivitiesEnabled: configuration.channel == .production)
+    let adapter = AlarmKitAdapter(channel: configuration.channel)
+    let procedureActivities = CommanderProcedureLiveActivityCoordinator(
+      enabled: configuration.channel == .production
+    )
     let scheduleService = URLSessionScheduleService(configuration: configuration)
     let namespace = configuration.channel.rawValue
     let service = AlarmSyncService(
@@ -166,6 +277,7 @@ final class CommanderViewModel: ObservableObject {
       : leadTimePreferences.load()
 
     self.adapter = adapter
+    self.procedureActivities = procedureActivities
     self.service = service
     self.watchConnectivity = watchConnectivity
     self.leadTimePreferences = leadTimePreferences
@@ -236,11 +348,22 @@ final class CommanderViewModel: ObservableObject {
       return
     }
 #endif
+    await reconcileProcedureActivitiesFromLatestSchedule()
     if let lastAutomaticAttempt, Date().timeIntervalSince(lastAutomaticAttempt) < 10 { return }
     if latestSchedule != nil {
       await synchronizeWithRecovery(maxAttempts: 3, automatic: true, source: .cached)
     }
     await synchronizeWithRecovery(maxAttempts: 3, automatic: true)
+  }
+
+  private func reconcileProcedureActivitiesFromLatestSchedule() async {
+    guard let latestSchedule else { return }
+    await procedureActivities.reconcile(
+      schedule: latestSchedule,
+      overrides: leadTimeOverrides,
+      projectionRevision: leadTimeProjectionRevision
+    )
+    liveActivityIssue = await procedureActivities.issue
   }
 
   func refreshAccess() async {
@@ -388,11 +511,19 @@ final class CommanderViewModel: ObservableObject {
     recoveryStatus = "DEBUG testovací pobyt bez alarmů"
     fallbackStatus = "DEBUG test: záložní upozornění jsou vypnutá"
 
-    let outcome = await AlarmFreeVisualActivityReconciler.reconcile(
-      schedule: schedule,
-      now: now,
-      projectionRevision: leadTimeProjectionRevision
-    )
+    let outcome: AlarmFreeVisualActivityOutcome
+    if CommanderRuntime.multiActivityVisualTest {
+      outcome = await AlarmFreeVisualPriorityPairReconciler.reconcile(
+        now: now,
+        projectionRevision: leadTimeProjectionRevision
+      )
+    } else {
+      outcome = await AlarmFreeVisualActivityReconciler.reconcile(
+        schedule: schedule,
+        now: now,
+        projectionRevision: leadTimeProjectionRevision
+      )
+    }
     recoveryStatus = outcome.status
     errorMessage = outcome.errorMessage
   }
@@ -438,14 +569,21 @@ final class CommanderViewModel: ObservableObject {
 
     for attempt in 0..<maxAttempts {
       do {
+        let projectionOverrides = leadTimeOverrides
+        let projectionRevision = leadTimeProjectionRevision
         let result = try await scheduleSync.synchronize(
           source: source,
-          overrides: leadTimeOverrides,
-          projectionRevision: leadTimeProjectionRevision
+          overrides: projectionOverrides,
+          projectionRevision: projectionRevision
         )
         latestSchedule = result.schedule
         summary = result.alarmSummary
-        liveActivityIssue = await adapter.liveActivityIssue
+        await procedureActivities.reconcile(
+          schedule: result.schedule,
+          overrides: projectionOverrides,
+          projectionRevision: projectionRevision
+        )
+        liveActivityIssue = await procedureActivities.issue
         watchTransferStatus = result.watchDeliveryStatus.diagnosticText
         recovery.recordAlarmVerification(succeeded: result.alarmSummary.succeeded)
 

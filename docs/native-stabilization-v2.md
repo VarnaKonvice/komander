@@ -1,96 +1,119 @@
 # Stabilizační průchod nativní aplikace – září 2026
 
-Pracovní větev: `lc/native-stabilization-v2`. Výchozí schválený stav je `d64fcac3dfffb0efb83698af4cde2e98976a63a9` (`guard verified red alarm handoff`). Průchod začal commity `516eecf` a `eea8a33`; navazující běh nejprve přečetl jejich diff a opravil chybějící platformní kontrakt. `main` a `lc/native-design-v1` se nemění.
+Pracovní větev: `lc/liveactivity-rebuild-v1`. Základní HEAD rekonstrukce je `b8cd52a`; současné změny jsou před fyzickým acceptance záměrně necommitnuté. `main` se tímto průchodem nemění.
 
-Tento dokument je registr rozhodnutí a mezí důkazů. Automatické testy nejsou fyzický PASS. Historický designový checkpoint `05d83b6` na `lc/native-design-v1-lockscreen-approved` ani schválení uživatele se tímto průchodem nenahrazují. Produkční zdroj `LazenskyCommanderLiveActivity.swift`, jeho geometrie, ikony a barvy nebyly redesignovány.
+Tento dokument je aktuální registr architektury, invariantů a mezí důkazů. Historické incidenty a starší handoff pokusy zůstávají v samostatných incident dokumentech, ale nejsou současným runtime kontraktem.
 
-## Platformní kontrakt a původní build blocker
+## Vlastnictví lifecycle
 
-Package používá Swift tools 6.2; iPhone a Watch zůstávají na `.iOS(.v26)` a `.watchOS(.v26)`. `.macOS(.v13)` explicitně vyjadřuje vývojový runtime pro Swift Testing a `LazenskyCommanderCoreCheck`, nikoli novou distribuovanou macOS aplikaci. Xcode app má vlastní deployment nastavení. Linux prostředí tohoto Work běhu nemá Swift ani Xcode, proto se skutečné testy a Apple buildy provádějí na macOS runneru GitHub Actions.
-
-Původní deklarace pouze iOS/watchOS nezakazovala macOS build; ponechávala implicitní staré minimum. Proto nové použití `Task` selhalo. Zvýšit jen dostupnost konkrétní FIFO fronty na 10.15 by nevyjádřilo kontrakt celého balíčku, který obsahuje také async URLSession a současný testovací runtime. Reference: [SwiftPM SupportedPlatform](https://docs.swift.org/package-manager/PackageDescription/PackageDescription.html), [Swift platform support](https://swift.org/platform-support/), [URLSession async API](https://developer.apple.com/documentation/foundation/urlsession/data%28for%3Adelegate%3A%29).
-
-Integrační build následně odhalil dvě nepřístupná API: konstruktor `WatchNotificationPlan()` a továrnu `NativeAlarmContract.alarm`. Jsou nyní public. `PublicIntegrationContractTests.swift` je záměrně bez `@testable import`; behaviorální fixture testy stále používají interní memberwise inicializátory. Jde o kontrolu veřejného API, nikoli náhražku integračního buildu.
-
-## Vlastnictví dat a vedlejších účinků
-
-| Oblast | Vlastník a zdroj pravdy | Důležité omezení |
+| Oblast | Vlastník | Aktuální kontrakt |
 | --- | --- | --- |
-| Canonical rozpis | `CommanderScheduleSyncCoordinator` → validovaný `ScheduleSnapshotStoring`; produkční feed `data/schedule.json` | Lokální předstihy nikdy nepřepisují canonical feed |
-| Čerstvost | scheduleVersion + shoda obsahu; samostatná projectionRevision pro lokální předstihy | Stejná verze s jiným canonical obsahem není aktualizace |
-| Persistence iPhonu | Actor `UserDefaultsScheduleSnapshotStore`, samostatné namespace pro kanály; alarm mapping zvlášť | Neplatná cache se nesmí tvářit jako platný nový rozpis |
-| Odvozené časy | `NativeAlarmContract` a `AlarmCountdown` | Fixed začátek countdownu není čas zazvonění |
-| AlarmKit zápisy | `AlarmSyncService` a jeden `AlarmKitAdapter`, volané přes app request queue | Actor sám nebrání prokládání přes await; nepřidávat druhého souběžného volajícího |
-| Alarm metadata | Persistovaný `AlarmPresentationContext` | Závisí také na sousední události a vlastníkovi volna, nikoli jen vlastním leaveAt |
-| Červený Stop handoff | `CommanderAlarmStopIntent`, sdílené rozhodnutí `CommanderLiveActivityHandoff` | První událost může ponechat AlarmKit kartu; další využije existující kartu volna |
-| Zelená / volno | Jeden společný tvůrce `CommanderRollingLiveActivity.scheduleRunning` na MainActor, ActivityKit start/staleDate | O výsledném zobrazení na zamčeném telefonu rozhoduje OS |
-| Dnes a Týden | Stejný Schedule + overrides + core presentation; TimelineView | Týden má nyní pravidelnou minutovou aktualizaci fází |
-| Watch data | WCSession → validovaný atomický soubor v App Group | ACK potvrzuje snapshot identitu, nikoli zvuk nebo zobrazení notifikace |
-| Watch notifikace | `WatchCommanderModel` → `WatchLocalNotificationService` → FIFO celé async operace | Cache callback pouze invaliduje widget; žádný skrytý paralelní zápis |
-| Watch UI / widget | Stejný core live-state a `WatchScheduleExpiryPolicy` | Expirace po poslední události + 24 h, cache se kvůli zobrazení nemaže |
-| Provisioning reminder | Samostatný renewal coordinator + skutečný embedded profil | Otevření aplikace není obnova podpisu; due reminder zůstává doručený |
-| iPhone záložní notifikace | Existující recovery řízená výsledkem AlarmKit verification | Watch chyby ani Live Activity chyby samy nezapínají zálohu |
-| Fyzický acceptance | Izolovaný bundle, lokální Schedule, vlastní run ledger, reálný adapter a extension | READY je preflight; nikdy automatický fyzický PASS |
+| Canonical rozpis | `CommanderScheduleSyncCoordinator` + validovaný `ScheduleSnapshotStoring` | Lokální preference nikdy nepřepisují canonical feed |
+| Odchod / countdown / zvonění / Stop | AlarmKit přes `AlarmSyncService` + `AlarmKitAdapter` | AlarmKit je jediný vlastník celé odchodové fáze |
+| Procedura / jídlo Live Activity | `CommanderProcedureLiveActivityCoordinator` | Nejvýše dvě nejbližší neskončené události; start kontextu přes `leaveAt`, časové fáze `Začíná za` → `Právě…` → další/skončeno; žádná mutace ze Stop intentu |
+| Alarm presentation context | `AlarmPresentationContext` | Jen countdown window a typ aktuální události; žádný další-event/Stop handoff stav |
+| Dynamic Island / Lock Screen | `LazenskyCommanderLiveActivity` | AlarmKit a Commander mají oddělené ActivityConfiguration; compact timer má explicitně omezenou šířku |
+| Watch schedule | `WatchScheduleSnapshot` → `WCSession.updateApplicationContext` → validovaná App Group cache | Watch app/widget čtou poslední validní lokální snapshot |
+| Watch Live Activity | systémová replikace iPhone Live Activity + `.supplementalActivityFamilies([.small])` | Není totožná s datovou cestou samostatné Watch app |
+| Provisioning reminder | samostatný renewal coordinator | Due delivered reminder se nesmaže pouhým foregroundem |
+| Fyzický acceptance | izolovaný `Commander Test` bundle | READY ověřuje přípravu; nikdy automaticky neznamená fyzický PASS |
 
-## Skutečné příčiny křehkosti a opravy
+## Finální lifecycle v2
 
-1. **Duplicitní časové rozhodování a tvorba aktivit.** Stop intent, reconciliation a acceptance měly různé výpočty handoffu. Sdílená core policy chrání přesné hranice; obě cesty tvorby zelené aktivity používají jedinou implementaci. Ověřené ActivityKit end/dismissal volání zůstává zachované.
-2. **Cleanup považoval viditelnou ukončenou kartu za nepotřebnou.** `.end(.after(startAt))` může být stále červeně viditelná. Reconciliation zachová odpovídající canonical bridge do startu a ukončí neplatný. Staré volno nesmí potlačit zelený stav po začátku další události.
-3. **Alarm se porovnával bez závislostí prezentace.** Posunutí následující procedury nemusí změnit předchozí NativeAlarm, přesto zneplatní jeho Stop intent. Persistovaný presentation context vyvolá správnou obnovu. Starý záznam migruje právě jednou; zvýšení samotné scheduleVersion nezpůsobuje churn.
-4. **Potlačená chyba cancel ztrácela vlastnictví.** Před i po zápisu nyní selhání rušení ponechá mapování a zabrání vytvoření náhrady. Retry se opře o skutečný read-back.
-5. **Future-only cleanup mohl při foregroundu zastavit právě zvonící alarm.** Skutečně alerting, nezměněná a dosud neskončená canonical událost je chráněna. Odstraněná/změněná/ukončená událost chráněna není; zastavený minulý alarm se znovu netvoří.
-6. **Acceptance snapshotu obsahovala async mezeru mezi load a save.** Oba produkčně používané snapshot store actory implementují compare/accept/save bez await. Watch cache validuje i local projection a odmítá změněný canonical obsah při stejné verzi.
-7. **Watch actor umožňoval překryv celých notifikačních operací.** FIFO serializuje i jejich await. Druhý vlastník v cache callbacku byl odstraněn. Read-back ověřuje skutečný čas triggeru, text a zvuk; metadata sama nejsou důkaz. Opětovné přijetí stejného snapshotu také opakuje neúspěšný zápis a publikuje chybu.
-8. **Recovery čekala na síť a používala starý čas.** Foreground/bootstrap nejprve obnoví lokální projekce z validní cache. Síťová synchronizace zachytí čas až po přijetí rozpisu. Adapter nepřijme nové plánování po deadline; Watch fronta zachytí výchozí čas při provádění operace.
-9. **Chyba ActivityKit request byla tichá.** Chyba přípravy se nyní vrací do diagnostiky aplikace; Stop intent ji zapisuje do systémového logu a fyzického test reportu. Nezaměňuje se za selhání AlarmKitu a nezapíná další notifikační větev.
-10. **Dokumentovaný fyzický postup byl zastaralý.** Popisoval sedm minut a druhý preAlert, zatímco schválená implementace používá patnáctiminutový tok a jednoho vlastníka volna. Acceptance návod nyní odpovídá skutečnému generátoru a explicitně kontroluje červenou po obou Stop.
+1. AlarmKit připraví odchodový countdown tak, aby jeho endpoint byl přesně canonical `leaveAt`.
+2. V `leaveAt` AlarmKit zobrazí alert a zazvoní.
+3. **Stop pouze zastaví AlarmKit.** Nevolá `Activity.request`, `update` ani `end` pro Commander proceduru/jídlo.
+4. Commander kontext je naplánovaný už od canonical `leaveAt`, takže po Stop nemá vzniknout hluchá mezera. Do `startAt` zobrazuje `Začíná za` a název/lokalitu následující události. Starý červený bridge zůstává odstraněný.
+5. V canonical `startAt` se tatáž Commander prezentace lokálně přepne na `Právě jídlo` / `Právě probíhá` a odpočet do `endAt`; přepnutí používá `TimelineView` s explicitními hranicemi a nevyžaduje foreground aplikace.
+6. Budoucí lokální scheduled start používá ActivityKit `start: candidate.leaveAt`. Platforma pro něj vyžaduje `AlertConfiguration`; bundled `CommanderSilentAlert.wav` odstraní druhý slyšitelný alarm, ne však možnost systémového vizuálního start alertu.
+7. `staleDate = endAt` pouze označuje zastarání. Není to obecný přesný lokální scheduler ukončení; při dalším reconciliation coordinator explicitně ukončuje prošlé/neplatné aktivity.
 
-## Registr schválených invariantů a důkazů
+## AlarmKit countdown
 
-„Behaviorální“ níže znamená provedení produkčního core kódu s deterministickými časy či testovacím systémovým adaptérem. Neznamená simulaci skutečného iOS rendereru. Původní strukturální testy nejsou vydávány za behaviorální důkaz.
+`AlarmCountdown` vždy zachovává canonical `leaveAt` jako skutečný čas alarmu. Okno začíná po konci poslední předchozí události stejného dne, maximálně 30 minut před `leaveAt`.
 
-| Invariant | Automatická ochrana | Co automatika neprokazuje |
-| --- | --- | --- |
-| Před odchodem odpočet / volno; na leaveAt červená; na start zelená | `entireAlarmFlowAgreesAcrossDashboardWatchAndCanonicalBoundaries`, `AlarmCountdownPlanTests`, dashboard testy | Reálný zvuk a systémové překreslení v suspendované aplikaci |
-| Stop zachová červenou přesně do startu | `stopDecisionPreservesRedUntilExactStartWithAndWithoutExistingCard`, `foregroundCleanupRetainsEndedRedCardOnlyForCurrentCanonicalDeparture` | ActivityKit viditelnost po `.end(.after)` |
-| Volno nesmí potlačit zelenou ani přeskočit mezilehlou událost | `freeTimeOwnerCannotSuppressGreenActivityAtNextStart`, `sharedHandoffSelectionRejectsSkippedAndCrossDaySources` | Pořadí systémových UI aktualizací |
-| Schválené konkrétní SDK handoff a vzhled zůstávají | Ponechaný `AlarmRedHandoffRegressionTests`, diff nezměněné Live Activity view, embedded extension build | Textový guard nekontroluje pixely; fyzický design PASS je oddělený |
-| Nezměněné alarmy se nevytvářejí znovu, sousední změna invaliduje závislosti | `neighbourChangeRefreshesStopIntentWithoutChangingOwnAlarmDeadline`, `legacyAlarmPersistenceMigratesContextOnceWithoutChangingCanonicalPayload` | AlarmKit implementaci Stop intentu na zařízení |
-| Selhání cancel nesmí vytvořit druhý AlarmKit alarm | `failedCancellationBeforeRepairKeepsManagedIDAndNeverCreatesDuplicate`, `failedCancellationDuringPostWriteRepairKeepsNewIDForSafeRetry` | OS výpadek během trvalého zápisu nebo externí zásah |
-| Foreground není Stop; zastavený minulý alarm se netvoří znovu | `foregroundReconciliationDoesNotSilenceRingingCanonicalAlarmOrRecreateStoppedAlarm`, `ringingProtectionDoesNotKeepRemovedOrFinishedCanonicalEvents` | Přesný okamžik změny `.alerting` v OS |
-| Pomalá síť nesmí plánovat právě prošlý odchod | `slowFetchUsesAcceptanceTimeAndCannotRecreateAnAlarmWhoseDepartureJustPassed` | Latenci uvnitř samotného SDK schedule volání |
-| Starší/neplatný snapshot nesmí přepsat nový platný | `concurrentCanonicalAcceptanceNeverRollsBackNewestVersion`, `persistedCanonicalAcceptanceSurvivesRestartAndRejectsConflictingVersion`, `StabilityPassTests` | Tvrdý pád OS při flush UserDefaults |
-| Watch projectionRevision nemění canonical obsah | `sameVersionWatchRevisionCannotSmuggleCanonicalChanges`, `watchDiskCacheRejectsInvalidLocalProjectionAndKeepsLastValidBytes`, `WatchAcknowledgementTests` | Doručení WCSession na reálném páru |
-| Watch notifikační operace se nepřekrývají a chyba nezablokuje další | `asynchronousNotificationOperationsNeverOverlapAndFailureDoesNotBlockNext` + Watch build | Test fronty není integrační test UNUserNotificationCenter |
-| Watch read-back ověřuje skutečný požadavek, stejný payload umí opravu | `watchReadbackChecksActualTriggerAndContentInsteadOfTrustingMetadata`, `sameWatchPayloadRepairsInvalidRequestAndRetryStopsOnlyAfterReadbackMatches` | Fyzickou haptiku, Focus a systémové routování zvuku |
-| Watch app a widget mají stejnou expiraci | `watchAppAndWidgetUseSameExpiryBoundaryWithoutDiscardingPersistedSchedule`, původní Watch timeline testy | WidgetKit rozpočet aktualizací na zařízení |
-| Due provisioning reminder přežije otevření aplikace | `dueProfileKeepsAlreadyDeliveredProvisioningReminder`, `expiredDueAndUnavailableProfilesDoNotRepeatedlyArmPastReminders` | Platný podpis distribuované aplikace |
-| Reminder se smí přesunout až podle skutečného profilu; cizí notifikace zůstávají | `sameProfileNeverMovesDeadlineToTodayPlusSixOrDuplicatesReminder`, renewal/readback/DST/overlap testy | CMS test skutečného profilu vyžaduje `LC_TEST_EMBEDDED_PROFILE`; běžné CI jej neposkytuje |
-| Selhání AlarmKit/Watch nesmí rollbackovat canonical rozpis | `StabilityPassTests`, `StabilityClosureTests`, Watch ACK testy | Nepřetržitou konektivitu |
-| Lokální změna předstihu nevyžaduje síť a invaliduje všechny projekce | `LeadTimeTypeSettingsTests`, cached projection testy v `StabilityClosureTests` | Rychlost doručení Watch projection |
-| Acceptance je izolovaná, používá reálný kontrakt a nevydává falešné READY | `PhysicalAcceptanceTests`: cleanup, matching records, wrong fixed/preAlert, missing fireDate, slow preparation, shared target sources | Fyzický PASS ani produkční provisioning |
-| Dnes / Týden / Nastavení používají společnou prioritu a stav | `CommanderDashboardPresentationTests`, `CommanderSchedulePresentationTests`, `CommanderDaySummaryTests`, lead-time tests | VoiceOver, největší Dynamic Type, malý displej |
+- Jsme-li před oknem: `schedule = .fixed(leaveAt - countdownWindow)` + `preAlert = countdownWindow`.
+- Jsme-li již uvnitř okna: `schedule = nil` + `preAlert = leaveAt - now`; countdown začne okamžitě.
+- Nulové okno: přímý alarm na `leaveAt` bez countdownu.
 
-## Dokončené posouzení a omezení
+`AlarmPresentationContext` persistuje jen `countdownWindow`, `procedureType` a `mealType`. Změna následující události již neobnovuje nesouvisející předchozí alarm. Změna předchozího konce alarm obnoví pouze tehdy, když se tím změní countdown window.
 
-Prostudovány byly oba původní stabilizační commity a související historie červeného handoffu/countdownu; core schedule, alarm sync, persistence, ActivityKit adapter a extension, app recovery/fronta, Watch cache/transport/widget/notifikace, provisioning coordinator a jeho testy, fyzický acceptance a hlavní obrazovky. Existující funkční cesty nebyly přepisovány jen kvůli stylu.
+## Visual QA
 
-UI změny jsou omezené: živé fáze v Týdnu, stejná expirace Watch app/widget, přesnější počet připravovaných aktivit v acceptance a zobrazení skutečné ActivityKit chyby v diagnostice. Čitelnost, hierarchie a sdílené barevné/ikonové podklady byly posouzeny ve zdrojích. Nový vizuální render ani zařízení nejsou v tomto běhu dostupné; vizuální přístupnost se neoznačuje za ověřenou.
+Před fyzickým telefonem byl použit izolovaný `LazenskyCommanderAlarmFreeVisualTest` na iOS simulátoru bez sítě a bez AlarmKitu. Ověřen byl dashboard a skutečný ActivityKit host na iPhone 17 Pro simulátoru.
 
-Zbývající hranice a rizika:
+Visual QA odhalil konkrétní chybu compact Dynamic Islandu: SwiftUI `Text(date, style: .timer)` v Live Activity rezervoval nadměrnou horizontální šířku a v kombinaci s `.fixedSize(horizontal: true)` vytlačil compact trailing obsah. Oprava přidala explicitní šířku compact timeru (`54 pt`) pro Commander procedure timer i AlarmKit countdown. Následný runtime snímek ukázal normální compact Island, logo + ikonu vlevo a viditelný odpočet vpravo.
 
-- Žádný nový fyzický iPhone ani Watch test v tomto Work běhu neproběhl. Jediný závěrečný [acceptance postup](physical-alarm-acceptance.md) chrání oba způsoby červeného Stop handoffu v celé časové posloupnosti.
-- Generic unsigned build neověří podpis, App Group entitlement při instalaci ani doručení na hodinky. Skutečný profil a reálné Watch doručení jsou samostatné fyzické důkazy; izolovaný iPhone acceptance je nenahrazuje.
-- Aktualizace vzdáleného rozpisu při trvale suspendované aplikaci nemá BGTask/APNs fetch garanci. Již naplánované systémové alarmy a aktivity běží v OS; nový canonical rozpis se zpracuje při existujícím foreground/manual recovery. Nebyla přidána falešná background garance.
-- Recovery zachovává existující iPhone záložní notifikace při neověřeném AlarmKitu. Při nejistém stavu platformy mohou souběžně existovat s neověřeným systémovým alarmem. Oprava cancel zabraňuje druhému **AlarmKit** ID; netvrdí obecnou exactly-once garanci zvuku přes všechny systémové kanály.
-- Race mezi načtením systémového stavu a jeho pozdější změnou nelze odstranit samotným mock testem. Obzvlášť `.alerting`, Stop intent v jiném procesu a ActivityKit limity závisejí na iOS. Chyby přípravy jsou nyní pozorovatelné a další foreground znovu reconciliuje.
-- Atomické snapshot acceptance je zaručeno uvnitř jednoho používaného store actoru. Výchozí protokolová implementace load/await/save pro externí vlastní store sama takovou záruku nemá; nová produkční implementace musí dodat vlastní atomický accept. Totéž platí pro nepřidávání druhého koordinátora systémových zápisů mimo současnou request queue.
-- VoiceOver, největší Dynamic Type, malé displeje a případné truncation vyžadují zařízení nebo UI test runner. Nebyl proveden samoúčelný redesign ani prohlášení o úplném accessibility auditu.
+Tento simulátorový důkaz potvrzuje layout/runtime host, nikoli slyšitelný alarm, fyzický Lock Screen, Always-On, Watch synchronizaci ani systémové chování konkrétního iPhonu.
 
-## Ověřovací gate a pokračování
+## Automatické invarianty
 
-Konečný kód musí projít workflow **Native stability tests**: `swift test --package-path native/LazenskyCommander`, generic iPhone build včetně embedded extensions, `LazenskyCommanderPhysicalAcceptance`, `LazenskyCommanderWatchApp`. **Public schedule tests** chrání také schedule/assets/calendar/auth/launcher mimo native část. Historické červené běhy zůstávají v Actions jako důkaz odhalených chyb; nenahrazují zelený běh konečného kódu.
+| Invariant | Ochrana |
+| --- | --- |
+| AlarmKit vždy vlastní departure countdown; Commander kontext startuje v `leaveAt` a do `startAt` nelže o probíhající proceduře | `alarmKitOwnsDepartureAndCommanderContextStartsAtLeaveAt`, `commanderContextHasNoPostStopGapAndStaleFallsForwardToNextEvent` |
+| Stop intent nesmí Commander aktivitu vytvořit ani měnit | `stopIntentNeverCreatesOrMutatesCommanderProcedureActivity` |
+| AlarmKit, Watch a Commander musí pro jeden projekční průchod sdílet stejné override-adjusted `leaveAt` | `commanderUsesOverrideAdjustedLeaveAtLikeAlarmKitAndWatch` |
+| Commander reconciliation se nesmí prokládat přes `await` a nesmí ponechat duplicitní stejné `stableId` | `commanderReconciliationIsSerializedAndDeduplicatesStableIDs` |
+| Compact timery nesmí znovu roztáhnout Dynamic Island | strukturální guardy v `alarmKitOwnsDepartureAndCommanderContextStartsAtLeaveAt` + runtime Visual QA |
+| Změna následující události nesmí zbytečně regenerovat předchozí alarm | `alarmPresentationContextIgnoresFollowingEventChanges`, `followingEventChangeDoesNotRefreshUnrelatedAlarm` |
+| Změna předchozího konce musí změnit countdown window | `alarmPresentationContextTracksPreviousEventCountdownWindow` |
+| Physical acceptance připraví dvě AlarmKit countdown cesty i dvě Commander aktivity | `physicalPreflightAcceptsAlarmKitCountdownForBothEventsEvenWhenCommanderActivitiesArePrepared` |
+| Selhání cancel nesmí vytvořit duplicitní AlarmKit ID | `failedCancellationBeforeRepairKeepsManagedIDAndNeverCreatesDuplicate`, `failedCancellationDuringPostWriteRepairKeepsNewIDForSafeRetry` |
+| Foreground nesmí umlčet platně zvonící canonical alarm | `foregroundReconciliationDoesNotSilenceRingingCanonicalAlarmOrRecreateStoppedAlarm` |
+| Starší/conflicting snapshot nesmí rollbacknout canonical stav | snapshot acceptance testy |
+| Watch operace zůstávají serializované a cache validovaná | Watch cache/notification/ack testy |
+| Due provisioning reminder přežije foreground | provisioning reminder testy |
 
-Přesný konečný SHA, počty skutečně úspěšných testů, odkazy na dokončené Actions a stav pracovního stromu patří do závěrečného předávacího reportu v chatu. Tento registr sám neoznačuje dosud běžící build za úspěšný.
+## Fyzický acceptance v2
 
-Po zeleném finálním CI je větev kandidátem pro jediný závěrečný fyzický acceptance. Do té doby nezaměňovat připravenost ke code review za uzavřený fyzický PASS. Po zaznamenaném PASS lze začlenit do `lc/native-design-v1`; žádný merge ani přesun této větve tento průchod neprovádí.
+Izolovaný test vytváří dvě události: jídlo T+6 až T+8 s leaveAt T+4 a magnetoterapii T+13 až T+15 s leaveAt T+11.
+
+- První AlarmKit countdown začíná okamžitě, protože při spuštění už jsme uvnitř jeho okna.
+- Druhý countdown začíná v T+8 a běží do T+11; předchozí Commander karta nevlastní „volno“.
+- Dvě Commander aktivity jsou předem připravené se scheduled starty v jejich `leaveAt` (T+4 a T+11).
+- Po každém Stop musí být bez dalšího uživatelského zásahu dostupný Commander kontext `Začíná za …`; **hluchá mezera i červený Commander handoff jsou FAIL UX/architektury**.
+- PASS vyžaduje skutečné zazvonění obou alarmů v canonical `leaveAt`, Commander kontext bez hluché mezery po Stop, lokální přepnutí na `Právě…` v `startAt` a na další událost / `Skončilo` v `endAt`. Okamžité odstranění systémové karty není součástí lokální Personal Team garance.
+
+Podrobný postup je v [physical-alarm-acceptance.md](physical-alarm-acceptance.md).
+
+### Fyzický běh 2026-09-18 – neplatný jako finální PASS, ale s užitečnými fyzickými důkazy
+
+Run `8733CA09-F01A-42DD-B4CC-70FB6F4ED879` začal v 08:16:44. AlarmKit read-back i screenshoty doložily první canonical leaveAt 08:21:00 a druhý canonical leaveAt 08:28:00. První odchodový countdown byl viditelný už v 08:16:53, první skutečný AlarmKit alert byl na iPhonu v 08:21:02 a na Watch v 08:21:05. Druhý countdown byl na iPhonu v 08:25:33 a druhý alert v 08:28:10; na Watch v 08:28:13. Druhý Stop intent se fyzicky provedl pro ID `FF8171F3-F7A5-41EF-BF84-63537A5EB930`.
+
+Commander Live Activity pro jídlo se zobrazila na iPhonu v 08:23:23 a na Watch v 08:23:37, tedy u plánovaného startu 08:23. V 08:25 přešla do stale UI `Jídlo skončilo`. Stará stale karta zůstala viditelná i později, což odpovídá známému lokálnímu omezení: `staleDate` není přesný future end/dismiss scheduler. Magnetoterapie se na Watch zobrazila v 08:30:34, tedy u plánovaného startu 08:30; tvrzení o opožděném startu proto fyzické screenshoty nepotvrdily.
+
+Běh přesto **není platný finální PASS**, protože při prvním Commander startu v 08:23:23 vyskočil systémový dialog `Povolit živé aktivity z aplikace Commander Test?`. Preflight tedy chybně dovolil časovaný běh dřív, než bylo prvotní Live Activity oprávnění skutečně fyzicky vyřešené. Acceptance aplikace proto nově používá samostatný Live Activity primer před vytvořením `PhysicalAcceptanceRun`; teprve po jeho potvrzení smí vzniknout ostré časy.
+
+Physical report navíc nově odděluje historické `2/2 při READY` od aktuálního počtu po skončení, ukládá časovou osu READY, AlarmKit snapshotů, ActivityKit stavů a všech Stop intentů a průběžně čistí ownership ledger o systémově již neexistující AlarmKit ID.
+
+### Večerní běh 2026-09-18 – produktový FAIL staršího buildu
+
+Run `EBA6DBDF-47C0-43EF-A281-5CD49710938C` měl platné READY 2/2 pro AlarmKit i 2/2 připravené Commander aktivity. První Stop byl zaznamenán v 20:17:06, jídlo přešlo active přibližně v 20:19:10 a stale v 20:21:00, druhý Stop v 20:24:15. Fyzicky ale po Stop vznikla na iPhonu hluchá mezera a Watch později stále ukazovaly staré `TEST – Jídlo` jako skončené; z pohledu cílového UX je tento běh **FAIL**.
+
+Testovaný podepsaný binární build byl sestaven v 20:03. Opravy scheduled startu z `startAt` na `leaveAt`, embedded `nextEvent` a následné časové fáze `Začíná za` → `Právě…` vznikly až po tomto buildu. Večerní běh proto není fyzickým důkazem proti současnému kódu, ale přesně definuje regresi, kterou musí další jediný acceptance běh vyvrátit. Současná oprava je zatím krytá pouze automatickými testy/buildy a nesmí být označena jako fyzicky PASS.
+
+## Co automatika stále negarantuje
+
+- APNs není v Personal Team variantě použit; lokální scheduled ActivityKit start je závislý na systémovém contractu a může zobrazit start alert.
+- `maximumPreparedActivities = 2` je pouze malý lokální rolling window, nikoli celodenní fronta. Scheduled i active Live Activities spotřebovávají systémovou kapacitu a její přesný limit není veřejný/stabilní. Pokud aplikace zůstane suspendovaná, lokální kód nemá garantovaný okamžik pro doplnění třetí a dalších událostí. Při každém foregroundu se ale Commander activity window reconciliuje ještě před throttlem síťové/AlarmKit synchronizace, takže se nejbližší dvojice doplní okamžitě z posledního validního rozpisu. Dvouudálostní physical acceptance tuto produkční mezeru záměrně nesmí vydávat za full-day důkaz.
+- Přesné future `update`/`end` libovolné ActivityKit aktivity bez execution time nemá obecnou lokální garanci. `staleDate` určuje okamžik, kdy systém obsah považuje za stale, ale negarantuje skutečný end/dismissal ani přesnou fyzickou obnovu každé plochy; vlastní fázové UI proto používá explicitní `TimelineView` hranice a skutečný cleanup proběhne při dalším execution time.
+- Generic unsigned build neověřuje fyzický signing/provisioning, zvuk AlarmKitu ani doručení na Watch.
+- Watch app data přes WatchConnectivity a systémová Live Activity replikace na Watch jsou dvě různé acceptance oblasti.
+- Vzdálená změna canonical feedu při dlouhodobě suspendované app nemá vlastní push/background wake garanci.
+- VoiceOver, největší Dynamic Type, Always-On/reduced luminance a finální Lock Screen render vyžadují fyzický/UI acceptance.
+
+## Gate před telefonem
+
+Před jediným závěrečným fyzickým během musí být zelené:
+
+1. celý Swift test suite,
+2. build `LazenskyCommanderApp`,
+3. build `LazenskyCommanderLiveActivity`,
+4. build `LazenskyCommanderPhysicalAcceptance`,
+5. build `LazenskyCommanderWatchApp`,
+6. `git diff --check`,
+7. read-only audit, že ve Swift runtime nezůstal starý handoff/bridge mechanismus a dokumentace odpovídá implementaci.
+
+Žádný commit, push, merge, tag, release ani Vercel deployment není součástí tohoto gate.
+
+**Finální bezplatný kontrakt:** projekt zůstává na Personal Teamu. APNs/backend ani placené Apple Developer členství se neimplementují. AlarmKit je celodenní garantovaná odchodová vrstva; Commander Live Activity používá dvouslotový lokální rolling window a další aktivity se doplní při příštím foreground/reconciliation. Tento limit je přijatý produktový kompromis a nesmí se později maskovat jako full-day Live Activity garance.

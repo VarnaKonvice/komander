@@ -27,6 +27,17 @@ public enum AlarmAdapterError: LocalizedError, Equatable, Sendable {
   }
 }
 
+
+public struct PlatformAlarmTimingObservation: Equatable, Sendable {
+  public let effectiveAlertDate: Date?
+  public let isImmediateCountdownWithoutFireDate: Bool
+
+  public init(effectiveAlertDate: Date?, isImmediateCountdownWithoutFireDate: Bool = false) {
+    self.effectiveAlertDate = effectiveAlertDate
+    self.isImmediateCountdownWithoutFireDate = isImmediateCountdownWithoutFireDate
+  }
+}
+
 public protocol AlarmAdapting: Sendable {
   func prepare(schedule: Schedule) async
   func prepare(schedule: Schedule, projectionRevision: Int) async
@@ -44,6 +55,7 @@ public protocol AlarmAdapting: Sendable {
   /// not raw fixed schedule dates. nil means this capability is unavailable in that adapter.
   func existingPlatformFixedAlertDates() async throws -> [String: Date]?
   func existingPlatformFixedAlertDates(for platformAlarmIDs: Set<String>) async throws -> [String: Date]?
+  func existingPlatformTimingObservations(for platformAlarmIDs: Set<String>) async throws -> [String: PlatformAlarmTimingObservation]?
 }
 
 public extension AlarmAdapting {
@@ -66,6 +78,11 @@ public extension AlarmAdapting {
   /// Limit timing inspection to managed future alarms; expired/orphan alarms still reconcile by ID.
   func existingPlatformFixedAlertDates(for platformAlarmIDs: Set<String>) async throws -> [String: Date]? {
     try await existingPlatformFixedAlertDates()?.filter { platformAlarmIDs.contains($0.key) }
+  }
+
+  func existingPlatformTimingObservations(for platformAlarmIDs: Set<String>) async throws -> [String: PlatformAlarmTimingObservation]? {
+    guard let dates = try await existingPlatformFixedAlertDates(for: platformAlarmIDs) else { return nil }
+    return dates.mapValues { PlatformAlarmTimingObservation(effectiveAlertDate: $0) }
   }
 }
 
