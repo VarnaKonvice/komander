@@ -38,10 +38,14 @@ struct CommanderWeekView: View {
 
   private func weekContent(days: [CommanderWeekDay]?, today: Date) -> some View {
     ScrollViewReader { proxy in
-      ScrollView {
-        LazyVStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
-          CommanderGlassHeader(tab: "Týden")
-          CommanderScreenHeading(title: "Týden", subtitle: "Přehled procedur a aktivit")
+      VStack(spacing: 0) {
+        CommanderPinnedTabHeader(
+          title: "Týden",
+          subtitle: "Přehled procedur a aktivit",
+          schedule: model.latestSchedule
+        )
+        ScrollView {
+          LazyVStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
           if let days, !days.isEmpty {
             ForEach(days, id: \.date) { day in
               let previewExpanded = ProcessInfo.processInfo.arguments.contains("-CommanderPreviewExpandWeek")
@@ -81,12 +85,12 @@ struct CommanderWeekView: View {
               .commanderCard()
           }
         }
-        .padding(.horizontal, CommanderDesignTokens.Spacing.page)
-        .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
+          .padding(.horizontal, CommanderDesignTokens.Spacing.page)
+          .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
+        }
+        .scrollIndicators(.hidden)
+        .clipped()
       }
-      .scrollIndicators(.hidden)
-      .clipped()
-      .padding(.top, CommanderDesignTokens.Spacing.scrollTop)
       .background(CommanderDepthBackground().ignoresSafeArea())
       .toolbar(.hidden, for: .navigationBar)
       .onAppear { focusToday(today, in: days, using: proxy) }
@@ -137,7 +141,7 @@ struct CommanderWeekDayTile: View {
     }
     // Expansion adds rows, never shrinks or replaces the full summary.
     .commanderCard(
-      accent: isToday ? CommanderDesignTokens.Colors.procedureCyan : CommanderDesignTokens.Colors.primaryPurple,
+      accent: isToday ? CommanderDesignTokens.Colors.procedureCyan : CommanderDesignTokens.Colors.locationBlue,
       surface: .depthCard
     )
     .overlay {
@@ -163,7 +167,7 @@ struct CommanderDaySummaryCard: View {
       content
     } else {
       content
-        .commanderCard(accent: CommanderDesignTokens.Colors.primaryPurple, surface: .depthCard)
+        .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthCard)
     }
   }
 
@@ -171,7 +175,7 @@ struct CommanderDaySummaryCard: View {
     VStack(alignment: .leading, spacing: 11) {
       HStack(spacing: 8) {
         CommanderSymbolBadge(
-          symbol: "calendar", color: CommanderDesignTokens.Colors.primaryPurple, size: CommanderDesignTokens.Size.primaryBadge
+          symbol: "calendar", color: CommanderDesignTokens.Colors.locationBlue, size: CommanderDesignTokens.Size.primaryBadge
         )
         Text(CommanderDateText.shortDay(overview.date))
           .commanderFont(.date)
@@ -183,7 +187,7 @@ struct CommanderDaySummaryCard: View {
         if let isExpanded {
           Text(proceduresText)
             .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(CommanderDesignTokens.Colors.primaryPurple)
+            .foregroundStyle(CommanderDesignTokens.Colors.therapyPink)
             .lineLimit(1)
             .minimumScaleFactor(0.85)
           Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
@@ -191,9 +195,14 @@ struct CommanderDaySummaryCard: View {
             .foregroundStyle(.white)
             .accessibilityHidden(true)
         } else if let period = stayPeriod, let day = period.currentDay {
-          VStack(alignment: .trailing, spacing: 5) {
-            Text("\(day). den z \(period.totalDays)")
-              .font(.system(size: 15, weight: .bold))
+          VStack(alignment: .trailing, spacing: 3) {
+            Text("Den pobytu")
+              .font(.system(size: 11, weight: .semibold))
+              .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
+              .lineLimit(1)
+            Text("\(day) / \(period.totalDays)")
+              .font(.system(size: 17, weight: .bold))
+              .monospacedDigit()
               .foregroundStyle(.white)
               .lineLimit(1)
             GeometryReader { proxy in
@@ -201,16 +210,19 @@ struct CommanderDaySummaryCard: View {
                 Capsule().fill(.white.opacity(0.16))
                 Capsule()
                   .fill(LinearGradient(
-                    colors: [CommanderDesignTokens.Colors.primaryPurple,
+                    colors: [CommanderDesignTokens.Colors.locationBlue,
                              CommanderDesignTokens.Colors.procedureCyan],
                     startPoint: .leading, endPoint: .trailing
                   ))
                   .frame(width: proxy.size.width * min(1, Double(day) / Double(max(1, period.totalDays))))
               }
             }
-            .frame(width: 80, height: 5)
+            .frame(height: 5)
             .accessibilityHidden(true)
           }
+          .frame(width: 108, alignment: .trailing)
+          .accessibilityElement(children: .combine)
+          .accessibilityLabel("Den pobytu \(day) z \(period.totalDays)")
         }
       }
       CommanderDayMetrics(overview: overview)
@@ -238,9 +250,9 @@ struct CommanderDayMetrics: View {
   var body: some View {
     LazyVGrid(
       columns: Array(
-        repeating: GridItem(.flexible(minimum: 0), spacing: 6),
-        count: dynamicTypeSize.isAccessibilitySize ? 2 : 4
-      ), spacing: 6
+        repeating: GridItem(.flexible(minimum: 0), spacing: 8),
+        count: dynamicTypeSize.isAccessibilitySize ? 1 : 3
+      ), spacing: 8
     ) {
       CommanderMetricTile(
         title: "Terapie", value: "\(overview.procedureCount)",
@@ -260,13 +272,6 @@ struct CommanderDayMetrics: View {
         referenceValue: freeTime,
         accessibleValue: overview.freeBeforeDinnerMinutes == nil ? "Údaj není k dispozici" : nil
       )
-      CommanderMetricTile(
-        title: "Večeře",
-        value: overview.dinnerStartAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
-        symbol: "fork.knife", accent: Color(commanderHex: CommanderVisualAssets.accent(forIconKey: "meal_dinner")),
-        referenceValue: freeTime,
-        accessibleValue: overview.dinnerStartAt == nil ? "Není v rozpisu" : nil
-      )
     }
   }
 
@@ -277,7 +282,7 @@ struct CommanderDayMetrics: View {
     // Keep number + unit together; mixed durations have one deliberate line break.
     if hours == 0 { return "\(remainder)\u{00A0}min" }
     if remainder == 0 { return "\(hours)\u{00A0}h" }
-    return "\(hours)\u{00A0}h\n\(remainder)\u{00A0}min"
+    return "\(hours)\u{00A0}h \(remainder)\u{00A0}min"
   }
 }
 
@@ -294,7 +299,7 @@ private struct CommanderMetricTile: View {
     VStack(spacing: 4) {
       CommanderSymbolBadge(symbol: symbol, color: accent, size: CommanderDesignTokens.Size.primaryBadge)
       Text(title)
-        .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 19 : 15, weight: .semibold))
+        .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 19 : 16, weight: .semibold))
         .foregroundStyle(Color.white.opacity(0.96))
         .multilineTextAlignment(.center)
         .lineLimit(2)
@@ -313,8 +318,8 @@ private struct CommanderMetricTile: View {
             .frame(maxWidth: .infinity)
         }
     }
-    .padding(.horizontal, 4)
-    .padding(.vertical, 15)
+    .padding(.horizontal, 8)
+    .padding(.vertical, 16)
     .frame(maxWidth: .infinity)
     .commanderCard(accent: accent, surface: .depthInset)
     .accessibilityElement(children: .ignore)
@@ -324,11 +329,12 @@ private struct CommanderMetricTile: View {
 
   private func metricValue(_ text: String) -> some View {
     Text(text)
-      .font(.system(size: text.contains("\n") ? 23 : 26, weight: .bold))
+      .font(.system(size: text.contains("\n") ? 23 : 22, weight: .bold))
       .monospacedDigit()
       .foregroundStyle(.white)
       .multilineTextAlignment(.center)
       .lineLimit(text.contains("\n") ? 2 : 1)
-      .minimumScaleFactor(0.8)
+      .minimumScaleFactor(0.65)
+      .allowsTightening(true)
   }
 }

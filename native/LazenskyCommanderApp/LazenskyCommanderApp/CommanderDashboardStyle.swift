@@ -298,6 +298,97 @@ struct CommanderGlassHeader: View {
   }
 }
 
+struct CommanderScheduleAuditStatusPill: View {
+  let schedule: Schedule?
+
+  private var status: (title: String, symbol: String, color: Color) {
+    guard let schedule else {
+      return ("Nenahrán", "questionmark.circle.fill", CommanderDesignTokens.Colors.textSecondary)
+    }
+    let report = CommanderScheduleAudit.run(schedule, policy: .petrSpaOperational)
+    let errors = report.issues.filter { $0.severity == .error }.count
+    let warnings = report.issues.filter { $0.severity == .warning }.count
+    if errors > 0 {
+      return (errors == 1 ? "1 chyba" : "\(errors) chyb", "exclamationmark.octagon.fill", CommanderDesignTokens.Colors.criticalRed)
+    }
+    if warnings > 0 {
+      return (warnings == 1 ? "1 kontrola" : "\(warnings) kontroly", "exclamationmark.triangle.fill", CommanderDesignTokens.Colors.urgentOrange)
+    }
+    return ("Ověřeno", "checkmark.circle.fill", CommanderDesignTokens.Colors.mealGreen)
+  }
+
+  var body: some View {
+    let status = status
+    VStack(alignment: .trailing, spacing: 1) {
+      Text("ROZPIS")
+        .font(.system(size: 10, weight: .bold))
+        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary.opacity(0.82))
+      HStack(spacing: 4) {
+        Image(systemName: status.symbol)
+          .font(.system(size: 14, weight: .bold))
+          .foregroundStyle(status.color)
+        Text(status.title)
+          .font(.system(size: 13, weight: .bold))
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .lineLimit(1)
+          .minimumScaleFactor(0.75)
+      }
+    }
+    .padding(.horizontal, 11)
+    .padding(.vertical, 7)
+    .frame(width: 120)
+    .background {
+      RoundedRectangle(cornerRadius: 11, style: .continuous)
+        .fill(
+          LinearGradient(
+            colors: [
+              Color(commanderHex: "#234E8E"),
+              Color(commanderHex: "#192C5B"),
+              Color(commanderHex: "#0E1530")
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+    }
+    .overlay {
+      RoundedRectangle(cornerRadius: 11, style: .continuous)
+        .strokeBorder(status.color.opacity(0.58), lineWidth: 0.85)
+    }
+    .shadow(color: status.color.opacity(0.12), radius: 1.0)
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel("Rozpis, \(status.title)")
+  }
+}
+
+struct CommanderPinnedTabHeader: View {
+  let title: String
+  let subtitle: String
+  let schedule: Schedule?
+
+  var body: some View {
+    VStack(spacing: 8) {
+      CommanderGlassHeader(tab: "", showsTabPill: false)
+
+      HStack(alignment: .center, spacing: 10) {
+        CommanderScreenHeading(title: title, subtitle: subtitle)
+          .frame(maxWidth: .infinity, alignment: .leading)
+
+        NavigationLink {
+          CommanderScheduleAuditView(schedule: schedule)
+        } label: {
+          CommanderScheduleAuditStatusPill(schedule: schedule)
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Otevře kontrolu rozpisu")
+      }
+    }
+    .padding(.horizontal, CommanderDesignTokens.Spacing.page)
+    .padding(.top, CommanderDesignTokens.Spacing.scrollTop)
+    .padding(.bottom, 8)
+  }
+}
+
 struct CommanderScreenHeading: View {
   let title: String
   let subtitle: String
@@ -320,33 +411,36 @@ struct CommanderTabScaffold<Content: View>: View {
   let tab: String
   let title: String
   let subtitle: String
+  let schedule: Schedule?
   let content: Content
 
   init(
     tab: String,
     title: String,
     subtitle: String,
+    schedule: Schedule?,
     @ViewBuilder content: () -> Content
   ) {
     self.tab = tab
     self.title = title
     self.subtitle = subtitle
+    self.schedule = schedule
     self.content = content()
   }
 
   var body: some View {
-    ScrollView {
-      LazyVStack(alignment: .leading, spacing: 14) {
-        CommanderGlassHeader(tab: tab)
-        CommanderScreenHeading(title: title, subtitle: subtitle)
-        content
+    VStack(spacing: 0) {
+      CommanderPinnedTabHeader(title: title, subtitle: subtitle, schedule: schedule)
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 14) {
+          content
+        }
+        .padding(.horizontal, CommanderDesignTokens.Spacing.page)
+        .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
       }
-      .padding(.horizontal, CommanderDesignTokens.Spacing.page)
-      .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
+      .scrollIndicators(.hidden)
+      .clipped()
     }
-    .scrollIndicators(.hidden)
-    .clipped()
-    .padding(.top, CommanderDesignTokens.Spacing.scrollTop)
     .background(CommanderDepthBackground().ignoresSafeArea())
     .toolbar(.hidden, for: .navigationBar)
   }

@@ -8,7 +8,8 @@ struct CommanderSettingsView: View {
     CommanderTabScaffold(
       tab: "Nastavení",
       title: "Nastavení",
-      subtitle: "Upravte si chování aplikace podle svých potřeb."
+      subtitle: "Upravte si chování aplikace podle svých potřeb.",
+      schedule: model.latestSchedule
     ) {
       if model.requiresUserAction, let message = model.userActionMessage {
         CommanderSettingsAttentionCard(message: message)
@@ -58,6 +59,174 @@ struct CommanderSettingsView: View {
   }
 }
 
+struct CommanderScheduleAuditView: View {
+  let schedule: Schedule?
+
+  private var report: CommanderScheduleAuditReport? {
+    schedule.map { CommanderScheduleAudit.run($0, policy: .petrSpaOperational) }
+  }
+
+  var body: some View {
+    ScrollView {
+      LazyVStack(alignment: .leading, spacing: 12) {
+        CommanderGlassHeader(tab: "", showsTabPill: false)
+        CommanderScreenHeading(
+          title: "Kontrola rozpisu",
+          subtitle: "Bezpečnostní kontrola aktuální verze"
+        )
+
+        if let report {
+          statusCard(report)
+          summaryCard(report)
+          issuesCard(report)
+        } else {
+          CommanderSectionCard(
+            title: "Rozpis není načten",
+            symbol: "questionmark.circle.fill",
+            accent: CommanderDesignTokens.Colors.textSecondary
+          ) {
+            Text("Po načtení rozpisu se zde zobrazí kontrola dnů, událostí a anomálií.")
+              .commanderFont(.subtitle)
+              .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          }
+        }
+      }
+      .padding(.horizontal, CommanderDesignTokens.Spacing.page)
+      .padding(.top, CommanderDesignTokens.Spacing.scrollTop)
+      .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
+    }
+    .scrollIndicators(.hidden)
+    .background(CommanderDepthBackground().ignoresSafeArea())
+    .toolbar(.visible, for: .navigationBar)
+    .navigationTitle("Kontrola rozpisu")
+    .navigationBarTitleDisplayMode(.inline)
+  }
+
+  private func statusCard(_ report: CommanderScheduleAuditReport) -> some View {
+    let errors = report.issues.filter { $0.severity == .error }.count
+    let warnings = report.issues.filter { $0.severity == .warning }.count
+    let color = errors > 0 ? CommanderDesignTokens.Colors.criticalRed
+      : warnings > 0 ? CommanderDesignTokens.Colors.urgentOrange
+      : CommanderDesignTokens.Colors.mealGreen
+    let title = errors > 0 ? "Rozpis obsahuje chybu"
+      : warnings > 0 ? "Rozpis vyžaduje kontrolu"
+      : "Rozpis bez upozornění"
+    let detail = errors > 0 ? "\(errors) chyb · \(warnings) kontrol"
+      : warnings > 0 ? "\(warnings) položek k potvrzení"
+      : "Strukturální kontrola je čistá"
+
+    return HStack(spacing: 10) {
+      CommanderSymbolBadge(
+        symbol: errors > 0 ? "exclamationmark.octagon.fill"
+          : warnings > 0 ? "exclamationmark.triangle.fill"
+          : "checkmark.circle.fill",
+        color: color,
+        size: CommanderDesignTokens.Size.sectionBadge
+      )
+      VStack(alignment: .leading, spacing: 3) {
+        Text(title)
+          .commanderFont(.eventTitle)
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        Text(detail)
+          .commanderFont(.subtitle)
+          .foregroundStyle(color)
+      }
+      Spacer(minLength: 0)
+    }
+    .padding(CommanderDesignTokens.Spacing.medium)
+    .commanderCard(accent: color, surface: .depthCard)
+  }
+
+  private func summaryCard(_ report: CommanderScheduleAuditReport) -> some View {
+    CommanderSectionCard(
+      title: "Souhrn",
+      symbol: "checklist",
+      accent: CommanderDesignTokens.Colors.locationBlue
+    ) {
+      VStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
+        auditMetric("Pobyt", value: report.stayDayCount.map { "\($0) dní" } ?? "—")
+        auditMetric("Události", value: "\(report.eventCount)")
+        auditMetric("Procedury", value: "\(report.procedureCount)")
+        auditMetric("Jídla", value: "\(report.mealCount)")
+        auditMetric("Verze rozpisu", value: "v\(report.scheduleVersion)")
+      }
+    }
+  }
+
+  @ViewBuilder
+  private func issuesCard(_ report: CommanderScheduleAuditReport) -> some View {
+    if report.issues.isEmpty {
+      CommanderSectionCard(
+        title: "Kontroly",
+        symbol: "checkmark.seal.fill",
+        accent: CommanderDesignTokens.Colors.mealGreen
+      ) {
+        Text("Žádná strukturální anomálie. Přesná shoda se zdrojovým papírem bude samostatný acceptance krok.")
+          .commanderFont(.subtitle)
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+      }
+    } else {
+      CommanderSectionCard(
+        title: "Vyžaduje pozornost",
+        symbol: "exclamationmark.triangle.fill",
+        accent: report.hasErrors ? CommanderDesignTokens.Colors.criticalRed : CommanderDesignTokens.Colors.urgentOrange
+      ) {
+        VStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
+          ForEach(Array(report.issues.enumerated()), id: \.offset) { _, issue in
+            auditIssueRow(issue)
+          }
+        }
+      }
+    }
+  }
+
+  private func auditMetric(_ title: String, value: String) -> some View {
+    HStack {
+      Text(title)
+        .commanderFont(.label)
+        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+      Spacer()
+      Text(value)
+        .commanderFont(.metric)
+        .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+    }
+    .padding(.horizontal, 10)
+    .padding(.vertical, 8)
+    .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthInset)
+  }
+
+  private func auditIssueRow(_ issue: CommanderScheduleAuditIssue) -> some View {
+    let color = issue.severity == .error
+      ? CommanderDesignTokens.Colors.criticalRed
+      : CommanderDesignTokens.Colors.urgentOrange
+    return HStack(alignment: .top, spacing: 9) {
+      Image(systemName: issue.severity == .error ? "xmark.octagon.fill" : "exclamationmark.triangle.fill")
+        .font(.system(size: 18, weight: .bold))
+        .foregroundStyle(color)
+        .frame(width: 24)
+      VStack(alignment: .leading, spacing: 3) {
+        if let date = issue.date {
+          Text(CommanderDateText.numericDate(isoDate: date) ?? date)
+            .commanderFont(.label)
+            .foregroundStyle(color)
+        }
+        Text(issue.message)
+          .commanderFont(.subtitle)
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .fixedSize(horizontal: false, vertical: true)
+        if issue.severity == .warning {
+          Text("Čeká na vaše potvrzení")
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        }
+      }
+      Spacer(minLength: 0)
+    }
+    .padding(10)
+    .commanderCard(accent: color, surface: .depthInset)
+  }
+}
+
 private struct CommanderSettingsAttentionCard: View {
   let message: String
 
@@ -97,6 +266,18 @@ private struct CommanderScheduleSettingsCard: View {
       symbol: "calendar",
       accent: CommanderDesignTokens.Colors.locationBlue
     ) {
+      NavigationLink {
+        CommanderScheduleAuditView(schedule: model.latestSchedule)
+      } label: {
+        CommanderNavigationRow(
+          title: "Kontrola rozpisu",
+          subtitle: "Anomálie, změny a potvrzení",
+          symbol: "checkmark.shield.fill",
+          accent: CommanderDesignTokens.Colors.locationBlue
+        )
+      }
+      .buttonStyle(.plain)
+
       Button {
         model.synchronize()
       } label: {

@@ -142,14 +142,14 @@ private struct CommanderNeonTabBar: View {
     .padding(4)
     .background {
       // Opaque blue glass shading avoids a live backdrop blur while scrolling.
-      RoundedRectangle(cornerRadius: 24, style: .continuous)
+      RoundedRectangle(cornerRadius: 19, style: .continuous)
         .fill(LinearGradient(
           colors: [Color(commanderHex: "#1E447E"), Color(commanderHex: "#101E43")],
           startPoint: .topLeading, endPoint: .bottomTrailing
         ))
     }
     .overlay {
-      RoundedRectangle(cornerRadius: 24, style: .continuous)
+      RoundedRectangle(cornerRadius: 19, style: .continuous)
         .strokeBorder(LinearGradient(
           colors: [CommanderDesignTokens.Colors.primaryPurple.opacity(0.40),
                    CommanderDesignTokens.Colors.procedureCyan.opacity(0.30),

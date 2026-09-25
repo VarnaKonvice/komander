@@ -79,29 +79,34 @@ struct CommanderDashboardContent: View {
 
   var body: some View {
     let presentation = presentation
-    ScrollView {
-      LazyVStack(alignment: .leading, spacing: 10) {
-        CommanderGlassHeader(tab: "", showsTabPill: false)
+    VStack(spacing: 0) {
+      CommanderPinnedTabHeader(
+        title: "Dnes",
+        subtitle: "Přehled dne a aktuální stav",
+        schedule: schedule
+      )
 
-        if presentation.mode == .unsynchronized {
-          CommanderUnsynchronizedView(
-            isSynchronizing: isSynchronizing,
-            synchronize: synchronize
-          )
-        } else {
-          CommanderTodayOverviewCard(presentation: presentation)
-          CommanderNowDeck(presentation: presentation, schedule: schedule)
-          if !presentation.timeline.isEmpty {
-            CommanderDayTimelineView(items: presentation.timeline)
+      ScrollView {
+        LazyVStack(alignment: .leading, spacing: 10) {
+          if presentation.mode == .unsynchronized {
+            CommanderUnsynchronizedView(
+              isSynchronizing: isSynchronizing,
+              synchronize: synchronize
+            )
+          } else {
+            CommanderTodayOverviewCard(presentation: presentation)
+            CommanderNowDeck(presentation: presentation, schedule: schedule)
+            if !presentation.timeline.isEmpty {
+              CommanderDayTimelineView(items: presentation.timeline)
+            }
           }
         }
+        .padding(.horizontal, CommanderDesignTokens.Spacing.page)
+        .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
       }
-      .padding(.horizontal, CommanderDesignTokens.Spacing.page)
-      .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
+      .scrollIndicators(.hidden)
+      .clipped()
     }
-    .scrollIndicators(.hidden)
-    .clipped()
-    .padding(.top, CommanderDesignTokens.Spacing.scrollTop)
   }
 }
 
@@ -109,12 +114,9 @@ private struct CommanderTodayOverviewCard: View {
   let presentation: CommanderDashboardPresentation
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      CommanderScreenHeading(title: "Dnes", subtitle: "Přehled dne a aktuální stav")
-      CommanderDaySummaryCard(
-        overview: presentation.dayOverview, stayPeriod: presentation.stayPeriod
-      )
-    }
+    CommanderDaySummaryCard(
+      overview: presentation.dayOverview, stayPeriod: presentation.stayPeriod
+    )
   }
 }
 
@@ -601,12 +603,18 @@ private struct CommanderCountdownRing: View {
           .padding(.vertical, 3)
           .background {
             Capsule()
-              .fill(Color(commanderHex: "#0A1732").opacity(0.94))
+              .fill(
+                LinearGradient(
+                  colors: [Color(commanderHex: "#234E8E"), Color(commanderHex: "#172952")],
+                  startPoint: .topLeading,
+                  endPoint: .bottomTrailing
+                )
+              )
               .overlay {
                 Capsule()
-                  .strokeBorder(accent.opacity(0.34), lineWidth: 0.75)
+                  .strokeBorder(accent.opacity(0.38), lineWidth: 0.75)
               }
-              .shadow(color: .black.opacity(0.58), radius: 4, y: 2)
+              .shadow(color: Color(commanderHex: "#08162F").opacity(0.34), radius: 2.2, y: 1.2)
           }
           .offset(y: -3)
           .frame(maxHeight: .infinity, alignment: .top)

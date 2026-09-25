@@ -9,7 +9,8 @@ struct CommanderStayView: View {
       CommanderTabScaffold(
         tab: "Pobyt",
         title: "Pobyt",
-        subtitle: "Souhrn celého pobytu"
+        subtitle: "Souhrn celého pobytu",
+        schedule: model.latestSchedule
       ) {
         if let schedule = model.latestSchedule {
           if let stay = try? CommanderStayPresentation.make(schedule: schedule, now: context.date) {
@@ -35,7 +36,7 @@ private struct CommanderStayOverviewCard: View {
       HStack(spacing: CommanderDesignTokens.Spacing.small) {
         CommanderSymbolBadge(
           symbol: "bed.double.fill",
-          color: CommanderDesignTokens.Colors.primaryPurple,
+          color: CommanderDesignTokens.Colors.locationBlue,
           size: CommanderDesignTokens.Size.sectionBadge
         )
         VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
@@ -69,7 +70,7 @@ private struct CommanderStayOverviewCard: View {
     }
     .padding(CommanderDesignTokens.Spacing.medium)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .commanderCard(accent: CommanderDesignTokens.Colors.primaryPurple, surface: .depthCard)
+    .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthCard)
   }
 
   private var primaryTitle: String {
@@ -80,7 +81,7 @@ private struct CommanderStayOverviewCard: View {
   private var statusText: String {
     guard let period = stay.period else { return "Zobrazují se dostupné údaje" }
     if let currentDay = period.currentDay {
-      return "Aktuálně \(currentDay). den z \(period.totalDays)"
+      return "Den pobytu \(currentDay) / \(period.totalDays)"
     }
     return period.phase == .upcoming ? "Pobyt ještě nezačal" : "Pobyt skončil"
   }
@@ -88,7 +89,7 @@ private struct CommanderStayOverviewCard: View {
   private var statusColor: Color {
     guard let phase = stay.period?.phase else { return CommanderDesignTokens.Colors.textSecondary }
     switch phase {
-    case .active: return CommanderDesignTokens.Colors.mealGreen
+    case .active: return CommanderDesignTokens.Colors.procedureCyan
     case .upcoming: return CommanderDesignTokens.Colors.freeBlue
     case .finished: return CommanderDesignTokens.Colors.textSecondary
     }
@@ -149,13 +150,13 @@ private struct CommanderProcedureOverviewCard: View {
     CommanderSectionCard(
       title: "Přehled terapií v celém pobytu",
       symbol: "cross.case.fill",
-      accent: CommanderDesignTokens.Colors.primaryPurple
+      accent: CommanderDesignTokens.Colors.therapyPink
     ) {
       CommanderProgressMeter(
         title: "Ukončené podle rozpisu",
         value: "\(stay.completedProcedures) / \(stay.totalProcedures)",
         fraction: procedureFraction,
-        accent: CommanderDesignTokens.Colors.primaryPurple
+        accent: CommanderDesignTokens.Colors.therapyPink
       )
 
       if stay.procedures.isEmpty {
@@ -251,6 +252,6 @@ private struct CommanderStayUnavailableCard: View {
     }
     .padding(CommanderDesignTokens.Spacing.page)
     .frame(maxWidth: .infinity, alignment: .leading)
-    .commanderCard(accent: CommanderDesignTokens.Colors.primaryPurple, surface: .depthCard)
+    .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthCard)
   }
 }

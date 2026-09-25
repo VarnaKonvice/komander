@@ -14,7 +14,8 @@ struct CommanderInfoView: View {
       CommanderTabScaffold(
         tab: "Info",
         title: "Info",
-        subtitle: "Informace o vašem pobytu"
+        subtitle: "Informace o vašem pobytu",
+        schedule: model.latestSchedule
       ) {
         if let schedule = model.latestSchedule {
           let fields = CommanderInfoPresentation.fields(stay: schedule.stay)
@@ -58,7 +59,7 @@ struct CommanderInfoView: View {
           title: "Aktuální den pobytu",
           value: "\(currentDay) / \(period.totalDays)",
           symbol: "calendar.circle.fill",
-          accent: CommanderDesignTokens.Colors.primaryPurple
+          accent: CommanderDesignTokens.Colors.locationBlue
         )
       }
     case .upcoming:
