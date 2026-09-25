@@ -12,18 +12,18 @@ struct CommanderMealSummaryView: View {
       LazyVGrid(columns: columns, alignment: .leading, spacing: 10) {
         ForEach(meals, id: \.event.stableId) { item in
           HStack(alignment: .top, spacing: 10) {
-            CommanderEventIconView(event: item.event, size: 42)
+            CommanderEventIconView(event: item.event)
             VStack(alignment: .leading, spacing: 5) {
               Text(item.startAt, format: .dateTime.hour().minute())
                 .font(.headline.weight(.bold).monospacedDigit())
-                .foregroundStyle(CommanderDashboardPalette.mealGreen)
+                .foregroundStyle(CommanderEventAppearance.accent(for: item.event))
               Text(item.event.title)
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(.white)
               if !item.event.location.isEmpty {
                 Text(item.event.location)
                   .font(.caption.weight(.semibold))
-                  .foregroundStyle(.white.opacity(0.74))
+                  .foregroundStyle(CommanderDesignTokens.Colors.eventSupportingText)
                   .lineLimit(2)
               }
             }
@@ -33,7 +33,7 @@ struct CommanderMealSummaryView: View {
           .background(CommanderDashboardPalette.glass.opacity(item.phase == .past ? 0.56 : 1))
           .overlay {
             RoundedRectangle(cornerRadius: 8)
-              .stroke(CommanderDashboardPalette.mealGreen.opacity(item.phase == .past ? 0.22 : 0.42), lineWidth: 1)
+              .stroke(CommanderEventAppearance.accent(for: item.event).opacity(item.phase == .past ? 0.22 : 0.42), lineWidth: 1)
           }
           .clipShape(RoundedRectangle(cornerRadius: 8))
           .opacity(item.phase == .past ? 0.64 : 1)

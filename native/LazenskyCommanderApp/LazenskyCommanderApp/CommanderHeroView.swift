@@ -92,7 +92,7 @@ struct CommanderHeroView: View {
   private func eventHeader(status: String, statusColor: Color) -> some View {
     if let event = item?.event {
       HStack(alignment: .center, spacing: 14) {
-        CommanderEventIconView(event: event, size: 72)
+        CommanderEventIconView(event: event)
         VStack(alignment: .leading, spacing: 5) {
           Text(status)
             .font(.subheadline.bold())
@@ -104,7 +104,7 @@ struct CommanderHeroView: View {
           if !event.location.isEmpty {
             Label(event.location, systemImage: "mappin.and.ellipse")
               .font(.subheadline)
-              .foregroundStyle(.white.opacity(0.74))
+              .foregroundStyle(CommanderDesignTokens.Colors.eventSupportingText)
               .fixedSize(horizontal: false, vertical: true)
           }
         }

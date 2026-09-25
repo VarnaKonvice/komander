@@ -5,25 +5,50 @@ struct CommanderDayTimelineView: View {
   let items: [CommanderDashboardEvent]
 
   var body: some View {
-    VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.small) {
-      Text("Dnešní program")
-        .commanderFont(.section)
-        .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-        .accessibilityAddTraits(.isHeader)
-      LazyVStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
+    VStack(alignment: .leading, spacing: 8) {
+      HStack(alignment: .firstTextBaseline) {
+        Text("Dnešní program")
+          .commanderFont(.section)
+          .foregroundStyle(.white)
+          .accessibilityAddTraits(.isHeader)
+        Spacer(minLength: 8)
+        Text(eventCountText)
+          .font(.system(size: 15, weight: .semibold))
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+      }
+      LazyVStack(spacing: 5) {
         ForEach(items, id: \.event.stableId) { item in
-          CommanderEventRow(item: item)
+          CommanderEventRow(item: item, compact: true)
         }
       }
+    }
+    .padding(10)
+    .commanderCard(accent: CommanderDesignTokens.Colors.procedureCyan, surface: .depthCard)
+  }
+
+  private var eventCountText: String {
+    switch items.count {
+    case 1: "1 událost"
+    case 2...4: "\(items.count) události"
+    default: "\(items.count) událostí"
     }
   }
 }
 
 struct CommanderEventRow: View {
   let item: CommanderDashboardEvent
+  var compact = false
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-  private var accent: Color {
-    Color(commanderHex: CommanderVisualAssets.accent(for: item.event))
+  private var accent: Color { CommanderEventAppearance.accent(for: item.event) }
+  private var isPast: Bool { item.phase == .past }
+  private var isCurrent: Bool { item.phase == .current }
+  private var rowAccent: Color { accent }
+  private var isSingleWordTitle: Bool {
+    !item.event.title.contains { $0.isWhitespace }
+  }
+  private var timeRange: String {
+    "\(item.startAt.formatted(CommanderScheduleDateStyle.clock))–\(item.endAt.formatted(CommanderScheduleDateStyle.clock))"
   }
 
   private var departureText: String {
@@ -35,125 +60,78 @@ struct CommanderEventRow: View {
   }
 
   var body: some View {
-    HStack(alignment: .center, spacing: 6) {
-      VStack(alignment: .leading, spacing: 2) {
-        Text(item.startAt.formatted(CommanderScheduleDateStyle.clock))
-        Text(item.endAt.formatted(CommanderScheduleDateStyle.clock))
-      }
-      .commanderFont(.time)
-      .monospacedDigit()
-      .foregroundStyle(accent)
-      .fixedSize(horizontal: true, vertical: false)
-      .frame(width: 55, alignment: .leading)
-
+    HStack(spacing: 10) {
       CommanderSymbolBadge(
-        symbol: CommanderVisualAssets.symbol(for: item.event),
-        color: accent,
-        size: 34
+        symbol: CommanderEventAppearance.symbol(for: item.event),
+        color: rowAccent,
+        size: CommanderDesignTokens.Size.primaryBadge
       )
-      .background(accent.opacity(0.10), in: Circle())
-      .overlay { Circle().strokeBorder(accent.opacity(0.56), lineWidth: 1.15) }
-      .shadow(color: accent.opacity(0.46), radius: 7)
 
-      details.layoutPriority(1)
-    }
-    .padding(.horizontal, 10)
-    .padding(.vertical, 7)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background {
-      let shape = RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
-      ZStack {
-        shape.fill(
-          LinearGradient(
-            colors: [
-              Color(red: 0.13, green: 0.16, blue: 0.33),
-              Color(red: 0.055, green: 0.085, blue: 0.21),
-              Color(red: 0.03, green: 0.05, blue: 0.14)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
-        )
-        shape.fill(
-          LinearGradient(
-            colors: [
-              Color.white.opacity(0.075),
-              accent.opacity(item.phase == .current ? 0.11 : 0.07),
-              Color.clear
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
-        )
-        shape.fill(
-          RadialGradient(
-            colors: [accent.opacity(item.phase == .current ? 0.13 : 0.08), .clear],
-            center: UnitPoint(x: 0.18, y: 0.2),
-            startRadius: 4,
-            endRadius: 130
-          )
-        )
-      }
-    }
-    .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow))
-    .overlay {
-      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
-        .strokeBorder(
-          LinearGradient(
-            colors: [
-              Color.white.opacity(item.phase == .current ? 0.22 : 0.15),
-              accent.opacity(item.phase == .current ? 0.40 : 0.26),
-              Color.black.opacity(0.14)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          ),
-          lineWidth: 1
-        )
-        .allowsHitTesting(false)
-    }
-    .shadow(color: Color.black.opacity(0.26), radius: 5, y: 3)
-    .shadow(
-      color: accent.opacity(item.phase == .current ? 0.15 : 0.055),
-      radius: item.phase == .current ? 8 : 5
-    )
-    .accessibilityElement(children: .combine)
-    .accessibilityValue(item.phase == .current ? "Právě probíhá" : "")
-  }
+      VStack(alignment: .leading, spacing: 3) {
+        Text(timeRange)
+          .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 22 : 18, weight: .bold))
+          .monospacedDigit()
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .lineLimit(1)
+          .minimumScaleFactor(0.9)
 
-  private var details: some View {
-    VStack(alignment: .leading, spacing: 2) {
-      Text(item.event.title)
-        .commanderFont(.eventTitle)
-        .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-        .fixedSize(horizontal: false, vertical: true)
-      if !item.event.location.isEmpty {
-        HStack(alignment: .top, spacing: 6) {
-          location
-            .fixedSize(horizontal: false, vertical: true)
-            .layoutPriority(1)
-          Spacer(minLength: 4)
-          departure
-            .fixedSize(horizontal: true, vertical: true)
+        Text(item.event.title)
+          .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 24.5 : 20.5, weight: .bold))
+          .foregroundStyle(rowAccent)
+          .allowsTightening(true)
+          .lineLimit(isSingleWordTitle ? 1 : nil)
+          .minimumScaleFactor(isSingleWordTitle ? 0.90 : 1)
+          .fixedSize(horizontal: false, vertical: true)
+
+        if !item.event.location.isEmpty {
+          Label(item.event.location, systemImage: "mappin.circle.fill")
+            .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 20 : 17, weight: .semibold))
+            .foregroundStyle(CommanderDesignTokens.Colors.eventSupportingText)
+            .lineLimit(1)
+            .minimumScaleFactor(0.9)
         }
-      } else {
-        departure
-          .frame(maxWidth: .infinity, alignment: .trailing)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .layoutPriority(1)
+
+      Divider()
+        .overlay(CommanderDesignTokens.Colors.textSecondary.opacity(0.24))
+        .padding(.vertical, 4)
+        .accessibilityHidden(true)
+
+      departure
+    }
+    .padding(.horizontal, 11)
+    .padding(.vertical, 11)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .commanderCard(accent: accent, surface: .eventRow)
+    .overlay {
+      if isCurrent {
+        RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
+          .strokeBorder(Color.white.opacity(0.88), lineWidth: 1.2)
+          .blendMode(.plusLighter)
+          .allowsHitTesting(false)
       }
     }
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-
-  private var location: some View {
-    Label(item.event.location, systemImage: "mappin.circle.fill")
-      .commanderFont(.location)
-      .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
+    .saturation(isPast ? 0.65 : 1)
+    .opacity(isPast ? 0.9 : 1)
+    .accessibilityElement(children: .combine)
+    .accessibilityValue(isCurrent ? "Právě probíhá" : isPast ? "Dokončeno" : "")
   }
 
   private var departure: some View {
-    Text("Odchod \(departureText)")
-      .commanderFont(.departure)
-      .monospacedDigit()
-      .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+    HStack(spacing: 5) {
+      Image(systemName: "figure.walk")
+        .font(.system(size: 20, weight: .medium))
+        .accessibilityHidden(true)
+      VStack(alignment: .trailing, spacing: 2) {
+        Text("Odchod").font(.system(size: 14, weight: .semibold))
+        Text(departureText)
+          .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 22 : 19, weight: .bold))
+          .monospacedDigit()
+      }
+    }
+    .foregroundStyle(CommanderDesignTokens.Colors.eventSupportingText)
+    .fixedSize(horizontal: true, vertical: true)
   }
 }

@@ -68,7 +68,6 @@ private struct CommanderSettingsAttentionCard: View {
         color: CommanderDesignTokens.Colors.criticalRed,
         size: CommanderDesignTokens.Size.sectionBadge
       )
-      .shadow(color: CommanderDesignTokens.Colors.criticalRed.opacity(0.42), radius: 7)
       VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
         Text("Potřebuje váš zásah")
           .commanderFont(.eventTitle)
@@ -126,13 +125,8 @@ private struct CommanderScheduleSettingsCard: View {
           .commanderFont(.metric)
           .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
           .padding(CommanderDesignTokens.Spacing.small)
-          .frame(maxWidth: .infinity, minHeight: 44)
-          .background(CommanderDesignTokens.Colors.urgentOrange.opacity(0.18))
-          .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset))
-          .overlay {
-            RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-              .strokeBorder(CommanderDesignTokens.Colors.urgentOrange.opacity(0.5), lineWidth: 1)
-          }
+          .frame(maxWidth: .infinity, minHeight: 48)
+          .commanderCard(accent: CommanderDesignTokens.Colors.urgentOrange, surface: .depthInset)
       }
     }
   }
@@ -152,7 +146,6 @@ private struct CommanderSettingsActionRow: View {
         color: accent,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
-      .shadow(color: accent.opacity(0.34), radius: 5)
       VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
         Text(title)
           .commanderFont(.metric)

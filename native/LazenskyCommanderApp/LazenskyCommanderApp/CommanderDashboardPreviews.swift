@@ -140,3 +140,82 @@ private struct CommanderWeekDayPreview: View {
 #Preview("Týden - rozbalený den") {
   CommanderWeekDayPreview(isExpanded: true)
 }
+
+#if DEBUG && targetEnvironment(simulator)
+// Deterministic visual checks of the real UI components; never changes the device schedule.
+struct CommanderApprovedVisualProof: View {
+  static var mode: String? {
+    let args = ProcessInfo.processInfo.arguments
+    guard let index = args.firstIndex(of: "-CommanderApprovedVisualProof"),
+          args.indices.contains(index + 1) else { return nil }
+    return args[index + 1]
+  }
+
+  private static let cases: [(String, String, String, String)] = [
+    ("Snídaně", "07:30", "#50B863", "fork.knife"),
+    ("Individuální rehabilitace", "08:30", "#2EE6C4", "figure.run"),
+    ("Ergoterapie", "09:30", "#2EE6C4", "figure.run"),
+    ("Vířivá vana dolních končetin", "10:30", "#2ED4FF", "drop"),
+    ("Bazén", "11:30", "#2ED4FF", "drop"),
+    ("Masáž", "12:30", "#FF7A59", "leaf.fill"),
+    ("Hydrojet", "13:30", "#FF7A59", "leaf.fill"),
+    ("Rašelinový zábal", "14:30", "#FFC857", "commander.heat.waves"),
+    ("Magnetoterapie", "15:30", "#D6B4FE", "atom"),
+    ("Večeře", "17:30", "#50B863", "fork.knife")
+  ]
+
+  private var schedule: Schedule {
+    let events = ["2026-09-24", "2026-09-25"].flatMap { date in
+      Self.cases.enumerated().map { index, item -> [String: String] in
+        ["stableId": "proof-\(date)-\(index)", "date": date,
+         "start": item.1, "end": String(item.1.prefix(2)) + ":55",
+         "title": item.0, "location": index == 0 || index == 9 ? "Jídelna" : "Rehabilitace",
+         "kind": index == 0 || index == 9 ? "meal" : "procedure"]
+      }
+    }
+    let object: [String: Any] = [
+      "schemaVersion": 1, "scheduleVersion": 1, "updatedAt": "2026-09-24T00:00:00Z",
+      "stay": ["dateFrom": "2026-09-24", "dateTo": "2026-09-25"], "events": events,
+      "settings": ["defaultLeadTimeMinutes": 20, "procedureTypeOverrides": [:], "mealOverrides": [:]]
+    ]
+    let schedule = try! JSONDecoder().decode(Schedule.self, from: JSONSerialization.data(withJSONObject: object))
+    for (event, reference) in zip(schedule.events.prefix(Self.cases.count), Self.cases) {
+      precondition(CommanderVisualAssets.accent(for: event) == reference.2, event.title)
+      precondition(CommanderVisualAssets.symbol(for: event) == reference.3, event.title)
+    }
+    precondition(CommanderVisualAssets.accent(forIconKey: nil) == "#FF5DA8")
+    precondition(CommanderVisualAssets.accent(forIconKey: "unknown") == "#FF5DA8")
+    return schedule
+  }
+
+  var body: some View {
+    let schedule = schedule
+    let now = try! NativeAlarmContract.date(fromLocalISO: "2026-09-24T09:35:00")
+    let days = try! CommanderWeekPresentation.make(schedule: schedule, now: now)
+    Group {
+      if Self.mode == "today" {
+        CommanderDashboardContent(schedule: schedule, overrides: LeadTimeOverrides(), now: now,
+                                  isSynchronizing: false, synchronize: {})
+      } else {
+        ScrollView {
+          VStack(spacing: CommanderDesignTokens.Spacing.medium) {
+            CommanderGlassHeader(tab: "")
+            if Self.mode == "program" || Self.mode == "program-later" {
+              CommanderDayTimelineView(items: Self.mode == "program"
+                ? Array(days[0].events.prefix(5)) : Array(days[0].events.suffix(5)))
+            } else {
+              let isToday = Self.mode == "week-today"
+              CommanderWeekDayTile(day: days[isToday ? 0 : 1],
+                                  isExpanded: Self.mode == "week-expanded",
+                                  isToday: isToday, toggle: {})
+            }
+          }
+          .padding(CommanderDesignTokens.Spacing.page)
+        }
+      }
+    }
+    .background(CommanderDepthBackground().ignoresSafeArea())
+    .preferredColorScheme(.dark)
+  }
+}
+#endif

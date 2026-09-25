@@ -40,6 +40,7 @@ struct CommanderInfoView: View {
                 }
               }
             }
+
           }
         } else {
           unavailableCard("Rozpis ještě není načten")
@@ -91,12 +92,10 @@ struct CommanderInfoView: View {
 
   private func accent(for key: String) -> Color {
     switch key {
-    case "spa": return CommanderDesignTokens.Colors.locationBlue
-    case "dateFrom", "dateTo": return CommanderDesignTokens.Colors.primaryPurple
-    case "room": return CommanderDesignTokens.Colors.freeBlue
-    case "doctor": return CommanderDesignTokens.Colors.procedureCyan
-    case "mealShift": return CommanderDesignTokens.Colors.mealGreen
-    default: return CommanderDesignTokens.Colors.textSecondary
+    case "spa", "dateFrom", "dateTo", "room", "doctor", "mealShift":
+      return CommanderDesignTokens.Colors.locationBlue
+    default:
+      return CommanderDesignTokens.Colors.textSecondary
     }
   }
 

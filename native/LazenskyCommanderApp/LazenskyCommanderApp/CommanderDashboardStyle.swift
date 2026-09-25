@@ -1,22 +1,29 @@
 import LazenskyCommanderCore
 import SwiftUI
 
-// Source-of-Truth v2 shared by every main application tab.
+// Source-of-Truth v3: saturated neon surfaces with crisp glow, no broad haze.
 enum CommanderDesignTokens {
   enum Colors {
-    static let background = Color(commanderHex: "#0E1530")
-    static let panel = Color(commanderHex: "#141C3E")
-    static let panelStroke = Color(commanderHex: "#4E68D8")
-    static let primaryPurple = Color(commanderHex: "#A873FF")
-    static let locationBlue = Color(commanderHex: "#4CC8FF")
-    static let mealGreen = Color(commanderHex: "#50B863")
-    static let amber = Color(commanderHex: "#FFB54A")
-    static let freeBlue = Color(commanderHex: "#2EA6FF")
-    static let procedureCyan = Color(commanderHex: "#2ED4FF")
-    static let urgentOrange = Color(commanderHex: "#FF8A00")
-    static let criticalRed = Color(commanderHex: "#F45A4A")
+    static let background = Color(commanderHex: "#1542BA")
+    static let backgroundDeep = Color(commanderHex: "#102884")
+    static let panel = Color(commanderHex: "#1743A5")
+    static let panelBright = Color(commanderHex: "#285DD7")
+    static let panelStroke = Color(commanderHex: "#36DFFF")
+    static let primaryPurple = Color(commanderHex: "#C77DFF")
+    static let locationBlue = Color(commanderHex: "#65E5FF")
+    static let mealGreen = Color(commanderHex: CommanderBrandAssets.Colors.mealGreen)
+    static let amber = Color(commanderHex: "#FFC340")
+    static let freeBlue = Color(commanderHex: CommanderBrandAssets.Colors.freeTimeCyan)
+    static let procedureCyan = Color(commanderHex: CommanderBrandAssets.Colors.procedureCyan)
+    static let urgentOrange = Color(commanderHex: "#FF8A3D")
+    static let criticalRed = Color(commanderHex: "#FF5F59")
+    static let therapyPink = Color(commanderHex: CommanderBrandAssets.Colors.therapyPink)
+    static let procedureEndNeutral = Color(commanderHex: CommanderBrandAssets.Colors.procedureEndNeutral)
     static let textPrimary = Color(commanderHex: "#FFFFFF")
-    static let textSecondary = Color(commanderHex: "#A6B0D6")
+    static let textSecondary = Color(commanderHex: "#F2F6FF")
+    // Supporting event information (location, departure) stays neutral white.
+    // Event accent colors are reserved for the icon/title/border hierarchy.
+    static let eventSupportingText = textPrimary
   }
 
   enum Spacing {
@@ -25,20 +32,27 @@ enum CommanderDesignTokens {
     static let eventRows: CGFloat = 6
     static let small: CGFloat = 8
     static let medium: CGFloat = 12
-    static let page: CGFloat = 16
+    static let page: CGFloat = 14
     static let section: CGFloat = 20
-    static let bottom: CGFloat = 28
+    static let bottom: CGFloat = 24
+    static let scrollTop: CGFloat = 12
+    static let tabBarClearance: CGFloat = 92
   }
 
   enum Size {
-    static let sectionBadge: CGFloat = 40
-    static let rowMetricBadge: CGFloat = 30
+    // Approved rule: one normal icon size everywhere.
+    static let standardBadge: CGFloat = 50
+    // Only the two highlighted cards in "Co mě teď čeká" may be larger.
+    static let featuredBadge: CGFloat = 59
+    static let primaryBadge: CGFloat = standardBadge
+    static let sectionBadge: CGFloat = standardBadge
+    static let rowMetricBadge: CGFloat = standardBadge
   }
 
   enum Radius {
     static let eventRow: CGFloat = 14
     static let card: CGFloat = 18
-    static let header: CGFloat = 22
+    static let header: CGFloat = 16
     static let inset: CGFloat = 12
   }
 
@@ -80,16 +94,17 @@ enum CommanderDesignTokens {
 
     var size: CGFloat {
       switch self {
-      case .screenTitle: 34
-      case .countdown: 24
-      case .liveTitle: 22
-      case .date: 20
-      case .time: 18
-      case .brand: 20
-      case .section, .eventTitle: 17
-      case .metric: 16
-      case .location: 16
-      case .subtitle, .label, .departure: 14
+      case .screenTitle: 37
+      case .countdown: 27
+      case .liveTitle: 25
+      case .date: 23
+      case .time: 21
+      case .brand: 24
+      case .section: 20
+      case .eventTitle: 21
+      case .metric: 21
+      case .location: 18
+      case .subtitle, .label, .departure: 17
       }
     }
 
@@ -111,100 +126,89 @@ enum CommanderDesignTokens {
     }
   }
 
-  static let cardBackground = LinearGradient(
-    colors: [Colors.panel, Colors.background], startPoint: .topLeading, endPoint: .bottomTrailing
-  )
-  static let glassHighlight = LinearGradient(
-    colors: [Colors.panelStroke.opacity(0.2), Colors.panelStroke.opacity(0.02)],
-    startPoint: .topLeading, endPoint: .bottomTrailing
-  )
 }
 
+// One surface owner: parent cards hold blue light; children carry the category tint.
+// A narrow halo supports the crisp stroke. No broad blur or stacked material layers.
 private struct CommanderCardSurface: ViewModifier {
   var accent: Color?
   var surface: CommanderDesignTokens.CardSurface
 
   func body(content: Content) -> some View {
-    let shape = RoundedRectangle(cornerRadius: surface.radius)
-    let depthAccent = accent ?? CommanderDesignTokens.Colors.primaryPurple
+    let shape = RoundedRectangle(cornerRadius: surface.radius, style: .continuous)
+    let tint = accent ?? CommanderDesignTokens.Colors.panelStroke
+
+    // Keep the page/status-bar background unchanged. Cards add a crisp category tint.
+    let baseColors: [Color] = {
+      switch surface {
+      case .header:
+        return [
+          Color(commanderHex: "#0D65EA"),
+          Color(commanderHex: "#084FC5"),
+          Color(commanderHex: "#063B91")
+        ]
+      case .eventRow:
+        return [
+          Color(commanderHex: "#0C65D8"),
+          Color(commanderHex: "#0A50B8"),
+          Color(commanderHex: "#073B8D")
+        ]
+      case .depthInset:
+        return [
+          Color(commanderHex: "#116DDE"),
+          Color(commanderHex: "#0C56C0"),
+          Color(commanderHex: "#084294")
+        ]
+      case .card, .depthCard:
+        return [
+          Color(commanderHex: "#176FE2"),
+          Color(commanderHex: "#1058C4"),
+          Color(commanderHex: "#0A4398")
+        ]
+      }
+    }()
+
+    let crispWidth: CGFloat = 1.45
 
     content
       .background {
-        ZStack {
-          if surface.isGlass {
-            shape.fill(.ultraThinMaterial)
-              .overlay(CommanderDesignTokens.Colors.panel.opacity(0.8))
-          } else if surface.isDepth {
-            shape.fill(
-              LinearGradient(
-                colors: [
-                  Color(red: 0.17, green: 0.18, blue: 0.38),
-                  depthAccent.opacity(0.10),
-                  Color(red: 0.055, green: 0.075, blue: 0.19)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-              )
-            )
-            shape.fill(
-              LinearGradient(
-                colors: [
-                  Color.white.opacity(0.11),
-                  depthAccent.opacity(0.10),
-                  Color.clear
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-              )
-            )
-            shape.fill(
-              RadialGradient(
-                colors: [depthAccent.opacity(0.13), .clear],
-                center: .topLeading,
-                startRadius: 4,
-                endRadius: surface == .depthInset ? 110 : 220
-              )
-            )
-          } else {
-            CommanderDesignTokens.cardBackground
-            CommanderDesignTokens.glassHighlight
-          }
-        }
-      }
-      .background(CommanderDesignTokens.Colors.background)
-      .clipShape(shape)
-      .overlay {
-        if surface.isDepth {
-          shape.strokeBorder(
+        shape.fill(
+          LinearGradient(
+            colors: baseColors,
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+          )
+        )
+        .overlay {
+          // Put category color into the actual card face. This is a flat tint,
+          // not a haze layer: no white, blur, material or bloom.
+          shape.fill(
             LinearGradient(
               colors: [
-                Color.white.opacity(0.23),
-                depthAccent.opacity(0.52),
-                Color.black.opacity(0.16)
+                tint.opacity(surface == .eventRow ? 0.22 : 0.15),
+                tint.opacity(surface == .eventRow ? 0.12 : 0.08),
+                tint.opacity(surface == .eventRow ? 0.05 : 0.03)
               ],
               startPoint: .topLeading,
               endPoint: .bottomTrailing
-            ),
-            lineWidth: 1
+            )
           )
-          .allowsHitTesting(false)
-        } else {
-          shape.strokeBorder(
-            accent?.opacity(0.55) ?? CommanderDesignTokens.Stroke.normal,
-            lineWidth: CommanderDesignTokens.Stroke.width
-          )
-          .allowsHitTesting(false)
         }
       }
-      .shadow(
-        color: surface.isDepth ? Color.black.opacity(0.30) : .clear,
-        radius: surface == .depthInset ? 5 : 9,
-        y: surface == .depthInset ? 4 : 6
-      )
-      .shadow(
-        color: surface.isDepth ? depthAccent.opacity(0.10) : .clear,
-        radius: surface == .depthInset ? 7 : 11
-      )
+      .background {
+        // Crisp neon only. No blur, material, white bloom or haze.
+        ZStack {
+          shape.stroke(tint.opacity(0.14), lineWidth: 3.0)
+          shape.stroke(tint.opacity(0.36), lineWidth: 2.0)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+      }
+      .overlay {
+        shape
+          .strokeBorder(tint.opacity(1.0), lineWidth: crispWidth)
+          .allowsHitTesting(false)
+      }
   }
 }
 
@@ -235,42 +239,62 @@ private struct CommanderFontModifier: ViewModifier {
 
 struct CommanderGlassHeader: View {
   let tab: String
+  var showsTabPill: Bool = false
 
   var body: some View {
-    HStack(spacing: 6) {
-      logo
-      Text("Lázeňský \(Text("Commander").foregroundStyle(CommanderDesignTokens.Colors.primaryPurple))")
-        .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-        .commanderFont(.brand)
-        .lineLimit(1)
-        .minimumScaleFactor(0.94)
-        .layoutPriority(1)
-        .frame(maxWidth: .infinity, alignment: .leading)
-      tabPill
-    }
-    .padding(.horizontal, 6)
-    .padding(.vertical, CommanderDesignTokens.Spacing.tiny)
-    .commanderCard(surface: .header)
-    .accessibilityElement(children: .combine)
-  }
-
-  private var logo: some View {
-    CommanderBrandAssets.circularMark
-      .resizable()
-      .scaledToFit()
-      .frame(width: 44, height: 44)
+    HStack(spacing: 8) {
+      ZStack {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+          .fill(
+            LinearGradient(
+              colors: [Color(commanderHex: "#160C45"), Color(commanderHex: "#071B55")],
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            )
+          )
+        CommanderBrandAssets.circularMark
+          .resizable()
+          .scaledToFit()
+          .padding(3)
+      }
+      .frame(width: CommanderDesignTokens.Size.standardBadge, height: CommanderDesignTokens.Size.standardBadge)
+      .overlay {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+          .strokeBorder(
+            LinearGradient(
+              colors: [CommanderDesignTokens.Colors.primaryPurple.opacity(0.55),
+                       CommanderDesignTokens.Colors.procedureCyan.opacity(0.35),
+                       Color.white.opacity(0.4)],
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            ),
+            lineWidth: 0.65
+          )
+      }
+      .shadow(color: CommanderDesignTokens.Colors.primaryPurple.opacity(0.30), radius: 1.5)
       .accessibilityHidden(true)
-  }
-
-  private var tabPill: some View {
-    Text(tab)
-      .font(.system(size: 14, weight: .medium))
-      .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-      .fixedSize()
-      .padding(.horizontal, 8)
-      .padding(.vertical, 6)
-      .background(CommanderDesignTokens.Colors.panel, in: Capsule())
-      .overlay { Capsule().strokeBorder(CommanderDesignTokens.Stroke.strong, lineWidth: 1) }
+      HStack(spacing: 0) {
+        Text("Lázeňský ")
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        Text("Commander")
+          .foregroundStyle(
+            LinearGradient(
+              colors: [CommanderDesignTokens.Colors.primaryPurple, Color(commanderHex: "#E77CFF")],
+              startPoint: .leading, endPoint: .trailing
+            )
+          )
+      }
+      .commanderFont(.brand)
+      .lineLimit(1)
+      .minimumScaleFactor(0.8)
+      .layoutPriority(1)
+      .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .padding(.horizontal, 8)
+    .padding(.vertical, 5)
+    .commanderCard(accent: CommanderDesignTokens.Colors.procedureCyan.opacity(0.85), surface: .header)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("Lázeňský Commander")
   }
 }
 
@@ -312,16 +336,17 @@ struct CommanderTabScaffold<Content: View>: View {
 
   var body: some View {
     ScrollView {
-      LazyVStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
+      LazyVStack(alignment: .leading, spacing: 14) {
         CommanderGlassHeader(tab: tab)
         CommanderScreenHeading(title: title, subtitle: subtitle)
         content
       }
       .padding(.horizontal, CommanderDesignTokens.Spacing.page)
-      .padding(.top, CommanderDesignTokens.Spacing.tiny)
       .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
     }
     .scrollIndicators(.hidden)
+    .clipped()
+    .padding(.top, CommanderDesignTokens.Spacing.scrollTop)
     .background(CommanderDepthBackground().ignoresSafeArea())
     .toolbar(.hidden, for: .navigationBar)
   }
@@ -353,7 +378,7 @@ struct CommanderSectionCard<Content: View>: View {
           color: accent,
           size: CommanderDesignTokens.Size.sectionBadge
         )
-        .shadow(color: accent.opacity(0.42), radius: 7)
+
         Text(title)
           .commanderFont(.section)
           .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
@@ -380,7 +405,7 @@ struct CommanderDetailRow: View {
         color: accent,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
-      .shadow(color: accent.opacity(0.34), radius: 5)
+
       VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
         Text(title)
           .commanderFont(.label)
@@ -393,7 +418,7 @@ struct CommanderDetailRow: View {
       Spacer(minLength: 0)
     }
     .padding(CommanderDesignTokens.Spacing.small)
-    .frame(maxWidth: .infinity, alignment: .leading)
+    .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
     .commanderCard(accent: accent, surface: .depthInset)
     .accessibilityElement(children: .combine)
   }
@@ -421,11 +446,18 @@ struct CommanderProgressMeter: View {
         ZStack(alignment: .leading) {
           Capsule().fill(CommanderDesignTokens.Colors.textSecondary.opacity(0.16))
           Capsule()
-            .fill(accent)
+            .fill(
+              LinearGradient(
+                colors: [accent.opacity(0.78), accent, Color.white.opacity(0.72)],
+                startPoint: .leading,
+                endPoint: .trailing
+              )
+            )
             .frame(width: proxy.size.width * min(max(fraction, 0), 1))
+            .shadow(color: accent.opacity(0.36), radius: 2)
         }
       }
-      .frame(height: 8)
+      .frame(height: 12)
     }
     .accessibilityElement(children: .combine)
   }
@@ -445,7 +477,7 @@ struct CommanderNavigationRow: View {
         color: accent,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
-      .shadow(color: accent.opacity(0.34), radius: 5)
+
       VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
         Text(title)
           .commanderFont(.metric)
@@ -475,59 +507,134 @@ struct CommanderNavigationRow: View {
 
 enum CommanderEventAppearance {
   static func accent(for event: ScheduleEvent) -> Color {
-    if event.kind == .meal { return CommanderDesignTokens.Colors.mealGreen }
-    switch CommanderVisualAssets.icon(for: event)?.key {
-    case "iodobrom", "peat_wrap": return CommanderDesignTokens.Colors.amber
-    case "electro_therapy", "hydrojet", "whirlpool", "pool":
-      return CommanderDesignTokens.Colors.procedureCyan
-    default: return CommanderDesignTokens.Colors.primaryPurple
-    }
+    Color(commanderHex: CommanderVisualAssets.accent(for: event))
   }
 
   static func symbol(for event: ScheduleEvent) -> String {
-    if event.kind == .meal { return "fork.knife" }
-    switch CommanderVisualAssets.icon(for: event)?.key {
-    case "electro_therapy": return "atom"
-    case "iodobrom", "whirlpool": return "bathtub.fill"
-    case "massage", "peat_wrap": return "figure.mind.and.body"
-    case "pool", "hydrojet": return "water.waves"
-    case "individual_rehab", "imoove": return "figure.walk"
-    default: return "calendar"
-    }
+    CommanderVisualAssets.symbol(for: event)
   }
+
 }
 
 struct CommanderSymbolBadge: View {
   let symbol: String
   let color: Color
-  var size: CGFloat = 36
+  var size: CGFloat = CommanderDesignTokens.Size.standardBadge
 
   var body: some View {
-    Image(systemName: symbol)
-      .font(.system(size: size * 0.5, weight: .medium))
-      .foregroundStyle(color)
+    badgeGlyph
+      .frame(width: size * 0.52, height: size * 0.52)
       .frame(width: size, height: size)
-      .background(color.opacity(0.14), in: Circle())
-      .overlay { Circle().strokeBorder(color.opacity(0.35), lineWidth: 1) }
+      .background(
+        LinearGradient(
+          colors: [color.opacity(0.13), Color(commanderHex: "#052D78")],
+          startPoint: .topLeading, endPoint: .bottomTrailing
+        ), in: Circle()
+      )
+      .overlay {
+        Circle()
+          .strokeBorder(color, lineWidth: 1.45)
+          .allowsHitTesting(false)
+      }
       .accessibilityHidden(true)
+  }
+
+  @ViewBuilder
+  private var badgeGlyph: some View {
+    if symbol == "commander.heat.waves" {
+      CommanderHeatWavesGlyph(color: color)
+    } else {
+      Image(systemName: symbol)
+        .resizable()
+        .scaledToFit()
+        .symbolRenderingMode(.monochrome)
+        .foregroundStyle(color)
+        .frame(width: size * 0.54, height: size * 0.54)
+    }
+  }
+}
+
+private struct CommanderHeatWavesGlyph: View {
+  let color: Color
+
+  var body: some View {
+    GeometryReader { proxy in
+      let w = proxy.size.width
+      let h = proxy.size.height
+      let stroke = max(1.65, min(w, h) * 0.085)
+
+      ZStack {
+        ForEach([0.29, 0.50, 0.71], id: \.self) { factor in
+          Path { path in
+            let x = w * factor
+            path.move(to: CGPoint(x: x, y: h * 0.66))
+            path.addCurve(
+              to: CGPoint(x: x, y: h * 0.47),
+              control1: CGPoint(x: x - w * 0.055, y: h * 0.60),
+              control2: CGPoint(x: x + w * 0.055, y: h * 0.54)
+            )
+            path.addCurve(
+              to: CGPoint(x: x, y: h * 0.28),
+              control1: CGPoint(x: x - w * 0.055, y: h * 0.41),
+              control2: CGPoint(x: x + w * 0.055, y: h * 0.35)
+            )
+            path.addCurve(
+              to: CGPoint(x: x, y: h * 0.11),
+              control1: CGPoint(x: x - w * 0.050, y: h * 0.22),
+              control2: CGPoint(x: x + w * 0.050, y: h * 0.16)
+            )
+          }
+          .stroke(
+            color,
+            style: StrokeStyle(lineWidth: stroke, lineCap: .round, lineJoin: .round)
+          )
+        }
+
+        Capsule()
+          .fill(color)
+          .frame(width: w * 0.58, height: stroke * 1.15)
+          .position(x: w * 0.50, y: h * 0.84)
+      }
+    }
+  }
+}
+
+struct CommanderQuoteCard: View {
+  let text: String
+  let symbol: String
+  let accent: Color
+
+  var body: some View {
+    HStack(spacing: 14) {
+      Image(systemName: symbol)
+        .font(.system(size: 34, weight: .light))
+        .foregroundStyle(accent)
+        .accessibilityHidden(true)
+      Text(text)
+        .font(.system(size: 19, weight: .medium, design: .serif).italic())
+        .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    .padding(18)
+    .frame(maxWidth: .infinity, minHeight: 100, alignment: .leading)
+    .commanderCard(accent: CommanderDesignTokens.Colors.procedureCyan)
   }
 }
 
 enum CommanderDashboardPalette {
-  static let background = Color(red: 0.055, green: 0.11, blue: 0.235)
-  static let backgroundDeep = Color(red: 0.025, green: 0.035, blue: 0.13)
-  static let backgroundLift = Color(red: 0.08, green: 0.18, blue: 0.34)
+  static let background = CommanderDesignTokens.Colors.background
+  static let backgroundDeep = CommanderDesignTokens.Colors.backgroundDeep
+  static let backgroundLift = CommanderDesignTokens.Colors.panelBright
   static let surface = Color(commanderHex: CommanderBrandAssets.Colors.brandSurfaceDark)
   static let elevatedSurface = Color(red: 0.09, green: 0.12, blue: 0.24)
   static let glass = Color.white.opacity(0.105)
   static let glassStrong = Color.white.opacity(0.15)
   static let glassBorder = Color.white.opacity(0.22)
   static let commanderPurple = Color(commanderHex: CommanderBrandAssets.Colors.commanderPurple)
-  static let commanderPurpleLight = Color(commanderHex: CommanderBrandAssets.Colors.commanderPurpleLight)
+  static let commanderPurpleLight = CommanderDesignTokens.Colors.primaryPurple
   static let waterBlue = Color(commanderHex: CommanderBrandAssets.Colors.waterBlue)
   static let timeGold = Color(commanderHex: CommanderBrandAssets.Colors.timeGold)
   static let inProgress = Color(commanderHex: CommanderVisualAssets.colors?.state.inProgress ?? "#22C55E")
-  static let mealGreen = Color(red: 0.32, green: 0.88, blue: 0.42)
   static let alertRed = Color(red: 1.0, green: 0.34, blue: 0.39)
   static let neutral = Color.white.opacity(0.62)
 
@@ -540,8 +647,7 @@ enum CommanderDashboardPalette {
   }
 
   static func eventAccent(for event: ScheduleEvent) -> Color {
-    if event.kind == .meal { return mealGreen }
-    return Color(commanderHex: CommanderVisualAssets.accent(for: CommanderVisualAssets.icon(for: event)))
+    CommanderEventAppearance.accent(for: event)
   }
 
   static func eventKindLabel(for event: ScheduleEvent) -> String? {
@@ -569,32 +675,15 @@ struct CommanderNeutralStateVisual: View {
   }
 }
 
+// Legacy iPhone views use the same approved badge, never a second PNG/icon palette.
 struct CommanderEventIconView: View {
   let event: ScheduleEvent
-  var size: CGFloat = 52
 
-  private var icon: CommanderIconMap.Icon? {
-    CommanderVisualAssets.icon(for: event)
-  }
-
-  private var accent: Color {
-    CommanderDashboardPalette.eventAccent(for: event)
-  }
-
-  @ViewBuilder
   var body: some View {
-    if let icon, let image = CommanderVisualAssets.image(for: icon.key) {
-      Image(uiImage: image)
-        .resizable()
-        .scaledToFill()
-        .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay {
-          RoundedRectangle(cornerRadius: 8)
-            .stroke(accent.opacity(0.9), lineWidth: 1.5)
-        }
-        .accessibilityHidden(true)
-    }
+    CommanderSymbolBadge(
+      symbol: CommanderEventAppearance.symbol(for: event),
+      color: CommanderEventAppearance.accent(for: event)
+    )
   }
 }
 

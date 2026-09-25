@@ -18,7 +18,7 @@ struct CommanderNextEventView: View {
       CommanderSectionTitle(title: title, systemImage: "arrow.right.circle")
       VStack(alignment: .leading, spacing: 12) {
         HStack(alignment: .top, spacing: 12) {
-          CommanderEventIconView(event: item.event, size: 54)
+          CommanderEventIconView(event: item.event)
           VStack(alignment: .leading, spacing: 6) {
             Text(detail)
               .font(.title2.weight(.heavy).monospacedDigit())
@@ -37,7 +37,7 @@ struct CommanderNextEventView: View {
         if !item.event.location.isEmpty {
           Label(item.event.location, systemImage: "mappin.and.ellipse")
             .font(.headline.weight(.semibold))
-            .foregroundStyle(.white)
+            .foregroundStyle(CommanderDesignTokens.Colors.eventSupportingText)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .frame(maxWidth: .infinity, alignment: .leading)

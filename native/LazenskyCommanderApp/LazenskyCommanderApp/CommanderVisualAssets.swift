@@ -1,6 +1,5 @@
 import Foundation
 import LazenskyCommanderCore
-import UIKit
 
 enum CommanderVisualAssets {
   static let iconMap: CommanderIconMap? = decode("icon-map")
@@ -28,10 +27,9 @@ enum CommanderVisualAssets {
     )
   }
 
-  // Kept for older surfaces while all visible event rows migrate to accent(for: event).
   static func accent(for icon: CommanderIconMap.Icon?) -> String {
     guard let icon else {
-      return colors?.brand.commanderPurple ?? iconMap?.fallback.accent ?? "#6E56CF"
+      return CommanderBrandAssets.ProcedureFamily.fallback.accentHex
     }
     return CommanderBrandAssets.procedureAccentHex(
       iconKey: icon.key,
@@ -40,10 +38,15 @@ enum CommanderVisualAssets {
     )
   }
 
-  @MainActor
-  static func image(for iconKey: String?) -> UIImage? {
-    guard let requestedKey = iconKey.flatMap({ $0.isEmpty ? nil : $0 }) else { return nil }
-    return loadImage(requestedKey)
+  static func accent(forIconKey key: String?) -> String {
+    guard let key, let icon = iconMap?.icons.first(where: { $0.key == key }) else {
+      return CommanderBrandAssets.ProcedureFamily.fallback.accentHex
+    }
+    return CommanderBrandAssets.procedureAccentHex(
+      iconKey: icon.key,
+      title: icon.label,
+      isMeal: icon.key.hasPrefix("meal_")
+    )
   }
 
   private static func decode<Value: Decodable>(_ name: String) -> Value? {
@@ -51,9 +54,4 @@ enum CommanderVisualAssets {
     return try? JSONDecoder().decode(Value.self, from: Data(contentsOf: url))
   }
 
-  @MainActor
-  private static func loadImage(_ key: String) -> UIImage? {
-    guard let url = Bundle.main.url(forResource: key, withExtension: "png") else { return nil }
-    return UIImage(contentsOfFile: url.path)
-  }
 }

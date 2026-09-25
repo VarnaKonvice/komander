@@ -4,6 +4,7 @@ import SwiftUI
 struct CommanderWeekView: View {
   @ObservedObject var model: CommanderViewModel
   @State private var expandedDays: Set<Date> = []
+  @State private var hasFocusedToday = false
 
   private func days(at now: Date) -> [CommanderWeekDay]? {
     guard let schedule = model.latestSchedule else { return nil }
@@ -14,11 +15,28 @@ struct CommanderWeekView: View {
 
   var body: some View {
     TimelineView(.everyMinute) { context in
-      weekContent(days: days(at: context.date))
+      weekContent(
+        days: days(at: context.date),
+        today: Self.calendar.startOfDay(for: context.date)
+      )
     }
   }
 
-  private func weekContent(days: [CommanderWeekDay]?) -> some View {
+  private static var calendar: Calendar {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+    return calendar
+  }
+
+  private func focusToday(_ today: Date, in days: [CommanderWeekDay]?, using proxy: ScrollViewProxy) {
+    guard !hasFocusedToday, days?.contains(where: { $0.date == today }) == true else { return }
+    hasFocusedToday = true
+    DispatchQueue.main.async {
+      proxy.scrollTo(today, anchor: .top)
+    }
+  }
+
+  private func weekContent(days: [CommanderWeekDay]?, today: Date) -> some View {
     ScrollViewReader { proxy in
       ScrollView {
         LazyVStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
@@ -26,8 +44,11 @@ struct CommanderWeekView: View {
           CommanderScreenHeading(title: "Týden", subtitle: "Přehled procedur a aktivit")
           if let days, !days.isEmpty {
             ForEach(days, id: \.date) { day in
+              let previewExpanded = ProcessInfo.processInfo.arguments.contains("-CommanderPreviewExpandWeek")
+                && day.date == days[min(1, days.count - 1)].date
               CommanderWeekDayTile(
-                day: day, isExpanded: expandedDays.contains(day.date)
+                day: day, isExpanded: expandedDays.contains(day.date) || previewExpanded,
+                isPast: day.date < today, isToday: day.date == today
               ) {
                 if expandedDays.contains(day.date) {
                   expandedDays.remove(day.date)
@@ -40,13 +61,16 @@ struct CommanderWeekView: View {
               }
               .id(day.date)
             }
+            .onAppear {
+#if DEBUG
+              if ProcessInfo.processInfo.arguments.contains("-CommanderPreviewExpandFirstDay"),
+                 expandedDays.isEmpty,
+                 let first = days.first?.date {
+                expandedDays = [first]
+              }
+#endif
+            }
 
-            // Give the final days enough trailing scroll range so even the last
-            // expanded card can align under the top safe area like earlier days.
-            Color.clear
-              .frame(height: 520)
-              .allowsHitTesting(false)
-              .accessibilityHidden(true)
           } else {
             Text(model.latestSchedule == nil ? "Rozpis ještě není načten"
                  : days == nil ? "Rozpis nelze zobrazit" : "Rozpis neobsahuje žádné události")
@@ -58,12 +82,19 @@ struct CommanderWeekView: View {
           }
         }
         .padding(.horizontal, CommanderDesignTokens.Spacing.page)
-        .padding(.top, CommanderDesignTokens.Spacing.tiny)
         .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
       }
       .scrollIndicators(.hidden)
+      .clipped()
+      .padding(.top, CommanderDesignTokens.Spacing.scrollTop)
       .background(CommanderDepthBackground().ignoresSafeArea())
       .toolbar(.hidden, for: .navigationBar)
+      .onAppear { focusToday(today, in: days, using: proxy) }
+      .onChange(of: days?.map(\.date)) { _, _ in
+        // The first appearance can precede schedule loading.
+        focusToday(today, in: days, using: proxy)
+      }
+      .onDisappear { hasFocusedToday = false }
     }
   }
 }
@@ -71,15 +102,17 @@ struct CommanderWeekView: View {
 struct CommanderWeekDayTile: View {
   let day: CommanderWeekDay
   let isExpanded: Bool
+  var isPast = false
+  var isToday = false
   let toggle: () -> Void
 
-  private let expandedRadius: CGFloat = 22
-
   var body: some View {
-    VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.small) {
+    VStack(alignment: .leading, spacing: 8) {
       Button(action: toggle) {
-        CommanderDaySummaryCard(overview: day.overview, isExpanded: isExpanded)
-          .contentShape(Rectangle())
+        CommanderDaySummaryCard(
+          overview: day.overview, isExpanded: isExpanded, embedded: true
+        )
+        .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
       .accessibilityValue(isExpanded ? "Rozbaleno" : "Sbaleno")
@@ -90,347 +123,212 @@ struct CommanderWeekDayTile: View {
           Text("Žádný program")
             .commanderFont(.subtitle)
             .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
-            .padding(CommanderDesignTokens.Spacing.medium)
+            .padding(12)
         } else {
           LazyVStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
             ForEach(day.events, id: \.event.stableId) { item in
-              CommanderWeekEventRow(item: item)
+              CommanderEventRow(item: item)
             }
           }
-          .padding(.horizontal, 2)
-          .padding(.bottom, 2)
+          .padding(.horizontal, 8)
+          .padding(.bottom, 8)
         }
       }
     }
-    .padding(isExpanded ? 8 : 0)
-    .background {
-      if isExpanded {
-        RoundedRectangle(cornerRadius: expandedRadius)
-          .fill(
-            LinearGradient(
-              colors: [
-                Color(red: 0.16, green: 0.18, blue: 0.39),
-                Color(red: 0.08, green: 0.13, blue: 0.29),
-                Color(red: 0.035, green: 0.06, blue: 0.17)
-              ],
-              startPoint: .topLeading,
-              endPoint: .bottomTrailing
-            )
-          )
-      }
-    }
+    // Expansion adds rows, never shrinks or replaces the full summary.
+    .commanderCard(
+      accent: isToday ? CommanderDesignTokens.Colors.procedureCyan : CommanderDesignTokens.Colors.primaryPurple,
+      surface: .depthCard
+    )
     .overlay {
-      if isExpanded {
-        RoundedRectangle(cornerRadius: expandedRadius)
-          .strokeBorder(
-            LinearGradient(
-              colors: [
-                Color.white.opacity(0.34),
-                CommanderDesignTokens.Colors.freeBlue.opacity(0.88),
-                CommanderDesignTokens.Colors.primaryPurple.opacity(0.72)
-              ],
-              startPoint: .topLeading,
-              endPoint: .bottomTrailing
-            ),
-            lineWidth: 1.6
-          )
+      if isToday {
+        RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.card)
+          .strokeBorder(Color.white.opacity(0.8), lineWidth: 2)
+          .allowsHitTesting(false)
       }
     }
+    .saturation(isPast ? 0.7 : 1)
+    .opacity(isPast ? 0.92 : 1)
   }
 }
 
 struct CommanderDaySummaryCard: View {
   let overview: CommanderDayOverview
   var isExpanded: Bool? = nil
-
-  private var isWeekTile: Bool { isExpanded != nil }
-  private var summaryAccent: Color {
-    isExpanded == true
-      ? CommanderDesignTokens.Colors.freeBlue
-      : CommanderDesignTokens.Colors.primaryPurple
-  }
-
-  private var cardRadius: CGFloat { CommanderDesignTokens.Radius.card }
-
-  private var metricColumns: [GridItem] {
-    Array(
-      repeating: GridItem(.flexible(minimum: 0), spacing: 5, alignment: .top),
-      count: 4
-    )
-  }
+  var stayPeriod: CommanderStayPeriod? = nil
+  var embedded = false
 
   var body: some View {
+    if embedded {
+      content
+    } else {
+      content
+        .commanderCard(accent: CommanderDesignTokens.Colors.primaryPurple, surface: .depthCard)
+    }
+  }
+
+  private var content: some View {
     VStack(alignment: .leading, spacing: 11) {
-      HStack(spacing: CommanderDesignTokens.Spacing.small) {
+      HStack(spacing: 8) {
         CommanderSymbolBadge(
-          symbol: "calendar",
-          color: CommanderDesignTokens.Colors.primaryPurple,
-          size: 40
+          symbol: "calendar", color: CommanderDesignTokens.Colors.primaryPurple, size: CommanderDesignTokens.Size.primaryBadge
         )
-        .background(CommanderDesignTokens.Colors.primaryPurple.opacity(0.08), in: Circle())
-        .overlay {
-          Circle().strokeBorder(
-            CommanderDesignTokens.Colors.primaryPurple.opacity(0.48), lineWidth: 1
-          )
-        }
-
         Text(CommanderDateText.shortDay(overview.date))
-          .font(.system(size: 22, weight: .bold))
+          .commanderFont(.date)
           .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-          .fixedSize(horizontal: false, vertical: true)
+          .lineLimit(1)
+          .minimumScaleFactor(0.85)
           .layoutPriority(1)
-        Spacer(minLength: 0)
-        if isWeekTile {
-          Text(proceduresText)
-            .font(.system(size: 15, weight: .semibold))
-            .foregroundStyle(
-              isExpanded == true
-                ? CommanderDesignTokens.Colors.freeBlue
-                : CommanderDesignTokens.Colors.primaryPurple
-            )
-            .fixedSize(horizontal: false, vertical: true)
-        }
+        Spacer(minLength: 4)
         if let isExpanded {
+          Text(proceduresText)
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(CommanderDesignTokens.Colors.primaryPurple)
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
           Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-            .font(.system(size: 15, weight: .bold))
-            .foregroundStyle(
-              isExpanded
-                ? CommanderDesignTokens.Colors.freeBlue
-                : CommanderDesignTokens.Colors.textSecondary
-            )
+            .font(.system(size: 16, weight: .bold))
+            .foregroundStyle(.white)
             .accessibilityHidden(true)
+        } else if let period = stayPeriod, let day = period.currentDay {
+          VStack(alignment: .trailing, spacing: 5) {
+            Text("\(day). den z \(period.totalDays)")
+              .font(.system(size: 15, weight: .bold))
+              .foregroundStyle(.white)
+              .lineLimit(1)
+            GeometryReader { proxy in
+              ZStack(alignment: .leading) {
+                Capsule().fill(.white.opacity(0.16))
+                Capsule()
+                  .fill(LinearGradient(
+                    colors: [CommanderDesignTokens.Colors.primaryPurple,
+                             CommanderDesignTokens.Colors.procedureCyan],
+                    startPoint: .leading, endPoint: .trailing
+                  ))
+                  .frame(width: proxy.size.width * min(1, Double(day) / Double(max(1, period.totalDays))))
+              }
+            }
+            .frame(width: 80, height: 5)
+            .accessibilityHidden(true)
+          }
         }
       }
-
-      LazyVGrid(columns: metricColumns, alignment: .leading, spacing: 0) {
-        CommanderMetricTile(
-          title: "Terapie", value: "\(overview.procedureCount)",
-          symbol: "cross.case", accent: CommanderDesignTokens.Colors.primaryPurple
-        )
-        CommanderMetricTile(
-          title: "Konec\nprocedur",
-          value: overview.procedureEndAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
-          symbol: "clock", accent: CommanderDesignTokens.Colors.primaryPurple,
-          accessibleValue: overview.procedureEndAt == nil ? "Bez procedur" : nil
-        )
-        CommanderMetricTile(
-          title: "Volno do\nvečeře", value: freeTime,
-          symbol: "cup.and.saucer", accent: CommanderDesignTokens.Colors.freeBlue,
-          accessibleValue: overview.freeBeforeDinnerMinutes == nil ? "Údaj není k dispozici" : nil
-        )
-        CommanderMetricTile(
-          title: "Večeře",
-          value: overview.dinnerStartAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
-          symbol: "fork.knife", accent: CommanderDesignTokens.Colors.mealGreen,
-          accessibleValue: overview.dinnerStartAt == nil ? "Není v rozpisu" : nil
-        )
-      }
+      CommanderDayMetrics(overview: overview)
     }
-    .padding(.horizontal, 9)
+    .padding(.horizontal, 12)
     .padding(.top, 14)
-    .padding(.bottom, 11)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background {
-      RoundedRectangle(cornerRadius: cardRadius)
-        .fill(
-          LinearGradient(
-            colors: [
-              Color(red: 0.15, green: 0.17, blue: 0.36),
-              summaryAccent.opacity(isExpanded == true ? 0.15 : 0.10),
-              Color(red: 0.035, green: 0.055, blue: 0.16)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
-        )
-    }
-    .clipShape(RoundedRectangle(cornerRadius: cardRadius))
-    .overlay {
-      RoundedRectangle(cornerRadius: cardRadius)
-        .strokeBorder(
-          summaryAccent.opacity(isExpanded == true ? 0.78 : 0.48),
-          lineWidth: isExpanded == true ? 1.5 : 1
-        )
-    }
+    .padding(.bottom, 14)
     .accessibilityElement(children: .combine)
+  }
+
+  private var proceduresText: String {
+    switch overview.procedureCount {
+    case 1: "1 procedura"
+    case 2...4: "\(overview.procedureCount) procedury"
+    default: "\(overview.procedureCount) procedur"
+    }
+  }
+}
+
+/// Identical geometry in Today and in every collapsed / expanded week summary.
+struct CommanderDayMetrics: View {
+  let overview: CommanderDayOverview
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+  var body: some View {
+    LazyVGrid(
+      columns: Array(
+        repeating: GridItem(.flexible(minimum: 0), spacing: 6),
+        count: dynamicTypeSize.isAccessibilitySize ? 2 : 4
+      ), spacing: 6
+    ) {
+      CommanderMetricTile(
+        title: "Terapie", value: "\(overview.procedureCount)",
+        symbol: "cross.case.fill", accent: CommanderDesignTokens.Colors.therapyPink,
+        referenceValue: freeTime
+      )
+      CommanderMetricTile(
+        title: "Konec\nprocedur",
+        value: overview.procedureEndAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
+        symbol: "clock.fill", accent: CommanderDesignTokens.Colors.procedureEndNeutral,
+        referenceValue: freeTime,
+        accessibleValue: overview.procedureEndAt == nil ? "Bez procedur" : nil
+      )
+      CommanderMetricTile(
+        title: "Volno do\nvečeře", value: freeTime,
+        symbol: "cup.and.saucer", accent: CommanderDesignTokens.Colors.freeBlue,
+        referenceValue: freeTime,
+        accessibleValue: overview.freeBeforeDinnerMinutes == nil ? "Údaj není k dispozici" : nil
+      )
+      CommanderMetricTile(
+        title: "Večeře",
+        value: overview.dinnerStartAt?.formatted(CommanderScheduleDateStyle.clock) ?? "—",
+        symbol: "fork.knife", accent: Color(commanderHex: CommanderVisualAssets.accent(forIconKey: "meal_dinner")),
+        referenceValue: freeTime,
+        accessibleValue: overview.dinnerStartAt == nil ? "Není v rozpisu" : nil
+      )
+    }
   }
 
   private var freeTime: String {
     guard let minutes = overview.freeBeforeDinnerMinutes else { return "—" }
     let hours = minutes / 60
     let remainder = minutes % 60
-    if hours == 0 { return "\(remainder) min" }
-    return remainder == 0 ? "\(hours) h" : "\(hours) h \(remainder) min"
-  }
-
-  private var proceduresText: String {
-    switch overview.procedureCount {
-    case 1: return "1 procedura"
-    case 2...4: return "\(overview.procedureCount) procedury"
-    default: return "\(overview.procedureCount) procedur"
-    }
+    // Keep number + unit together; mixed durations have one deliberate line break.
+    if hours == 0 { return "\(remainder)\u{00A0}min" }
+    if remainder == 0 { return "\(hours)\u{00A0}h" }
+    return "\(hours)\u{00A0}h\n\(remainder)\u{00A0}min"
   }
 }
 
 private struct CommanderMetricTile: View {
   let title: String
   let value: String
-  let symbol: String?
+  let symbol: String
   let accent: Color
+  let referenceValue: String
   var accessibleValue: String? = nil
-
-  private var isClockValue: Bool {
-    value.contains(":") && !value.contains(" ")
-  }
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   var body: some View {
-    VStack(alignment: .center, spacing: 3) {
-      if let symbol {
-        CommanderSymbolBadge(symbol: symbol, color: accent, size: 40)
-          .background(accent.opacity(0.08), in: Circle())
-          .overlay { Circle().strokeBorder(accent.opacity(0.48), lineWidth: 1) }
-      }
+    VStack(spacing: 4) {
+      CommanderSymbolBadge(symbol: symbol, color: accent, size: CommanderDesignTokens.Size.primaryBadge)
       Text(title)
-        .font(.system(size: 14, weight: .semibold))
-        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 19 : 15, weight: .semibold))
+        .foregroundStyle(Color.white.opacity(0.96))
         .multilineTextAlignment(.center)
         .lineLimit(2)
-        .frame(maxWidth: .infinity, minHeight: 36, alignment: .top)
-      Text(value)
-        .font(.system(size: 21, weight: .bold))
-        .monospacedDigit()
-        .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-        .multilineTextAlignment(.center)
-        .lineLimit(isClockValue ? 1 : 2)
-        .minimumScaleFactor(isClockValue ? 0.90 : 1)
-        .frame(maxWidth: .infinity, minHeight: 48, alignment: .top)
+        .minimumScaleFactor(0.78)
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, minHeight: dynamicTypeSize.isAccessibilitySize ? 46 : 38, maxHeight: dynamicTypeSize.isAccessibilitySize ? 46 : 38)
+      // "Volno do večeře" determines the value slot for every tile in this day.
+      // Measure its actual typography, including mixed hour/minute durations.
+      metricValue(referenceValue)
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, minHeight: 48)
+        .hidden()
+        .accessibilityHidden(true)
+        .overlay {
+          metricValue(value)
+            .frame(maxWidth: .infinity)
+        }
     }
-    .padding(.horizontal, 5)
-    .padding(.top, 12)
-    .padding(.bottom, 9)
-    .frame(maxWidth: .infinity, minHeight: 142, alignment: .top)
-    .background {
-      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-        .fill(
-          LinearGradient(
-            colors: [
-              Color(red: 0.17, green: 0.18, blue: 0.38),
-              accent.opacity(0.12),
-              Color(red: 0.055, green: 0.075, blue: 0.19)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
-        )
-    }
-    .overlay {
-      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.inset)
-        .strokeBorder(accent.opacity(0.42), lineWidth: 1)
-    }
+    .padding(.horizontal, 4)
+    .padding(.vertical, 15)
+    .frame(maxWidth: .infinity)
+    .commanderCard(accent: accent, surface: .depthInset)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(title.replacingOccurrences(of: "\n", with: " "))
-    .accessibilityValue(accessibleValue ?? value)
-  }
-}
-
-private struct CommanderWeekEventRow: View {
-  let item: CommanderDashboardEvent
-
-  private var accent: Color {
-    Color(commanderHex: CommanderVisualAssets.accent(for: item.event))
+    .accessibilityValue((accessibleValue ?? value).replacingOccurrences(of: "\n", with: " "))
   }
 
-  private var departureText: String {
-    var calendar = Calendar(identifier: .gregorian)
-    calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
-    let time = item.leaveAt.formatted(CommanderScheduleDateStyle.clock)
-    return calendar.isDate(item.startAt, inSameDayAs: item.leaveAt)
-      ? time : "\(CommanderDateText.shortDay(item.leaveAt)) \(time)"
-  }
-
-  var body: some View {
-    HStack(alignment: .center, spacing: 6) {
-      VStack(alignment: .leading, spacing: 2) {
-        Text(item.startAt.formatted(CommanderScheduleDateStyle.clock))
-        Text(item.endAt.formatted(CommanderScheduleDateStyle.clock))
-      }
-      .commanderFont(.time)
+  private func metricValue(_ text: String) -> some View {
+    Text(text)
+      .font(.system(size: text.contains("\n") ? 23 : 26, weight: .bold))
       .monospacedDigit()
-      .foregroundStyle(accent)
-      .fixedSize(horizontal: true, vertical: false)
-      .frame(width: 55, alignment: .leading)
-
-      CommanderSymbolBadge(
-        symbol: CommanderVisualAssets.symbol(for: item.event),
-        color: accent,
-        size: 34
-      )
-
-      details.layoutPriority(1)
-    }
-    .padding(.horizontal, 10)
-    .padding(.vertical, 7)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background {
-      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
-        .fill(
-          LinearGradient(
-            colors: [
-              Color(red: 0.13, green: 0.16, blue: 0.33),
-              accent.opacity(item.phase == .current ? 0.10 : 0.06),
-              Color(red: 0.03, green: 0.05, blue: 0.14)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
-        )
-    }
-    .clipShape(RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow))
-    .overlay {
-      RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
-        .strokeBorder(
-          accent.opacity(item.phase == .current ? 0.38 : 0.22),
-          lineWidth: 1
-        )
-        .allowsHitTesting(false)
-    }
-    .accessibilityElement(children: .combine)
-    .accessibilityValue(item.phase == .current ? "Právě probíhá" : "")
-  }
-
-  private var details: some View {
-    VStack(alignment: .leading, spacing: 2) {
-      Text(item.event.title)
-        .commanderFont(.eventTitle)
-        .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-        .fixedSize(horizontal: false, vertical: true)
-      if !item.event.location.isEmpty {
-        HStack(alignment: .top, spacing: 6) {
-          location
-            .fixedSize(horizontal: false, vertical: true)
-            .layoutPriority(1)
-          Spacer(minLength: 4)
-          departure
-            .fixedSize(horizontal: true, vertical: true)
-        }
-      } else {
-        departure
-          .frame(maxWidth: .infinity, alignment: .trailing)
-      }
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-
-  private var location: some View {
-    Label(item.event.location, systemImage: "mappin.circle.fill")
-      .commanderFont(.location)
-      .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
-  }
-
-  private var departure: some View {
-    Text("Odchod \(departureText)")
-      .commanderFont(.departure)
-      .monospacedDigit()
-      .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+      .foregroundStyle(.white)
+      .multilineTextAlignment(.center)
+      .lineLimit(text.contains("\n") ? 2 : 1)
+      .minimumScaleFactor(0.8)
   }
 }

@@ -15,6 +15,7 @@ struct CommanderStayView: View {
           if let stay = try? CommanderStayPresentation.make(schedule: schedule, now: context.date) {
             CommanderStayOverviewCard(stay: stay)
             CommanderProcedureOverviewCard(stay: stay)
+
           } else {
             CommanderStayUnavailableCard(message: "Souhrn pobytu nelze zobrazit")
           }
@@ -37,7 +38,6 @@ private struct CommanderStayOverviewCard: View {
           color: CommanderDesignTokens.Colors.primaryPurple,
           size: CommanderDesignTokens.Size.sectionBadge
         )
-        .shadow(color: CommanderDesignTokens.Colors.primaryPurple.opacity(0.42), radius: 7)
         VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
           Text(primaryTitle)
             .commanderFont(.liveTitle)
@@ -74,16 +74,13 @@ private struct CommanderStayOverviewCard: View {
 
   private var primaryTitle: String {
     guard let period = stay.period else { return "Termín není v rozpisu" }
-    if let currentDay = period.currentDay {
-      return "\(dayCount(currentDay)) z \(period.totalDays) dnů"
-    }
     return "\(dayCount(period.totalDays)) pobytu"
   }
 
   private var statusText: String {
     guard let period = stay.period else { return "Zobrazují se dostupné údaje" }
     if let currentDay = period.currentDay {
-      return "Aktuální den \(currentDay) / \(period.totalDays)"
+      return "Aktuálně \(currentDay). den z \(period.totalDays)"
     }
     return period.phase == .upcoming ? "Pobyt ještě nezačal" : "Pobyt skončil"
   }
@@ -127,7 +124,6 @@ private struct CommanderStayOverviewCard: View {
         color: CommanderDesignTokens.Colors.locationBlue,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
-      .shadow(color: CommanderDesignTokens.Colors.locationBlue.opacity(0.34), radius: 5)
       VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.tiny) {
         Text(title)
           .commanderFont(.label)
@@ -151,7 +147,7 @@ private struct CommanderProcedureOverviewCard: View {
 
   var body: some View {
     CommanderSectionCard(
-      title: "Terapie",
+      title: "Přehled terapií v celém pobytu",
       symbol: "cross.case.fill",
       accent: CommanderDesignTokens.Colors.primaryPurple
     ) {
@@ -189,6 +185,18 @@ private struct CommanderProcedureProgressRow: View {
     Color(commanderHex: CommanderVisualAssets.accent(for: procedure.representativeEvent))
   }
 
+  private var procedureUnit: String {
+    switch procedure.total {
+    case 1: return "procedura"
+    case 2...4: return "procedury"
+    default: return "procedur"
+    }
+  }
+
+  private var isSingleWordName: Bool {
+    !procedure.name.contains { $0.isWhitespace }
+  }
+
   var body: some View {
     HStack(spacing: CommanderDesignTokens.Spacing.small) {
       CommanderSymbolBadge(
@@ -196,22 +204,34 @@ private struct CommanderProcedureProgressRow: View {
         color: accent,
         size: CommanderDesignTokens.Size.rowMetricBadge
       )
-      .shadow(color: accent.opacity(0.34), radius: 5)
       Text(procedure.name)
         .commanderFont(.metric)
         .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        .allowsTightening(true)
+        .lineLimit(isSingleWordName ? 1 : 2)
+        .minimumScaleFactor(isSingleWordName ? 0.80 : 1)
         .fixedSize(horizontal: false, vertical: true)
+        .layoutPriority(1)
       Spacer(minLength: CommanderDesignTokens.Spacing.small)
-      Text("\(procedure.completed) / \(procedure.total)")
-        .commanderFont(.metric)
-        .monospacedDigit()
-        .foregroundStyle(accent)
+      VStack(alignment: .trailing, spacing: 1) {
+        Text("\(procedure.total)")
+          .commanderFont(.metric)
+          .monospacedDigit()
+          .foregroundStyle(accent)
+        Text(procedureUnit)
+          .commanderFont(.label)
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          .lineLimit(1)
+          .minimumScaleFactor(0.9)
+      }
+      .frame(width: 86, alignment: .trailing)
+      .layoutPriority(2)
     }
     .padding(CommanderDesignTokens.Spacing.small)
-    .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
+    .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
     .commanderCard(accent: accent, surface: .depthInset)
     .accessibilityElement(children: .combine)
-    .accessibilityLabel("\(procedure.name), ukončené podle rozpisu \(procedure.completed) z \(procedure.total)")
+    .accessibilityLabel("\(procedure.name), \(procedure.total) \(procedureUnit)")
   }
 }
 

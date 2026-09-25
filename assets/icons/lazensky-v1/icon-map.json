@@ -12,7 +12,7 @@
       "key": "meal_breakfast",
       "label": "Snídaně",
       "watchLabel": "Snídaně",
-      "accent": "#F59E0B",
+      "accent": "#50B863",
       "googleCalendarColorId": "6",
       "priority": 300,
       "keywords": [
@@ -24,7 +24,7 @@
       "key": "meal_lunch",
       "label": "Oběd",
       "watchLabel": "Oběd",
-      "accent": "#F59E0B",
+      "accent": "#50B863",
       "googleCalendarColorId": "6",
       "priority": 300,
       "keywords": [
@@ -36,7 +36,7 @@
       "key": "meal_dinner",
       "label": "Večeře",
       "watchLabel": "Večeře",
-      "accent": "#F59E0B",
+      "accent": "#50B863",
       "googleCalendarColorId": "6",
       "priority": 300,
       "keywords": [
@@ -48,7 +48,7 @@
       "key": "pool",
       "label": "Bazén",
       "watchLabel": "Bazén",
-      "accent": "#0EA5B7",
+      "accent": "#2ED4FF",
       "googleCalendarColorId": "7",
       "priority": 100,
       "keywords": [
@@ -62,7 +62,7 @@
       "key": "iodobrom",
       "label": "Jodobrom",
       "watchLabel": "Jodobrom",
-      "accent": "#B27A2C",
+      "accent": "#FFC857",
       "googleCalendarColorId": "5",
       "priority": 220,
       "keywords": [
@@ -78,7 +78,7 @@
       "key": "whirlpool",
       "label": "Vířivka",
       "watchLabel": "Vířivka",
-      "accent": "#38BDF8",
+      "accent": "#2ED4FF",
       "googleCalendarColorId": "7",
       "priority": 220,
       "keywords": [
@@ -95,7 +95,7 @@
       "key": "peat_wrap",
       "label": "Rašelina / slatina / zábal",
       "watchLabel": "Rašelina",
-      "accent": "#5B3A29",
+      "accent": "#FFC857",
       "googleCalendarColorId": "11",
       "priority": 220,
       "keywords": [
@@ -118,7 +118,7 @@
       "key": "imoove",
       "label": "iMoove",
       "watchLabel": "iMoove",
-      "accent": "#149B91",
+      "accent": "#2EE6C4",
       "googleCalendarColorId": "2",
       "priority": 240,
       "keywords": [
@@ -130,7 +130,7 @@
       "key": "massage",
       "label": "Masáž",
       "watchLabel": "Masáž",
-      "accent": "#65A30D",
+      "accent": "#FF7A59",
       "googleCalendarColorId": "10",
       "priority": 10,
       "keywords": [
@@ -144,7 +144,7 @@
       "key": "hydrojet",
       "label": "Hydrojet",
       "watchLabel": "Hydrojet",
-      "accent": "#0EA5E9",
+      "accent": "#FF7A59",
       "googleCalendarColorId": "9",
       "priority": 240,
       "keywords": [
@@ -156,7 +156,7 @@
       "key": "electro_therapy",
       "label": "Elektro / magneto / ultrazvuk",
       "watchLabel": "Elektro",
-      "accent": "#6D5BD0",
+      "accent": "#D6B4FE",
       "googleCalendarColorId": "3",
       "priority": 220,
       "keywords": [
@@ -176,7 +176,7 @@
       "key": "individual_rehab",
       "label": "Individuální rehab",
       "watchLabel": "Rehab",
-      "accent": "#22A06B",
+      "accent": "#2EE6C4",
       "googleCalendarColorId": "10",
       "priority": 100,
       "keywords": [

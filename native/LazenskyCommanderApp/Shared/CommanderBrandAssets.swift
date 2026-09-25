@@ -35,11 +35,14 @@ enum CommanderBrandAssets {
         static let brandSurfaceDark = "#2B1A4D"
 
         // One semantic palette shared by app, AlarmKit, Live Activity and Watch.
-        static let heatOchre = "#D69E2E"
+        static let heatOchre = "#FFC857"
         static let waterAqua = "#2ED4FF"
-        static let electroIndigo = "#8A7CFF"
-        static let rehabilitationBlue = "#2EA6FF"
+        static let electroIndigo = "#D6B4FE"
+        static let rehabilitationBlue = "#2EE6C4"
         static let massageCoral = "#FF7A59"
+        static let therapyPink = "#FF5DA8"
+        static let procedureEndNeutral = "#94A3B8"
+        static let freeTimeCyan = "#2ED4FF"
     }
 
     private static let iconMap: CommanderIconMap? = decode("icon-map")
@@ -55,9 +58,82 @@ enum CommanderBrandAssets {
         return iconMap?.classify(title: title)
     }
 
+    enum ProcedureFamily {
+        case meal
+        case water
+        case rehabilitation
+        case massage
+        case heatWrap
+        case electro
+        case fallback
+
+        var accentHex: String {
+            switch self {
+            case .meal: return Colors.mealGreen
+            case .water: return Colors.waterAqua
+            case .rehabilitation: return Colors.rehabilitationBlue
+            case .massage: return Colors.massageCoral
+            case .heatWrap: return Colors.heatOchre
+            case .electro: return Colors.electroIndigo
+            case .fallback: return Colors.therapyPink
+            }
+        }
+
+        var symbol: String {
+            switch self {
+            case .meal: return "fork.knife"
+            case .water: return "drop"
+            case .rehabilitation: return "figure.run"
+            case .massage: return "leaf.fill"
+            case .heatWrap: return "commander.heat.waves"
+            case .electro: return "atom"
+            case .fallback: return "cross.case.fill"
+            }
+        }
+    }
+
+    static func procedureFamily(iconKey: String?, title: String, isMeal: Bool) -> ProcedureFamily {
+        if isMeal || iconKey?.hasPrefix("meal_") == true { return .meal }
+
+        let normalized = normalizedTitle(title)
+
+        // One source of truth for every screen. Order is intentional.
+        if ["jodobrom", "parafin", "parafango", "slatin", "raselin", "zabal"].contains(where: normalized.contains) {
+            return .heatWrap
+        }
+        if ["elektro", "magnet", "ultrazvuk", "galvan", "galvanika", "ctyrkomor", "ctyrkomorovka", "razov", "shockwave"].contains(where: normalized.contains) {
+            return .electro
+        }
+        if ["hydrojet", "hydro jet", "masaz"].contains(where: normalized.contains) {
+            return .massage
+        }
+        if ["viriv", "whirlpool", "perlick", "uhlicit", "bazen", "plav", "koupel"].contains(where: normalized.contains) {
+            return .water
+        }
+        if ["imoove", "i-moove", "fyzioter", "fyzio", "rehab", "ltv", "ergoter", "cvic", "chuze", "chodici pas", "walking pas", "senzomotor", "motodlaha"].contains(where: normalized.contains) {
+            return .rehabilitation
+        }
+
+        switch iconKey {
+        case "meal_breakfast", "meal_lunch", "meal_dinner":
+            return .meal
+        case "iodobrom", "peat_wrap":
+            return .heatWrap
+        case "electro_therapy":
+            return .electro
+        case "massage", "hydrojet":
+            return .massage
+        case "whirlpool", "pool":
+            return .water
+        case "individual_rehab", "imoove":
+            return .rehabilitation
+        default:
+            return .fallback
+        }
+    }
+
     static func procedureAccentHex(iconKey: String?, title: String, isMeal: Bool) -> String {
-        approvedIcon(iconKey: iconKey, title: title)?.accent
-            ?? iconMap?.fallback.accent ?? Colors.commanderPurple
+        procedureFamily(iconKey: iconKey, title: title, isMeal: isMeal).accentHex
     }
 
     // Presentation state is deliberately separate from the approved procedure palette.
@@ -74,22 +150,7 @@ enum CommanderBrandAssets {
         title: String,
         isMeal: Bool
     ) -> String {
-        if isMeal || iconKey?.hasPrefix("meal_") == true { return "fork.knife" }
-        let normalized = normalizedTitle(title)
-        if ["jodobrom", "parafin", "parafango", "slatin", "raselin", "zabal"].contains(where: normalized.contains) { return "thermometer.medium" }
-        if ["elektro", "magnet", "ultrazvuk", "galvan", "ctyrkomor", "laser"].contains(where: normalized.contains) { return "atom" }
-        if ["viriv", "whirlpool", "perlick", "uhlicit", "bazen", "plav", "koupel"].contains(where: normalized.contains) { return "water.waves" }
-        if ["imoove", "i-moove", "fyzioter", "fyzio", "rehab", "ltv", "ergoter", "cvic", "chuze", "chodici pas", "walking pas"].contains(where: normalized.contains) { return "figure.walk" }
-        if ["hydrojet", "hydro jet", "masaz"].contains(where: normalized.contains) { return "figure.mind.and.body" }
-
-        switch iconKey {
-        case "electro_therapy": return "atom"
-        case "iodobrom", "peat_wrap": return "thermometer.medium"
-        case "whirlpool", "pool": return "water.waves"
-        case "massage", "hydrojet": return "figure.mind.and.body"
-        case "individual_rehab", "imoove": return "figure.walk"
-        default: return "calendar"
-        }
+        procedureFamily(iconKey: iconKey, title: title, isMeal: isMeal).symbol
     }
 
     private static func normalizedTitle(_ value: String) -> String {

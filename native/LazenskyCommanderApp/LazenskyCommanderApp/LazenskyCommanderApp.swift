@@ -1,6 +1,511 @@
 import SwiftUI
 import LazenskyCommanderCore
 import UserNotifications
+private enum CommanderDesignPreview {
+#if targetEnvironment(simulator)
+  static let enabled = true
+#else
+  // Preview data must never replace the real schedule on a physical production build.
+  // It can still be enabled explicitly for a controlled device design session.
+  static let enabled = true
+#endif
+
+  static let schedule: Schedule = {
+    let data = Data(json.utf8)
+    return try! JSONDecoder().decode(Schedule.self, from: data)
+  }()
+
+  private static let json = #"""
+{
+  "schemaVersion": 1,
+  "scheduleVersion": 1001,
+  "updatedAt": "2026-09-22T11:30:00.000Z",
+  "stay": {
+    "spa": "Rehabilitační sanatorium Darkov",
+    "dateFrom": "2026-09-22",
+    "dateTo": "2026-09-28",
+    "room": "208",
+    "doctor": "MUDr. Novák",
+    "mealShift": "I. směna"
+  },
+  "events": [
+    {
+      "stableId": "demo-20260922-breakfast",
+      "date": "2026-09-22",
+      "start": "07:30",
+      "end": "08:00",
+      "title": "Snídaně",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Snídaně"
+    },
+    {
+      "stableId": "demo-20260922-rehab",
+      "date": "2026-09-22",
+      "start": "09:00",
+      "end": "09:30",
+      "title": "Individuální rehabilitace",
+      "location": "Rehabilitace",
+      "kind": "procedure",
+      "procedureType": "Individuální rehabilitace"
+    },
+    {
+      "stableId": "demo-20260922-magnet",
+      "date": "2026-09-22",
+      "start": "10:15",
+      "end": "10:35",
+      "title": "Magnetoterapie",
+      "location": "Elektroléčba",
+      "kind": "procedure",
+      "procedureType": "Magnetoterapie"
+    },
+    {
+      "stableId": "demo-20260922-lunch",
+      "date": "2026-09-22",
+      "start": "12:00",
+      "end": "12:40",
+      "title": "Oběd",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Oběd"
+    },
+    {
+      "stableId": "demo-20260922-massage",
+      "date": "2026-09-22",
+      "start": "14:00",
+      "end": "14:20",
+      "title": "Masáž",
+      "location": "Rehabilitace",
+      "kind": "procedure",
+      "procedureType": "Masáž"
+    },
+    {
+      "stableId": "demo-20260922-hydrojet",
+      "date": "2026-09-22",
+      "start": "15:30",
+      "end": "15:50",
+      "title": "Hydrojet",
+      "location": "Vodoléčba",
+      "kind": "procedure",
+      "procedureType": "Hydrojet"
+    },
+    {
+      "stableId": "demo-20260922-dinner",
+      "date": "2026-09-22",
+      "start": "17:30",
+      "end": "18:00",
+      "title": "Večeře",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Večeře"
+    },
+    {
+      "stableId": "demo-20260923-breakfast",
+      "date": "2026-09-23",
+      "start": "07:30",
+      "end": "08:00",
+      "title": "Snídaně",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Snídaně"
+    },
+    {
+      "stableId": "demo-20260923-iodobrom",
+      "date": "2026-09-23",
+      "start": "08:20",
+      "end": "08:40",
+      "title": "Jodobromová koupel",
+      "location": "Vodoléčba",
+      "kind": "procedure",
+      "procedureType": "Jodobromová koupel"
+    },
+    {
+      "stableId": "demo-20260923-ltv",
+      "date": "2026-09-23",
+      "start": "09:15",
+      "end": "09:45",
+      "title": "LTV",
+      "location": "Tělocvična",
+      "kind": "procedure",
+      "procedureType": "LTV"
+    },
+    {
+      "stableId": "demo-20260923-ultrasound",
+      "date": "2026-09-23",
+      "start": "10:15",
+      "end": "10:30",
+      "title": "Ultrazvuk",
+      "location": "Elektroléčba",
+      "kind": "procedure",
+      "procedureType": "Ultrazvuk"
+    },
+    {
+      "stableId": "demo-20260923-lunch",
+      "date": "2026-09-23",
+      "start": "12:00",
+      "end": "12:40",
+      "title": "Oběd",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Oběd"
+    },
+    {
+      "stableId": "demo-20260923-imoove",
+      "date": "2026-09-23",
+      "start": "14:10",
+      "end": "14:30",
+      "title": "iMoove",
+      "location": "Rehabilitace",
+      "kind": "procedure",
+      "procedureType": "iMoove"
+    },
+    {
+      "stableId": "demo-20260923-dinner",
+      "date": "2026-09-23",
+      "start": "17:30",
+      "end": "18:00",
+      "title": "Večeře",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Večeře"
+    },
+    {
+      "stableId": "demo-20260924-breakfast",
+      "date": "2026-09-24",
+      "start": "07:30",
+      "end": "08:00",
+      "title": "Snídaně",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Snídaně"
+    },
+    {
+      "stableId": "demo-20260924-rehab",
+      "date": "2026-09-24",
+      "start": "08:30",
+      "end": "09:00",
+      "title": "Individuální rehabilitace",
+      "location": "Rehabilitace",
+      "kind": "procedure",
+      "procedureType": "Individuální rehabilitace"
+    },
+    {
+      "stableId": "demo-20260924-peat",
+      "date": "2026-09-24",
+      "start": "09:30",
+      "end": "09:50",
+      "title": "Rašelinový zábal",
+      "location": "Zábaly",
+      "kind": "procedure",
+      "procedureType": "Rašelinový zábal"
+    },
+    {
+      "stableId": "demo-20260924-pool",
+      "date": "2026-09-24",
+      "start": "10:30",
+      "end": "11:00",
+      "title": "Bazén",
+      "location": "Bazén",
+      "kind": "procedure",
+      "procedureType": "Bazén"
+    },
+    {
+      "stableId": "demo-20260924-lunch",
+      "date": "2026-09-24",
+      "start": "12:00",
+      "end": "12:40",
+      "title": "Oběd",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Oběd"
+    },
+    {
+      "stableId": "demo-20260924-massage",
+      "date": "2026-09-24",
+      "start": "14:00",
+      "end": "14:20",
+      "title": "Masáž",
+      "location": "Rehabilitace",
+      "kind": "procedure",
+      "procedureType": "Masáž"
+    },
+    {
+      "stableId": "demo-20260924-dinner",
+      "date": "2026-09-24",
+      "start": "17:30",
+      "end": "18:00",
+      "title": "Večeře",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Večeře"
+    },
+    {
+      "stableId": "demo-20260925-breakfast",
+      "date": "2026-09-25",
+      "start": "07:30",
+      "end": "08:00",
+      "title": "Snídaně",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Snídaně"
+    },
+    {
+      "stableId": "demo-20260925-whirlpool",
+      "date": "2026-09-25",
+      "start": "08:30",
+      "end": "08:50",
+      "title": "Vířivá vana",
+      "location": "Vodoléčba",
+      "kind": "procedure",
+      "procedureType": "Vířivá vana"
+    },
+    {
+      "stableId": "demo-20260925-ergo",
+      "date": "2026-09-25",
+      "start": "09:20",
+      "end": "09:50",
+      "title": "Ergoterapie",
+      "location": "Rehabilitace",
+      "kind": "procedure",
+      "procedureType": "Ergoterapie"
+    },
+    {
+      "stableId": "demo-20260925-electro",
+      "date": "2026-09-25",
+      "start": "10:20",
+      "end": "10:40",
+      "title": "Elektroléčba",
+      "location": "Elektroléčba",
+      "kind": "procedure",
+      "procedureType": "Elektroléčba"
+    },
+    {
+      "stableId": "demo-20260925-lunch",
+      "date": "2026-09-25",
+      "start": "12:00",
+      "end": "12:40",
+      "title": "Oběd",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Oběd"
+    },
+    {
+      "stableId": "demo-20260925-hydrojet",
+      "date": "2026-09-25",
+      "start": "14:30",
+      "end": "14:50",
+      "title": "Hydrojet",
+      "location": "Vodoléčba",
+      "kind": "procedure",
+      "procedureType": "Hydrojet"
+    },
+    {
+      "stableId": "demo-20260925-dinner",
+      "date": "2026-09-25",
+      "start": "17:30",
+      "end": "18:00",
+      "title": "Večeře",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Večeře"
+    },
+    {
+      "stableId": "demo-20260926-breakfast",
+      "date": "2026-09-26",
+      "start": "08:00",
+      "end": "08:30",
+      "title": "Snídaně",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Snídaně"
+    },
+    {
+      "stableId": "demo-20260926-rehab",
+      "date": "2026-09-26",
+      "start": "09:15",
+      "end": "09:45",
+      "title": "Individuální rehabilitace",
+      "location": "Rehabilitace",
+      "kind": "procedure",
+      "procedureType": "Individuální rehabilitace"
+    },
+    {
+      "stableId": "demo-20260926-massage",
+      "date": "2026-09-26",
+      "start": "10:20",
+      "end": "10:40",
+      "title": "Masáž",
+      "location": "Rehabilitace",
+      "kind": "procedure",
+      "procedureType": "Masáž"
+    },
+    {
+      "stableId": "demo-20260926-lunch",
+      "date": "2026-09-26",
+      "start": "12:00",
+      "end": "12:40",
+      "title": "Oběd",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Oběd"
+    },
+    {
+      "stableId": "demo-20260926-pool",
+      "date": "2026-09-26",
+      "start": "14:30",
+      "end": "15:00",
+      "title": "Bazén",
+      "location": "Bazén",
+      "kind": "procedure",
+      "procedureType": "Bazén"
+    },
+    {
+      "stableId": "demo-20260926-dinner",
+      "date": "2026-09-26",
+      "start": "17:30",
+      "end": "18:00",
+      "title": "Večeře",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Večeře"
+    },
+    {
+      "stableId": "demo-20260927-breakfast",
+      "date": "2026-09-27",
+      "start": "08:00",
+      "end": "08:30",
+      "title": "Snídaně",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Snídaně"
+    },
+    {
+      "stableId": "demo-20260927-imoove",
+      "date": "2026-09-27",
+      "start": "09:30",
+      "end": "09:50",
+      "title": "iMoove",
+      "location": "Rehabilitace",
+      "kind": "procedure",
+      "procedureType": "iMoove"
+    },
+    {
+      "stableId": "demo-20260927-lunch",
+      "date": "2026-09-27",
+      "start": "12:00",
+      "end": "12:40",
+      "title": "Oběd",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Oběd"
+    },
+    {
+      "stableId": "demo-20260927-whirlpool",
+      "date": "2026-09-27",
+      "start": "14:30",
+      "end": "14:50",
+      "title": "Vířivá vana",
+      "location": "Vodoléčba",
+      "kind": "procedure",
+      "procedureType": "Vířivá vana"
+    },
+    {
+      "stableId": "demo-20260927-dinner",
+      "date": "2026-09-27",
+      "start": "17:30",
+      "end": "18:00",
+      "title": "Večeře",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Večeře"
+    },
+    {
+      "stableId": "demo-20260928-breakfast",
+      "date": "2026-09-28",
+      "start": "07:30",
+      "end": "08:00",
+      "title": "Snídaně",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Snídaně"
+    },
+    {
+      "stableId": "demo-20260928-rehab",
+      "date": "2026-09-28",
+      "start": "08:30",
+      "end": "09:00",
+      "title": "Individuální rehabilitace",
+      "location": "Rehabilitace",
+      "kind": "procedure",
+      "procedureType": "Individuální rehabilitace"
+    },
+    {
+      "stableId": "demo-20260928-iodobrom",
+      "date": "2026-09-28",
+      "start": "09:30",
+      "end": "09:50",
+      "title": "Jodobromová koupel",
+      "location": "Vodoléčba",
+      "kind": "procedure",
+      "procedureType": "Jodobromová koupel"
+    },
+    {
+      "stableId": "demo-20260928-magnet",
+      "date": "2026-09-28",
+      "start": "10:20",
+      "end": "10:40",
+      "title": "Magnetoterapie",
+      "location": "Elektroléčba",
+      "kind": "procedure",
+      "procedureType": "Magnetoterapie"
+    },
+    {
+      "stableId": "demo-20260928-lunch",
+      "date": "2026-09-28",
+      "start": "12:00",
+      "end": "12:40",
+      "title": "Oběd",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Oběd"
+    },
+    {
+      "stableId": "demo-20260928-massage",
+      "date": "2026-09-28",
+      "start": "14:00",
+      "end": "14:20",
+      "title": "Masáž",
+      "location": "Rehabilitace",
+      "kind": "procedure",
+      "procedureType": "Masáž"
+    },
+    {
+      "stableId": "demo-20260928-dinner",
+      "date": "2026-09-28",
+      "start": "17:30",
+      "end": "18:00",
+      "title": "Večeře",
+      "location": "Jídelna",
+      "kind": "meal",
+      "mealType": "Večeře"
+    }
+  ],
+  "settings": {
+    "defaultLeadTimeMinutes": 20,
+    "procedureTypeOverrides": {
+      "Jodobromová koupel": 25,
+      "Bazén": 25
+    },
+    "mealOverrides": {
+      "Snídaně": 15,
+      "Oběd": 15,
+      "Večeře": 15
+    }
+  }
+}
+"""#
+}
+
 @MainActor
 final class CommanderViewModel: ObservableObject {
   @Published private(set) var accessStatus = "Kontroluji přístup k alarmům..."
@@ -54,8 +559,8 @@ final class CommanderViewModel: ObservableObject {
     self.watchConnectivity = watchConnectivity
     self.leadTimePreferences = leadTimePreferences
     self.channel = configuration.channel
-    self.leadTimeOverrides = savedPreferences.overrides
-    self.leadTimeProjectionRevision = savedPreferences.revision
+    self.leadTimeOverrides = CommanderDesignPreview.enabled ? LeadTimeOverrides() : savedPreferences.overrides
+    self.leadTimeProjectionRevision = CommanderDesignPreview.enabled ? 0 : savedPreferences.revision
     scheduleSync = CommanderScheduleSyncCoordinator(
       scheduleService: scheduleService,
       alarmSyncService: service,
@@ -90,6 +595,18 @@ final class CommanderViewModel: ObservableObject {
   }
 
   func bootstrap() async {
+    if CommanderDesignPreview.enabled {
+      latestSchedule = CommanderDesignPreview.schedule
+      accessStatus = "Designový náhled – alarmy jsou vypnuté"
+      watchTransferStatus = "Designový náhled"
+      recoveryStatus = "Náhledový týden načten"
+      fallbackStatus = "Vypnuto v designovém náhledu"
+      requiresUserAction = false
+      userActionMessage = nil
+      errorMessage = nil
+      return
+    }
+
     latestSchedule = try? await scheduleSync.loadLastSchedule()
     if channel == .production, let watchScheduleSnapshot {
       do {
@@ -108,6 +625,7 @@ final class CommanderViewModel: ObservableObject {
   }
 
   func handleForeground() async {
+    if CommanderDesignPreview.enabled { return }
     await reconcileProcedureActivitiesFromLatestSchedule()
     if let lastAutomaticAttempt, Date().timeIntervalSince(lastAutomaticAttempt) < 10 { return }
     if latestSchedule != nil {
@@ -117,6 +635,7 @@ final class CommanderViewModel: ObservableObject {
   }
 
   private func reconcileProcedureActivitiesFromLatestSchedule() async {
+    if CommanderDesignPreview.enabled { return }
     guard let latestSchedule else { return }
     await procedureActivities.reconcile(
       schedule: latestSchedule,
@@ -131,6 +650,10 @@ final class CommanderViewModel: ObservableObject {
   }
 
   func requestAuthorization() {
+    if CommanderDesignPreview.enabled {
+      accessStatus = "Designový náhled – alarmy jsou vypnuté"
+      return
+    }
     Task {
       do {
         try await adapter.requestAuthorization()
@@ -148,6 +671,12 @@ final class CommanderViewModel: ObservableObject {
   }
 
   func synchronize() {
+    if CommanderDesignPreview.enabled {
+      latestSchedule = CommanderDesignPreview.schedule
+      recoveryStatus = "Náhledový týden načten"
+      errorMessage = nil
+      return
+    }
     Task { await synchronizeWithRecovery(maxAttempts: 3, automatic: false) }
   }
 
@@ -214,6 +743,11 @@ final class CommanderViewModel: ObservableObject {
         revision: leadTimeProjectionRevision
       )
     )
+    if CommanderDesignPreview.enabled {
+      latestSchedule = CommanderDesignPreview.schedule
+      recoveryStatus = "Náhledový týden načten"
+      return
+    }
     recoveryStatus = "Přepočítávám čas odchodu"
     Task { await synchronizeWithRecovery(maxAttempts: 3, automatic: false, source: .cached) }
   }
