@@ -164,3 +164,39 @@ Kostra `CommanderScheduleSourceRevision` nyní uchovává:
 - jednoznačný near-match s konkrétně vypsanými rozdílnými poli.
 
 Near-match se nikdy automaticky neopravuje. Je pouze diagnostikou pro člověka.
+
+## Překryvy nejsou automaticky chyba
+
+Časový překryv je **kontrolní anomálie**, ne automatické odmítnutí rozpisu.
+
+Reálné příklady, které musí Commander umět přijmout po potvrzení:
+
+- jeden fyzioterapeutický blok obsahuje více dílčích cvičení, jejichž časy se na papíře překrývají,
+- krátká procedura se překryje se začátkem 45minutového jídelního okna,
+- procedura začne ještě před koncem jídla, ale po reálném přesunu zbývá dost času.
+
+Audit proto rozlišuje:
+
+- `procedure-overlap-review` – procedura × procedura,
+- `meal-procedure-overlap-review` – procedura × jídlo.
+
+U jídla report počítá **přímý časový překryv** a kolik minut z jídelního okna zbývá. Čas přesunu mezi lokalitami se zatím automaticky neodečítá, protože bez explicitního modelu vzdáleností by to byl odhad.
+
+Příklad: večeře 17:30–18:15 a procedura 17:30–17:40 → přímý překryv 10 min, z jídelního okna zbývá 35/45 min; Commander upozorní, ale dovolí člověku situaci potvrdit.
+
+## Potvrzení očekávané výjimky
+
+Warning lze ručně potvrdit jako očekávanou výjimku. Potvrzení obsahuje:
+
+- `scheduleVersion`,
+- jednoznačný `reviewKey`,
+- čas potvrzení,
+- volitelnou poznámku.
+
+Důležité bezpečnostní pravidlo: potvrzení platí jen pro **stejnou verzi kanonického rozpisu**. Po nové revizi papíru / změně rozpisu se stejná anomálie musí znovu zkontrolovat.
+
+Blokující `error` nelze potvrzením warningu obejít. Stav `ROZPIS OVĚŘEN` může vzniknout jen při:
+
+- 0 blokujících chybách,
+- 0 nepotvrzených warningech,
+- přesné source-to-canonical reconciliaci.

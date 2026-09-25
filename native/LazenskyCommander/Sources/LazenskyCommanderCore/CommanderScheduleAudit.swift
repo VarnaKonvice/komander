@@ -28,6 +28,56 @@ public struct CommanderScheduleAuditIssue: Codable, Equatable, Sendable {
 }
 
 
+public extension CommanderScheduleAuditIssue {
+  /// Stable only within one canonical schedule version. Acknowledgements always
+  /// carry that version as a second guard, so a revised schedule must be reviewed again.
+  var reviewKey: String {
+    [code, date ?? "-", stableId ?? "-", message]
+      .joined(separator: "|")
+  }
+}
+
+public struct CommanderScheduleAuditAcknowledgement: Codable, Equatable, Sendable {
+  public let scheduleVersion: Int
+  public let reviewKey: String
+  public let confirmedAt: String
+  public let note: String?
+
+  public init(scheduleVersion: Int, reviewKey: String, confirmedAt: String, note: String? = nil) {
+    self.scheduleVersion = scheduleVersion
+    self.reviewKey = reviewKey
+    self.confirmedAt = confirmedAt
+    self.note = note
+  }
+}
+
+public struct CommanderScheduleAuditReviewState: Equatable, Sendable {
+  public let errors: [CommanderScheduleAuditIssue]
+  public let openWarnings: [CommanderScheduleAuditIssue]
+  public let acknowledgedWarnings: [CommanderScheduleAuditIssue]
+
+  public var canBeAccepted: Bool { errors.isEmpty && openWarnings.isEmpty }
+}
+
+public enum CommanderScheduleAuditReview {
+  public static func resolve(
+    report: CommanderScheduleAuditReport,
+    acknowledgements: [CommanderScheduleAuditAcknowledgement]
+  ) -> CommanderScheduleAuditReviewState {
+    let acceptedKeys = Set(acknowledgements
+      .filter { $0.scheduleVersion == report.scheduleVersion }
+      .map(\.reviewKey))
+
+    let errors = report.issues.filter { $0.severity == .error }
+    let warnings = report.issues.filter { $0.severity == .warning }
+    return CommanderScheduleAuditReviewState(
+      errors: errors,
+      openWarnings: warnings.filter { !acceptedKeys.contains($0.reviewKey) },
+      acknowledgedWarnings: warnings.filter { acceptedKeys.contains($0.reviewKey) }
+    )
+  }
+}
+
 public struct CommanderScheduleAuditPolicy: Equatable, Sendable {
   public let minimumProceduresMondayThroughSaturday: Int?
   public let sundayExpectedProcedureCount: Int?
@@ -131,17 +181,14 @@ public enum CommanderScheduleAudit {
         return (event, start, end)
       }.sorted { $0.1 < $1.1 }
 
-      for pairIndex in 1..<parsed.count {
-        let previous = parsed[pairIndex - 1]
-        let current = parsed[pairIndex]
-        if current.1 < previous.2 {
-          issues.append(.init(
-            severity: .warning,
-            code: "overlap-review",
-            message: "Časový překryv vyžaduje ruční kontrolu: \(previous.0.title) a \(current.0.title).",
-            stableId: current.0.stableId,
-            date: date
-          ))
+      for firstIndex in parsed.indices {
+        for secondIndex in parsed.index(after: firstIndex)..<parsed.endIndex {
+          let first = parsed[firstIndex]
+          let second = parsed[secondIndex]
+          guard second.1 < first.2 else { break }
+          let overlapEnd = min(first.2, second.2)
+          let overlapMinutes = max(1, Int(overlapEnd.timeIntervalSince(second.1) / 60))
+          issues.append(overlapIssue(first: first, second: second, overlapMinutes: overlapMinutes, date: date))
         }
       }
     }
@@ -201,6 +248,37 @@ public enum CommanderScheduleAudit {
     guard let value else { return nil }
     let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
     return trimmed.isEmpty ? nil : trimmed
+  }
+
+  private static func overlapIssue(
+    first: (ScheduleEvent, Date, Date),
+    second: (ScheduleEvent, Date, Date),
+    overlapMinutes: Int,
+    date: String
+  ) -> CommanderScheduleAuditIssue {
+    let pair = [first.0, second.0]
+    if let meal = pair.first(where: { $0.kind == .meal }),
+       let procedure = pair.first(where: { $0.kind == .procedure }) {
+      let mealStart = try? NativeAlarmContract.dateTime(date: meal.date, time: meal.start)
+      let mealEnd = try? NativeAlarmContract.dateTime(date: meal.date, time: meal.end)
+      let mealMinutes = mealStart.flatMap { start in mealEnd.map { max(0, Int($0.timeIntervalSince(start) / 60)) } } ?? 0
+      let remaining = max(0, mealMinutes - overlapMinutes)
+      return .init(
+        severity: .warning,
+        code: "meal-procedure-overlap-review",
+        message: "Překryv \(overlapMinutes) min: \(procedure.title) × \(meal.title). Z jídelního okna po přímém překryvu zbývá \(remaining) z \(mealMinutes) min; čas přesunu není započítán. Potvrdit, že je kombinace reálně zvládnutelná.",
+        stableId: second.0.stableId,
+        date: date
+      )
+    }
+
+    return .init(
+      severity: .warning,
+      code: "procedure-overlap-review",
+      message: "Časový překryv \(overlapMinutes) min vyžaduje kontrolu: \(first.0.title) × \(second.0.title). Může jít o záměrný souběh v jednom terapeutickém bloku.",
+      stableId: second.0.stableId,
+      date: date
+    )
   }
 
   private static func auditOperationalExpectations(
