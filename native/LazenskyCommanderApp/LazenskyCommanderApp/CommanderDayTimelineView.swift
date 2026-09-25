@@ -113,8 +113,9 @@ struct CommanderEventRow: View {
           .allowsHitTesting(false)
       }
     }
-    .saturation(isPast ? 0.65 : 1)
-    .opacity(isPast ? 0.9 : 1)
+    .grayscale(isPast ? 0.55 : 0)
+    .saturation(isPast ? 0.30 : 1)
+    .opacity(isPast ? 0.72 : 1)
     .accessibilityElement(children: .combine)
     .accessibilityValue(isCurrent ? "Právě probíhá" : isPast ? "Dokončeno" : "")
   }
