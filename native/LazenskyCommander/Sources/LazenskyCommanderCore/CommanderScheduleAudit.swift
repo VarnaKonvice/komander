@@ -27,6 +27,31 @@ public struct CommanderScheduleAuditIssue: Codable, Equatable, Sendable {
   }
 }
 
+
+public struct CommanderScheduleAuditPolicy: Equatable, Sendable {
+  public let minimumProceduresMondayThroughSaturday: Int?
+  public let sundayExpectedProcedureCount: Int?
+  public let sundayExpectedMealTypes: Set<String>
+
+  public init(
+    minimumProceduresMondayThroughSaturday: Int? = nil,
+    sundayExpectedProcedureCount: Int? = nil,
+    sundayExpectedMealTypes: Set<String> = []
+  ) {
+    self.minimumProceduresMondayThroughSaturday = minimumProceduresMondayThroughSaturday
+    self.sundayExpectedProcedureCount = sundayExpectedProcedureCount
+    self.sundayExpectedMealTypes = sundayExpectedMealTypes
+  }
+
+  /// Operational expectation for Petr's spa stays. These are review warnings,
+  /// not a claim that Czech law universally mandates this exact daily pattern.
+  public static let petrSpaOperational = CommanderScheduleAuditPolicy(
+    minimumProceduresMondayThroughSaturday: 3,
+    sundayExpectedProcedureCount: 0,
+    sundayExpectedMealTypes: ["Snídaně", "Oběd", "Večeře"]
+  )
+}
+
 public struct CommanderScheduleAuditReport: Codable, Equatable, Sendable {
   public let scheduleVersion: Int
   public let stayFrom: String?
@@ -48,7 +73,7 @@ public struct CommanderScheduleAuditReport: Codable, Equatable, Sendable {
 /// Source-to-canonical reconciliation is a separate acceptance layer because an
 /// internally valid schedule can still contain a transcription/import mistake.
 public enum CommanderScheduleAudit {
-  public static func run(_ schedule: Schedule) -> CommanderScheduleAuditReport {
+  public static func run(_ schedule: Schedule, policy: CommanderScheduleAuditPolicy = .init()) -> CommanderScheduleAuditReport {
     var issues: [CommanderScheduleAuditIssue] = []
 
     do {
@@ -122,6 +147,13 @@ public enum CommanderScheduleAudit {
     }
 
     if let range = stayRange {
+      auditOperationalExpectations(
+        eventsByDate: eventsByDate,
+        range: range,
+        policy: policy,
+        issues: &issues
+      )
+
       let allDates = Set(schedule.events.map(\.date))
       var day = range.from
       while day <= range.to {
@@ -169,6 +201,65 @@ public enum CommanderScheduleAudit {
     guard let value else { return nil }
     let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
     return trimmed.isEmpty ? nil : trimmed
+  }
+
+  private static func auditOperationalExpectations(
+    eventsByDate: [String: [ScheduleEvent]],
+    range: StayRange,
+    policy: CommanderScheduleAuditPolicy,
+    issues: inout [CommanderScheduleAuditIssue]
+  ) {
+    var day = range.from
+    while day <= range.to {
+      let date = formatDate(day)
+      let dayEvents = eventsByDate[date] ?? []
+      let procedureCount = dayEvents.filter { $0.kind == .procedure }.count
+      let weekday = calendar.component(.weekday, from: day)
+
+      if weekday == 1 {
+        if let expected = policy.sundayExpectedProcedureCount, procedureCount != expected {
+          issues.append(.init(
+            severity: .warning,
+            code: "sunday-procedure-review",
+            message: "Neděle má \(procedureCount) procedur, očekávání je \(expected); ověřit proti aktuálnímu papíru.",
+            date: date
+          ))
+        }
+
+        if !policy.sundayExpectedMealTypes.isEmpty {
+          let actualMeals = Set(dayEvents.filter { $0.kind == .meal }.map {
+            normalized($0.mealType ?? $0.title)
+          })
+          let missingMeals = policy.sundayExpectedMealTypes
+            .filter { !actualMeals.contains(normalized($0)) }
+            .sorted()
+          if !missingMeals.isEmpty {
+            issues.append(.init(
+              severity: .warning,
+              code: "sunday-meals-review",
+              message: "V neděli chybí očekávané jídlo/jídla: \(missingMeals.joined(separator: ", ")); ověřit proti papíru.",
+              date: date
+            ))
+          }
+        }
+      } else if let minimum = policy.minimumProceduresMondayThroughSaturday, procedureCount < minimum {
+        issues.append(.init(
+          severity: .warning,
+          code: "low-procedure-count-review",
+          message: "Den má jen \(procedureCount) procedur, provozní očekávání je alespoň \(minimum); ověřit proti papíru nebo lékařské změně.",
+          date: date
+        ))
+      }
+
+      guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+      day = next
+    }
+  }
+
+  private static func normalized(_ value: String) -> String {
+    value.trimmingCharacters(in: .whitespacesAndNewlines)
+      .precomposedStringWithCanonicalMapping
+      .lowercased(with: Locale(identifier: "cs_CZ"))
   }
 
   private static func parsedStayRange(

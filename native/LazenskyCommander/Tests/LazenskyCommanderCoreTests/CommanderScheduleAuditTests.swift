@@ -31,6 +31,47 @@ struct CommanderScheduleAuditTests {
     #expect(report.issues.filter { $0.code == "day-without-events" }.count == 2)
   }
 
+
+  @Test func sundayOperationalPolicyExpectsMealsAndNoProcedures() {
+    let sundayMeals = [
+      meal(id: "sun.breakfast", date: "2026-09-06", start: "07:30", end: "08:00", title: "Snídaně"),
+      meal(id: "sun.lunch", date: "2026-09-06", start: "12:00", end: "12:40", title: "Oběd"),
+      meal(id: "sun.dinner", date: "2026-09-06", start: "17:30", end: "18:00", title: "Večeře")
+    ]
+    let report = CommanderScheduleAudit.run(
+      schedule(from: "2026-09-06", to: "2026-09-06", events: sundayMeals),
+      policy: .petrSpaOperational
+    )
+    #expect(!report.issues.contains { $0.code == "sunday-procedure-review" })
+    #expect(!report.issues.contains { $0.code == "sunday-meals-review" })
+  }
+
+  @Test func saturdayBelowThreeProceduresIsReviewWarningNotBlockingError() {
+    let events = [
+      makeEvent(id: "sat.a", date: "2026-09-05", start: "09:00", end: "09:20", title: "Masáž"),
+      makeEvent(id: "sat.b", date: "2026-09-05", start: "10:00", end: "10:20", title: "Magnetoterapie")
+    ]
+    let report = CommanderScheduleAudit.run(
+      schedule(from: "2026-09-05", to: "2026-09-05", events: events),
+      policy: .petrSpaOperational
+    )
+    #expect(report.issues.contains { $0.code == "low-procedure-count-review" && $0.severity == .warning })
+    #expect(!report.hasErrors)
+  }
+
+  @Test func sundayProcedureOrMissingMealRequiresHumanReview() {
+    let events = [
+      meal(id: "sun.breakfast", date: "2026-09-06", start: "07:30", end: "08:00", title: "Snídaně"),
+      makeEvent(id: "sun.proc", date: "2026-09-06", start: "10:00", end: "10:20", title: "Masáž")
+    ]
+    let report = CommanderScheduleAudit.run(
+      schedule(from: "2026-09-06", to: "2026-09-06", events: events),
+      policy: .petrSpaOperational
+    )
+    #expect(report.issues.contains { $0.code == "sunday-procedure-review" })
+    #expect(report.issues.contains { $0.code == "sunday-meals-review" })
+  }
+
   private func schedule(from: String, to: String, events: [ScheduleEvent]) -> Schedule {
     Schedule(
       schemaVersion: 1,
@@ -39,6 +80,21 @@ struct CommanderScheduleAuditTests {
       stay: ["dateFrom": from, "dateTo": to],
       events: events,
       settings: ScheduleSettings(defaultLeadTimeMinutes: 20, procedureTypeOverrides: [:], mealOverrides: [:])
+    )
+  }
+
+  private func meal(id: String, date: String, start: String, end: String, title: String) -> ScheduleEvent {
+    ScheduleEvent(
+      stableId: id,
+      date: date,
+      start: start,
+      end: end,
+      title: title,
+      location: "Jídelna",
+      kind: .meal,
+      procedureType: nil,
+      mealType: title,
+      leadTimeMinutes: nil
     )
   }
 

@@ -132,3 +132,35 @@ Současná obrazovka Předstihy funkčně dává smysl, ale používá systémov
 4. otestovat 28 → změna několika procedur → 35 dnů,
 5. napojit fyzický AlarmKit read-back na audit report,
 6. teprve potom znovu rozjet ostré Live Activities.
+
+## Provozní očekávání pro Petrův pobyt
+
+Tato pravidla jsou **kontrolní očekávání**, nikoli univerzální právní invarianty:
+
+- neděle: 0 léčebných procedur a očekávaná snídaně + oběd + večeře,
+- pondělí–sobota: očekávání alespoň 3 procedur denně,
+- sobota se proto kontroluje stejně jako ostatní léčebné dny, ale nižší počet je pouze warning k ověření proti papíru,
+- běžná denní formální návštěva sesterny / kontrola sestrou se **nepočítá jako procedura**, pokud není výslovně uvedena v procedurálním rozpisu,
+- lékařská nebo sesterská kontrola se později může modelovat jako samostatný typ události, ale nesmí uměle zvyšovat počet procedur.
+
+Důvod pro warning místo blokující chyby: veřejné předpisy a informace pojišťoven určují podmínky a délku lázeňské péče, ale nenašli jsme obecné veřejné pravidlo, které by pro každou indikaci a každého poskytovatele právně nařizovalo přesně 3 procedury každý Po–So. Někteří poskytovatelé a odborné materiály běžně uvádějí 3 procedury denně a neděli jako klidový režim. Commander proto takový vzorec používá jako silnou anomální kontrolu, ne jako náhradu skutečného papíru.
+
+## Zdrojové revize a reconciliace
+
+Kostra `CommanderScheduleSourceRevision` nyní uchovává:
+
+- identitu revize,
+- čas převzetí,
+- rozsah `coverageFrom` / `coverageTo`,
+- důvod změny,
+- hashe zdrojových fotografií/souborů,
+- jednotlivé zdrojové řádky včetně stránky.
+
+`CommanderScheduleSourceReconciler` provádí obousměrné párování zdrojového papíru proti kanonickému rozpisu ve stejném rozsahu. Rozlišuje:
+
+- přesnou shodu,
+- chybějící zdrojový řádek,
+- kanonickou událost navíc,
+- jednoznačný near-match s konkrétně vypsanými rozdílnými poli.
+
+Near-match se nikdy automaticky neopravuje. Je pouze diagnostikou pro člověka.
