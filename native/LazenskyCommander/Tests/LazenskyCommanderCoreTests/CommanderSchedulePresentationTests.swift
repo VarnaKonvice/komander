@@ -139,13 +139,14 @@ import Testing
 }
 
 @Test func infoKeepsCanonicalMetadataAndOmitsOnlyMissingOrBlankValues() {
-  let stay = ["spa": "Lázně", "dateFrom": "2026-08-20", "dateTo": "2026-08-22", "room": "208", "doctor": "MUDr. Test", "mealShift": "II. směna", "contact": "Recepce", "empty": "  "]
+  let stay = ["spa": "Lázně", "dateFrom": "2026-08-20", "dateTo": "2026-08-22", "room": "208", "doctor": "MUDr. Test", "diagnosis": "Testovací diagnóza", "mealShift": "II. směna", "contact": "Recepce", "empty": "  "]
   let fields = CommanderInfoPresentation.fields(stay: stay)
-  #expect(fields.map(\.key) == ["spa", "dateFrom", "dateTo", "room", "doctor", "mealShift", "contact"])
+  #expect(fields.map(\.key) == ["spa", "dateFrom", "dateTo", "mealShift", "room", "doctor", "diagnosis", "contact"])
   #expect(fields.first { $0.key == "dateFrom" }?.value == "20. 8. 2026")
   #expect(fields.first { $0.key == "dateTo" }?.value == "22. 8. 2026")
   #expect(fields.first { $0.key == "room" }?.value == "208")
   #expect(fields.first { $0.key == "doctor" }?.value == "MUDr. Test")
+  #expect(fields.first { $0.key == "diagnosis" }?.value == "Testovací diagnóza")
   #expect(CommanderInfoPresentation.fields(stay: [:]).isEmpty)
   #expect(CommanderInfoPresentation.fields(stay: ["room": "208"]).map(\.key) == ["room"])
 }

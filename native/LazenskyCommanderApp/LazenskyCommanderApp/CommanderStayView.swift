@@ -214,7 +214,7 @@ private struct CommanderProcedureProgressRow: View {
         .layoutPriority(1)
       Spacer(minLength: CommanderDesignTokens.Spacing.small)
       VStack(alignment: .trailing, spacing: 1) {
-        Text("\(procedure.total)")
+        Text("\(procedure.completed) / \(procedure.total)")
           .commanderFont(.metric)
           .monospacedDigit()
           .foregroundStyle(accent)
@@ -231,7 +231,7 @@ private struct CommanderProcedureProgressRow: View {
     .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
     .commanderCard(accent: accent, surface: .depthInset)
     .accessibilityElement(children: .combine)
-    .accessibilityLabel("\(procedure.name), \(procedure.total) \(procedureUnit)")
+    .accessibilityLabel("\(procedure.name), dokončeno \(procedure.completed) z \(procedure.total) \(procedureUnit)")
   }
 }
 

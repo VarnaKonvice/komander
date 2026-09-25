@@ -1,6 +1,7 @@
 import SwiftUI
 import LazenskyCommanderCore
 import UserNotifications
+import WidgetKit
 private enum CommanderDesignPreview {
 #if targetEnvironment(simulator)
   static let enabled = true
@@ -26,6 +27,7 @@ private enum CommanderDesignPreview {
     "dateTo": "2026-09-28",
     "room": "208",
     "doctor": "MUDr. Novák",
+    "diagnosis": "Neuvedeno",
     "mealShift": "I. směna"
   },
   "events": [
@@ -579,6 +581,12 @@ final class CommanderViewModel: ObservableObject {
     }
   }
 
+  private func reloadHomeWidgets() {
+    WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.iPhoneKind)
+    WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.iPhoneDayOverviewKind)
+    WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.iPhoneProcedureCountKind)
+  }
+
   var defaultLeadTimeMinutes: Int {
     leadTimeOverrides.defaultLeadTimeMinutes
       ?? latestSchedule?.settings.defaultLeadTimeMinutes
@@ -597,6 +605,7 @@ final class CommanderViewModel: ObservableObject {
   func bootstrap() async {
     if CommanderDesignPreview.enabled {
       latestSchedule = CommanderDesignPreview.schedule
+      reloadHomeWidgets()
       accessStatus = "Designový náhled – alarmy jsou vypnuté"
       watchTransferStatus = "Designový náhled"
       recoveryStatus = "Náhledový týden načten"
@@ -608,6 +617,7 @@ final class CommanderViewModel: ObservableObject {
     }
 
     latestSchedule = try? await scheduleSync.loadLastSchedule()
+    reloadHomeWidgets()
     if channel == .production, let watchScheduleSnapshot {
       do {
         watchTransferStatus = try await watchConnectivity.deliver(watchScheduleSnapshot).diagnosticText
@@ -746,9 +756,11 @@ final class CommanderViewModel: ObservableObject {
     if CommanderDesignPreview.enabled {
       latestSchedule = CommanderDesignPreview.schedule
       recoveryStatus = "Náhledový týden načten"
+      Task { reloadHomeWidgets() }
       return
     }
     recoveryStatus = "Přepočítávám čas odchodu"
+    reloadHomeWidgets()
     Task { await synchronizeWithRecovery(maxAttempts: 3, automatic: false, source: .cached) }
   }
 
@@ -805,6 +817,7 @@ final class CommanderViewModel: ObservableObject {
         )
         latestSchedule = result.schedule
         summary = result.alarmSummary
+        reloadHomeWidgets()
         await procedureActivities.reconcile(
           schedule: result.schedule,
           overrides: projectionOverrides,

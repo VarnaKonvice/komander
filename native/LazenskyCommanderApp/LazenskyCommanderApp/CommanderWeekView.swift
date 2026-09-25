@@ -143,7 +143,7 @@ struct CommanderWeekDayTile: View {
     .overlay {
       if isToday {
         RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.card)
-          .strokeBorder(Color.white.opacity(0.8), lineWidth: 2)
+          .strokeBorder(CommanderDesignTokens.Colors.procedureCyan.opacity(0.28), lineWidth: 1.1)
           .allowsHitTesting(false)
       }
     }

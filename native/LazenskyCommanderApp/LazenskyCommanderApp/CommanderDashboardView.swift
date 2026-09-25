@@ -6,20 +6,20 @@ struct CommanderDepthBackground: View {
     GeometryReader { proxy in
       ZStack {
         LinearGradient(
-          colors: [Color(commanderHex: "#383BF0"), Color(commanderHex: "#0758D8"),
-                   Color(commanderHex: "#133FC1"), Color(commanderHex: "#252DAE")],
+          colors: [Color(commanderHex: "#20266F"), Color(commanderHex: "#0F326F"),
+                   Color(commanderHex: "#132553"), Color(commanderHex: "#161B49")],
           startPoint: .topLeading, endPoint: .bottomTrailing
         )
         RadialGradient(
-          colors: [Color(commanderHex: "#4588FF").opacity(0.52), .clear],
+          colors: [Color(commanderHex: "#4588FF").opacity(0.22), .clear],
           center: UnitPoint(x: 0.95, y: 0.22), startRadius: 0, endRadius: proxy.size.height * 0.65
         )
         RadialGradient(
-          colors: [Color(commanderHex: "#8B46FF").opacity(0.34), .clear],
+          colors: [Color(commanderHex: "#8B46FF").opacity(0.16), .clear],
           center: UnitPoint(x: 0.02, y: 0.88), startRadius: 0, endRadius: proxy.size.height * 0.46
         )
         RadialGradient(
-          colors: [Color(commanderHex: "#5A39FF").opacity(0.19), .clear],
+          colors: [Color(commanderHex: "#5A39FF").opacity(0.08), .clear],
           center: UnitPoint(x: 0.08, y: 0.05), startRadius: 0, endRadius: proxy.size.height * 0.34
         )
         // Directional ribbons create light and depth without blurring the entire page.
@@ -35,11 +35,11 @@ struct CommanderDepthBackground: View {
           }
           .stroke(
             LinearGradient(
-              colors: [.clear, Color(commanderHex: "#3DACFF").opacity(0.28), .clear],
+              colors: [.clear, Color(commanderHex: "#3DACFF").opacity(0.12), .clear],
               startPoint: .bottomLeading, endPoint: .topTrailing
             ), lineWidth: 26
           )
-          .shadow(color: Color(commanderHex: "#37BFFF").opacity(0.14), radius: 1.5)
+          .shadow(color: Color(commanderHex: "#37BFFF").opacity(0.05), radius: 1.0)
         }
       }
     }
@@ -569,14 +569,6 @@ private struct CommanderCountdownRing: View {
         .shadow(color: accent.opacity(0.72), radius: 2.4)
 
       VStack(spacing: 0) {
-        if !topLabel.isEmpty {
-          Text(topLabel)
-            .font(.system(size: 14, weight: .semibold))
-            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
-            .lineLimit(2)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity, alignment: .center)
-        }
         Text(valueText)
           .font(.system(size: valueText.count > 7 ? 21 : 25, weight: .heavy))
           .minimumScaleFactor(0.70)
@@ -594,8 +586,31 @@ private struct CommanderCountdownRing: View {
             .frame(maxWidth: .infinity, alignment: .center)
         }
       }
-      .padding(8)
+      .padding(.horizontal, 8)
+      .padding(.top, topLabel.isEmpty ? 8 : 15)
+      .padding(.bottom, 8)
       .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+
+      if !topLabel.isEmpty {
+        Text(topLabel)
+          .font(.system(size: 12, weight: .bold))
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .lineLimit(1)
+          .minimumScaleFactor(0.82)
+          .padding(.horizontal, 7)
+          .padding(.vertical, 3)
+          .background {
+            Capsule()
+              .fill(Color(commanderHex: "#0A1732").opacity(0.94))
+              .overlay {
+                Capsule()
+                  .strokeBorder(accent.opacity(0.34), lineWidth: 0.75)
+              }
+              .shadow(color: .black.opacity(0.58), radius: 4, y: 2)
+          }
+          .offset(y: -3)
+          .frame(maxHeight: .infinity, alignment: .top)
+      }
     }
   }
 }

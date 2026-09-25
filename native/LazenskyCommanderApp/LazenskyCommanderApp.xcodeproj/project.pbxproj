@@ -110,6 +110,7 @@
 		H80000000000000000000002 /* CommanderBrandAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000011 /* CommanderBrandAssets.swift */; };
 		H80000000000000000000003 /* CommanderBrandAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000011 /* CommanderBrandAssets.swift */; };
 		H80000000000000000000004 /* CommanderBrandAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000011 /* CommanderBrandAssets.swift */; };
+		K10000000000000000000001 /* LazenskyCommanderHomeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = K10000000000000000000011 /* LazenskyCommanderHomeWidget.swift */; };
 		H80000000000000000000005 /* AppAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000012 /* AppAssets.xcassets */; };
 		H80000000000000000000006 /* WatchAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000013 /* WatchAssets.xcassets */; };
 		H80000000000000000000007 /* BrandAssets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = H80000000000000000000014 /* BrandAssets.xcassets */; };
@@ -289,6 +290,12 @@
 				);
 			};
 		};
+		CA0000000000000000000041 /* physicalAcceptance PBXBuildFile */ = {
+			isa = "PBXBuildFile";
+			fileRef = "K10000000000000000000011";
+		};
+		K10000000000000000000003 /* CommanderDesignPreviewSchedule.json in Resources */ = {isa = PBXBuildFile; fileRef = K10000000000000000000012 /* CommanderDesignPreviewSchedule.json */; };
+		K10000000000000000000004 /* CommanderDesignPreviewSchedule.json in Physical Resources */ = {isa = PBXBuildFile; fileRef = K10000000000000000000012 /* CommanderDesignPreviewSchedule.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -434,6 +441,7 @@
 		G70000000000000000000012 /* WatchLocalNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLocalNotificationService.swift; sourceTree = "<group>"; };
 		G70000000000000000000013 /* UserNotifications.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UserNotifications.framework; path = System/Library/Frameworks/UserNotifications.framework; sourceTree = SDKROOT; };
 		H80000000000000000000011 /* CommanderBrandAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderBrandAssets.swift; sourceTree = "<group>"; };
+		K10000000000000000000011 /* LazenskyCommanderHomeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LazenskyCommanderHomeWidget.swift; sourceTree = "<group>"; };
 		H80000000000000000000012 /* AppAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AppAssets.xcassets; sourceTree = "<group>"; };
 		H80000000000000000000013 /* WatchAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WatchAssets.xcassets; sourceTree = "<group>"; };
 		H80000000000000000000014 /* BrandAssets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = BrandAssets.xcassets; sourceTree = "<group>"; };
@@ -471,6 +479,7 @@
 			explicitFileType = "wrapper.app-extension";
 			sourceTree = "BUILT_PRODUCTS_DIR";
 		};
+		K10000000000000000000012 /* CommanderDesignPreviewSchedule.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = CommanderDesignPreviewSchedule.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -595,6 +604,7 @@
 				H80000000000000000000011 /* CommanderBrandAssets.swift */,
 				F60000000000000000000024 /* WatchCacheLocation.swift */,
 				H80000000000000000000014 /* BrandAssets.xcassets */,
+				K10000000000000000000012 /* CommanderDesignPreviewSchedule.json */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -603,6 +613,7 @@
 			isa = PBXGroup;
 			children = (
 				B20000000000000000000012 /* LazenskyCommanderLiveActivity.swift */,
+				K10000000000000000000011 /* LazenskyCommanderHomeWidget.swift */,
 				B20000000000000000000013 /* Info.plist */,
 			);
 			path = LazenskyCommanderLiveActivity;
@@ -917,6 +928,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				K10000000000000000000003 /* CommanderDesignPreviewSchedule.json in Resources */,
 				AC2000000000000000000001,
 				AC2000000000000000000002,
 				H80000000000000000000008 /* BrandAssets.xcassets in Resources */,
@@ -1008,6 +1020,7 @@
 			isa = "PBXResourcesBuildPhase";
 			buildActionMask = "2147483647";
 			files = (
+				"K10000000000000000000004",
 				AC2000000000000000000003,
 				AC2000000000000000000004,
 				"CA000000000000000000002B",
@@ -1065,6 +1078,7 @@
 			files = (
 				B20000000000000000000002 /* CommanderAlarmMetadata.swift in Sources */,
 				B20000000000000000000003 /* LazenskyCommanderLiveActivity.swift in Sources */,
+				K10000000000000000000001 /* LazenskyCommanderHomeWidget.swift in Sources */,
 				H80000000000000000000002 /* CommanderBrandAssets.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1116,6 +1130,7 @@
 				"CA0000000000000000000027",
 				"CA0000000000000000000028",
 				"CA0000000000000000000029",
+				"CA0000000000000000000041",
 			);
 			runOnlyForDeploymentPostprocessing = "0";
 		};

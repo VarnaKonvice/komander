@@ -131,7 +131,7 @@ public struct CommanderStayField: Equatable, Sendable {
 
 public enum CommanderInfoPresentation {
   public static func fields(stay: [String: String]) -> [CommanderStayField] {
-    let known = ["spa", "dateFrom", "dateTo", "room", "doctor", "mealShift"]
+    let known = ["spa", "dateFrom", "dateTo", "mealShift", "room", "doctor", "diagnosis"]
     let keys = known + stay.keys.filter { !known.contains($0) }.sorted()
     return keys.compactMap { key in
       guard let value = stay[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty else { return nil }

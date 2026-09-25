@@ -143,32 +143,32 @@ private struct CommanderCardSurface: ViewModifier {
       switch surface {
       case .header:
         return [
-          Color(commanderHex: "#0D65EA"),
-          Color(commanderHex: "#084FC5"),
-          Color(commanderHex: "#063B91")
+          Color(commanderHex: "#214B8A"),
+          Color(commanderHex: "#172A59"),
+          Color(commanderHex: "#0E1530")
         ]
       case .eventRow:
         return [
-          Color(commanderHex: "#0C65D8"),
-          Color(commanderHex: "#0A50B8"),
-          Color(commanderHex: "#073B8D")
+          Color(commanderHex: "#234E8E"),
+          Color(commanderHex: "#192C5B"),
+          Color(commanderHex: "#0E1530")
         ]
       case .depthInset:
         return [
-          Color(commanderHex: "#116DDE"),
-          Color(commanderHex: "#0C56C0"),
-          Color(commanderHex: "#084294")
+          Color(commanderHex: "#204782"),
+          Color(commanderHex: "#172952"),
+          Color(commanderHex: "#0E1530")
         ]
       case .card, .depthCard:
         return [
-          Color(commanderHex: "#176FE2"),
-          Color(commanderHex: "#1058C4"),
-          Color(commanderHex: "#0A4398")
+          Color(commanderHex: "#1E447E"),
+          Color(commanderHex: "#16274E"),
+          Color(commanderHex: "#0E1530")
         ]
       }
     }()
 
-    let crispWidth: CGFloat = 1.45
+    let crispWidth: CGFloat = 0.85
 
     content
       .background {
@@ -185,9 +185,9 @@ private struct CommanderCardSurface: ViewModifier {
           shape.fill(
             LinearGradient(
               colors: [
-                tint.opacity(surface == .eventRow ? 0.22 : 0.15),
-                tint.opacity(surface == .eventRow ? 0.12 : 0.08),
-                tint.opacity(surface == .eventRow ? 0.05 : 0.03)
+                tint.opacity(surface == .eventRow ? 0.08 : 0.05),
+                tint.opacity(surface == .eventRow ? 0.035 : 0.025),
+                tint.opacity(surface == .eventRow ? 0.012 : 0.010)
               ],
               startPoint: .topLeading,
               endPoint: .bottomTrailing
@@ -198,15 +198,15 @@ private struct CommanderCardSurface: ViewModifier {
       .background {
         // Crisp neon only. No blur, material, white bloom or haze.
         ZStack {
-          shape.stroke(tint.opacity(0.14), lineWidth: 3.0)
-          shape.stroke(tint.opacity(0.36), lineWidth: 2.0)
+          shape.stroke(tint.opacity(0.025), lineWidth: 1.6)
+          shape.stroke(tint.opacity(0.075), lineWidth: 1.05)
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
       }
       .overlay {
         shape
-          .strokeBorder(tint.opacity(1.0), lineWidth: crispWidth)
+          .strokeBorder(tint.opacity(0.34), lineWidth: crispWidth)
           .allowsHitTesting(false)
       }
   }
@@ -247,7 +247,7 @@ struct CommanderGlassHeader: View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
           .fill(
             LinearGradient(
-              colors: [Color(commanderHex: "#160C45"), Color(commanderHex: "#071B55")],
+              colors: [Color(commanderHex: "#26206C"), Color(commanderHex: "#0B377A")],
               startPoint: .topLeading,
               endPoint: .bottomTrailing
             )
@@ -262,16 +262,16 @@ struct CommanderGlassHeader: View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
           .strokeBorder(
             LinearGradient(
-              colors: [CommanderDesignTokens.Colors.primaryPurple.opacity(0.55),
-                       CommanderDesignTokens.Colors.procedureCyan.opacity(0.35),
-                       Color.white.opacity(0.4)],
+              colors: [CommanderDesignTokens.Colors.primaryPurple.opacity(0.68),
+                       CommanderDesignTokens.Colors.procedureCyan.opacity(0.48),
+                       Color.white.opacity(0.50)],
               startPoint: .topLeading,
               endPoint: .bottomTrailing
             ),
-            lineWidth: 0.65
+            lineWidth: 0.80
           )
       }
-      .shadow(color: CommanderDesignTokens.Colors.primaryPurple.opacity(0.30), radius: 1.5)
+      .shadow(color: CommanderDesignTokens.Colors.procedureCyan.opacity(0.16), radius: 1.2)
       .accessibilityHidden(true)
       HStack(spacing: 0) {
         Text("Lázeňský ")
@@ -629,7 +629,7 @@ enum CommanderDashboardPalette {
   static let elevatedSurface = Color(red: 0.09, green: 0.12, blue: 0.24)
   static let glass = Color.white.opacity(0.105)
   static let glassStrong = Color.white.opacity(0.15)
-  static let glassBorder = Color.white.opacity(0.22)
+  static let glassBorder = Color.white.opacity(0.14)
   static let commanderPurple = Color(commanderHex: CommanderBrandAssets.Colors.commanderPurple)
   static let commanderPurpleLight = CommanderDesignTokens.Colors.primaryPurple
   static let waterBlue = Color(commanderHex: CommanderBrandAssets.Colors.waterBlue)

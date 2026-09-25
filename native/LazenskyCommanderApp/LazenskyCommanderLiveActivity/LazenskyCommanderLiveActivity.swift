@@ -68,6 +68,9 @@ struct LazenskyCommanderLiveActivityBundle: WidgetBundle {
   var body: some Widget {
     LazenskyCommanderAlarmLiveActivity()
     LazenskyCommanderProcedureLiveActivity()
+    LazenskyCommanderHomeWidget()
+    LazenskyCommanderDayOverviewWidget()
+    LazenskyCommanderProcedureCountWidget()
   }
 }
 

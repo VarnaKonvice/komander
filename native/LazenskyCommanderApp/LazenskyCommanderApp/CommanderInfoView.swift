@@ -6,7 +6,7 @@ struct CommanderInfoView: View {
 
   private let labels = [
     "spa": "Lázně", "dateFrom": "Pobyt od", "dateTo": "Pobyt do",
-    "room": "Pokoj", "doctor": "Lékař", "mealShift": "Stravovací směna"
+    "room": "Pokoj", "doctor": "Lékař", "diagnosis": "Diagnóza", "mealShift": "Stravovací směna"
   ]
 
   var body: some View {
@@ -85,6 +85,7 @@ struct CommanderInfoView: View {
     case "dateTo": return "calendar.badge.checkmark"
     case "room": return "bed.double.fill"
     case "doctor": return "stethoscope"
+    case "diagnosis": return "cross.case.fill"
     case "mealShift": return "fork.knife"
     default: return "info.circle"
     }
@@ -92,6 +93,8 @@ struct CommanderInfoView: View {
 
   private func accent(for key: String) -> Color {
     switch key {
+    case "diagnosis":
+      return CommanderDesignTokens.Colors.primaryPurple
     case "spa", "dateFrom", "dateTo", "room", "doctor", "mealShift":
       return CommanderDesignTokens.Colors.locationBlue
     default:

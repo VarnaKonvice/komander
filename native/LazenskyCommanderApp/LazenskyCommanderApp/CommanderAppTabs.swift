@@ -122,13 +122,13 @@ private struct CommanderNeonTabBar: View {
             if selection == index {
               RoundedRectangle(cornerRadius: 17, style: .continuous)
                 .fill(LinearGradient(
-                  colors: [Color(commanderHex: "#4928BC"), Color(commanderHex: "#0931BB")],
+                  colors: [Color(commanderHex: "#2D347A"), Color(commanderHex: "#17305F")],
                   startPoint: .topLeading, endPoint: .bottomTrailing
                 ))
                 .overlay {
                   RoundedRectangle(cornerRadius: 17, style: .continuous)
-                    .strokeBorder(CommanderDesignTokens.Colors.primaryPurple, lineWidth: 1.3)
-                    .shadow(color: CommanderDesignTokens.Colors.primaryPurple.opacity(0.50), radius: 1.4)
+                     .strokeBorder(CommanderDesignTokens.Colors.primaryPurple.opacity(0.52), lineWidth: 1.0)
+                    .shadow(color: CommanderDesignTokens.Colors.primaryPurple.opacity(0.18), radius: 1.0)
                     .allowsHitTesting(false)
                 }
             }
@@ -144,19 +144,19 @@ private struct CommanderNeonTabBar: View {
       // Opaque blue glass shading avoids a live backdrop blur while scrolling.
       RoundedRectangle(cornerRadius: 24, style: .continuous)
         .fill(LinearGradient(
-          colors: [Color(commanderHex: "#12399B"), Color(commanderHex: "#081E64")],
+          colors: [Color(commanderHex: "#1E447E"), Color(commanderHex: "#101E43")],
           startPoint: .topLeading, endPoint: .bottomTrailing
         ))
     }
     .overlay {
       RoundedRectangle(cornerRadius: 24, style: .continuous)
         .strokeBorder(LinearGradient(
-          colors: [CommanderDesignTokens.Colors.primaryPurple,
-                   CommanderDesignTokens.Colors.procedureCyan,
-                   CommanderDesignTokens.Colors.primaryPurple],
+          colors: [CommanderDesignTokens.Colors.primaryPurple.opacity(0.40),
+                   CommanderDesignTokens.Colors.procedureCyan.opacity(0.30),
+                   CommanderDesignTokens.Colors.primaryPurple.opacity(0.40)],
           startPoint: .leading, endPoint: .trailing
-        ), lineWidth: 1.4)
-        .shadow(color: CommanderDesignTokens.Colors.procedureCyan.opacity(0.46), radius: 1.8)
+        ), lineWidth: 1.0)
+        .shadow(color: CommanderDesignTokens.Colors.procedureCyan.opacity(0.14), radius: 1.1)
         .allowsHitTesting(false)
     }
     .frame(height: 62)
