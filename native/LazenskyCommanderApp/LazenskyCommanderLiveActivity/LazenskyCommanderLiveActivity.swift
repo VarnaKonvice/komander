@@ -53,11 +53,12 @@ private enum CommanderActivityTokens {
 
   static func procedureStateAccent(
     phase: CommanderProcedureVisualPhase,
+    departureDue: Bool,
     eventAccent: Color
   ) -> Color {
     switch phase {
-    case .upcoming: amber
-    case .active: CommanderBrandAssets.Presentation.active
+    case .upcoming: departureDue ? urgentOrange : eventAccent
+    case .active: eventAccent
     case .ended: CommanderBrandAssets.Presentation.neutral
     }
   }
@@ -105,7 +106,12 @@ struct LazenskyCommanderAlarmLiveActivity: Widget {
         }
         DynamicIslandExpandedRegion(.bottom, priority: 2) {
           CommanderExpandedEventBody(
-            title: title, iconKey: metadata?.iconKey, location: metadata?.location ?? "",
+            title: title,
+            iconKey: metadata?.iconKey,
+            kind: metadata?.kind,
+            location: metadata?.location ?? "",
+            nextEvent: metadata?.nextEvent,
+            nextEventLabel: "Potom:",
             stateAccent: accent
           ) {
             CommanderAlarmCountdown(mode: context.state.mode)
@@ -150,6 +156,7 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
       )
       let keylineAccent = CommanderActivityTokens.procedureStateAccent(
         phase: preview.phase,
+        departureDue: preview.departureDue,
         eventAccent: eventAccent
       )
       let isVisualProbe = context.attributes.stableId == "physicalAcceptance.visualProbe"
@@ -217,9 +224,18 @@ private struct CommanderProcedureIslandCenter: View {
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
       let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date, isStale: context.isStale)
+      let eventAccent = CommanderActivityTokens.eventAccent(
+        kind: display.kind,
+        iconKey: display.iconKey,
+        title: display.title
+      )
       Text(display.status)
         .font(.system(size: 13, weight: .bold))
-        .foregroundStyle(CommanderActivityTokens.procedureStateAccent(phase: display.phase, eventAccent: .clear))
+        .foregroundStyle(CommanderActivityTokens.procedureStateAccent(
+          phase: display.phase,
+          departureDue: display.departureDue,
+          eventAccent: eventAccent
+        ))
         .lineLimit(1)
         .minimumScaleFactor(0.85)
     }
@@ -240,6 +256,7 @@ private struct CommanderProcedureIslandTiming: View {
       )
       let stateAccent = CommanderActivityTokens.procedureStateAccent(
         phase: display.phase,
+        departureDue: display.departureDue,
         eventAccent: eventAccent
       )
       CommanderProcedurePhaseTiming(
@@ -257,9 +274,23 @@ private struct CommanderProcedureIslandBottom: View {
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
       let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date, isStale: context.isStale)
+      let eventAccent = CommanderActivityTokens.eventAccent(
+        kind: display.kind,
+        iconKey: display.iconKey,
+        title: display.title
+      )
       CommanderExpandedEventBody(
-        title: display.title, iconKey: display.iconKey, location: display.location,
-        stateAccent: CommanderActivityTokens.procedureStateAccent(phase: display.phase, eventAccent: .clear)
+        title: display.title,
+        iconKey: display.iconKey,
+        kind: display.kind,
+        location: display.location,
+        nextEvent: display.nextEvent,
+        nextEventLabel: display.nextEventLabel,
+        stateAccent: CommanderActivityTokens.procedureStateAccent(
+          phase: display.phase,
+          departureDue: display.departureDue,
+          eventAccent: eventAccent
+        )
       ) {
         CommanderPresentationClock(display: display)
       }
@@ -313,8 +344,11 @@ private struct CommanderAlarmWatchLiveActivityView: View {
     let metadata = context.attributes.metadata
     CommanderSmartStackCard(
       status: context.state.mode.isAlert ? "Čas vyrazit" : "Odchod",
-      title: metadata?.title ?? "Lázeňský Commander", iconKey: metadata?.iconKey,
-      startTime: CommanderAlarmTime.startTime(from: metadata?.startAt),
+      title: metadata?.title ?? "Lázeňský Commander",
+      iconKey: metadata?.iconKey,
+      kind: metadata?.kind,
+      timeLabel: "Začátek",
+      timeValue: CommanderAlarmTime.startTime(from: metadata?.startAt),
       stateAccent: CommanderActivityTokens.departureAccent(for: context.state.mode)
     ) {
       CommanderAlarmCountdown(mode: context.state.mode)
@@ -328,10 +362,23 @@ private struct CommanderProcedureWatchLiveActivityView: View {
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
       let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date, isStale: context.isStale)
+      let eventAccent = CommanderActivityTokens.eventAccent(
+        kind: display.kind,
+        iconKey: display.iconKey,
+        title: display.title
+      )
       CommanderSmartStackCard(
-        status: display.status, title: display.title, iconKey: display.iconKey,
-        startTime: display.startAt.formatted(date: .omitted, time: .shortened),
-        stateAccent: CommanderActivityTokens.procedureStateAccent(phase: display.phase, eventAccent: .clear)
+        status: display.status,
+        title: display.title,
+        iconKey: display.iconKey,
+        kind: display.kind,
+        timeLabel: display.timeLabel,
+        timeValue: display.timeValue,
+        stateAccent: CommanderActivityTokens.procedureStateAccent(
+          phase: display.phase,
+          departureDue: display.departureDue,
+          eventAccent: eventAccent
+        )
       ) {
         CommanderPresentationClock(display: display)
       }
@@ -345,7 +392,9 @@ private struct CommanderSmartStackCard<Clock: View>: View {
   let status: String
   let title: String
   let iconKey: String?
-  let startTime: String
+  let kind: ScheduleKind?
+  let timeLabel: String
+  let timeValue: String
   let stateAccent: Color
   @ViewBuilder var clock: () -> Clock
 
@@ -375,13 +424,17 @@ private struct CommanderSmartStackCard<Clock: View>: View {
           VStack(alignment: .leading, spacing: 0) {
             Text(title)
               .font(.system(size: 11, weight: .bold))
-              .foregroundStyle(Color(commanderPresentationHex: CommanderBrandAssets.procedureAccentHex(iconKey: iconKey, title: title, isMeal: false)))
+              .foregroundStyle(Color(commanderPresentationHex: CommanderBrandAssets.procedureAccentHex(
+                iconKey: iconKey,
+                title: title,
+                isMeal: kind == .meal
+              )))
               .lineLimit(1)
               .minimumScaleFactor(0.82)
               .truncationMode(.tail)
               .frame(maxWidth: .infinity, alignment: .leading)
             if geometry.size.height >= 78 && geometry.size.width >= 170 {
-              Text("Začátek " + startTime)
+              Text(timeLabel + " " + timeValue)
                 .font(.system(size: 9, weight: .medium).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.85))
                 .lineLimit(1)
@@ -402,7 +455,10 @@ private struct CommanderSmartStackCard<Clock: View>: View {
 private struct CommanderExpandedEventBody<Clock: View>: View {
   let title: String
   let iconKey: String?
+  let kind: ScheduleKind?
   let location: String
+  let nextEvent: CommanderAlarmEventSnapshot?
+  let nextEventLabel: String
   let stateAccent: Color
   @ViewBuilder var clock: () -> Clock
 
@@ -417,7 +473,11 @@ private struct CommanderExpandedEventBody<Clock: View>: View {
         .layoutPriority(2)
       Text(title)
         .font(.system(size: 15, weight: .bold))
-        .foregroundStyle(Color(commanderPresentationHex: CommanderBrandAssets.procedureAccentHex(iconKey: iconKey, title: title, isMeal: false)))
+        .foregroundStyle(Color(commanderPresentationHex: CommanderBrandAssets.procedureAccentHex(
+          iconKey: iconKey,
+          title: title,
+          isMeal: kind == .meal
+        )))
         .lineLimit(1)
         .minimumScaleFactor(0.85)
         .truncationMode(.tail)
@@ -430,6 +490,13 @@ private struct CommanderExpandedEventBody<Clock: View>: View {
           .padding(.horizontal, 10)
           .padding(.vertical, 4)
           .background(stateAccent.opacity(0.15), in: Capsule())
+      }
+      if let nextEvent {
+        CommanderNextEventLine(
+          event: nextEvent,
+          compact: true,
+          label: nextEventLabel
+        )
       }
     }
     .padding(.bottom, 4)
@@ -461,7 +528,7 @@ private struct CommanderPresentationClock: View {
 
   @ViewBuilder var body: some View {
     switch display.phase {
-    case .upcoming: CommanderClampedCountdown(target: display.startAt)
+    case .upcoming: CommanderClampedCountdown(target: display.countdownTarget)
     case .active: CommanderClampedCountdown(target: display.endAt)
     case .ended: Text("Skončilo")
     }
@@ -526,6 +593,7 @@ private struct CommanderProcedureLockScreenView: View {
       )
       let stateAccent = CommanderActivityTokens.procedureStateAccent(
         phase: display.phase,
+        departureDue: display.departureDue,
         eventAccent: eventAccent
       )
 
@@ -628,7 +696,7 @@ private struct CommanderProcedureDisplayHero: View {
 
         switch display.phase {
         case .upcoming:
-          CommanderClampedCountdown(target: display.startAt)
+          CommanderClampedCountdown(target: display.countdownTarget)
             .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
             .foregroundStyle(accent)
             .lineLimit(1)
@@ -672,13 +740,13 @@ private struct CommanderProcedureDisplaySideStatus: View {
     switch display.phase {
     case .upcoming:
       VStack(spacing: 2) {
-        Image(systemName: "clock.badge")
+        Image(systemName: display.departureDue ? "figure.walk" : "clock.badge")
           .font(.system(size: 24, weight: .semibold))
           .foregroundStyle(accent)
-        Text("Začátek")
+        Text(display.timeLabel)
           .font(.system(size: 11, weight: .semibold))
           .foregroundStyle(CommanderActivityTokens.textSecondary)
-        Text(display.startAt.formatted(date: .omitted, time: .shortened))
+        Text(display.timeValue)
           .font(.system(size: 12, weight: .bold).monospacedDigit())
           .foregroundStyle(accent)
       }
@@ -828,23 +896,33 @@ private struct CommanderNextEventLine: View {
   }
 
   var body: some View {
-    HStack(spacing: 5) {
-      Text(label)
-        .foregroundStyle(CommanderActivityTokens.textSecondary)
-      CommanderProcedureArtwork(iconKey: iconKey, title: event.title, size: 18)
-      Text(event.title)
-        .fontWeight(.semibold)
-        .foregroundStyle(accent)
-        .lineLimit(1)
-        .minimumScaleFactor(0.72)
-      Spacer(minLength: 4)
-      Text(CommanderAlarmTime.startTime(from: event.startAt))
-        .fontWeight(.bold)
-        .monospacedDigit()
-        .foregroundStyle(CommanderActivityTokens.textPrimary)
+    VStack(alignment: .leading, spacing: compact ? 0 : 2) {
+      HStack(spacing: 5) {
+        Text(label)
+          .foregroundStyle(CommanderActivityTokens.textSecondary)
+        CommanderProcedureArtwork(iconKey: iconKey, title: event.title, size: 18)
+        Text(event.title)
+          .fontWeight(.semibold)
+          .foregroundStyle(accent)
+          .lineLimit(1)
+          .minimumScaleFactor(0.72)
+        Spacer(minLength: 4)
+        Text(CommanderAlarmTime.startTime(from: event.startAt))
+          .fontWeight(.bold)
+          .monospacedDigit()
+          .foregroundStyle(CommanderActivityTokens.textPrimary)
+      }
+
+      if !event.location.isEmpty {
+        Label(event.location, systemImage: "mappin.circle.fill")
+          .font(compact ? .system(size: 8, weight: .medium) : .caption2.weight(.medium))
+          .foregroundStyle(CommanderActivityTokens.locationBlue)
+          .lineLimit(1)
+          .minimumScaleFactor(0.72)
+          .padding(.leading, compact ? 18 : 23)
+      }
     }
     .font(compact ? .caption2 : .system(size: 13, weight: .medium))
-    .lineLimit(1)
   }
 }
 
@@ -951,14 +1029,17 @@ private struct CommanderProcedureDisplay {
   let location: String
   let kind: ScheduleKind
   let iconKey: String
+  let leaveAt: Date
   let startAt: Date
   let endAt: Date
   let phase: CommanderProcedureVisualPhase
+  let departureDue: Bool
   let nextEvent: CommanderAlarmEventSnapshot?
   let nextEventLabel: String
 
   private struct ResolvedEvent {
     let snapshot: CommanderAlarmEventSnapshot
+    let leaveAt: Date
     let startAt: Date
     let endAt: Date
   }
@@ -971,22 +1052,36 @@ private struct CommanderProcedureDisplay {
   ) -> CommanderProcedureDisplay {
     let events = resolvedEvents(attributes: attributes, state: state)
     guard !events.isEmpty else {
+      let resolvedPhase = isStale ? CommanderProcedureVisualPhase.ended : phase(
+        at: date,
+        startAt: attributes.startAt,
+        endAt: attributes.endAt
+      )
       return CommanderProcedureDisplay(
         title: attributes.title,
         location: attributes.location,
         kind: attributes.kind,
         iconKey: attributes.iconKey,
+        leaveAt: attributes.leaveAt,
         startAt: attributes.startAt,
         endAt: attributes.endAt,
-        phase: isStale ? .ended : phase(at: date, startAt: attributes.startAt, endAt: attributes.endAt),
+        phase: resolvedPhase,
+        departureDue: resolvedPhase == .upcoming && date >= attributes.leaveAt,
         nextEvent: attributes.nextEvent,
         nextEventLabel: "Potom:"
       )
     }
 
     let primaryIndex: Int
-    if let activeIndex = events.firstIndex(where: { $0.startAt <= date && date < $0.endAt }) {
-      // When events overlap, keep the earlier still-running event as primary.
+    if let departureIndex = events.firstIndex(where: {
+      $0.leaveAt <= date && date < $0.startAt
+    }) {
+      // A later departure deadline is more actionable than an earlier event that is
+      // technically still running (for example breakfast while it is time to leave).
+      primaryIndex = departureIndex
+    } else if let activeIndex = events.firstIndex(where: {
+      $0.startAt <= date && date < $0.endAt
+    }) {
       primaryIndex = activeIndex
     } else if let upcomingIndex = events.firstIndex(where: { $0.startAt > date }) {
       primaryIndex = upcomingIndex
@@ -995,6 +1090,11 @@ private struct CommanderProcedureDisplay {
     }
 
     let primary = events[primaryIndex]
+    let resolvedPhase = isStale ? CommanderProcedureVisualPhase.ended : phase(
+      at: date,
+      startAt: primary.startAt,
+      endAt: primary.endAt
+    )
     let following = events.dropFirst(primaryIndex + 1).first(where: { $0.endAt > date })
     let followingIsActive = following.map { $0.startAt <= date && date < $0.endAt } ?? false
 
@@ -1003,9 +1103,11 @@ private struct CommanderProcedureDisplay {
       location: primary.snapshot.location,
       kind: primary.snapshot.kind,
       iconKey: primary.snapshot.iconKey,
+      leaveAt: primary.leaveAt,
       startAt: primary.startAt,
       endAt: primary.endAt,
-      phase: isStale ? .ended : phase(at: date, startAt: primary.startAt, endAt: primary.endAt),
+      phase: resolvedPhase,
+      departureDue: resolvedPhase == .upcoming && date >= primary.leaveAt,
       nextEvent: following?.snapshot,
       nextEventLabel: followingIsActive ? "Současně:" : "Potom:"
     )
@@ -1016,10 +1118,12 @@ private struct CommanderProcedureDisplay {
     state: CommanderProcedureLiveActivityAttributes.ContentState
   ) -> [Date] {
     let events = resolvedEvents(attributes: attributes, state: state)
-    let dates = events.flatMap { [$0.startAt, $0.endAt] }
+    let dates = events.flatMap { [$0.leaveAt, $0.startAt, $0.endAt] }
     if !dates.isEmpty { return Array(Set(dates)).sorted() }
-    var fallback = [attributes.startAt, attributes.endAt]
+
+    var fallback = [attributes.leaveAt, attributes.startAt, attributes.endAt]
     if let next = attributes.nextEvent {
+      if let leave = CommanderAlarmTime.startDate(from: next.leaveAt) { fallback.append(leave) }
       if let start = CommanderAlarmTime.startDate(from: next.startAt) { fallback.append(start) }
       if let end = CommanderAlarmTime.startDate(from: next.endAt) { fallback.append(end) }
     }
@@ -1048,10 +1152,16 @@ private struct CommanderProcedureDisplay {
     }
 
     return snapshots.compactMap { snapshot in
-      guard let startAt = CommanderAlarmTime.startDate(from: snapshot.startAt),
+      guard let leaveAt = CommanderAlarmTime.startDate(from: snapshot.leaveAt),
+            let startAt = CommanderAlarmTime.startDate(from: snapshot.startAt),
             let endAt = CommanderAlarmTime.startDate(from: snapshot.endAt)
       else { return nil }
-      return ResolvedEvent(snapshot: snapshot, startAt: startAt, endAt: endAt)
+      return ResolvedEvent(
+        snapshot: snapshot,
+        leaveAt: leaveAt,
+        startAt: startAt,
+        endAt: endAt
+      )
     }.sorted {
       if $0.startAt != $1.startAt { return $0.startAt < $1.startAt }
       return $0.snapshot.stableId < $1.snapshot.stableId
@@ -1069,7 +1179,7 @@ private struct CommanderProcedureDisplay {
   var status: String {
     switch phase {
     case .upcoming:
-      return "Následuje"
+      return departureDue ? "Čas vyrazit" : "Vyrazit za"
     case .active:
       return "Právě probíhá"
     case .ended:
@@ -1077,9 +1187,24 @@ private struct CommanderProcedureDisplay {
     }
   }
 
+  var countdownTarget: Date {
+    switch phase {
+    case .upcoming: return departureDue ? startAt : leaveAt
+    case .active, .ended: return endAt
+    }
+  }
+
+  var countdownLabel: String {
+    switch phase {
+    case .upcoming: return departureDue ? "Do začátku" : "Do odchodu"
+    case .active: return "Do konce"
+    case .ended: return ""
+    }
+  }
+
   var timeLabel: String {
     switch phase {
-    case .upcoming: return "Začátek"
+    case .upcoming: return departureDue ? "Začátek" : "Odchod"
     case .active, .ended: return "Konec"
     }
   }
@@ -1087,7 +1212,7 @@ private struct CommanderProcedureDisplay {
   var timeValue: String {
     switch phase {
     case .upcoming:
-      return startAt.formatted(date: .omitted, time: .shortened)
+      return (departureDue ? startAt : leaveAt).formatted(date: .omitted, time: .shortened)
     case .active, .ended:
       return endAt.formatted(date: .omitted, time: .shortened)
     }
@@ -1109,7 +1234,7 @@ private struct CommanderProcedurePhaseTiming: View {
     Group {
       switch display.phase {
       case .upcoming:
-        countdown(to: display.startAt, label: "Do začátku")
+        countdown(to: display.countdownTarget, label: display.countdownLabel)
       case .active:
         countdown(to: display.endAt, label: "Do konce")
       case .ended:

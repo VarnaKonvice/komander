@@ -141,3 +141,37 @@ The corrective rules are now:
 - visible procedure timers use `Text(timerInterval:pauseTime:countsDown:)` with `pauseTime == target`, so they clamp at zero and never reverse into elapsed-time counting.
 
 Current regression baseline after these fixes: **223 tests in 3 suites**.
+
+
+## 2026-09-26 evening — day-story architecture supersedes the one-window rule
+
+The earlier “one Commander activity anchored only to the first mandatory procedure” rule in this document is now historical. It was sufficient to prove scheduled creation, but it did not match the intended spa-day UX.
+
+The current production design is:
+
+- AlarmKit remains the only audible safety layer and still owns every canonical `leaveAt`.
+- Commander plans up to three nearest Live Activity windows in advance.
+- A window normally starts 60 minutes before its first event, or at an even earlier canonical `leaveAt`.
+- Meals may anchor windows exactly like procedures.
+- Events separated by at most two hours can stay in one window; a longer free gap creates a successor window.
+- Each window carries at most six events and remains within the 7 h 50 min activity budget.
+- A pending successor may exist while the current window is active; their planned active windows do not overlap.
+- UI progression is now `Vyrazit za → Čas vyrazit → Právě probíhá → Potom/Současně → Skončilo`.
+- If the next event reaches its `leaveAt` while the current event is still technically running, the next departure becomes the primary presentation.
+- Upcoming/active presentation uses the approved color of the concrete meal/procedure. The departure-due phase uses a dedicated urgent accent.
+- Lock Screen and expanded Dynamic Island expose the following event with title, start time and location where space permits.
+- The same Commander ActivityKit instance for a window remains the source for Lock Screen, Dynamic Island and Apple Watch replication.
+
+A long free interval can therefore end one Commander window and a later meal (for example dinner) can be pre-scheduled as a new window. This is intentional and replaces the earlier requirement of a single ActivityKit instance for the whole procedure portion of the day.
+
+### Known system boundary
+
+`staleDate` marks a Live Activity stale; it is not a precise future dismissal command. The coordinator can remove obsolete/stale instances whenever it receives foreground execution, but without push/background execution it cannot promise that an old finished card disappears from every system surface at the exact second a later scheduled window starts. The next physical E2E must observe this explicitly.
+
+### Programming gate after the evening change
+
+- Renderer revision: **5**.
+- Xcode app/extension/watch build number: **5**.
+- Swift suite: **225 tests in 3 suites passed**.
+- Production generic iOS build: passed after the multi-window and departure-phase changes.
+- No physical AlarmKit run was performed after this architecture change on 2026-09-26 evening; physical E2E is intentionally deferred to the next session.

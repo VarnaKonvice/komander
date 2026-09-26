@@ -3,35 +3,61 @@ import Foundation
 import Testing
 @testable import LazenskyCommanderCore
 
-@Test func liveActivityPlanAnchorsToFirstRemainingProcedureAndStaysInsideLifetimeBudget() throws {
+@Test func liveActivityPlanStartsAnHourBeforeBreakfastAndCarriesNearbyProcedure() throws {
   let schedule = try liveActivitySchedule()
   let payload = try NativeAlarmContract.payload(schedule: schedule)
-  let now = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T07:00:00")
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T05:30:00")
   let plan = try #require(CommanderLiveActivityPlan.make(schedule: schedule, payload: payload, now: now))
 
-  let expectedActivation = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T08:10:00")
-  let expectedWindowEnd = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T16:00:00")
-  #expect(plan.anchorStableID == "proc-morning")
+  let expectedActivation = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T06:30:00")
+  let expectedWindowEnd = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T08:40:00")
+  #expect(plan.anchorStableID == "meal-breakfast")
   #expect(plan.activationStart == expectedActivation)
   #expect(plan.windowEnd == expectedWindowEnd)
-  #expect(plan.includedStableIDs == ["proc-morning", "meal-lunch", "proc-afternoon"])
-  #expect(!plan.includedStableIDs.contains("meal-breakfast"))
-  #expect(!plan.includedStableIDs.contains("meal-dinner"))
+  #expect(plan.includedStableIDs == ["meal-breakfast", "proc-morning"])
 }
 
-@Test func liveActivityPlanFallsForwardToNextProcedureAfterEarlierOneEnds() throws {
+@Test func liveActivityPlanCreatesSuccessorWindowsAcrossLongFreeGaps() throws {
+  let schedule = try liveActivitySchedule()
+  let payload = try NativeAlarmContract.payload(schedule: schedule)
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T05:30:00")
+  let plans = CommanderLiveActivityPlan.makeWindows(schedule: schedule, payload: payload, now: now)
+
+  #expect(plans.map(\.anchorStableID) == [
+    "meal-breakfast", "meal-lunch", "meal-dinner"
+  ])
+  #expect(plans.map(\.includedStableIDs) == [
+    ["meal-breakfast", "proc-morning"],
+    ["meal-lunch", "proc-afternoon"],
+    ["meal-dinner"]
+  ])
+  let dinnerActivation = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T16:30:00")
+  #expect(plans[2].activationStart == dinnerActivation)
+}
+
+@Test func liveActivityPlanKeepsMorningAnchorWhileItsWindowIsStillRunning() throws {
+  let schedule = try liveActivitySchedule()
+  let payload = try NativeAlarmContract.payload(schedule: schedule)
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T07:50:00")
+  let plan = try #require(CommanderLiveActivityPlan.make(schedule: schedule, payload: payload, now: now))
+
+  #expect(plan.anchorStableID == "meal-breakfast")
+  #expect(plan.includedStableIDs == ["meal-breakfast", "proc-morning"])
+}
+
+@Test func liveActivityPlanFallsForwardAfterMorningWindowEnds() throws {
   let schedule = try liveActivitySchedule()
   let payload = try NativeAlarmContract.payload(schedule: schedule)
   let now = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T10:00:00")
   let plan = try #require(CommanderLiveActivityPlan.make(schedule: schedule, payload: payload, now: now))
 
-  let expectedActivation = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T14:20:00")
-  #expect(plan.anchorStableID == "proc-afternoon")
+  let expectedActivation = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T11:00:00")
+  #expect(plan.anchorStableID == "meal-lunch")
   #expect(plan.activationStart == expectedActivation)
-  #expect(plan.includedStableIDs == ["proc-afternoon", "meal-dinner"])
+  #expect(plan.includedStableIDs == ["meal-lunch", "proc-afternoon"])
 }
 
-@Test func liveActivityPlanDoesNotCreateMealOnlyActivity() throws {
+@Test func liveActivityPlanCreatesMealOnlyWindow() throws {
   let schedule = Schedule(
     schemaVersion: 1,
     scheduleVersion: 1,
@@ -48,18 +74,34 @@ import Testing
   )
   let payload = try NativeAlarmContract.payload(schedule: schedule)
   let now = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T09:00:00")
-
-  #expect(CommanderLiveActivityPlan.make(schedule: schedule, payload: payload, now: now) == nil)
-}
-
-@Test func liveActivityPlanUsesOverrideAdjustedCanonicalLeaveAt() throws {
-  let schedule = try liveActivitySchedule()
-  let overrides = LeadTimeOverrides(eventOverrides: ["proc-morning": 20])
-  let payload = try NativeAlarmContract.payload(schedule: schedule, overrides: overrides)
-  let now = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T07:00:00")
   let plan = try #require(CommanderLiveActivityPlan.make(schedule: schedule, payload: payload, now: now))
 
-  let expectedActivation = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T08:00:00")
+  let expectedActivation = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T11:00:00")
+  #expect(plan.anchorStableID == "meal-only")
+  #expect(plan.activationStart == expectedActivation)
+}
+
+@Test func liveActivityPlanStartsByEarlierOverrideAdjustedLeaveAt() throws {
+  let schedule = Schedule(
+    schemaVersion: 1,
+    scheduleVersion: 2,
+    updatedAt: "2026-09-26T00:00:00Z",
+    stay: [:],
+    events: [
+      ScheduleEvent(
+        stableId: "proc", date: "2026-09-26", start: "08:20", end: "08:40",
+        title: "Magnetoterapie", location: "Budova A", kind: .procedure,
+        procedureType: "Magnetoterapie", mealType: nil, leadTimeMinutes: nil
+      )
+    ],
+    settings: ScheduleSettings(defaultLeadTimeMinutes: 10, procedureTypeOverrides: [:], mealOverrides: [:])
+  )
+  let overrides = LeadTimeOverrides(eventOverrides: ["proc": 90])
+  let payload = try NativeAlarmContract.payload(schedule: schedule, overrides: overrides)
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T05:30:00")
+  let plan = try #require(CommanderLiveActivityPlan.make(schedule: schedule, payload: payload, now: now))
+
+  let expectedActivation = try NativeAlarmContract.date(fromLocalISO: "2026-09-26T06:50:00")
   #expect(plan.activationStart == expectedActivation)
 }
 

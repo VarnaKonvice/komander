@@ -90,7 +90,7 @@ enum CommanderPhysicalAcceptanceDiagnostics {
 }
 
 struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
-  static let currentRendererRevision = 4
+  static let currentRendererRevision = 5
 
   struct ContentState: Codable, Hashable {
     let scheduleVersion: Int
@@ -134,6 +134,7 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
   let title: String
   let location: String
   let kind: ScheduleKind
+  let activationStart: Date?
   let leaveAt: Date
   let startAt: Date
   let endAt: Date
@@ -147,6 +148,7 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
     title: String,
     location: String,
     kind: ScheduleKind,
+    activationStart: Date? = nil,
     leaveAt: Date,
     startAt: Date,
     endAt: Date,
@@ -159,6 +161,7 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
     self.title = title
     self.location = location
     self.kind = kind
+    self.activationStart = activationStart
     self.leaveAt = leaveAt
     self.startAt = startAt
     self.endAt = endAt
