@@ -215,7 +215,7 @@ private struct CommanderProcedureIslandCenter: View {
 
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
-      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: min(timeline.date, Date()))
+      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)
       Text(display.status)
         .font(.system(size: 13, weight: .bold))
         .foregroundStyle(CommanderActivityTokens.procedureStateAccent(phase: display.phase, eventAccent: .clear))
@@ -231,7 +231,7 @@ private struct CommanderProcedureIslandTiming: View {
 
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
-      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: min(timeline.date, Date()))
+      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)
       let eventAccent = CommanderActivityTokens.eventAccent(
         kind: display.kind,
         iconKey: display.iconKey,
@@ -255,7 +255,7 @@ private struct CommanderProcedureIslandBottom: View {
 
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
-      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: min(timeline.date, Date()))
+      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)
       CommanderExpandedEventBody(
         title: display.title, iconKey: display.iconKey, location: display.location,
         stateAccent: CommanderActivityTokens.procedureStateAccent(phase: display.phase, eventAccent: .clear)
@@ -271,7 +271,7 @@ private struct CommanderProcedureIslandArtwork: View {
 
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
-      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: min(timeline.date, Date()))
+      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)
       CommanderProcedureArtwork(iconKey: display.iconKey, title: display.title, size: 32)
     }
   }
@@ -326,7 +326,7 @@ private struct CommanderProcedureWatchLiveActivityView: View {
 
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
-      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: min(timeline.date, Date()))
+      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)
       CommanderSmartStackCard(
         status: display.status, title: display.title, iconKey: display.iconKey,
         startTime: display.startAt.formatted(date: .omitted, time: .shortened),
@@ -435,13 +435,26 @@ private struct CommanderExpandedEventBody<Clock: View>: View {
   }
 }
 
+private struct CommanderClampedCountdown: View {
+  let target: Date
+
+  var body: some View {
+    Text(
+      timerInterval: target.addingTimeInterval(-24 * 60 * 60)...target,
+      pauseTime: target,
+      countsDown: true,
+      showsHours: true
+    )
+  }
+}
+
 private struct CommanderPresentationClock: View {
   let display: CommanderProcedureDisplay
 
   @ViewBuilder var body: some View {
     switch display.phase {
-    case .upcoming: Text(display.startAt, style: .timer)
-    case .active: Text(display.endAt, style: .timer)
+    case .upcoming: CommanderClampedCountdown(target: display.startAt)
+    case .active: CommanderClampedCountdown(target: display.endAt)
     case .ended: Text("Skončilo")
     }
   }
@@ -492,7 +505,7 @@ private struct CommanderProcedureLockScreenView: View {
 
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
-      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: min(timeline.date, Date()))
+      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)
       let eventAccent = CommanderActivityTokens.eventAccent(
         kind: display.kind,
         iconKey: display.iconKey,
@@ -567,7 +580,7 @@ private struct CommanderAlarmHero: View {
               .font(.system(size: 11, weight: .semibold))
               .foregroundStyle(CommanderActivityTokens.textSecondary)
               .lineLimit(1)
-            Text(startDate, style: .timer)
+            CommanderClampedCountdown(target: startDate)
               .font(.system(size: 44, weight: .heavy, design: .rounded).monospacedDigit())
               .foregroundStyle(accent)
               .lineLimit(1)
@@ -607,13 +620,13 @@ private struct CommanderProcedureDisplayHero: View {
 
         switch display.phase {
         case .upcoming:
-          Text(display.startAt, style: .timer)
+          CommanderClampedCountdown(target: display.startAt)
             .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
             .foregroundStyle(accent)
             .lineLimit(1)
             .minimumScaleFactor(0.74)
         case .active:
-          Text(display.endAt, style: .timer)
+          CommanderClampedCountdown(target: display.endAt)
             .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
             .foregroundStyle(accent)
             .lineLimit(1)
@@ -667,7 +680,7 @@ private struct CommanderProcedureDisplaySideStatus: View {
           .font(.system(size: 11, weight: .semibold))
           .foregroundStyle(CommanderActivityTokens.textSecondary)
           .lineLimit(1)
-        Text(display.endAt, style: .timer)
+        CommanderClampedCountdown(target: display.endAt)
           .font(.system(size: 18, weight: .bold).monospacedDigit())
           .foregroundStyle(accent)
           .lineLimit(1)
@@ -1110,7 +1123,7 @@ private struct CommanderProcedurePhaseTiming: View {
           .foregroundStyle(CommanderActivityTokens.textSecondary)
           .lineLimit(1)
       }
-      Text(date, style: .timer)
+      CommanderClampedCountdown(target: date)
         .font(timingFont)
         .foregroundStyle(accent)
         .lineLimit(1)

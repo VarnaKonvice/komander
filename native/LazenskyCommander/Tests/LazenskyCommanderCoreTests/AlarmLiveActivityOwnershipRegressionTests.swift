@@ -74,7 +74,10 @@ import Testing
   #expect(live.contains("case .compact: return 54"))
   #expect(live.contains("Text(\"Skončilo\")"))
   #expect(live.contains("TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state)))"))
-  #expect(live.contains("CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: min(timeline.date, Date()))"))
+  #expect(live.contains("CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)"))
+  #expect(!live.contains("min(timeline.date, Date())"))
+  #expect(live.contains("private struct CommanderClampedCountdown"))
+  #expect(live.contains("pauseTime: target"))
   #expect(live.contains("return \"Následuje\""))
   #expect(live.contains("return \"Právě probíhá\""))
   #expect(live.contains("CommanderNextEventLine("))
@@ -119,8 +122,10 @@ import Testing
   #expect(coordinator.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
   #expect(coordinator.contains("alertConfiguration: alert"))
   #expect(coordinator.contains("start: plan.activationStart"))
-  #expect(coordinator.contains("keeper.activityState != .pending"))
+  #expect(coordinator.contains("if keeper.activityState == .pending"))
+  #expect(coordinator.contains("let pendingIsFresh ="))
   #expect(coordinator.contains("abs(keeper.attributes.leaveAt.timeIntervalSince(plan.activationStart)) <= 1"))
+  #expect(coordinator.contains("keeper.content.state.events == plannedSnapshots"))
   #expect(!coordinator.contains("relevanceScores"))
 }
 
@@ -177,6 +182,10 @@ import Testing
   #expect(physical.contains("try await liveActivityPrimer.prepare()"))
   #expect(physical.contains("guard await liveActivityPrimer.confirmAndClear()"))
   #expect(physical.contains("Potvrdit povolení a spustit test"))
+  #expect(physical.contains("clearAllPhysicalAcceptanceActivities()"))
+  #expect(physical.contains("await liveActivityPrimer.clearAllPhysicalAcceptanceActivities()"))
+  #expect(physical.contains("--cleanup-only"))
+  #expect(physical.contains("ÚKLID HOTOV – žádné testovací alarmy ani Live Activities."))
 }
 
 @Test func commanderContextHasNoPostStopGapAndStaleFallsForwardToNextEvent() throws {
@@ -198,7 +207,9 @@ import Testing
   #expect(coordinator.contains("staleDate: Self.staleDate(for: state.events, activationStart:"))
   #expect(coordinator.contains("CommanderAlarmEventSnapshot("))
   #expect(live.contains("TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state)))"))
-  #expect(live.contains("CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: min(timeline.date, Date()))"))
+  #expect(live.contains("CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)"))
+  #expect(!live.contains("Text(display.startAt, style: .timer)"))
+  #expect(!live.contains("Text(display.endAt, style: .timer)"))
   #expect(live.contains("if state.events.isEmpty"))
   #expect(live.contains("events.firstIndex(where: { $0.startAt <= date && date < $0.endAt })"))
   #expect(live.contains("events.dropFirst(primaryIndex + 1).first(where: { $0.endAt > date })"))
@@ -211,6 +222,27 @@ import Testing
   #expect(!live.contains("CommanderProcedureHero"))
   #expect(!live.contains("CommanderProcedureStaticStart"))
   #expect(!live.contains("CommanderProcedureText"))
+}
+
+@Test func liveActivityBuildRevisionIsBumpedForFreshExtensionInstall() throws {
+  let repo = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent().deletingLastPathComponent()
+    .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+  let project = try String(
+    contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj/project.pbxproj"),
+    encoding: .utf8
+  )
+  let appInfo = try String(
+    contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp/Info.plist"),
+    encoding: .utf8
+  )
+
+  #expect(!project.contains("CURRENT_PROJECT_VERSION = 1;"))
+  #expect(!project.contains("CURRENT_PROJECT_VERSION = \"1\";"))
+  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = 2;").count - 1 == 8)
+  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = \"2\";").count - 1 == 4)
+  #expect(appInfo.contains("<string>$(MARKETING_VERSION)</string>"))
+  #expect(appInfo.contains("<string>$(CURRENT_PROJECT_VERSION)</string>"))
 }
 
 @Test func commanderUsesOverrideAdjustedLeaveAtLikeAlarmKitAndWatch() throws {

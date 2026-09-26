@@ -154,6 +154,13 @@ private actor PhysicalAcceptanceLiveActivityPrimer {
     }
   }
 
+  func clearAllPhysicalAcceptanceActivities() async {
+    for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
+      where activity.attributes.stableId.hasPrefix(PhysicalAcceptanceRun.stableIDPrefix) {
+      await activity.end(nil, dismissalPolicy: .immediate)
+    }
+  }
+
   private static func localISO(_ date: Date) -> String {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "en_US_POSIX")
@@ -217,6 +224,27 @@ final class PhysicalAcceptanceModel: ObservableObject {
     if liveActivitiesPrimed { return "Spustit fyzický test" }
     if permissionProbeRequested { return "Potvrdit povolení a spustit test" }
     return "Připravit Live Activities"
+  }
+
+  func cleanupOnly() {
+    guard !isBusy else { return }
+    isBusy = true
+    error = nil
+    Task {
+      do {
+        await liveActivityPrimer.clearAllPhysicalAcceptanceActivities()
+        try await AlarmKitAdapter.clearPreviousPhysicalAcceptance(ownership: ownership)
+        run = nil
+        preflight = nil
+        observations = []
+        preparedCommanderStableIDs = []
+        readyCommanderStableIDs = []
+        status = "ÚKLID HOTOV – žádné testovací alarmy ani Live Activities."
+      } catch {
+        self.error = error.localizedDescription
+      }
+      isBusy = false
+    }
   }
 
   func startVisualProbe() {
@@ -351,6 +379,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
       guard ActivityAuthorizationInfo().areActivitiesEnabled else {
         throw AlarmAdapterError.unavailable("Živé aktivity nejsou povolené pro Commander Test.")
       }
+      await liveActivityPrimer.clearAllPhysicalAcceptanceActivities()
       try await AlarmKitAdapter.clearPreviousPhysicalAcceptance(ownership: ownership)
       let run = try PhysicalAcceptanceRun(now: Date(), id: runID)
       self.run = run
@@ -671,7 +700,9 @@ struct PhysicalAcceptanceApp: App {
       PhysicalAcceptanceView(model: model)
         .preferredColorScheme(.dark)
         .task {
-          if ProcessInfo.processInfo.arguments.contains("--scheduled-probe") {
+          if ProcessInfo.processInfo.arguments.contains("--cleanup-only") {
+            model.cleanupOnly()
+          } else if ProcessInfo.processInfo.arguments.contains("--scheduled-probe") {
             model.startScheduledProbe()
           } else if ProcessInfo.processInfo.arguments.contains("--visual-probe") {
             model.startVisualProbe()

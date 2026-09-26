@@ -92,17 +92,31 @@ actor CommanderProcedureLiveActivityCoordinator {
       return
     }
 
+    let candidateByID = Dictionary(uniqueKeysWithValues: raw.map { ($0.event.stableId, $0) })
+    let plannedQueue = plan.includedStableIDs.compactMap { candidateByID[$0] }
+    let plannedSnapshots = plannedQueue.map(Self.snapshot)
+
     if let keeper = existing.first {
-      let pendingMatchesPlan =
-        keeper.activityState != .pending ||
-        (
+      if keeper.activityState == .pending {
+        let pendingIsFresh =
           keeper.attributes.stableId == plan.anchorStableID &&
           keeper.attributes.scheduleVersion == schedule.scheduleVersion &&
           abs(keeper.attributes.leaveAt.timeIntervalSince(plan.activationStart)) <= 1 &&
-          keeper.content.state.projectionRevision == max(0, projectionRevision)
-        )
+          keeper.content.state.scheduleVersion == schedule.scheduleVersion &&
+          keeper.content.state.projectionRevision == max(0, projectionRevision) &&
+          keeper.content.state.events == plannedSnapshots
 
-      if pendingMatchesPlan {
+        if pendingIsFresh {
+          for duplicate in existing.dropFirst() {
+            await duplicate.end(nil, dismissalPolicy: .immediate)
+          }
+          return
+        }
+
+        for activity in existing {
+          await activity.end(nil, dismissalPolicy: .immediate)
+        }
+      } else {
         let activationStart = keeper.attributes.leaveAt
         let queue = Self.queue(from: raw, activationStart: activationStart, now: now)
         if !queue.isEmpty {
@@ -123,10 +137,10 @@ actor CommanderProcedureLiveActivityCoordinator {
           }
           return
         }
-      }
 
-      for activity in existing {
-        await activity.end(nil, dismissalPolicy: .immediate)
+        for activity in existing {
+          await activity.end(nil, dismissalPolicy: .immediate)
+        }
       }
     }
 

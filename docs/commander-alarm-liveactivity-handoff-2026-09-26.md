@@ -117,3 +117,27 @@ Physical Acceptance READY now requires a real Commander activity to be present a
 - On the booted iPhone 16 simulator, the dedicated scheduled probe transitioned from `.pending` to `.active` without a Stop intent or foreground `Activity.request` at activation time. The diagnostic timeline recorded pending from 16:38:40 through 16:38:51 and active at 16:38:52 for an Activity scheduled at 16:38:48. Simulator timing is not a physical-device PASS, but it proves the new scheduled-start code path executes as designed.
 
 No further full two-alarm physical run should be requested until this architecture is committed and the final targeted physical proof is ready.
+
+## 2026-09-26 physical scheduled-start evidence and follow-up fix
+
+The later physical run proved the scheduled architecture itself on real hardware:
+
+- the Commander activity existed before Stop,
+- after the AlarmKit alert was stopped, the Live Activity remained visible,
+- Lock Screen, Dynamic Island and Apple Watch all showed the same activity,
+- the activity later reached an active-procedure presentation.
+
+Two presentation defects were visible in the captured screenshots:
+
+1. the installed Live Activity extension rendered an older copy (`Začíná za`), even though that string was no longer present in the current source;
+2. timer-style text crossed zero and began counting upward, while the visual phase lagged behind the event boundary.
+
+The corrective rules are now:
+
+- host app and every extension/watch target use build **2**; the main app Info.plist now inherits `$(CURRENT_PROJECT_VERSION)` instead of hard-coding build 1,
+- Physical Acceptance clears every old `physicalAcceptance.*` Live Activity before a new run and has a dedicated `--cleanup-only` mode,
+- pending scheduled activities are treated as immutable snapshots: if the planned event queue differs, the pending activity is ended and recreated instead of relying on an update,
+- phase resolution uses `TimelineView.Context.date` directly at explicit start/end boundaries; the former `min(timeline.date, Date())` cap is forbidden,
+- visible procedure timers use `Text(timerInterval:pauseTime:countsDown:)` with `pauseTime == target`, so they clamp at zero and never reverse into elapsed-time counting.
+
+Current regression baseline after these fixes: **223 tests in 3 suites**.
