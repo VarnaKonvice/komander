@@ -200,3 +200,24 @@ Blokující `error` nelze potvrzením warningu obejít. Stav `ROZPIS OVĚŘEN` m
 - 0 blokujících chybách,
 - 0 nepotvrzených warningech,
 - přesné source-to-canonical reconciliaci.
+
+## Zdrojový ledger po dnech
+
+Pro bezpečné částečné změny a prodloužení pobytu je přidán `CommanderScheduleSourceLedger`.
+
+Princip:
+
+- každý den pobytu může mít svůj ověřovací záznam,
+- záznam obsahuje zdrojovou revizi, hashe zdrojových souborů a SHA-256 kanonického obsahu daného dne,
+- při nové verzi rozpisu se automaticky přenesou jen dny, jejichž kanonický SHA-256 zůstal beze změny,
+- deklarovaný rozsah nového náhradního papíru se vždy invaliduje, i kdyby výsledná data vypadala stejně; nový papír je pro tento rozsah nový autoritativní zdroj,
+- při prodloužení pobytu zůstávají staré ověřené dny zachované a nové dny jsou neověřené, dokud nepřijde a neprojde nový papír,
+- finální stav `verified` vyžaduje také důkaz zdrojového souboru (alespoň jeden hash) pro každý den.
+
+`CommanderScheduleAcceptanceGate` nyní spojuje:
+
+1. blokující strukturální chyby,
+2. nepotvrzená varování,
+3. úplnost source-to-canonical ověření po dnech.
+
+Výsledné stavy jsou `blocked`, `reviewRequired`, `sourceVerificationRequired`, `verified`. Potvrzení varování tedy samo o sobě nikdy nestačí k označení rozpisu jako plně ověřeného proti papíru.
