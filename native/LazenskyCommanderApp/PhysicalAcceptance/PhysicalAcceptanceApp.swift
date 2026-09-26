@@ -478,7 +478,7 @@ struct PhysicalAcceptanceView: View {
                 .padding(.vertical, 4)
               }
             }
-            Text("Sled: Odchod za → alarm → Zastavit → Commander ZAČÍNÁ ZA → v startu PRÁVĚ… → po konci DALŠÍ / Skončilo; stejně pro druhou událost.")
+            Text("Sled: Odchod → alarm → Zastavit → Commander NÁSLEDUJE → v startu PRÁVĚ PROBÍHÁ → po konci POTOM / Skončilo; stejně pro druhou událost.")
               .font(.footnote)
               .foregroundStyle(.secondary)
           } else {

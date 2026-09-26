@@ -199,7 +199,7 @@ import Testing
   }
   #expect(source.contains("CommanderSynchronizationRequestQueue"))
   #expect(source.contains("AlarmManager.shared.alarmUpdates"))
-  #expect(source.contains("Commander ZAČÍNÁ ZA → v startu PRÁVĚ… → po konci DALŠÍ / Skončilo"))
+  #expect(source.contains("Commander NÁSLEDUJE → v startu PRÁVĚ PROBÍHÁ → po konci POTOM / Skončilo"))
 
   let adapter = try String(contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp/AlarmKitAdapter.swift"), encoding: .utf8)
   let coordinator = try String(contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp/CommanderProcedureLiveActivityCoordinator.swift"), encoding: .utf8)

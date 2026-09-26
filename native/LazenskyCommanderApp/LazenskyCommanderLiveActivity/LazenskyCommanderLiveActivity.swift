@@ -958,7 +958,7 @@ private struct CommanderProcedureDisplay {
         endAt: attributes.endAt,
         phase: phase(at: date, startAt: attributes.startAt, endAt: attributes.endAt),
         nextEvent: attributes.nextEvent,
-        nextEventLabel: "Další:"
+        nextEventLabel: "Potom:"
       )
     }
 
@@ -985,7 +985,7 @@ private struct CommanderProcedureDisplay {
       endAt: primary.endAt,
       phase: phase(at: date, startAt: primary.startAt, endAt: primary.endAt),
       nextEvent: following?.snapshot,
-      nextEventLabel: followingIsActive ? "Současně:" : "Další:"
+      nextEventLabel: followingIsActive ? "Současně:" : "Potom:"
     )
   }
 
@@ -1047,11 +1047,11 @@ private struct CommanderProcedureDisplay {
   var status: String {
     switch phase {
     case .upcoming:
-      return "Začíná za"
+      return "Následuje"
     case .active:
-      return kind == .meal ? "Právě jídlo" : "Právě probíhá"
+      return "Právě probíhá"
     case .ended:
-      return kind == .meal ? "Jídlo skončilo" : "Procedura skončila"
+      return "Skončilo"
     }
   }
 
@@ -1087,7 +1087,7 @@ private struct CommanderProcedurePhaseTiming: View {
     Group {
       switch display.phase {
       case .upcoming:
-        countdown(to: display.startAt, label: "Začíná za")
+        countdown(to: display.startAt, label: "Do začátku")
       case .active:
         countdown(to: display.endAt, label: "Do konce")
       case .ended:
