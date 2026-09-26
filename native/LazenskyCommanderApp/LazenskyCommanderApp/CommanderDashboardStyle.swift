@@ -317,107 +317,16 @@ extension EnvironmentValues {
   }
 }
 
-private struct CommanderScheduleAuditAcknowledgementsEnvironmentKey: EnvironmentKey {
-  static let defaultValue: [CommanderScheduleAuditAcknowledgement] = []
-}
-
-extension EnvironmentValues {
-  var commanderScheduleAuditAcknowledgements: [CommanderScheduleAuditAcknowledgement] {
-    get { self[CommanderScheduleAuditAcknowledgementsEnvironmentKey.self] }
-    set { self[CommanderScheduleAuditAcknowledgementsEnvironmentKey.self] = newValue }
-  }
-}
-
-struct CommanderScheduleAuditStatusPill: View {
-  let schedule: Schedule?
-  @Environment(\.commanderScheduleAuditAcknowledgements) private var acknowledgements
-
-  private var status: (title: String, symbol: String, color: Color) {
-    guard let schedule else {
-      return ("Nenahrán", "questionmark.circle.fill", CommanderDesignTokens.Colors.textSecondary)
-    }
-    let report = CommanderScheduleAudit.run(schedule, policy: .petrSpaOperational)
-    let review = CommanderScheduleAuditReview.resolve(
-      report: report,
-      acknowledgements: acknowledgements
-    )
-    if !review.errors.isEmpty {
-      let errors = review.errors.count
-      return (errors == 1 ? "1 chyba" : "\(errors) chyb", "exclamationmark.octagon.fill", CommanderDesignTokens.Colors.criticalRed)
-    }
-    if !review.openWarnings.isEmpty {
-      let warnings = review.openWarnings.count
-      return (warnings == 1 ? "1 kontrola" : "\(warnings) kontroly", "exclamationmark.triangle.fill", CommanderDesignTokens.Colors.urgentOrange)
-    }
-    return ("Zkontrolováno", "checkmark.circle.fill", CommanderDesignTokens.Colors.mealGreen)
-  }
-
-  var body: some View {
-    let status = status
-    VStack(alignment: .trailing, spacing: 1) {
-      Text("ROZPIS")
-        .font(.system(size: 10, weight: .bold))
-        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary.opacity(0.82))
-      HStack(spacing: 4) {
-        Image(systemName: status.symbol)
-          .font(.system(size: 14, weight: .bold))
-          .foregroundStyle(status.color)
-        Text(status.title)
-          .font(.system(size: 13, weight: .bold))
-          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-          .lineLimit(1)
-          .minimumScaleFactor(0.75)
-      }
-    }
-    .padding(.horizontal, 11)
-    .padding(.vertical, 7)
-    .frame(width: 120)
-    .background {
-      RoundedRectangle(cornerRadius: 11, style: .continuous)
-        .fill(
-          LinearGradient(
-            colors: [
-              Color(commanderHex: "#234E8E"),
-              Color(commanderHex: "#192C5B"),
-              Color(commanderHex: "#0E1530")
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-          )
-        )
-    }
-    .overlay {
-      RoundedRectangle(cornerRadius: 11, style: .continuous)
-        .strokeBorder(status.color.opacity(0.58), lineWidth: 0.85)
-    }
-    .shadow(color: status.color.opacity(0.12), radius: 1.0)
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel("Rozpis, \(status.title)")
-  }
-}
-
 struct CommanderPinnedTabHeader: View {
   let title: String
   let subtitle: String
   let schedule: Schedule?
-  @Environment(\.commanderOpenScheduleAudit) private var openScheduleAudit
 
   var body: some View {
     VStack(spacing: 8) {
       CommanderGlassHeader(tab: "", showsTabPill: false)
-
-      HStack(alignment: .center, spacing: 10) {
-        CommanderScreenHeading(title: title, subtitle: subtitle)
-          .frame(maxWidth: .infinity, alignment: .leading)
-
-        Button {
-          openScheduleAudit()
-        } label: {
-          CommanderScheduleAuditStatusPill(schedule: schedule)
-        }
-        .buttonStyle(.plain)
-        .accessibilityHint("Otevře kontrolu rozpisu")
-      }
+      CommanderScreenHeading(title: title, subtitle: subtitle)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
     .padding(.horizontal, CommanderDesignTokens.Spacing.page)
     .padding(.top, CommanderDesignTokens.Spacing.scrollTop)

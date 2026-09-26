@@ -108,8 +108,26 @@ struct CommanderEventRow: View {
     .overlay {
       if isCurrent {
         RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
-          .strokeBorder(Color.white.opacity(0.88), lineWidth: 1.2)
-          .blendMode(.plusLighter)
+          .strokeBorder(
+            LinearGradient(
+              colors: [rowAccent.opacity(0.96), Color.white.opacity(0.72), rowAccent.opacity(0.82)],
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            ),
+            lineWidth: 1.6
+          )
+          .shadow(color: rowAccent.opacity(0.28), radius: 2.4)
+          .allowsHitTesting(false)
+      }
+    }
+    .overlay(alignment: .leading) {
+      if isCurrent {
+        Capsule()
+          .fill(rowAccent)
+          .frame(width: 4)
+          .padding(.vertical, 11)
+          .offset(x: 3)
+          .shadow(color: rowAccent.opacity(0.38), radius: 2)
           .allowsHitTesting(false)
       }
     }

@@ -1,3 +1,4 @@
+import LazenskyCommanderCore
 import SwiftUI
 
 struct CommanderAppTabs: View {
@@ -11,6 +12,32 @@ struct CommanderAppTabs: View {
     self.model = model
     _selectedTab = State(initialValue: Self.previewTabIndex())
 
+  }
+
+  private enum AuditAttention {
+    case none
+    case warning
+    case error
+
+    var color: Color? {
+      switch self {
+      case .none: nil
+      case .warning: CommanderDesignTokens.Colors.urgentOrange
+      case .error: CommanderDesignTokens.Colors.criticalRed
+      }
+    }
+  }
+
+  private var auditAttention: AuditAttention {
+    guard let schedule = model.latestSchedule else { return .none }
+    let report = CommanderScheduleAudit.run(schedule, policy: .petrSpaOperational)
+    let review = CommanderScheduleAuditReview.resolve(
+      report: report,
+      acknowledgements: model.scheduleAuditAcknowledgements
+    )
+    if !review.errors.isEmpty { return .error }
+    if !review.openWarnings.isEmpty { return .warning }
+    return .none
   }
 
   private static func previewTabIndex() -> Int {
@@ -82,13 +109,16 @@ struct CommanderAppTabs: View {
         }
       }
 
-      CommanderNeonTabBar(selection: Binding(
-        get: { selectedTab },
-        set: { newSelection in
-          isScheduleAuditPresented = false
-          selectedTab = newSelection
-        }
-      ))
+      CommanderNeonTabBar(
+        selection: Binding(
+          get: { isScheduleAuditPresented ? 4 : selectedTab },
+          set: { newSelection in
+            isScheduleAuditPresented = false
+            selectedTab = newSelection
+          }
+        ),
+        settingsAttentionColor: auditAttention.color
+      )
         .padding(.horizontal, CommanderDesignTokens.Spacing.page)
         .padding(.top, 5)
         .padding(.bottom, 5)
@@ -99,7 +129,6 @@ struct CommanderAppTabs: View {
     .environment(\.commanderOpenScheduleAudit, CommanderOpenScheduleAuditAction(open: {
       isScheduleAuditPresented = true
     }))
-    .environment(\.commanderScheduleAuditAcknowledgements, model.scheduleAuditAcknowledgements)
     .task {
       await renewal.refresh()
     }
@@ -113,6 +142,7 @@ struct CommanderAppTabs: View {
 
 private struct CommanderNeonTabBar: View {
   @Binding var selection: Int
+  let settingsAttentionColor: Color?
 
   private let items: [(String, String)] = [
     ("Dnes", "sun.max.fill"),
@@ -129,29 +159,60 @@ private struct CommanderNeonTabBar: View {
           selection = index
         } label: {
           VStack(spacing: 2) {
-            Image(systemName: item.1)
-              .font(.system(size: 24, weight: .semibold))
+            ZStack(alignment: .topTrailing) {
+              Image(systemName: item.1)
+                .font(.system(size: 24, weight: .semibold))
+              if index == 4, let attention = settingsAttentionColor {
+                Circle()
+                  .fill(attention)
+                  .frame(width: 9, height: 9)
+                  .overlay(Circle().strokeBorder(Color.white.opacity(0.78), lineWidth: 0.7))
+                  .offset(x: 5, y: -3)
+                  .accessibilityHidden(true)
+              }
+            }
             Text(item.0)
               .font(.system(size: 12, weight: selection == index ? .bold : .semibold))
               .lineLimit(1)
               .minimumScaleFactor(0.82)
           }
-          .foregroundStyle(selection == index
-            ? CommanderDesignTokens.Colors.textPrimary
-            : CommanderDesignTokens.Colors.textSecondary)
+          .foregroundStyle(
+            index == 4 && settingsAttentionColor != nil && selection != index
+              ? settingsAttentionColor!
+              : selection == index
+                ? CommanderDesignTokens.Colors.textPrimary
+                : CommanderDesignTokens.Colors.textSecondary
+          )
           .frame(maxWidth: .infinity, minHeight: 54)
           .contentShape(Rectangle())
           .background {
-            if selection == index {
+            if selection == index || (index == 4 && settingsAttentionColor != nil) {
               RoundedRectangle(cornerRadius: 17, style: .continuous)
-                .fill(LinearGradient(
-                  colors: [Color(commanderHex: "#2D347A"), Color(commanderHex: "#17305F")],
-                  startPoint: .topLeading, endPoint: .bottomTrailing
-                ))
+                .fill(
+                  index == 4 && settingsAttentionColor != nil && selection != index
+                    ? LinearGradient(
+                        colors: [settingsAttentionColor!.opacity(0.18), Color(commanderHex: "#17305F").opacity(0.92)],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                      )
+                    : LinearGradient(
+                        colors: [Color(commanderHex: "#2D347A"), Color(commanderHex: "#17305F")],
+                        startPoint: .topLeading, endPoint: .bottomTrailing
+                      )
+                )
                 .overlay {
                   RoundedRectangle(cornerRadius: 17, style: .continuous)
-                     .strokeBorder(CommanderDesignTokens.Colors.primaryPurple.opacity(0.52), lineWidth: 1.0)
-                    .shadow(color: CommanderDesignTokens.Colors.primaryPurple.opacity(0.18), radius: 1.0)
+                    .strokeBorder(
+                      index == 4 && settingsAttentionColor != nil
+                        ? settingsAttentionColor!.opacity(selection == index ? 0.78 : 0.62)
+                        : CommanderDesignTokens.Colors.primaryPurple.opacity(0.52),
+                      lineWidth: 1.0
+                    )
+                    .shadow(
+                      color: index == 4 && settingsAttentionColor != nil
+                        ? settingsAttentionColor!.opacity(0.18)
+                        : CommanderDesignTokens.Colors.primaryPurple.opacity(0.18),
+                      radius: 1.0
+                    )
                     .allowsHitTesting(false)
                 }
             }
