@@ -4,6 +4,7 @@ struct CommanderAppTabs: View {
   @ObservedObject var model: CommanderViewModel
   @StateObject private var renewal = CommanderProvisioningRenewal()
   @State private var selectedTab: Int
+  @State private var isScheduleAuditPresented = false
   @Environment(\.scenePhase) private var scenePhase
 
   init(model: CommanderViewModel) {
@@ -43,33 +44,51 @@ struct CommanderAppTabs: View {
 
   private var appContent: some View {
     VStack(spacing: 0) {
-      TabView(selection: $selectedTab) {
-        NavigationStack { CommanderDashboardView(model: model) }
-          .tabItem { Label("Dnes", systemImage: "sun.max") }
-          .toolbar(.hidden, for: .tabBar)
-          .tag(0)
-        NavigationStack { CommanderWeekView(model: model) }
-          .tabItem { Label("Týden", systemImage: "calendar") }
-          .toolbar(.hidden, for: .tabBar)
-          .tag(1)
-        NavigationStack { CommanderStayView(model: model) }
-          .tabItem { Label("Pobyt", systemImage: "bed.double") }
-          .toolbar(.hidden, for: .tabBar)
-          .tag(2)
-        NavigationStack { CommanderInfoView(model: model) }
-          .tabItem { Label("Info", systemImage: "info.circle") }
-          .toolbar(.hidden, for: .tabBar)
-          .tag(3)
-        NavigationStack { CommanderSettingsView(model: model) }
-          .tabItem { Label("Nastavení", systemImage: "gearshape") }
-          .toolbar(.hidden, for: .tabBar)
-          .tag(4)
-      }
-      .toolbar(.hidden, for: .tabBar)
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .clipped()
+      ZStack {
+        TabView(selection: $selectedTab) {
+          NavigationStack { CommanderDashboardView(model: model) }
+            .tabItem { Label("Dnes", systemImage: "sun.max") }
+            .toolbar(.hidden, for: .tabBar)
+            .tag(0)
+          NavigationStack { CommanderWeekView(model: model) }
+            .tabItem { Label("Týden", systemImage: "calendar") }
+            .toolbar(.hidden, for: .tabBar)
+            .tag(1)
+          NavigationStack { CommanderStayView(model: model) }
+            .tabItem { Label("Pobyt", systemImage: "bed.double") }
+            .toolbar(.hidden, for: .tabBar)
+            .tag(2)
+          NavigationStack { CommanderInfoView(model: model) }
+            .tabItem { Label("Info", systemImage: "info.circle") }
+            .toolbar(.hidden, for: .tabBar)
+            .tag(3)
+          NavigationStack { CommanderSettingsView(model: model) }
+            .tabItem { Label("Nastavení", systemImage: "gearshape") }
+            .toolbar(.hidden, for: .tabBar)
+            .tag(4)
+        }
+        .toolbar(.hidden, for: .tabBar)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
 
-      CommanderNeonTabBar(selection: $selectedTab)
+        if isScheduleAuditPresented {
+          NavigationStack {
+            CommanderScheduleAuditView(
+              schedule: model.latestSchedule,
+              onClose: { isScheduleAuditPresented = false }
+            )
+          }
+          .zIndex(10)
+        }
+      }
+
+      CommanderNeonTabBar(selection: Binding(
+        get: { selectedTab },
+        set: { newSelection in
+          isScheduleAuditPresented = false
+          selectedTab = newSelection
+        }
+      ))
         .padding(.horizontal, CommanderDesignTokens.Spacing.page)
         .padding(.top, 5)
         .padding(.bottom, 5)
@@ -77,6 +96,9 @@ struct CommanderAppTabs: View {
     .background(CommanderDepthBackground().ignoresSafeArea())
     .tint(CommanderDashboardPalette.commanderPurpleLight)
     .environmentObject(renewal)
+    .environment(\.commanderOpenScheduleAudit, CommanderOpenScheduleAuditAction(open: {
+      isScheduleAuditPresented = true
+    }))
     .task {
       await renewal.refresh()
     }

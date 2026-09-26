@@ -298,6 +298,25 @@ struct CommanderGlassHeader: View {
   }
 }
 
+struct CommanderOpenScheduleAuditAction: @unchecked Sendable {
+  let open: () -> Void
+
+  func callAsFunction() {
+    open()
+  }
+}
+
+private struct CommanderOpenScheduleAuditEnvironmentKey: EnvironmentKey {
+  static let defaultValue = CommanderOpenScheduleAuditAction(open: {})
+}
+
+extension EnvironmentValues {
+  var commanderOpenScheduleAudit: CommanderOpenScheduleAuditAction {
+    get { self[CommanderOpenScheduleAuditEnvironmentKey.self] }
+    set { self[CommanderOpenScheduleAuditEnvironmentKey.self] = newValue }
+  }
+}
+
 struct CommanderScheduleAuditStatusPill: View {
   let schedule: Schedule?
 
@@ -365,6 +384,7 @@ struct CommanderPinnedTabHeader: View {
   let title: String
   let subtitle: String
   let schedule: Schedule?
+  @Environment(\.commanderOpenScheduleAudit) private var openScheduleAudit
 
   var body: some View {
     VStack(spacing: 8) {
@@ -374,8 +394,8 @@ struct CommanderPinnedTabHeader: View {
         CommanderScreenHeading(title: title, subtitle: subtitle)
           .frame(maxWidth: .infinity, alignment: .leading)
 
-        NavigationLink {
-          CommanderScheduleAuditView(schedule: schedule)
+        Button {
+          openScheduleAudit()
         } label: {
           CommanderScheduleAuditStatusPill(schedule: schedule)
         }

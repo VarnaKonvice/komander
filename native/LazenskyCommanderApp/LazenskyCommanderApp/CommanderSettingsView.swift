@@ -61,6 +61,7 @@ struct CommanderSettingsView: View {
 
 struct CommanderScheduleAuditView: View {
   let schedule: Schedule?
+  let onClose: () -> Void
 
   private var report: CommanderScheduleAuditReport? {
     schedule.map { CommanderScheduleAudit.run($0, policy: .petrSpaOperational) }
@@ -100,6 +101,17 @@ struct CommanderScheduleAuditView: View {
     .toolbar(.visible, for: .navigationBar)
     .navigationTitle("Kontrola rozpisu")
     .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .topBarLeading) {
+        Button {
+          onClose()
+        } label: {
+          Image(systemName: "chevron.left")
+            .font(.system(size: 17, weight: .bold))
+        }
+        .accessibilityLabel("Zpět")
+      }
+    }
   }
 
   private func statusCard(_ report: CommanderScheduleAuditReport) -> some View {
@@ -255,6 +267,7 @@ private struct CommanderSettingsAttentionCard: View {
 
 private struct CommanderScheduleSettingsCard: View {
   @ObservedObject var model: CommanderViewModel
+  @Environment(\.commanderOpenScheduleAudit) private var openScheduleAudit
 
   private var needsAlarmPermission: Bool {
     model.accessStatus.contains("not been requested") || model.accessStatus.contains("denied")
@@ -266,8 +279,8 @@ private struct CommanderScheduleSettingsCard: View {
       symbol: "calendar",
       accent: CommanderDesignTokens.Colors.locationBlue
     ) {
-      NavigationLink {
-        CommanderScheduleAuditView(schedule: model.latestSchedule)
+      Button {
+        openScheduleAudit()
       } label: {
         CommanderNavigationRow(
           title: "Kontrola rozpisu",
