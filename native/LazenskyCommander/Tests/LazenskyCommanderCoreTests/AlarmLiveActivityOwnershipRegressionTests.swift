@@ -51,6 +51,7 @@ import Testing
 
   #expect(adapter.contains("countdownDuration: Alarm.CountdownDuration("))
   #expect(adapter.contains("preAlert: countdownPlan.countdownWindow"))
+  #expect(adapter.contains("LocalizedStringResource(stringLiteral: \"Odchod · \\(alarm.title)\")"))
   #expect(adapter.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
   #expect(adapter.contains("private actor CommanderAlarmStopHandoffGate"))
   #expect(adapter.contains("await CommanderAlarmStopHandoffGate.shared.run"))
@@ -70,6 +71,11 @@ import Testing
   #expect(adapter.contains("nextEventSnapshot(after: alarm"))
 
   #expect(live.contains("CommanderAlarmIslandCountdown(mode: context.state.mode, size: .minimal)"))
+  #expect(live.contains("Text(context.state.mode.isAlert ? \"Čas vyrazit\" : \"Odchod\")"))
+  #expect(live.contains("Text(mode.isAlert ? \"Čas vyrazit\" : \"Odchod\")"))
+  #expect(live.contains("Image(systemName: \"figure.walk\")"))
+  #expect(live.contains("nextEventLabel: \"Potom:\""))
+  #expect(!live.contains("CommanderAlarmSideStatus"))
   #expect(live.contains("CommanderCompactBrandEventMark"))
   #expect(live.contains(".frame(width: timerWidth, alignment: .trailing)"))
   #expect(live.contains(".frame(width: timingWidth, alignment: .trailing)"))

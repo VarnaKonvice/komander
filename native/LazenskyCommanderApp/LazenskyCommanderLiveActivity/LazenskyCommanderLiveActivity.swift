@@ -92,10 +92,16 @@ struct LazenskyCommanderAlarmLiveActivity: Widget {
           CommanderProcedureArtwork(iconKey: metadata?.iconKey, title: title, size: 32)
         }
         DynamicIslandExpandedRegion(.center) {
-          Text(context.state.mode.isAlert ? "Vyrazit teď" : "Odchod za")
-            .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(accent)
-            .lineLimit(1)
+          HStack(spacing: 4) {
+            Image(systemName: "figure.walk")
+              .font(.system(size: 13, weight: .heavy))
+              .foregroundStyle(accent)
+              .accessibilityHidden(true)
+            Text(context.state.mode.isAlert ? "Čas vyrazit" : "Odchod")
+              .font(.system(size: 13, weight: .bold))
+              .foregroundStyle(CommanderActivityTokens.textPrimary)
+              .lineLimit(1)
+          }
         }
         DynamicIslandExpandedRegion(.bottom, priority: 2) {
           CommanderExpandedEventBody(
@@ -106,7 +112,10 @@ struct LazenskyCommanderAlarmLiveActivity: Widget {
           }
         }
       } compactLeading: {
-        CommanderCompactBrandEventMark()
+        Image(systemName: "figure.walk")
+          .font(.system(size: 15, weight: .heavy))
+          .foregroundStyle(accent)
+          .accessibilityHidden(true)
       } compactTrailing: {
         CommanderAlarmIslandCountdown(mode: context.state.mode, size: .compact)
       } minimal: {
@@ -457,7 +466,9 @@ private struct CommanderAlarmLockScreenView: View {
     VStack(spacing: 9) {
       CommanderAlarmHero(
         mode: context.state.mode,
-        startAt: metadata?.startAt
+        startAt: metadata?.startAt,
+        title: title,
+        iconKey: eventIconKey
       )
       CommanderActivityDivider(accent: departureAccent)
       CommanderActivityEventFooter(
@@ -469,7 +480,7 @@ private struct CommanderAlarmLockScreenView: View {
         timeValue: CommanderAlarmTime.startTime(from: metadata?.startAt),
         timeAccent: departureAccent,
         nextEvent: metadata?.nextEvent,
-        nextEventLabel: "Další:"
+        nextEventLabel: "Potom:"
       )
     }
     .commanderActivityCard(accent: departureAccent)
@@ -520,6 +531,8 @@ private struct CommanderProcedureLockScreenView: View {
 private struct CommanderAlarmHero: View {
   let mode: AlarmPresentationState.Mode
   let startAt: String?
+  let title: String
+  let iconKey: String
 
   private var accent: Color {
     CommanderActivityTokens.departureAccent(for: mode)
@@ -527,19 +540,38 @@ private struct CommanderAlarmHero: View {
 
   var body: some View {
     ZStack {
-      VStack(spacing: 0) {
-        Text(mode.isAlert ? "VYRAZIT TEĎ" : "Odchod za")
-          .font(.system(size: mode.isAlert ? 19 : 16, weight: .bold, design: .rounded))
+      HStack(spacing: 0) {
+        CommanderActivityBrandMark(size: 64)
+          .frame(width: 76, alignment: .leading)
+
+        Spacer(minLength: 0)
+
+        CommanderProcedureArtwork(iconKey: iconKey, title: title, size: 54)
+          .frame(width: 76, alignment: .trailing)
+      }
+
+      VStack(spacing: 1) {
+        Image(systemName: "figure.walk")
+          .font(.system(size: mode.isAlert ? 27 : 23, weight: .heavy))
           .foregroundStyle(accent)
+          .accessibilityHidden(true)
+
+        Text(mode.isAlert ? "Čas vyrazit" : "Odchod")
+          .font(.system(size: mode.isAlert ? 17 : 16, weight: .bold, design: .rounded))
+          .foregroundStyle(CommanderActivityTokens.textPrimary)
           .lineLimit(1)
 
         if mode.isAlert {
           if let startDate = CommanderAlarmTime.startDate(from: startAt) {
+            Text("Do začátku")
+              .font(.system(size: 11, weight: .semibold))
+              .foregroundStyle(CommanderActivityTokens.textSecondary)
+              .lineLimit(1)
             Text(startDate, style: .timer)
-              .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
+              .font(.system(size: 44, weight: .heavy, design: .rounded).monospacedDigit())
               .foregroundStyle(accent)
               .lineLimit(1)
-              .minimumScaleFactor(0.74)
+              .minimumScaleFactor(0.72)
           } else {
             Text("TEĎ")
               .font(.system(size: 42, weight: .heavy, design: .rounded))
@@ -547,47 +579,17 @@ private struct CommanderAlarmHero: View {
           }
         } else {
           CommanderAlarmCountdown(mode: mode)
-            .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
+            .font(.system(size: 48, weight: .heavy, design: .rounded).monospacedDigit())
             .foregroundStyle(accent)
             .lineLimit(1)
-            .minimumScaleFactor(0.74)
+            .minimumScaleFactor(0.72)
         }
       }
       .frame(width: CommanderActivityTokens.heroWidth, alignment: .center)
       .multilineTextAlignment(.center)
       .frame(maxWidth: .infinity)
-
-      HStack(spacing: 0) {
-        CommanderActivityBrandMark(size: 74)
-          .frame(width: 82, alignment: .leading)
-
-        Spacer(minLength: 0)
-
-        CommanderAlarmSideStatus(mode: mode, accent: accent)
-          .frame(width: 72, alignment: .trailing)
-      }
     }
-    .frame(minHeight: CommanderActivityTokens.heroMinHeight)
-  }
-}
-
-private struct CommanderAlarmSideStatus: View {
-  let mode: AlarmPresentationState.Mode
-  let accent: Color
-
-  var body: some View {
-    VStack(spacing: 2) {
-      Image(systemName: "figure.walk")
-        .font(.system(size: 27, weight: .semibold))
-        .foregroundStyle(accent)
-        .frame(height: 31)
-
-      Text(mode.isAlert ? "Je čas\nvyrazit" : "Odchod\nza")
-        .font(.system(size: 11, weight: .semibold))
-        .foregroundStyle(CommanderActivityTokens.textSecondary)
-        .multilineTextAlignment(.center)
-        .lineLimit(2)
-    }
+    .frame(minHeight: 92)
   }
 }
 

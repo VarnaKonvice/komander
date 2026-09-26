@@ -351,7 +351,7 @@ actor AlarmKitAdapter: AlarmAdapting {
     let event = schedule?.events.first(where: { $0.stableId == alarm.stableId })
     let iconKey = event.flatMap { CommanderVisualAssets.icon(for: $0)?.key } ?? ""
     let countdown = AlarmPresentation.Countdown(
-      title: LocalizedStringResource(stringLiteral: "Odchod za \(alarm.title)")
+      title: LocalizedStringResource(stringLiteral: "Odchod · \(alarm.title)")
     )
     let eventEndAt = event.map { Self.localISO(date: $0.date, time: $0.end) }
     let nextEvent = schedule.flatMap {
