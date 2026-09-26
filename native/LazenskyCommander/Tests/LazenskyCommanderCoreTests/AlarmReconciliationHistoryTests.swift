@@ -98,6 +98,51 @@ import Testing
   #expect(!after.hasMismatch)
   #expect(entry.verified)
   #expect(entry.hadProblemBeforeChanges)
+
+  let coverage = result.readbackCoverage
+  #expect(coverage.isComplete)
+  #expect(coverage.desiredAlarmCount == 1)
+  #expect(coverage.evidencedAlarmCount == 1)
+  let expectedVerifiedThrough = try ledgerDate(alarm.leaveAt)
+  #expect(coverage.verifiedThrough == expectedVerifiedThrough)
+}
+
+@Test func successfulSummaryWithoutConcretePlatformEvidenceCannotClaimReadbackCoverage() throws {
+  let expected = "2026-09-07T13:50:00"
+  let entry = AlarmReconciliationHistoryEntry(
+    scheduleVersion: 5,
+    startedAt: try ledgerDate("2026-09-07T13:20:00"),
+    completedAt: try ledgerDate("2026-09-07T13:21:00"),
+    desiredAlarmCount: 1,
+    after: [
+      AlarmReconciliationObservation(
+        stableId: "masaz-1400",
+        title: "Masáž",
+        expectedLeaveAt: expected,
+        platformAlarmID: nil,
+        platformExists: nil,
+        actualLeaveAt: nil
+      )
+    ],
+    verified: true
+  )
+  let summary = AlarmSyncSummary(
+    scheduleVersion: 5,
+    desiredAlarmCount: 1,
+    plan: AlarmReconciliationPlan(),
+    appliedCreate: 0,
+    appliedUpdate: 0,
+    appliedCancel: 0,
+    errorMessage: nil,
+    completedAt: try ledgerDate("2026-09-07T13:21:00"),
+    verified: true,
+    repairAttempts: 0,
+    reconciliationHistory: [entry]
+  )
+  #expect(summary.succeeded)
+  #expect(!summary.readbackCoverage.isComplete)
+  #expect(summary.readbackCoverage.evidencedAlarmCount == 0)
+  #expect(summary.readbackCoverage.verifiedThrough == nil)
 }
 
 private struct LedgerSource: ScheduleServing {

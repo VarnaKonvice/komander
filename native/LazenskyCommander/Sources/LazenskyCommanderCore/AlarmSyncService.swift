@@ -42,6 +42,80 @@ public struct AlarmSyncSummary: Equatable, Sendable {
   public var succeeded: Bool { errorMessage == nil && verified }
 }
 
+public struct AlarmReadbackCoverage: Equatable, Sendable {
+  public let desiredAlarmCount: Int
+  public let evidencedAlarmCount: Int
+  public let verifiedThrough: Date?
+  public let isComplete: Bool
+
+  public init(
+    desiredAlarmCount: Int,
+    evidencedAlarmCount: Int,
+    verifiedThrough: Date?,
+    isComplete: Bool
+  ) {
+    self.desiredAlarmCount = desiredAlarmCount
+    self.evidencedAlarmCount = evidencedAlarmCount
+    self.verifiedThrough = verifiedThrough
+    self.isComplete = isComplete
+  }
+}
+
+public extension AlarmSyncSummary {
+  /// Strict proof derived from the latest successful platform read-back.
+  /// `verified == true` alone is intentionally not enough because non-platform test adapters
+  /// may opt out of SDK inspection. This coverage requires concrete platform evidence for
+  /// every desired future alarm before the UI may say "Alarmy ověřeny".
+  var readbackCoverage: AlarmReadbackCoverage {
+    guard succeeded else {
+      return AlarmReadbackCoverage(
+        desiredAlarmCount: desiredAlarmCount,
+        evidencedAlarmCount: 0,
+        verifiedThrough: nil,
+        isComplete: false
+      )
+    }
+    if desiredAlarmCount == 0 {
+      return AlarmReadbackCoverage(
+        desiredAlarmCount: 0, evidencedAlarmCount: 0, verifiedThrough: nil, isComplete: true
+      )
+    }
+    guard let version = scheduleVersion,
+          let entry = reconciliationHistory.last(where: {
+            $0.scheduleVersion == version && $0.verified && $0.errorMessage == nil && $0.completedAt != nil
+          })
+    else {
+      return AlarmReadbackCoverage(
+        desiredAlarmCount: desiredAlarmCount, evidencedAlarmCount: 0, verifiedThrough: nil, isComplete: false
+      )
+    }
+
+    let evidenced = entry.after.filter(Self.hasStrictReadbackEvidence)
+    let unique = Dictionary(grouping: evidenced, by: \.stableId).compactMap { $0.value.last }
+    let isComplete = unique.count == desiredAlarmCount && entry.after.count == desiredAlarmCount
+    let verifiedThrough = isComplete
+      ? unique.compactMap { try? NativeAlarmContract.date(fromLocalISO: $0.expectedLeaveAt) }.max()
+      : nil
+    return AlarmReadbackCoverage(
+      desiredAlarmCount: desiredAlarmCount,
+      evidencedAlarmCount: unique.count,
+      verifiedThrough: verifiedThrough,
+      isComplete: isComplete
+    )
+  }
+
+  private static func hasStrictReadbackEvidence(_ observation: AlarmReconciliationObservation) -> Bool {
+    guard observation.platformAlarmID != nil,
+          observation.platformExists == true,
+          observation.readbackError == nil else { return false }
+    if observation.timingReadbackLimited == true { return true }
+    guard let actual = observation.actualLeaveAt,
+          let expected = try? NativeAlarmContract.date(fromLocalISO: observation.expectedLeaveAt)
+    else { return false }
+    return abs(actual.timeIntervalSince(expected)) <= 1
+  }
+}
+
 public struct AlarmSyncService: Sendable {
   private let scheduleService: any ScheduleServing
   private let store: any AlarmStateStoring

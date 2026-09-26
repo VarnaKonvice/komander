@@ -221,3 +221,18 @@ Princip:
 3. úplnost source-to-canonical ověření po dnech.
 
 Výsledné stavy jsou `blocked`, `reviewRequired`, `sourceVerificationRequired`, `verified`. Potvrzení varování tedy samo o sobě nikdy nestačí k označení rozpisu jako plně ověřeného proti papíru.
+
+## AlarmKit read-back coverage
+
+`AlarmSyncSummary.readbackCoverage` odděluje obecný úspěch synchronizačního průchodu od skutečného důkazu ze systémového AlarmKitu.
+
+UI smí tvrdit `Alarmy ověřeny do <čas>` pouze tehdy, když poslední úspěšná kontrola stejné verze rozpisu obsahuje pro **každý** požadovaný budoucí alarm:
+
+- skutečné platformní AlarmKit ID,
+- potvrzení, že ID v systému existuje,
+- žádnou read-back chybu,
+- a buď skutečný efektivní čas alarmu shodný s canonical `leaveAt` (tolerance 1 s), nebo explicitně označený běžící immediate countdown, u kterého iOS fireDate dočasně neposkytuje.
+
+Testovací/non-platform adapter, který read-back neposkytuje, proto může mít interně úspěšnou reconciliaci, ale **nesmí** vytvořit uživatelský stav `Alarmy ověřeny`.
+
+Na obrazovce `Kontrola rozpisu` se stav AlarmKitu zobrazuje jako samostatná karta. Strukturální kontrola rozpisu a AlarmKit read-back zůstávají dvě oddělená tvrzení.

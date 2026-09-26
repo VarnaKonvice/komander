@@ -87,6 +87,7 @@ struct CommanderScheduleAuditView: View {
         if let report, let review {
           statusCard(report, review: review)
           summaryCard(report)
+          alarmVerificationCard
           issuesCard(report, review: review)
         } else {
           CommanderSectionCard(
@@ -175,6 +176,62 @@ struct CommanderScheduleAuditView: View {
         auditMetric("Jídla", value: "\(report.mealCount)")
         auditMetric("Verze rozpisu", value: "v\(report.scheduleVersion)")
       }
+    }
+  }
+
+  private var alarmVerificationCard: some View {
+    let scheduleVersion = model.latestSchedule?.scheduleVersion
+    let summaryMatchesSchedule = model.summary?.scheduleVersion == scheduleVersion
+    let coverage = summaryMatchesSchedule ? model.summary?.readbackCoverage : nil
+
+    let color: Color
+    let symbol: String
+    let title: String
+    let detail: String
+
+    if let coverage, coverage.isComplete {
+      color = CommanderDesignTokens.Colors.mealGreen
+      symbol = "alarm.fill"
+      if coverage.desiredAlarmCount == 0 {
+        title = "Alarmy zkontrolovány"
+        detail = "Aktuální rozpis už nemá žádný budoucí alarm."
+      } else if let verifiedThrough = coverage.verifiedThrough {
+        title = "Alarmy ověřeny do \(verifiedThrough.formatted(CommanderScheduleDateStyle.departure))"
+        detail = "Systémový read-back potvrdil \(coverage.evidencedAlarmCount) / \(coverage.desiredAlarmCount) budoucích alarmů."
+      } else {
+        title = "Alarmy ověřeny"
+        detail = "Systémový read-back potvrdil všechny budoucí alarmy."
+      }
+    } else if let coverage {
+      color = CommanderDesignTokens.Colors.urgentOrange
+      symbol = "alarm.waves.left.and.right"
+      title = "Alarmy nejsou plně ověřené"
+      detail = "Fyzický read-back doložil \(coverage.evidencedAlarmCount) / \(coverage.desiredAlarmCount) požadovaných budoucích alarmů."
+    } else {
+      color = CommanderDesignTokens.Colors.textSecondary
+      symbol = "alarm"
+      title = "Alarmy zatím nejsou fyzicky ověřené"
+      detail = model.summary?.errorMessage ?? "Je potřeba úspěšná kontrola stejné verze rozpisu a skutečný systémový read-back."
+    }
+
+    return CommanderSectionCard(
+      title: "AlarmKit",
+      symbol: symbol,
+      accent: color
+    ) {
+      VStack(alignment: .leading, spacing: 4) {
+        Text(title)
+          .commanderFont(.metric)
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .fixedSize(horizontal: false, vertical: true)
+        Text(detail)
+          .commanderFont(.subtitle)
+          .foregroundStyle(color)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      .padding(10)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .commanderCard(accent: color, surface: .depthInset)
     }
   }
 
