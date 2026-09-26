@@ -311,7 +311,7 @@ private struct CommanderAlarmWatchLiveActivityView: View {
   var body: some View {
     let metadata = context.attributes.metadata
     CommanderSmartStackCard(
-      status: context.state.mode.isAlert ? "Vyrazit teď" : "Odchod za",
+      status: context.state.mode.isAlert ? "Čas vyrazit" : "Odchod",
       title: metadata?.title ?? "Lázeňský Commander", iconKey: metadata?.iconKey,
       startTime: CommanderAlarmTime.startTime(from: metadata?.startAt),
       stateAccent: CommanderActivityTokens.departureAccent(for: context.state.mode)
