@@ -140,7 +140,8 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
       let preview = CommanderProcedureDisplay.resolve(
         attributes: context.attributes,
         state: context.state,
-        at: Date()
+        at: Date(),
+        isStale: context.isStale
       )
       let eventAccent = CommanderActivityTokens.eventAccent(
         kind: preview.kind,
@@ -215,7 +216,7 @@ private struct CommanderProcedureIslandCenter: View {
 
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
-      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)
+      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date, isStale: context.isStale)
       Text(display.status)
         .font(.system(size: 13, weight: .bold))
         .foregroundStyle(CommanderActivityTokens.procedureStateAccent(phase: display.phase, eventAccent: .clear))
@@ -231,7 +232,7 @@ private struct CommanderProcedureIslandTiming: View {
 
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
-      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)
+      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date, isStale: context.isStale)
       let eventAccent = CommanderActivityTokens.eventAccent(
         kind: display.kind,
         iconKey: display.iconKey,
@@ -255,7 +256,7 @@ private struct CommanderProcedureIslandBottom: View {
 
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
-      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)
+      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date, isStale: context.isStale)
       CommanderExpandedEventBody(
         title: display.title, iconKey: display.iconKey, location: display.location,
         stateAccent: CommanderActivityTokens.procedureStateAccent(phase: display.phase, eventAccent: .clear)
@@ -271,7 +272,7 @@ private struct CommanderProcedureIslandArtwork: View {
 
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
-      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)
+      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date, isStale: context.isStale)
       CommanderProcedureArtwork(iconKey: display.iconKey, title: display.title, size: 32)
     }
   }
@@ -326,7 +327,7 @@ private struct CommanderProcedureWatchLiveActivityView: View {
 
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
-      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)
+      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date, isStale: context.isStale)
       CommanderSmartStackCard(
         status: display.status, title: display.title, iconKey: display.iconKey,
         startTime: display.startAt.formatted(date: .omitted, time: .shortened),
@@ -438,12 +439,19 @@ private struct CommanderExpandedEventBody<Clock: View>: View {
 private struct CommanderClampedCountdown: View {
   let target: Date
 
+  private var interval: Range<Date> {
+    target.addingTimeInterval(-24 * 60 * 60)..<target
+  }
+
   var body: some View {
     Text(
-      timerInterval: target.addingTimeInterval(-24 * 60 * 60)...target,
-      pauseTime: target,
-      countsDown: true,
-      showsHours: true
+      .currentDate,
+      format: .timer(
+        countingDownIn: interval,
+        showsHours: true,
+        maxFieldCount: 3,
+        maxPrecision: .seconds(1)
+      )
     )
   }
 }
@@ -505,7 +513,7 @@ private struct CommanderProcedureLockScreenView: View {
 
   var body: some View {
     TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state))) { timeline in
-      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)
+      let display = CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date, isStale: context.isStale)
       let eventAccent = CommanderActivityTokens.eventAccent(
         kind: display.kind,
         iconKey: display.iconKey,
@@ -958,7 +966,8 @@ private struct CommanderProcedureDisplay {
   static func resolve(
     attributes: CommanderProcedureLiveActivityAttributes,
     state: CommanderProcedureLiveActivityAttributes.ContentState,
-    at date: Date
+    at date: Date,
+    isStale: Bool = false
   ) -> CommanderProcedureDisplay {
     let events = resolvedEvents(attributes: attributes, state: state)
     guard !events.isEmpty else {
@@ -969,7 +978,7 @@ private struct CommanderProcedureDisplay {
         iconKey: attributes.iconKey,
         startAt: attributes.startAt,
         endAt: attributes.endAt,
-        phase: phase(at: date, startAt: attributes.startAt, endAt: attributes.endAt),
+        phase: isStale ? .ended : phase(at: date, startAt: attributes.startAt, endAt: attributes.endAt),
         nextEvent: attributes.nextEvent,
         nextEventLabel: "Potom:"
       )
@@ -996,7 +1005,7 @@ private struct CommanderProcedureDisplay {
       iconKey: primary.snapshot.iconKey,
       startAt: primary.startAt,
       endAt: primary.endAt,
-      phase: phase(at: date, startAt: primary.startAt, endAt: primary.endAt),
+      phase: isStale ? .ended : phase(at: date, startAt: primary.startAt, endAt: primary.endAt),
       nextEvent: following?.snapshot,
       nextEventLabel: followingIsActive ? "Současně:" : "Potom:"
     )

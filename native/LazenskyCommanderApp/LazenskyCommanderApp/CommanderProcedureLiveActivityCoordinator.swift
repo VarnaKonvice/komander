@@ -97,6 +97,20 @@ actor CommanderProcedureLiveActivityCoordinator {
     let plannedSnapshots = plannedQueue.map(Self.snapshot)
 
     if let keeper = existing.first {
+      if keeper.attributes.rendererRevision != CommanderProcedureLiveActivityAttributes.currentRendererRevision {
+        for activity in existing {
+          await activity.end(nil, dismissalPolicy: .immediate)
+        }
+        await requestPlannedActivity(
+          plan: plan,
+          raw: raw,
+          scheduleVersion: schedule.scheduleVersion,
+          projectionRevision: projectionRevision,
+          now: now
+        )
+        return
+      }
+
       if keeper.activityState == .pending {
         let pendingIsFresh =
           keeper.attributes.stableId == plan.anchorStableID &&
@@ -246,7 +260,8 @@ actor CommanderProcedureLiveActivityCoordinator {
       now: now
     ).map(Self.snapshot)
 
-    guard activity.content.state.scheduleVersion == schedule.scheduleVersion,
+    guard activity.attributes.rendererRevision == CommanderProcedureLiveActivityAttributes.currentRendererRevision,
+          activity.content.state.scheduleVersion == schedule.scheduleVersion,
           activity.content.state.projectionRevision == max(0, projectionRevision)
     else { return [] }
 

@@ -74,12 +74,16 @@ import Testing
   #expect(live.contains("case .compact: return 54"))
   #expect(live.contains("Text(\"Skončilo\")"))
   #expect(live.contains("TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state)))"))
-  #expect(live.contains("CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)"))
+  #expect(live.contains("CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date, isStale: context.isStale)"))
   #expect(!live.contains("min(timeline.date, Date())"))
   #expect(live.contains("private struct CommanderClampedCountdown"))
-  #expect(live.contains("pauseTime: target"))
+  #expect(live.contains("Text("))
+  #expect(live.contains(".currentDate"))
+  #expect(live.contains("countingDownIn: interval"))
+  #expect(!live.contains("pauseTime: target"))
   #expect(live.contains("return \"Následuje\""))
   #expect(live.contains("return \"Právě probíhá\""))
+  #expect(live.contains("isStale ? .ended"))
   #expect(live.contains("CommanderNextEventLine("))
   #expect(live.contains("nextEventLabel: display.nextEventLabel"))
   #expect(live.contains("nextEventLabel: \"Potom:\""))
@@ -207,7 +211,7 @@ import Testing
   #expect(coordinator.contains("staleDate: Self.staleDate(for: state.events, activationStart:"))
   #expect(coordinator.contains("CommanderAlarmEventSnapshot("))
   #expect(live.contains("TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state)))"))
-  #expect(live.contains("CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date)"))
+  #expect(live.contains("CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: timeline.date, isStale: context.isStale)"))
   #expect(!live.contains("Text(display.startAt, style: .timer)"))
   #expect(!live.contains("Text(display.endAt, style: .timer)"))
   #expect(live.contains("if state.events.isEmpty"))
@@ -218,6 +222,7 @@ import Testing
   #expect(live.components(separatedBy: "TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state)))").count - 1 >= 6)
   #expect(live.contains("return \"Následuje\""))
   #expect(live.contains("return \"Právě probíhá\""))
+  #expect(live.contains("isStale ? .ended"))
   #expect(live.contains("return \"Skončilo\""))
   #expect(!live.contains("CommanderProcedureHero"))
   #expect(!live.contains("CommanderProcedureStaticStart"))
@@ -236,13 +241,25 @@ import Testing
     contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp/Info.plist"),
     encoding: .utf8
   )
+  let metadata = try String(
+    contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/Shared/CommanderAlarmMetadata.swift"),
+    encoding: .utf8
+  )
+  let coordinator = try String(
+    contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp/CommanderProcedureLiveActivityCoordinator.swift"),
+    encoding: .utf8
+  )
 
   #expect(!project.contains("CURRENT_PROJECT_VERSION = 1;"))
   #expect(!project.contains("CURRENT_PROJECT_VERSION = \"1\";"))
-  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = 2;").count - 1 == 8)
-  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = \"2\";").count - 1 == 4)
+  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = 4;").count - 1 == 8)
+  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = \"4\";").count - 1 == 4)
   #expect(appInfo.contains("<string>$(MARKETING_VERSION)</string>"))
   #expect(appInfo.contains("<string>$(CURRENT_PROJECT_VERSION)</string>"))
+  #expect(metadata.contains("static let currentRendererRevision = 4"))
+  #expect(metadata.contains("let rendererRevision: Int?"))
+  #expect(coordinator.contains("keeper.attributes.rendererRevision != CommanderProcedureLiveActivityAttributes.currentRendererRevision"))
+  #expect(coordinator.contains("activity.attributes.rendererRevision == CommanderProcedureLiveActivityAttributes.currentRendererRevision"))
 }
 
 @Test func commanderUsesOverrideAdjustedLeaveAtLikeAlarmKitAndWatch() throws {

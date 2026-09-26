@@ -90,6 +90,8 @@ enum CommanderPhysicalAcceptanceDiagnostics {
 }
 
 struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
+  static let currentRendererRevision = 4
+
   struct ContentState: Codable, Hashable {
     let scheduleVersion: Int
     let projectionRevision: Int
@@ -136,6 +138,33 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
   let startAt: Date
   let endAt: Date
   let nextEvent: CommanderAlarmEventSnapshot?
+  let rendererRevision: Int?
+
+  init(
+    stableId: String,
+    scheduleVersion: Int,
+    iconKey: String,
+    title: String,
+    location: String,
+    kind: ScheduleKind,
+    leaveAt: Date,
+    startAt: Date,
+    endAt: Date,
+    nextEvent: CommanderAlarmEventSnapshot?,
+    rendererRevision: Int? = Self.currentRendererRevision
+  ) {
+    self.stableId = stableId
+    self.scheduleVersion = scheduleVersion
+    self.iconKey = iconKey
+    self.title = title
+    self.location = location
+    self.kind = kind
+    self.leaveAt = leaveAt
+    self.startAt = startAt
+    self.endAt = endAt
+    self.nextEvent = nextEvent
+    self.rendererRevision = rendererRevision
+  }
 }
 
 enum CommanderProcedureLiveActivityPolicy {
