@@ -523,6 +523,7 @@ final class CommanderViewModel: ObservableObject {
   @Published private(set) var userActionMessage: String?
   @Published private(set) var leadTimeOverrides = LeadTimeOverrides()
   @Published private(set) var leadTimeProjectionRevision = 0
+  @Published private(set) var scheduleAuditAcknowledgements: [CommanderScheduleAuditAcknowledgement] = []
 
   private let adapter: AlarmKitAdapter
   private let procedureActivities: CommanderProcedureLiveActivityCoordinator
@@ -531,6 +532,7 @@ final class CommanderViewModel: ObservableObject {
   private let watchConnectivity: IPhoneWatchConnectivityCoordinator
   private let fallbackNotifications = IPhoneFallbackNotificationService()
   private let leadTimePreferences: LeadTimePreferencesStore
+  private let scheduleAuditReviewStore: ScheduleAuditReviewStore
   private let channel: ScheduleChannel
   private var lastAutomaticAttempt: Date?
   private var delayedRecoveryTask: Task<Void, Never>?
@@ -553,6 +555,9 @@ final class CommanderViewModel: ObservableObject {
     let leadTimePreferences = LeadTimePreferencesStore(
       key: "lazensky.commander.leadTimePreferences.\(namespace).v1"
     )
+    let scheduleAuditReviewStore = ScheduleAuditReviewStore(
+      key: "lazensky.commander.scheduleAuditReview.\(namespace).v1"
+    )
     let savedPreferences = leadTimePreferences.load()
 
     self.adapter = adapter
@@ -560,9 +565,11 @@ final class CommanderViewModel: ObservableObject {
     self.service = service
     self.watchConnectivity = watchConnectivity
     self.leadTimePreferences = leadTimePreferences
+    self.scheduleAuditReviewStore = scheduleAuditReviewStore
     self.channel = configuration.channel
     self.leadTimeOverrides = CommanderDesignPreview.enabled ? LeadTimeOverrides() : savedPreferences.overrides
     self.leadTimeProjectionRevision = CommanderDesignPreview.enabled ? 0 : savedPreferences.revision
+    self.scheduleAuditAcknowledgements = scheduleAuditReviewStore.load()
     scheduleSync = CommanderScheduleSyncCoordinator(
       scheduleService: scheduleService,
       alarmSyncService: service,
@@ -740,6 +747,43 @@ final class CommanderViewModel: ObservableObject {
 
   func resetAllLeadTimeOverrides() {
     applyLeadTimeOverrides(LeadTimeOverrides())
+  }
+
+  func acknowledgeScheduleAuditIssue(_ issue: CommanderScheduleAuditIssue, note: String? = nil) {
+    guard issue.severity == .warning, let schedule = latestSchedule else { return }
+    let acknowledgement = CommanderScheduleAuditAcknowledgement(
+      scheduleVersion: schedule.scheduleVersion,
+      reviewKey: issue.reviewKey,
+      confirmedAt: ISO8601DateFormatter().string(from: Date()),
+      note: note
+    )
+    var current = scheduleAuditAcknowledgements.filter {
+      !($0.scheduleVersion == acknowledgement.scheduleVersion && $0.reviewKey == acknowledgement.reviewKey)
+    }
+    current.append(acknowledgement)
+    scheduleAuditAcknowledgements = current.sorted {
+      ($0.scheduleVersion, $0.confirmedAt, $0.reviewKey) < ($1.scheduleVersion, $1.confirmedAt, $1.reviewKey)
+    }
+    scheduleAuditReviewStore.save(scheduleAuditAcknowledgements)
+  }
+
+  func revokeScheduleAuditAcknowledgement(for issue: CommanderScheduleAuditIssue) {
+    guard let schedule = latestSchedule else { return }
+    let filtered = scheduleAuditAcknowledgements.filter {
+      !($0.scheduleVersion == schedule.scheduleVersion && $0.reviewKey == issue.reviewKey)
+    }
+    guard filtered != scheduleAuditAcknowledgements else { return }
+    scheduleAuditAcknowledgements = filtered
+    scheduleAuditReviewStore.save(filtered)
+  }
+
+  func scheduleAuditReviewState() -> CommanderScheduleAuditReviewState? {
+    guard let schedule = latestSchedule else { return nil }
+    let report = CommanderScheduleAudit.run(schedule, policy: .petrSpaOperational)
+    return CommanderScheduleAuditReview.resolve(
+      report: report,
+      acknowledgements: scheduleAuditAcknowledgements
+    )
   }
 
   private func applyLeadTimeOverrides(_ updated: LeadTimeOverrides) {
@@ -956,6 +1000,30 @@ private final class LeadTimePreferencesStore {
 
   private static func valid(_ values: [String: Int]) -> [String: Int] {
     values.filter { !$0.key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (0...180).contains($0.value) }
+  }
+}
+
+@MainActor
+private final class ScheduleAuditReviewStore {
+  private let defaults: UserDefaults
+  private let key: String
+
+  init(defaults: UserDefaults = .standard, key: String) {
+    self.defaults = defaults
+    self.key = key
+  }
+
+  func load() -> [CommanderScheduleAuditAcknowledgement] {
+    guard
+      let data = defaults.data(forKey: key),
+      let saved = try? JSONDecoder().decode([CommanderScheduleAuditAcknowledgement].self, from: data)
+    else { return [] }
+    return saved
+  }
+
+  func save(_ acknowledgements: [CommanderScheduleAuditAcknowledgement]) {
+    guard let data = try? JSONEncoder().encode(acknowledgements) else { return }
+    defaults.set(data, forKey: key)
   }
 }
 

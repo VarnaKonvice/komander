@@ -74,7 +74,7 @@ struct CommanderAppTabs: View {
         if isScheduleAuditPresented {
           NavigationStack {
             CommanderScheduleAuditView(
-              schedule: model.latestSchedule,
+              model: model,
               onClose: { isScheduleAuditPresented = false }
             )
           }
@@ -99,6 +99,7 @@ struct CommanderAppTabs: View {
     .environment(\.commanderOpenScheduleAudit, CommanderOpenScheduleAuditAction(open: {
       isScheduleAuditPresented = true
     }))
+    .environment(\.commanderScheduleAuditAcknowledgements, model.scheduleAuditAcknowledgements)
     .task {
       await renewal.refresh()
     }

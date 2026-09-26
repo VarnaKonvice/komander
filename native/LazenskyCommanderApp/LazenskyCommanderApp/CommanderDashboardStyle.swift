@@ -317,23 +317,39 @@ extension EnvironmentValues {
   }
 }
 
+private struct CommanderScheduleAuditAcknowledgementsEnvironmentKey: EnvironmentKey {
+  static let defaultValue: [CommanderScheduleAuditAcknowledgement] = []
+}
+
+extension EnvironmentValues {
+  var commanderScheduleAuditAcknowledgements: [CommanderScheduleAuditAcknowledgement] {
+    get { self[CommanderScheduleAuditAcknowledgementsEnvironmentKey.self] }
+    set { self[CommanderScheduleAuditAcknowledgementsEnvironmentKey.self] = newValue }
+  }
+}
+
 struct CommanderScheduleAuditStatusPill: View {
   let schedule: Schedule?
+  @Environment(\.commanderScheduleAuditAcknowledgements) private var acknowledgements
 
   private var status: (title: String, symbol: String, color: Color) {
     guard let schedule else {
       return ("Nenahrán", "questionmark.circle.fill", CommanderDesignTokens.Colors.textSecondary)
     }
     let report = CommanderScheduleAudit.run(schedule, policy: .petrSpaOperational)
-    let errors = report.issues.filter { $0.severity == .error }.count
-    let warnings = report.issues.filter { $0.severity == .warning }.count
-    if errors > 0 {
+    let review = CommanderScheduleAuditReview.resolve(
+      report: report,
+      acknowledgements: acknowledgements
+    )
+    if !review.errors.isEmpty {
+      let errors = review.errors.count
       return (errors == 1 ? "1 chyba" : "\(errors) chyb", "exclamationmark.octagon.fill", CommanderDesignTokens.Colors.criticalRed)
     }
-    if warnings > 0 {
+    if !review.openWarnings.isEmpty {
+      let warnings = review.openWarnings.count
       return (warnings == 1 ? "1 kontrola" : "\(warnings) kontroly", "exclamationmark.triangle.fill", CommanderDesignTokens.Colors.urgentOrange)
     }
-    return ("Ověřeno", "checkmark.circle.fill", CommanderDesignTokens.Colors.mealGreen)
+    return ("Zkontrolováno", "checkmark.circle.fill", CommanderDesignTokens.Colors.mealGreen)
   }
 
   var body: some View {

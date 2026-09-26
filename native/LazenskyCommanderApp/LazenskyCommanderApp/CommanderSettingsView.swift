@@ -60,11 +60,19 @@ struct CommanderSettingsView: View {
 }
 
 struct CommanderScheduleAuditView: View {
-  let schedule: Schedule?
+  @ObservedObject var model: CommanderViewModel
   let onClose: () -> Void
 
   private var report: CommanderScheduleAuditReport? {
-    schedule.map { CommanderScheduleAudit.run($0, policy: .petrSpaOperational) }
+    model.latestSchedule.map { CommanderScheduleAudit.run($0, policy: .petrSpaOperational) }
+  }
+
+  private var review: CommanderScheduleAuditReviewState? {
+    guard let report else { return nil }
+    return CommanderScheduleAuditReview.resolve(
+      report: report,
+      acknowledgements: model.scheduleAuditAcknowledgements
+    )
   }
 
   var body: some View {
@@ -76,10 +84,10 @@ struct CommanderScheduleAuditView: View {
           subtitle: "Bezpečnostní kontrola aktuální verze"
         )
 
-        if let report {
-          statusCard(report)
+        if let report, let review {
+          statusCard(report, review: review)
           summaryCard(report)
-          issuesCard(report)
+          issuesCard(report, review: review)
         } else {
           CommanderSectionCard(
             title: "Rozpis není načten",
@@ -114,18 +122,23 @@ struct CommanderScheduleAuditView: View {
     }
   }
 
-  private func statusCard(_ report: CommanderScheduleAuditReport) -> some View {
-    let errors = report.issues.filter { $0.severity == .error }.count
-    let warnings = report.issues.filter { $0.severity == .warning }.count
+  private func statusCard(
+    _ report: CommanderScheduleAuditReport,
+    review: CommanderScheduleAuditReviewState
+  ) -> some View {
+    let errors = review.errors.count
+    let warnings = review.openWarnings.count
+    let confirmed = review.acknowledgedWarnings.count
     let color = errors > 0 ? CommanderDesignTokens.Colors.criticalRed
       : warnings > 0 ? CommanderDesignTokens.Colors.urgentOrange
       : CommanderDesignTokens.Colors.mealGreen
     let title = errors > 0 ? "Rozpis obsahuje chybu"
       : warnings > 0 ? "Rozpis vyžaduje kontrolu"
-      : "Rozpis bez upozornění"
+      : "Strukturální kontrola dokončena"
     let detail = errors > 0 ? "\(errors) chyb · \(warnings) kontrol"
       : warnings > 0 ? "\(warnings) položek k potvrzení"
-      : "Strukturální kontrola je čistá"
+      : confirmed > 0 ? "\(confirmed) potvrzených výjimek"
+      : "Bez strukturálních upozornění"
 
     return HStack(spacing: 10) {
       CommanderSymbolBadge(
@@ -166,26 +179,45 @@ struct CommanderScheduleAuditView: View {
   }
 
   @ViewBuilder
-  private func issuesCard(_ report: CommanderScheduleAuditReport) -> some View {
-    if report.issues.isEmpty {
+  private func issuesCard(
+    _ report: CommanderScheduleAuditReport,
+    review: CommanderScheduleAuditReviewState
+  ) -> some View {
+    if review.errors.isEmpty && review.openWarnings.isEmpty && review.acknowledgedWarnings.isEmpty {
       CommanderSectionCard(
         title: "Kontroly",
         symbol: "checkmark.seal.fill",
         accent: CommanderDesignTokens.Colors.mealGreen
       ) {
-        Text("Žádná strukturální anomálie. Přesná shoda se zdrojovým papírem bude samostatný acceptance krok.")
+        Text("Žádná strukturální anomálie. Přesná shoda se zdrojovým papírem je samostatný acceptance krok.")
           .commanderFont(.subtitle)
           .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
       }
-    } else {
+    }
+
+    if !review.errors.isEmpty || !review.openWarnings.isEmpty {
       CommanderSectionCard(
         title: "Vyžaduje pozornost",
         symbol: "exclamationmark.triangle.fill",
-        accent: report.hasErrors ? CommanderDesignTokens.Colors.criticalRed : CommanderDesignTokens.Colors.urgentOrange
+        accent: review.errors.isEmpty ? CommanderDesignTokens.Colors.urgentOrange : CommanderDesignTokens.Colors.criticalRed
       ) {
         VStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
-          ForEach(Array(report.issues.enumerated()), id: \.offset) { _, issue in
-            auditIssueRow(issue)
+          ForEach(Array((review.errors + review.openWarnings).enumerated()), id: \.offset) { _, issue in
+            auditIssueRow(issue, acknowledged: false)
+          }
+        }
+      }
+    }
+
+    if !review.acknowledgedWarnings.isEmpty {
+      CommanderSectionCard(
+        title: "Potvrzené výjimky",
+        symbol: "checkmark.circle.fill",
+        accent: CommanderDesignTokens.Colors.mealGreen
+      ) {
+        VStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
+          ForEach(Array(review.acknowledgedWarnings.enumerated()), id: \.offset) { _, issue in
+            auditIssueRow(issue, acknowledged: true)
           }
         }
       }
@@ -207,36 +239,74 @@ struct CommanderScheduleAuditView: View {
     .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthInset)
   }
 
-  private func auditIssueRow(_ issue: CommanderScheduleAuditIssue) -> some View {
+  private func auditIssueRow(
+    _ issue: CommanderScheduleAuditIssue,
+    acknowledged: Bool
+  ) -> some View {
     let color = issue.severity == .error
       ? CommanderDesignTokens.Colors.criticalRed
-      : CommanderDesignTokens.Colors.urgentOrange
-    return HStack(alignment: .top, spacing: 9) {
-      Image(systemName: issue.severity == .error ? "xmark.octagon.fill" : "exclamationmark.triangle.fill")
-        .font(.system(size: 18, weight: .bold))
-        .foregroundStyle(color)
-        .frame(width: 24)
-      VStack(alignment: .leading, spacing: 3) {
-        if let date = issue.date {
-          Text(CommanderDateText.numericDate(isoDate: date) ?? date)
-            .commanderFont(.label)
-            .foregroundStyle(color)
+      : acknowledged ? CommanderDesignTokens.Colors.mealGreen : CommanderDesignTokens.Colors.urgentOrange
+
+    return VStack(alignment: .leading, spacing: 9) {
+      HStack(alignment: .top, spacing: 9) {
+        Image(systemName: issue.severity == .error
+          ? "xmark.octagon.fill"
+          : acknowledged ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+          .font(.system(size: 18, weight: .bold))
+          .foregroundStyle(color)
+          .frame(width: 24)
+        VStack(alignment: .leading, spacing: 3) {
+          if let date = issue.date {
+            Text(CommanderDateText.numericDate(isoDate: date) ?? date)
+              .commanderFont(.label)
+              .foregroundStyle(color)
+          }
+          Text(issue.message)
+            .commanderFont(.subtitle)
+            .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+            .fixedSize(horizontal: false, vertical: true)
+          if acknowledged {
+            Text("Potvrzeno jako očekávaná výjimka")
+              .font(.system(size: 12, weight: .semibold))
+              .foregroundStyle(CommanderDesignTokens.Colors.mealGreen)
+          } else if issue.severity == .warning {
+            Text("Čeká na vaše potvrzení")
+              .font(.system(size: 12, weight: .semibold))
+              .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          }
         }
-        Text(issue.message)
-          .commanderFont(.subtitle)
-          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-          .fixedSize(horizontal: false, vertical: true)
-        if issue.severity == .warning {
-          Text("Čeká na vaše potvrzení")
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
-        }
+        Spacer(minLength: 0)
       }
-      Spacer(minLength: 0)
+
+      if issue.severity == .warning {
+        Button {
+          if acknowledged {
+            model.revokeScheduleAuditAcknowledgement(for: issue)
+          } else {
+            model.acknowledgeScheduleAuditIssue(issue)
+          }
+        } label: {
+          HStack(spacing: 6) {
+            Image(systemName: acknowledged ? "arrow.uturn.backward.circle.fill" : "checkmark.circle.fill")
+            Text(acknowledged ? "Zrušit potvrzení" : "Potvrdit jako správné")
+          }
+          .font(.system(size: 13, weight: .bold))
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .frame(maxWidth: .infinity, minHeight: 38)
+          .background(color.opacity(0.16))
+          .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+          .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+              .strokeBorder(color.opacity(0.42), lineWidth: 0.8)
+          }
+        }
+        .buttonStyle(.plain)
+      }
     }
     .padding(10)
     .commanderCard(accent: color, surface: .depthInset)
   }
+
 }
 
 private struct CommanderSettingsAttentionCard: View {
