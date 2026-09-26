@@ -1,96 +1,84 @@
-# Lokální fyzický self-test AlarmKitu
+# Lokální fyzický self-test AlarmKitu a scheduled Commander Live Activity
+
+## Účel
+
+`LazenskyCommanderPhysicalAcceptance` je izolovaná servisní aplikace. Produkční Commander, jeho canonical storage ani produkční alarm ownership nemění.
+
+Tento test už **neověřuje starý Stop → vytvořit Live Activity handoff**. Tato cesta byla fyzicky opakovaně prokázána jako nespolehlivá (`Target is not foreground`) a není součástí aktuální architektury.
+
+Aktuální kontrakt je:
+
+1. AlarmKit je jediná garantovaná zvuková vrstva a vlastní departure countdown + alarm.
+2. Commander Live Activity se připraví z foreground execution time předem.
+3. Pro první relevantní povinnou proceduru použije ActivityKit scheduled start přesně v canonical `leaveAt`.
+4. Scheduled start používá tichý `CommanderSilentAlert.wav`, aby nevznikl druhý zvuk vedle AlarmKitu.
+5. Stop intent Commander aktivitu nevytváří ani nerequestuje z backgroundu.
+6. Po scheduled startu jedna Commander aktivita nese omezenou frontu událostí a přechází `Následuje → Právě probíhá → Potom / Skončilo` přes `TimelineView`.
 
 ## Oddělení od produkce
 
-Sdílené schéma `LazenskyCommanderPhysicalAcceptance` sestaví samostatnou aplikaci **Commander Test**:
-
 - App: `com.varnakonvice.lazenskycommander.physicalacceptance`.
 - Embedded extension: `com.varnakonvice.lazenskycommander.physicalacceptance.liveactivity`.
-- Extension používá přesně stejné Swift soubory, metadata, ikony a systémový timer jako produkční `LazenskyCommanderLiveActivity`. Neexistuje testovací náhražka AlarmKitu ani ActivityKit UI.
-- Testovací target nemá produkční `@main`, `CommanderViewModel`, WatchConnectivity ani Watch target. Nemá App Group entitlement.
-- Produkční app zůstává nainstalovaná pod svým původním ID. Self-test její storage, preferences ani ownership neotevírá. Neobnovuje její provisioning.
-- V režimu `physicalAcceptance` je zapnuté skutečné produkční chování procedure Live Activity. Remote E2E channel nadále svou procedure activity a Watch delivery vypíná; jeho konfigurace se nemění.
-- Watch delivery je vypnuté a žádná Watch aplikace není podmínkou testu. Systémové předání zvuku na hodinky/sluchátka tím není nahrazeno vlastní Watch notifikací.
+- Target sdílí produkční `AlarmKitAdapter`, `CommanderProcedureLiveActivityCoordinator`, metadata a Live Activity renderer.
+- Watch delivery je v testovacím targetu vypnuté; systémová replikace Live Activity na párované Watch je ale vlastnost ActivityKitu, nikoli WatchConnectivity.
+- Produkční schedule/prefs/managed alarms se nečtou ani nepřepisují.
 
-## Stav a namespaces
+## Testovací časová osa
 
-| Stav | Umístění |
+Po zachycení `now` vznikne lokální canonical rozpis:
+
+| Událost | Začátek | Konec | Lead time | leaveAt |
+| --- | --- | --- | --- | --- |
+| TEST – Jídlo | T+6 min | T+8 min | 2 min | T+4 min |
+| TEST – Magnetoterapie | T+13 min | T+15 min | 2 min | T+11 min |
+
+První jídlo slouží dál hlavně jako nezávislá kontrola AlarmKitu. Commander scheduled Live Activity se kotví k povinné proceduře `TEST – Magnetoterapie`, takže její scheduled start je T+11.
+
+## READY podmínky
+
+Před stavem READY musí být současně ověřeno:
+
+- 2/2 skutečné AlarmKit záznamy se správným canonical fire time,
+- AlarmKit ownership/read-back odpovídá testovacímu run ID,
+- Live Activities jsou v systému povolené,
+- existuje právě jedna odpovídající Commander Activity ve stavu `pending` nebo `active`,
+- její `scheduleVersion`, `projectionRevision` a event queue odpovídají testovacímu rozpisu,
+- do prvního AlarmKit alarmu zbývá bezpečná rezerva.
+
+READY je pouze důkaz přípravy. Není to fyzický PASS.
+
+## Co později ověřit jedním jediným fyzickým během
+
+Fyzický běh má smysl až poté, co projdou automatické testy, produkční build, Physical Acceptance build, Watch build a samostatný simulator scheduled-start probe.
+
+| Čas | Očekávání |
 | --- | --- |
-| Run ID | Nové UUID při každém stisku tlačítka |
-| stableId | `physicalAcceptance.<UUID>.meal` / `.procedure` |
-| Canonical snapshot | Nový `InMemoryScheduleSnapshotStore` pro každý běh |
-| Managed alarms | Nový `InMemoryAlarmStateStore` pro každý běh |
-| Effective overrides | Nová prázdná `LeadTimeOverrides()`; žádná preferences storage |
-| projectionRevision | `1` v rámci unikátního běhu |
-| Persistent ownership | Suite `com.varnakonvice.lazenskycommander.physicalAcceptance.v1`, key `ownedPlatformAlarms.v1`: `AlarmKit ID -> run UUID` |
-| Preflight/report | Paměť aktuálního běhu; export přes systémové Sdílet diagnostiku |
+| T+4 | TEST – Jídlo: AlarmKit zazvoní. Commander karta se kvůli samotnému jídlu neočekává. |
+| T+11 | TEST – Magnetoterapie: AlarmKit zazvoní a systém aktivuje již předem naplánovanou Commander Live Activity. |
+| Po Stop | Commander karta musí zůstat; Stop nesmí spouštět žádný nový `Activity.request`. |
+| T+11 až T+13 | Commander ukazuje `Následuje` a čas začátku magnetoterapie. |
+| T+13 až T+15 | Tatáž karta ukazuje `Právě probíhá` a `Do konce`. |
+| Po T+15 | Tatáž karta přejde na další známou událost nebo `Skončilo`. |
 
-Production/e2e klíče `scheduleSnapshot.*.v1`, `leadTimePreferences.*.v1`, `managedAlarms.*.v1` a `lazensky.commander.alarmkitOwned.e2e.v1` se v self-testu nepoužívají. Není přidán žádný schedule/alarm JSON do repozitáře ani na GitHub.
+Na Dynamic Islandu a Apple Watch se ověřuje tatáž ActivityKit instance; nevytváří se samostatná Commander aktivita pro hodinky.
 
-Před dalším během se ruší pouze ID evidovaná v self-test ledgeru. Neevidované ID se **nikdy automaticky neruší** a zablokuje nový běh. Ownership rezervace se zapisuje před `AlarmManager.schedule`, aby pokryla i přerušené vytváření alarmu. Pokud OS ztratí zápis ledgeru, ochrana proti neevidovaným ID selže bezpečně do NOT READY, nikoli do plošného rušení. Nedokončený úklid brání novému plánování.
+## PASS / FAIL
 
-## Jedno tlačítko, lokální čas
+**PASS:** správné AlarmKit časy, Commander Activity existuje už před Stopem jako pending/active, v T+11 se systémově aktivuje, po Stop nezmizí, v T+13 a T+15 se časově přepne bez nutnosti znovu otevřít aplikaci.
 
-Po potvrzení oprávnění a úklidu se zachytí `Date()` jako testovací `now`. Teprve tehdy vznikne lokální canonical Schedule. `T` je nejbližší celá minuta **nahoru** od `now`:
+**FAIL:** Commander před T+11 není připravená, scheduled start nenastane, Stop ji odstraní, objeví se další Commander instance, nebo diagnostika obsahuje `Target is not foreground` spojené s Commander create cestou.
 
-| Událost | Začátek | Konec | Lead time | leaveAt | Countdown |
-| --- | --- | --- | --- | --- | --- |
-| TEST – Jídlo | T+6 min | T+8 min | 2 min z event override | T+4 min | Okamžitý `schedule=nil`, zbývající čas do leaveAt |
-| TEST – Magnetoterapie | T+13 min | T+15 min | 2 min z event override | T+11 min | `.fixed(T+8)` + `preAlert = 3 min`; AlarmKit vlastní celé volno od konce jídla do odchodu |
+Staré testy varianty „první Stop vytváří Commander“ se už neopakují. Historické důkazy jsou v `docs/archive/liveactivity-stabilization-history-2026-09.md` a `docs/wip-liveactivity-handoff-2026-09-21.md`.
 
-První alarm nastane přibližně za 4–5 minut, druhý za 11–12 minut. AlarmKit je jediný vlastník odchodového countdownu a alertu. Před prvním alarmem **žádná Commander Live Activity předem nevzniká**. První stisk **Stop** vytvoří jednu Commander aktivitu s frontou `TEST – Jídlo → TEST – Magnetoterapie`; druhý Stop už nevytváří další aktivitu, pouze aktualizuje `ContentState` té stejné. V `startAt` a `endAt` se UI lokálně přepíná přes explicitní `TimelineView`. Generátor odmítne běh, jehož konec v T+15 by překročil půlnoc.
+## Gate před fyzickým během
 
-Všechny odchody a priority pocházejí z `NativeAlarmContract`. `resolvedLeadTime` vrací hodnotu a zdroj ve stejné prioritní cestě jako `effectiveLeadTime`; stejně velký local override tedy není zaměnitelný za hodnotu z rozpisu. Samotný self-test žádný lokální override nepřijímá.
+1. `swift test --package-path native/LazenskyCommander`
+2. produkční `LazenskyCommanderApp` build
+3. `LazenskyCommanderPhysicalAcceptance` build
+4. `LazenskyCommanderWatchApp` build
+5. `git diff --check`
+6. kontrola, že `CommanderAlarmStopIntent` neobsahuje `Activity.request`
+7. kontrola, že scheduled create cesta je pouze v `CommanderProcedureLiveActivityCoordinator`
+8. simulator scheduled-start probe
 
-## Preflight a hranice READY
-
-Používá se existující canonical-first `CommanderScheduleSyncCoordinator`, `AlarmSyncService`, read-back, self-recovery, `projectionRevision` a fronta `CommanderSynchronizationRequestQueue`. Zdroj je lokální `ScheduleServing`, nikoli URLSession. Během úvodního preflightu jsou nejvýše tři sync pokusy a nejvýše dvacet sekund read-back čekání.
-
-Před READY se nejdřív provede samostatný **Live Activity primer** mimo časovaný běh. Vytvoří krátkou okamžitou testovací aktivitu, aby případný první systémový dotaz `Povolit živé aktivity z aplikace Commander Test?` proběhl ještě před vytvořením časů ostrého testu. Teprve po vyřízení dialogu a následném potvrzení v Commander Testu smí vzniknout vlastní `PhysicalAcceptanceRun`.
-
-Před READY jsou vyžadovány dvě unikátní, správně mapované skutečné AlarmKit ID, správná uložená délka countdownu, správné schedule/state a shoda výsledného fire time s canonical leaveAt v existující toleranci jedné sekundy. První alarm musí být okamžitý `.countdown` se `schedule=nil`; přesný endpoint se ověřuje z `fireDate`, případně z pozorovaného času konfigurace + `preAlert`, pokud iOS `fireDate` neposkytne. Druhý alarm musí být `.scheduled` s pevným začátkem countdownu T+8 a `preAlert = 3 min`, takže výsledný endpoint je canonical T+11. Raw `.fixed` datum se nikdy samostatně nepovažuje za leaveAt. Commander není podmínkou READY a před prvním Stop má být jeho počet **0**; Live Activity primer ověřuje pouze systémové povolení. Do prvního alarmu musí při READY zbývat alespoň minuta. Diagnostika ukládá časovou osu READY, AlarmKit snapshotů, stav jediné Commander aktivity a všechny zaznamenané Stopy.
-
-Obrazovka ukazuje run ID/now, stableId/title, hodnotu i zdroj předstihu, canonical leaveAt, očekávaný start a konec countdownu, platform ID, uložený preAlert/postAlert, fixed schedule, Alarm.state, dostupný systémový fireDate a expected/verified/actual počty.
-
-Po READY už self-test alarmy neopravuje ani znovu neplánuje. Změny čte přes `alarmUpdates` a při návratu do foregroundu; žádný background síťový timer neběží. Preflight je označený časem svého ověření, aktuální read-back samostatně. iOS může aplikaci na zamčené obrazovce suspendovat, proto chybějící zachycený stav `alerting` není automatickým důkazem, že alarm nezazvonil.
-
-NOT READY je **neplatná příprava testu**, ne automatický závěr o nefunkčnosti AlarmKitu. Alarmy po neúspěšném preflightu mohou existovat; další stisk tlačítka uklidí předchozí evidovaný běh před vytvořením nového.
-
-## Jediný fyzický postup pro Petra
-
-1. Nainstalovat podepsaný target `LazenskyCommanderPhysicalAcceptance` se zabalenou `LazenskyCommanderPhysicalLiveActivity`. Běžný produkční obnovovací launcher tento target neinstaluje. Podepisuje se obojí stejným Personal Teamem; Watch target se nebuildí ani neinstaluje.
-2. Otevřít **Commander Test**. Nejprve stisknout **Připravit Live Activities**, vyřídit případný systémový dialog `Povolit / Nepovolovat` a potom stisknout **Potvrdit povolení a spustit test**. Případné povolení AlarmKitu se vyřídí ještě v úvodní přípravě. Teprve potom vyčkat na **READY / 2 ze 2** a přečíst zobrazené časy.
-3. Zamknout iPhone a sledovat celý jediný běh (asi 15–16 minut). U obou odchodů zastavit skutečné zvonění systémovým ovládáním. Aplikaci během běhu není potřeba znovu otevírat ani synchronizovat.
-
-| Čas | Co fyzicky pozorovat na Lock Screen / Dynamic Island |
-| --- | --- |
-| Do T+4 | AlarmKit odpočet do prvního odchodu |
-| T+4 | Skutečný AlarmKit alarm a `VYRAZIT TEĎ` |
-| Po Stop do T+6 | Alarm je zastaven; Commander musí bez hluché mezery ukázat `ZAČÍNÁ ZA` pro jídlo. **Nesmí vzniknout červený handoff.** |
-| T+6 až T+8 | Tatáž Commander prezentace se přepne na `PRÁVĚ JÍDLO`, s odpočtem do konce |
-| T+8 až T+11 | Tatáž Commander aktivita po konci jídla automaticky ukazuje magnetoterapii jako `ZAČÍNÁ ZA`; AlarmKit současně vlastní odchodový countdown do T+11 |
-| T+11 | Druhý skutečný AlarmKit alarm a `VYRAZIT TEĎ` |
-| Po druhém Stop do T+13 | Alarm je zastaven; **nevzniká nová Commander aktivita**. Tatáž karta pokračuje jako `ZAČÍNÁ ZA` pro magnetoterapii. |
-| T+13 až T+15 | Tatáž Commander prezentace se přepne na `PRÁVĚ PROBÍHÁ` pro magnetoterapii, s odpočtem do konce |
-| Po T+15 | Commander aktivita musí přejít do systémového `stale` stavu a zobrazit `Skončilo`; nesmí dál odpočítávat jako probíhající. Okamžité odstranění karty není v lokální Personal Team variantě garantováno. |
-
-Commander používá jednu chronologickou frontu událostí uvnitř `ContentState`, nikoli více ActivityKit instancí řazených přes `relevanceScore`. Při překryvu zůstává nahoře dříve zahájená stále probíhající událost a následující událost je zobrazena pod ní; po konci první se druhá automaticky stane hlavní. Stejný obsah se replikuje i na Watch.
-
-**PASS:** platný READY preflight, oba skutečné systémové alarmy zazvoní ve zobrazených `leaveAt` časech, po Stop není hluchá mezera ani červený handoff, Commander ukazuje `Začíná za …`, v `startAt` se přepne na `Právě…` a v `endAt` na další událost / `Skončilo` místo dalšího odpočtu. Slyšitelný alarm ani reálnou viditelnost UI nelze potvrdit jen úspěšným SDK read-backem. Výsledek zaznamenat spolu s commit SHA, iOS verzí a modelem iPhonu; při problému sdílet diagnostiku. Jde o jediný závěrečný acceptance běh, nikoli požadavek opakovat dříve ověřené mezikroky.
-
-Tato izolovaná aplikace neprokazuje doručení Watch notifikace, WatchConnectivity na párovaných zařízeních, Personal Team obnovu produkčního profilu ani přístupnost všech produkčních obrazovek. Tyto hranice se nesmějí skrýt za její PASS.
-
-Tento dvouudálostní acceptance stále **neprokazuje celý den s libovolným počtem událostí**, ale důvod už není systémový slot pro více Commander aktivit. Produkce drží jedinou Commander Live Activity; každý další Stop rozšiřuje/aktualizuje její frontu a foreground reconciliation ji může naplnit až šesti nejbližšími neskončenými událostmi, aby dynamický stav zůstal bezpečně pod limitem ActivityKit. Samostatně je proto potřeba hlídat velikost `ContentState` a dlouhý celodenní běh, nikoli refill dalších ActivityKit instancí.
-
-**FAIL:** po platném READY některý alarm nezazvoní, zazvoní posunutě nebo očekávaná Live Activity/Dynamic Island chybí či odpočítává jinam. Zaznamenat skutečný čas a sdílet diagnostiku. Aplikace sama nikdy nevydá automatický fyzický PASS.
-
-## Build bez instalace
-
-```sh
-xcodebuild -project native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj \
-  -scheme LazenskyCommanderPhysicalAcceptance -configuration Debug \
-  -destination 'generic/platform=iOS' -derivedDataPath /tmp/commander-physical-acceptance \
-  CODE_SIGNING_ALLOWED=NO build
-```
-
-Unsigned generic build prokazuje kompilaci a embed extension, nikoli Personal Team provisioning ani fyzický výsledek. V tomto balíku se nic neinstaluje, nepublikuje a nemění se žádný testovací či produkční feed.
+Teprve potom má smysl jediný krátký fyzický důkaz. Opakované dlouhé běhy bez nové technické otázky nejsou součástí acceptance.

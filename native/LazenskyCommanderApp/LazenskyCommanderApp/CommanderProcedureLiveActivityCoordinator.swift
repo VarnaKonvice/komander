@@ -2,14 +2,16 @@ import ActivityKit
 import Foundation
 import LazenskyCommanderCore
 
-/// Reconciles exactly one Commander Live Activity.
+/// Owns one Commander Live Activity for the mandatory-procedure part of the day.
 ///
-/// AlarmKit owns departure/countdown/alert and the Stop intent is the only creator of
-/// Commander. Foreground reconciliation may update that same activity and remove legacy
-/// duplicates, but it never creates another Commander instance. The dynamic state carries
-/// a short ordered queue of events, so overlaps and handoffs happen inside one Live Activity.
+/// AlarmKit remains the audible departure layer. Commander is requested while the app
+/// legitimately has foreground execution time. If the next mandatory procedure is still
+/// in the future, ActivityKit receives a scheduled start at its canonical `leaveAt`.
+/// The Stop intent never creates a Live Activity from the background.
 actor CommanderProcedureLiveActivityCoordinator {
   static let maximumConcurrentActivities = 1
+  static let maximumActiveLifetime: TimeInterval = 7 * 60 * 60 + 50 * 60
+  static let silentAlertSoundName = "CommanderSilentAlert.wav"
 
   private let enabled: Bool
   private(set) var issue: String?
@@ -72,41 +74,142 @@ actor CommanderProcedureLiveActivityCoordinator {
     }
 
     let raw = Self.rawCandidates(schedule: schedule, payload: payload)
-    let queue = Self.queue(from: raw, now: now)
+    let plan = CommanderLiveActivityPlan.make(
+      schedule: schedule,
+      payload: payload,
+      now: now,
+      maximumActiveLifetime: Self.maximumActiveLifetime,
+      maximumEvents: CommanderProcedureLiveActivityPolicy.maximumQueuedEvents
+    )
     let existing = Activity<CommanderProcedureLiveActivityAttributes>.activities
       .filter { Self.isOngoing($0.activityState) }
       .sorted { Self.retentionRank($0.activityState) < Self.retentionRank($1.activityState) }
 
-    if queue.isEmpty {
+    guard let plan else {
       for activity in existing {
         await activity.end(nil, dismissalPolicy: .immediate)
       }
       return
     }
 
-    let snapshots = queue.map(Self.snapshot)
-
     if let keeper = existing.first {
-      let state = CommanderProcedureLiveActivityPolicy.contentState(
-        scheduleVersion: schedule.scheduleVersion,
-        projectionRevision: projectionRevision,
-        events: snapshots,
-        attributes: keeper.attributes
-      )
-      await keeper.update(ActivityContent(
-        state: state,
-        staleDate: Self.staleDate(for: state.events),
-        relevanceScore: 1_000
-      ))
-      for duplicate in existing.dropFirst() {
-        await duplicate.end(nil, dismissalPolicy: .immediate)
+      let pendingMatchesPlan =
+        keeper.activityState != .pending ||
+        (
+          keeper.attributes.stableId == plan.anchorStableID &&
+          keeper.attributes.scheduleVersion == schedule.scheduleVersion &&
+          abs(keeper.attributes.leaveAt.timeIntervalSince(plan.activationStart)) <= 1 &&
+          keeper.content.state.projectionRevision == max(0, projectionRevision)
+        )
+
+      if pendingMatchesPlan {
+        let activationStart = keeper.attributes.leaveAt
+        let queue = Self.queue(from: raw, activationStart: activationStart, now: now)
+        if !queue.isEmpty {
+          let snapshots = queue.map(Self.snapshot)
+          let state = CommanderProcedureLiveActivityPolicy.contentState(
+            scheduleVersion: schedule.scheduleVersion,
+            projectionRevision: projectionRevision,
+            events: snapshots,
+            attributes: keeper.attributes
+          )
+          await keeper.update(ActivityContent(
+            state: state,
+            staleDate: Self.staleDate(for: state.events, activationStart: activationStart),
+            relevanceScore: 1_000
+          ))
+          for duplicate in existing.dropFirst() {
+            await duplicate.end(nil, dismissalPolicy: .immediate)
+          }
+          return
+        }
       }
+
+      for activity in existing {
+        await activity.end(nil, dismissalPolicy: .immediate)
+      }
+    }
+
+    await requestPlannedActivity(
+      plan: plan,
+      raw: raw,
+      scheduleVersion: schedule.scheduleVersion,
+      projectionRevision: projectionRevision,
+      now: now
+    )
+  }
+
+  private func requestPlannedActivity(
+    plan: CommanderLiveActivityPlan,
+    raw: [RawCandidate],
+    scheduleVersion: Int,
+    projectionRevision: Int,
+    now: Date
+  ) async {
+    guard let anchor = raw.first(where: { $0.event.stableId == plan.anchorStableID }) else {
+      issue = "Commander Live Activity nemá platnou kotevní proceduru."
       return
     }
 
-    // Stop intent is the only creator. If no Commander exists yet, reconciliation
-    // deliberately waits for the next explicit Stop handoff instead of racing another request.
-    return
+    let candidateByID = Dictionary(uniqueKeysWithValues: raw.map { ($0.event.stableId, $0) })
+    let queue = plan.includedStableIDs.compactMap { candidateByID[$0] }
+    guard !queue.isEmpty else { return }
+
+    let snapshots = queue.map(Self.snapshot)
+    let attributes = CommanderProcedureLiveActivityAttributes(
+      stableId: anchor.event.stableId,
+      scheduleVersion: scheduleVersion,
+      iconKey: CommanderVisualAssets.icon(for: anchor.event)?.key ?? "",
+      title: anchor.event.title,
+      location: anchor.event.location,
+      kind: anchor.event.kind,
+      leaveAt: plan.activationStart,
+      startAt: anchor.startAt,
+      endAt: anchor.endAt,
+      nextEvent: snapshots.dropFirst().first
+    )
+    let state = CommanderProcedureLiveActivityPolicy.contentState(
+      scheduleVersion: scheduleVersion,
+      projectionRevision: projectionRevision,
+      events: snapshots,
+      attributes: attributes
+    )
+    let content = ActivityContent(
+      state: state,
+      staleDate: Self.staleDate(for: state.events, activationStart: plan.activationStart),
+      relevanceScore: 1_000
+    )
+
+    do {
+      if plan.activationStart <= now {
+        _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+          attributes: attributes,
+          content: content,
+          pushType: nil,
+          style: .standard
+        )
+      } else {
+        guard Bundle.main.url(forResource: "CommanderSilentAlert", withExtension: "wav") != nil else {
+          issue = "Chybí tichý zvuk pro plánovaný start Commander Live Activity."
+          return
+        }
+        let alert = ActivityKit.AlertConfiguration(
+          title: LocalizedStringResource(stringLiteral: "Lázeňský Commander"),
+          body: LocalizedStringResource(stringLiteral: "Následuje · \(anchor.event.title)"),
+          sound: .named(Self.silentAlertSoundName)
+        )
+        _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+          attributes: attributes,
+          content: content,
+          pushType: nil,
+          style: .standard,
+          alertConfiguration: alert,
+          start: plan.activationStart
+        )
+      }
+    } catch {
+      issue = "Commander Live Activity se nepodařilo připravit: \(error.localizedDescription)"
+    }
   }
 
   func preparedStableIDs(
@@ -118,11 +221,16 @@ actor CommanderProcedureLiveActivityCoordinator {
     guard let payload = try? NativeAlarmContract.payload(schedule: schedule, overrides: overrides) else {
       return []
     }
-    let expectedQueue = Self.queue(from: Self.rawCandidates(schedule: schedule, payload: payload), now: now)
-      .map(Self.snapshot)
     guard let activity = Activity<CommanderProcedureLiveActivityAttributes>.activities.first(where: {
       Self.isOngoing($0.activityState)
     }) else { return [] }
+
+    let raw = Self.rawCandidates(schedule: schedule, payload: payload)
+    let expectedQueue = Self.queue(
+      from: raw,
+      activationStart: activity.attributes.leaveAt,
+      now: now
+    ).map(Self.snapshot)
 
     guard activity.content.state.scheduleVersion == schedule.scheduleVersion,
           activity.content.state.projectionRevision == max(0, projectionRevision)
@@ -130,7 +238,9 @@ actor CommanderProcedureLiveActivityCoordinator {
 
     let actualIDs = activity.content.state.events.map(\.stableId)
     let expectedIDs = expectedQueue.map(\.stableId)
-    guard actualIDs == Array(expectedIDs.prefix(actualIDs.count)) else { return [] }
+    guard !actualIDs.isEmpty,
+          actualIDs == Array(expectedIDs.prefix(actualIDs.count))
+    else { return [] }
     return [activity.attributes.stableId]
   }
 
@@ -155,18 +265,27 @@ actor CommanderProcedureLiveActivityCoordinator {
     }.sorted(by: rawCandidateOrder)
   }
 
-  private static func queue(from raw: [RawCandidate], now: Date) -> [RawCandidate] {
-    let remaining = raw.filter { $0.endAt > now }
-    guard !remaining.isEmpty else { return [] }
-
-    // Once Commander exists, keep the currently running event(s) first and then future ones.
-    // If nothing is running yet, keep the nearest upcoming events. This naturally preserves
-    // an older active procedure above a newer overlapping meal until the older one ends.
+  private static func queue(
+    from raw: [RawCandidate],
+    activationStart: Date,
+    now: Date
+  ) -> [RawCandidate] {
+    let windowEnd = activationStart.addingTimeInterval(maximumActiveLifetime)
+    let remaining = raw.filter {
+      $0.endAt > now &&
+      $0.endAt > activationStart &&
+      $0.endAt <= windowEnd
+    }
     return Array(remaining.prefix(CommanderProcedureLiveActivityPolicy.maximumQueuedEvents))
   }
 
-  private static func staleDate(for events: [CommanderAlarmEventSnapshot]) -> Date? {
-    events.compactMap { try? NativeAlarmContract.date(fromLocalISO: $0.endAt) }.max()
+  private static func staleDate(
+    for events: [CommanderAlarmEventSnapshot],
+    activationStart: Date
+  ) -> Date? {
+    let windowEnd = activationStart.addingTimeInterval(maximumActiveLifetime)
+    let lastEventEnd = events.compactMap { try? NativeAlarmContract.date(fromLocalISO: $0.endAt) }.max()
+    return lastEventEnd.map { min($0, windowEnd) }
   }
 
   private static func snapshot(_ candidate: RawCandidate) -> CommanderAlarmEventSnapshot {

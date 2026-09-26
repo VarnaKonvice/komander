@@ -11,6 +11,8 @@
 		AC2000000000000000000002 /* colors.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000014 /* colors.json */; };
 		AC2000000000000000000003 /* icon-map.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000013 /* icon-map.json */; };
 		AC2000000000000000000004 /* colors.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000014 /* colors.json */; };
+		S90000000000000000000001 /* CommanderSilentAlert.wav in Resources */ = {isa = PBXBuildFile; fileRef = S90000000000000000000011 /* CommanderSilentAlert.wav */; };
+		S90000000000000000000002 /* CommanderSilentAlert.wav in PhysicalAcceptance Resources */ = {isa = PBXBuildFile; fileRef = S90000000000000000000011 /* CommanderSilentAlert.wav */; };
 
 		CB1000000000000000000007 /* CommanderProvisioningRenewal.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000017 /* CommanderProvisioningRenewal.swift */; };
 		CB1000000000000000000006 /* CommanderDaySummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB1000000000000000000016 /* CommanderDaySummaryView.swift */; };
@@ -480,6 +482,7 @@
 			sourceTree = "BUILT_PRODUCTS_DIR";
 		};
 		K10000000000000000000012 /* CommanderDesignPreviewSchedule.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = CommanderDesignPreviewSchedule.json; sourceTree = "<group>"; };
+		S90000000000000000000011 /* CommanderSilentAlert.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = CommanderSilentAlert.wav; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -605,6 +608,7 @@
 				F60000000000000000000024 /* WatchCacheLocation.swift */,
 				H80000000000000000000014 /* BrandAssets.xcassets */,
 				K10000000000000000000012 /* CommanderDesignPreviewSchedule.json */,
+				S90000000000000000000011 /* CommanderSilentAlert.wav */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -921,6 +925,7 @@
 				C3000000000000000000000E /* peat_wrap.png in Resources */,
 				C3000000000000000000000F /* pool.png in Resources */,
 				C30000000000000000000010 /* whirlpool.png in Resources */,
+				S90000000000000000000001 /* CommanderSilentAlert.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1013,6 +1018,7 @@
 				"CA000000000000000000001B",
 				"CA000000000000000000001C",
 				"CA000000000000000000001D",
+				S90000000000000000000002 /* CommanderSilentAlert.wav in PhysicalAcceptance Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = "0";
 		};

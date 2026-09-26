@@ -6,6 +6,7 @@ import LazenskyCommanderCore
 private actor PhysicalAcceptanceLiveActivityPrimer {
   static let stableID = "physicalAcceptance.permissionProbe"
   static let visualProbeID = "physicalAcceptance.visualProbe"
+  static let scheduledProbeID = "physicalAcceptance.scheduledProbe"
 
   func prepare() async throws {
     await clear()
@@ -79,6 +80,88 @@ private actor PhysicalAcceptanceLiveActivityPrimer {
     }
   }
 
+  func startScheduledProbe() async throws -> Date {
+    await clearScheduledProbe()
+    guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+      throw AlarmAdapterError.unavailable("Live Activities jsou v systému vypnuté.")
+    }
+    guard Bundle.main.url(forResource: "CommanderSilentAlert", withExtension: "wav") != nil else {
+      throw AlarmAdapterError.unavailable("Chybí CommanderSilentAlert.wav.")
+    }
+
+    let now = Date()
+    let activationStart = now.addingTimeInterval(8)
+    let startAt = activationStart.addingTimeInterval(8)
+    let endAt = startAt.addingTimeInterval(24)
+    let event = CommanderAlarmEventSnapshot(
+      stableId: Self.scheduledProbeID,
+      iconKey: "electro_therapy",
+      title: "TEST – Scheduled Magnetoterapie",
+      location: "Simulator probe",
+      kind: .procedure,
+      startAt: Self.localISO(startAt),
+      endAt: Self.localISO(endAt),
+      leaveAt: Self.localISO(activationStart)
+    )
+    let attributes = CommanderProcedureLiveActivityAttributes(
+      stableId: Self.scheduledProbeID,
+      scheduleVersion: 1,
+      iconKey: event.iconKey,
+      title: event.title,
+      location: event.location,
+      kind: event.kind,
+      leaveAt: activationStart,
+      startAt: startAt,
+      endAt: endAt,
+      nextEvent: nil
+    )
+    let content = ActivityContent(
+      state: CommanderProcedureLiveActivityAttributes.ContentState(
+        scheduleVersion: 1,
+        projectionRevision: 1,
+        events: [event]
+      ),
+      staleDate: endAt,
+      relevanceScore: 1_000
+    )
+    let alert = ActivityKit.AlertConfiguration(
+      title: LocalizedStringResource(stringLiteral: "Lázeňský Commander"),
+      body: LocalizedStringResource(stringLiteral: "Následuje · Scheduled probe"),
+      sound: .named("CommanderSilentAlert.wav")
+    )
+    _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+      attributes: attributes,
+      content: content,
+      pushType: nil,
+      style: .standard,
+      alertConfiguration: alert,
+      start: activationStart
+    )
+    return activationStart
+  }
+
+  func scheduledProbeState() -> String {
+    guard let activity = Activity<CommanderProcedureLiveActivityAttributes>.activities.first(where: {
+      $0.attributes.stableId == Self.scheduledProbeID
+    }) else { return "missing" }
+    return String(describing: activity.activityState)
+  }
+
+  func clearScheduledProbe() async {
+    for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
+      where activity.attributes.stableId == Self.scheduledProbeID {
+      await activity.end(nil, dismissalPolicy: .immediate)
+    }
+  }
+
+  private static func localISO(_ date: Date) -> String {
+    let formatter = DateFormatter()
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = TimeZone(identifier: "Europe/Prague")
+    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+    return formatter.string(from: date)
+  }
+
   func confirmAndClear() async -> Bool {
     for _ in 0..<10 {
       guard ActivityAuthorizationInfo().areActivitiesEnabled else {
@@ -145,6 +228,42 @@ final class PhysicalAcceptanceModel: ObservableObject {
         try await liveActivityPrimer.startVisualProbe()
         liveActivityPrimerStatus = "Krátký test aktivní"
         status = "VIZUÁLNÍ TEST BĚŽÍ – přejděte na plochu, zamkněte telefon a zkontrolujte hodinky."
+      } catch {
+        self.error = error.localizedDescription
+      }
+      isBusy = false
+    }
+  }
+
+  func startScheduledProbe() {
+    guard !isBusy else { return }
+    isBusy = true
+    error = nil
+    CommanderPhysicalAcceptanceDiagnostics.clear()
+    Task {
+      do {
+        let activationStart = try await liveActivityPrimer.startScheduledProbe()
+        CommanderPhysicalAcceptanceDiagnostics.record(
+          "Scheduled probe vytvořen · start \(Self.time(activationStart))"
+        )
+        var sawPending = false
+        var sawActive = false
+        for _ in 0..<18 {
+          let state = await liveActivityPrimer.scheduledProbeState()
+          CommanderPhysicalAcceptanceDiagnostics.record("Scheduled probe state · \(state)")
+          if state == "pending" { sawPending = true }
+          if state == "active" { sawActive = true }
+          if sawPending && sawActive { break }
+          try? await Task.sleep(for: .seconds(1))
+        }
+        diagnosticTimeline = CommanderPhysicalAcceptanceDiagnostics.read() ?? "Scheduled probe bez diagnostiky"
+        if sawPending && sawActive {
+          liveActivityPrimerStatus = "Scheduled probe: pending → active"
+          status = "SCHEDULED PROBE PASS – systém aktivoval předem naplánovanou Live Activity."
+        } else {
+          liveActivityPrimerStatus = "Scheduled probe nedokončen"
+          status = "SCHEDULED PROBE FAIL – chybí přechod pending → active."
+        }
       } catch {
         self.error = error.localizedDescription
       }
@@ -239,7 +358,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
       let session = PhysicalAcceptanceSession(run: run, adapter: adapter)
       var summary: AlarmSyncSummary?
       var syncAttempts = 0
-      status = "Ověřuji 2 systémové alarmy; Commander čeká na Stop"
+      status = "Ověřuji 2 systémové alarmy a plánovanou Commander Live Activity"
       for tick in 0..<20 {
         if [0, 4, 10].contains(tick), syncAttempts < maxAttempts,
            summary?.succeeded != true {
@@ -261,13 +380,13 @@ final class PhysicalAcceptanceModel: ObservableObject {
         let check = try await PhysicalAcceptancePreflight(
           run: run, observations: observations, managed: session.alarmStore.load(),
           syncVerified: summary?.succeeded == true,
-          procedureActivityPrepared: true, now: now
+          procedureActivityPrepared: !preparedCommanderStableIDs.isEmpty, now: now
         )
         preflight = check
         readAt = now
         if check.ready {
           readyCommanderStableIDs = preparedCommanderStableIDs
-          recordDiagnostic("READY · alarmy 2/2 · Commander handoff čeká na Stop")
+          recordDiagnostic("READY · alarmy 2/2 · Commander Live Activity naplánována před Stop")
           recordSnapshot(run: run, readings: observations)
           startActivityStateObservers(run: run)
           status = "PŘIPRAVENO – 2/2 ověřeno. Zamkněte telefon."
@@ -383,7 +502,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
       lines += ["Run ID: \(run.id)", "now: \(Self.time(run.now))", "namespace: \(run.namespace)", "projectionRevision: \(run.projectionRevision)"]
     }
     if let preflight {
-      lines += ["Ověřeno: \(Self.time(preflight.checkedAt))", "Očekávané alarmy: 2; ověřené: \(preflight.verifiedAlarmCount)", "Skutečné alarmy při posledním čtení: \(observations.count)", "Commander handoff: vzniká až po Stop; aktuálně aktivní: \(preparedCommanderStableIDs.count)"]
+      lines += ["Ověřeno: \(Self.time(preflight.checkedAt))", "Očekávané alarmy: 2; ověřené: \(preflight.verifiedAlarmCount)", "Skutečné alarmy při posledním čtení: \(observations.count)", "Commander Live Activity: naplánována před Stop; aktivní/pending nyní: \(preparedCommanderStableIDs.count)"]
       for row in preflight.rows {
         lines += ["\(row.alarm.stableId) | \(row.alarm.title)", "lead: \(row.leadTime.minutes) min; source: \(Self.source(row.leadTime.source))", "canonical leaveAt / expected fire: \(row.alarm.leaveAt)", "expected visible/system transition: \(Self.time(row.expectedCountdownStart))"]
         if let actual = observations.first(where: { $0.stableID == row.alarm.stableId }) ?? row.actual {
@@ -502,7 +621,7 @@ struct PhysicalAcceptanceView: View {
           field("Očekávané alarmy", "2")
           field("Ověřené alarmy", "\(check.verifiedAlarmCount)")
           field("Skutečné alarmy", "\(model.observations.count)")
-          field("Commander handoff", "po Stop; aktivní nyní \(model.preparedCommanderStableIDs.count)")
+          field("Commander Live Activity", "předem naplánována; aktivní/pending \(model.preparedCommanderStableIDs.count)")
           field("Ověřeno v", PhysicalAcceptanceModel.time(check.checkedAt))
           ForEach(check.issues, id: \.self) { Text($0).foregroundStyle(.red) }
         }
@@ -552,7 +671,9 @@ struct PhysicalAcceptanceApp: App {
       PhysicalAcceptanceView(model: model)
         .preferredColorScheme(.dark)
         .task {
-          if ProcessInfo.processInfo.arguments.contains("--visual-probe") {
+          if ProcessInfo.processInfo.arguments.contains("--scheduled-probe") {
+            model.startScheduledProbe()
+          } else if ProcessInfo.processInfo.arguments.contains("--visual-probe") {
             model.startVisualProbe()
           } else if ProcessInfo.processInfo.arguments.contains("--auto-run") {
             model.start()

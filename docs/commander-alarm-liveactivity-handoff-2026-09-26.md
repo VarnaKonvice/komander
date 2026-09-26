@@ -2,110 +2,118 @@
 
 Date: 2026-09-26
 Branch: `lc/alarm-liveactivity-unification-v1`
-Base: `35ad9a4 Finalize Commander dashboard live-state UX`
+Base before this block: `35ad9a4 Finalize Commander dashboard live-state UX`
 
-## Verified baseline before this block
+## What is physically proven already
 
-- Dashboard / Today / Week / Settings work is checkpointed at `/Users/petrbohanes/commander-design-checkpoints/2026-09-26-dashboard-week-settings-final`.
-- Base commit `35ad9a4` is pushed to `origin/lc/schedule-acceptance-audit-v1`.
-- Core suite passed with 218 tests after the final live `Volno do večeře` update.
-- Physical iPhone build succeeded and installed.
-- Current physical destinations visible to Xcode/devicectl:
-  - `Petr -iPhone 16` (`00008140-0019586A3607001C`)
-  - `Petr – Apple Watch` (`00008310-001C09693CE0E01E`)
-- `NSSupportsLiveActivities` is enabled for the iPhone app and Live Activity extension.
-- `NSAlarmKitUsageDescription` is present.
+Historical acceptance evidence and the 2026-09-26 run prove these separately:
 
-## Current ownership model — preserve unless intentionally redesigned
+- AlarmKit real alarms fire on the physical iPhone.
+- AlarmKit sound has reached iPhone / Watch in earlier physical runs.
+- AlarmKit countdown / alert system presentation has been physically observed.
+- A Commander procedure Live Activity can render on the iPhone Lock Screen.
+- A Commander procedure Live Activity can replicate to Apple Watch Smart Stack/detail.
+- The short visual probe also proved Dynamic Island rendering when a Commander Activity actually exists.
+- `Právě probíhá / Do konce` has been physically exercised in older runs.
 
-### AlarmKit owns departure
+The unresolved point was not rendering. It was **creation timing**.
 
-`AlarmKitAdapter` schedules the real system alarm at canonical `leaveAt`.
+## Rejected architecture: create Commander from Stop
 
-- AlarmKit countdown window is capped at 30 minutes.
-- If the previous same-day event ends closer than 30 minutes before departure, the countdown window shrinks to that gap.
-- The actual alert deadline always remains canonical `leaveAt`.
-- AlarmKit presentation carries Commander metadata, including event identity, start/end/leave times, icon and the next event snapshot.
+The former contract made `CommanderAlarmStopIntent` the only creator of the first Commander Live Activity.
 
-### Stop intent hands off to Commander
+That route is now rejected. Multiple physical runs produced the same ActivityKit visibility failure while the intent executed in the background:
 
-`CommanderAlarmStopIntent` is the only production creator of `CommanderProcedureLiveActivityAttributes`.
+`The operation couldn’t be completed. Target is not foreground`
 
-- It first retires the stopped AlarmKit Activity.
-- It then updates the existing Commander Live Activity or creates exactly one Commander activity.
-- Events are merged into one ordered queue.
-- Duplicates are ended.
-- This ordering is deliberate because requesting a second Activity while AlarmKit still owns the active surface can fail with ActivityKit visibility restrictions.
+Retiring the AlarmKit activity first did not remove the system restriction reliably. Repeating the same Stop-create experiment therefore does not add useful evidence.
 
-### Foreground coordinator only reconciles
+## Current architecture
 
-`CommanderProcedureLiveActivityCoordinator` updates an already existing Commander Live Activity and removes duplicates, but deliberately does not create one.
+### AlarmKit remains the safety layer
 
-This is protected by regression tests and is an important stability invariant.
+- canonical `leaveAt` is still the alarm deadline,
+- AlarmKit owns departure countdown and the real audible alert,
+- existing reconciliation/read-back/repair logic remains independent from ActivityKit success.
 
-## Current system-surface story
+### One Commander Live Activity, prepared before Stop
 
-### Before departure
+`CommanderProcedureLiveActivityCoordinator` is now the only production creator of `CommanderProcedureLiveActivityAttributes`.
 
-AlarmKit Live Activity:
+- creation happens only from normal foreground/bootstrap reconciliation,
+- if the first still-relevant mandatory procedure is in the future, ActivityKit receives a scheduled start at that procedure's canonical `leaveAt`,
+- scheduled start uses bundled `CommanderSilentAlert.wav` so ActivityKit does not add a second audible alert next to AlarmKit,
+- if `leaveAt` has already passed while the app is legitimately foregrounded, the same coordinator may request the activity immediately,
+- maximum concurrent Commander activities remains one,
+- a pending scheduled activity is replaced if its anchor, schedule version, projection revision, or canonical `leaveAt` changes before activation,
+- old duplicates are ended,
+- Stop never calls `Activity.request`.
 
-- countdown mode: `Odchod za` + timer
-- alert mode: `Vyrazit teď`
-- Dynamic Island compact/minimal shows Commander brand + countdown
-- expanded Island shows status plus event title/location
-- Lock Screen shows large departure countdown / alert state
+### Planning rules are now pure and testable
 
-### After Stop handoff
+`CommanderLiveActivityPlan` lives in `LazenskyCommanderCore` and chooses:
 
-Commander procedure Live Activity:
+- the first remaining `procedure` as the mandatory anchor,
+- activation at the anchor's effective canonical `leaveAt`, including local lead-time overrides,
+- at most six queued events,
+- only events that fit inside a 7 h 50 min activity window.
 
-- before event starts: `Začíná za`
-- during event: `Právě probíhá` (meal variant: `Právě jídlo`)
-- after event: `Procedura skončila` / `Jídlo skončilo`
-- active timing uses `Do konce`
-- one activity can carry a short queue of following events and uses `Další:` / `Současně:`
+This deliberately leaves optional meal-only periods to AlarmKit if no mandatory procedure is available. It also avoids pretending one ActivityKit instance can cover a 10+ hour spa day.
 
-## UX gap to solve in this block
+## System-surface story
 
-The functional flow is stable, but wording and visual hierarchy are split across app and system surfaces.
+Before the Commander scheduled start, AlarmKit may show the departure countdown.
 
-The app now uses a clear story around:
+At the anchor `leaveAt`:
 
-`Následuje → Odchod → Právě probíhá → Do konce`
+- AlarmKit owns the real alarm / `Čas vyrazit`,
+- the already scheduled Commander Activity becomes active system-side,
+- after Stop there is no background create attempt to fail.
 
-The system surfaces still use a mix of:
+Commander then renders one queue as:
 
-`Odchod za`, `Vyrazit teď`, `Začíná za`, `Právě probíhá`, `Do konce`.
+`Následuje → Právě probíhá → Potom / Současně → Skončilo`
 
-The next work should unify the visual language without breaking AlarmKit ownership or the Stop handoff architecture.
+The same ActivityKit instance is the source for Lock Screen, Dynamic Island and system replication to Apple Watch.
 
-## Recommended order of work
+## Automated gate before another physical test
 
-1. Lock Screen AlarmKit visual/copy pass.
-2. Dynamic Island AlarmKit visual/copy pass (compact, minimal, expanded).
-3. Commander procedure Live Activity visual/copy pass.
-4. Verify handoff: AlarmKit countdown → alert → Stop → Commander upcoming/active.
-5. Physical iPhone test.
-6. Physical Watch / Smart Stack follow-up only after iPhone flow is stable.
+Do not ask Petr to repeat the old 15-minute Stop-create sequence.
 
-## Must-not-break invariants
+Before one final targeted physical proof, require:
 
-- canonical alarm deadline = `leaveAt`
-- one Commander Live Activity maximum
-- Stop intent remains the production creator of Commander activity
-- foreground reconciliation must not race a second Activity request
-- local lead-time overrides must move AlarmKit, app, Watch and Commander metadata together
-- no loss of next-event queue / overlap handling
-- ActivityKit static + dynamic payload remains below deliberate 3.6 KB target
-- current physical-acceptance harness remains available for destructive/system testing
+1. all Swift tests,
+2. production iOS build,
+3. Physical Acceptance build,
+4. Watch build,
+5. `git diff --check`,
+6. static regression guard: Stop intent contains no `Activity.request`,
+7. scheduled-create path exists only in the serialized coordinator,
+8. bundled silent alert exists in both production and Physical Acceptance app bundles,
+9. simulator scheduled-start probe transitions a Commander activity from pending to active.
 
-## Testing baseline
+Only after these pass is one physical scheduled-start proof justified.
 
-Relevant regression suites include:
+## Current test baseline
 
-- `AlarmCountdownPlanTests.swift`
-- `AlarmCountdownRegressionTests.swift`
-- `AlarmLiveActivityOwnershipRegressionTests.swift`
-- `PhysicalAcceptanceTests.swift`
+The core suite now includes `CommanderLiveActivityPlanTests` covering:
 
-The physical acceptance app already contains a short Dynamic Island + Watch visual probe and diagnostic timeline support.
+- first mandatory procedure anchoring,
+- 7 h 50 min lifetime window,
+- exclusion of early/late optional meals outside the window,
+- fallback to the next procedure after an earlier one ends,
+- no meal-only Commander activity,
+- override-adjusted canonical `leaveAt`.
+
+Physical Acceptance READY now requires a real Commander activity to be present as pending/active before the timed run proceeds.
+
+### Validation completed without another physical alarm run
+
+- Swift core suite: **222 tests in 3 suites passed**.
+- Production iOS generic build: **BUILD SUCCEEDED**.
+- Physical Acceptance generic iOS build: **BUILD SUCCEEDED**.
+- Watch generic build: **BUILD SUCCEEDED**.
+- The bundled silent alert is a 0.1 s PCM WAV whose 4,410 samples are all zero.
+- On the booted iPhone 16 simulator, the dedicated scheduled probe transitioned from `.pending` to `.active` without a Stop intent or foreground `Activity.request` at activation time. The diagnostic timeline recorded pending from 16:38:40 through 16:38:51 and active at 16:38:52 for an Activity scheduled at 16:38:48. Simulator timing is not a physical-device PASS, but it proves the new scheduled-start code path executes as designed.
+
+No further full two-alarm physical run should be requested until this architecture is committed and the final targeted physical proof is ready.

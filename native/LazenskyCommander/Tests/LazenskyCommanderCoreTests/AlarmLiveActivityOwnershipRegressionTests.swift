@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import LazenskyCommanderCore
 
-@Test func stopIntentCreatesOrUpdatesSingleCommanderProcedureActivityFromAlarmMetadata() throws {
+@Test func stopIntentNeverCreatesCommanderLiveActivityFromBackground() throws {
   let repo = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent()
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -14,21 +14,12 @@ import Testing
   let actorStart = try #require(adapter.range(of: "actor AlarmKitAdapter"))
   let stopIntent = String(adapter[stopStart.lowerBound..<actorStart.lowerBound])
 
-  #expect(stopIntent.contains("CommanderProcedureLiveActivityAttributes"))
-  #expect(stopIntent.contains("Activity<CommanderProcedureLiveActivityAttributes>"))
-  #expect(stopIntent.contains(".request("))
-  #expect(stopIntent.contains("await keeper.update(content)"))
-  #expect(stopIntent.contains("let ongoing = Activity<CommanderProcedureLiveActivityAttributes>.activities"))
-  #expect(stopIntent.contains("if let keeper = ongoing.first"))
-  #expect(stopIntent.contains("await Self.retireStoppedAlarmActivity(alarmID: alarmID)"))
-  #expect(stopIntent.contains("Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities"))
-  #expect(stopIntent.contains("await activity.end(nil, dismissalPolicy: .immediate)"))
-  let retire = try #require(stopIntent.range(of: "await Self.retireStoppedAlarmActivity(alarmID: alarmID)"))
-  let request = try #require(stopIntent.range(of: "_ = try Activity<CommanderProcedureLiveActivityAttributes>.request("))
-  #expect(retire.lowerBound < request.lowerBound)
-  #expect(stopIntent.contains("Self.mergeEvents(existing: existingEvents, incoming: incomingEvents, now: Date())"))
-  #expect(stopIntent.contains("events: events"))
-  #expect(stopIntent.contains("staleDate: Self.staleDate(for: state.events)"))
+  #expect(stopIntent.contains("static let supportedModes: IntentModes = [.background]"))
+  #expect(stopIntent.contains("activityPayload"))
+  #expect(stopIntent.contains("Commander Live Activity se nevytváří z backgroundu"))
+  #expect(!stopIntent.contains("Activity<CommanderProcedureLiveActivityAttributes>"))
+  #expect(!stopIntent.contains(".request("))
+  #expect(!stopIntent.contains(".update("))
   #expect(stopIntent.contains("return .result()"))
 }
 
@@ -52,20 +43,21 @@ import Testing
   #expect(adapter.contains("countdownDuration: Alarm.CountdownDuration("))
   #expect(adapter.contains("preAlert: countdownPlan.countdownWindow"))
   #expect(adapter.contains("LocalizedStringResource(stringLiteral: \"Odchod · \\(alarm.title)\")"))
-  #expect(adapter.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
-  #expect(adapter.contains("private actor CommanderAlarmStopHandoffGate"))
-  #expect(adapter.contains("await CommanderAlarmStopHandoffGate.shared.run"))
-  #expect(!coordinator.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
+  #expect(!adapter.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
+  #expect(!adapter.contains("CommanderAlarmStopHandoffGate"))
+  #expect(coordinator.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
   #expect(!adapter.contains("maximumCommanderActivities"))
   #expect(!adapter.contains("departureBridge"))
 
   #expect(coordinator.contains("maximumConcurrentActivities = 1"))
   #expect(coordinator.contains("CommanderProcedureLiveActivityPolicy.maximumQueuedEvents"))
-  #expect(!coordinator.contains("start: candidate.leaveAt"))
+  #expect(coordinator.contains("start: plan.activationStart"))
   #expect(coordinator.contains("if let keeper = existing.first"))
   #expect(coordinator.contains("for duplicate in existing.dropFirst()"))
-  #expect(!coordinator.contains("CommanderSilentAlert.wav"))
-  #expect(coordinator.contains("staleDate: Self.staleDate(for: state.events)"))
+  #expect(coordinator.contains("CommanderSilentAlert.wav"))
+  #expect(coordinator.contains("CommanderLiveActivityPlan.make("))
+  #expect(coordinator.contains("maximumActiveLifetime"))
+  #expect(coordinator.contains("staleDate: Self.staleDate(for: state.events, activationStart:"))
   #expect(adapter.contains("scheduleOverrides = overrides"))
   #expect(adapter.contains("nextEvent: nextEvent"))
   #expect(adapter.contains("nextEventSnapshot(after: alarm"))
@@ -124,7 +116,11 @@ import Testing
   #expect(coordinator.contains("if let keeper = existing.first"))
   #expect(coordinator.contains("for duplicate in existing.dropFirst()"))
   #expect(coordinator.contains("relevanceScore: 1_000"))
-  #expect(!coordinator.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
+  #expect(coordinator.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
+  #expect(coordinator.contains("alertConfiguration: alert"))
+  #expect(coordinator.contains("start: plan.activationStart"))
+  #expect(coordinator.contains("keeper.activityState != .pending"))
+  #expect(coordinator.contains("abs(keeper.attributes.leaveAt.timeIntervalSince(plan.activationStart)) <= 1"))
   #expect(!coordinator.contains("relevanceScores"))
 }
 
@@ -141,8 +137,8 @@ import Testing
     encoding: .utf8
   )
   #expect(physical.contains("readyCommanderStableIDs = preparedCommanderStableIDs"))
-  #expect(physical.contains("Commander handoff: vzniká až po Stop"))
-  #expect(physical.contains("Commander handoff čeká na Stop"))
+  #expect(physical.contains("Commander Live Activity: naplánována před Stop"))
+  #expect(physical.contains("Commander Live Activity naplánována před Stop"))
   #expect(shared.contains("physicalAcceptance.timeline.v2"))
   #expect(shared.contains("stringArray(forKey: timelineKey)"))
 }
@@ -195,11 +191,11 @@ import Testing
     contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderLiveActivity/LazenskyCommanderLiveActivity.swift"),
     encoding: .utf8
   )
-  #expect(!coordinator.contains("start: candidate.leaveAt"))
+  #expect(coordinator.contains("start: plan.activationStart"))
   #expect(coordinator.contains("maximumConcurrentActivities = 1"))
   #expect(coordinator.contains("let snapshots = queue.map(Self.snapshot)"))
   #expect(coordinator.contains("CommanderProcedureLiveActivityPolicy.contentState("))
-  #expect(coordinator.contains("staleDate: Self.staleDate(for: state.events)"))
+  #expect(coordinator.contains("staleDate: Self.staleDate(for: state.events, activationStart:"))
   #expect(coordinator.contains("CommanderAlarmEventSnapshot("))
   #expect(live.contains("TimelineView(.explicit(CommanderProcedureDisplay.timelineDates(attributes: context.attributes, state: context.state)))"))
   #expect(live.contains("CommanderProcedureDisplay.resolve(attributes: context.attributes, state: context.state, at: min(timeline.date, Date()))"))
@@ -262,7 +258,8 @@ import Testing
   #expect(coordinator.contains("for duplicate in existing.dropFirst()"))
   #expect(coordinator.contains("Self.retentionRank($0.activityState) < Self.retentionRank($1.activityState)"))
   #expect(coordinator.contains("maximumConcurrentActivities = 1"))
-  #expect(!coordinator.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
+  #expect(coordinator.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
+  #expect(coordinator.contains("alertConfiguration: alert"))
   #expect(!coordinator.contains("retainedStableIDs"))
 
   #expect(app.contains("let projectionOverrides = leadTimeOverrides"))

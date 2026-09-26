@@ -1,6 +1,6 @@
 # Lázeňský Commander – runtime kontrakt v1
 
-Pracovní větev: `lc/liveactivity-rebuild-v1`; základní HEAD rekonstrukce `b8cd52a`. Změny tohoto průchodu jsou do fyzického acceptance záměrně necommitnuté.
+Pracovní větev: `lc/alarm-liveactivity-unification-v1`. Aktuální architektura navazuje na historickou rekonstrukci `lc/liveactivity-rebuild-v1`, ale Stop-create handoff už není podporovaný.
 
 Tento kontrakt odděluje zdroj pravdy, projekce, jejich ověření a systémové limity. Cílem je, aby fyzický stav iPhonu byl dokazatelný a aby zelený stav aplikace neznamenal více, než skutečně ověřila.
 
@@ -45,7 +45,7 @@ Read-back musí proběhnout po zápisu. Pouhé uložení lokálního mapování 
 
 Musí být vyhodnocena samostatně. `AlarmKit ověřeno` nesmí implicitně znamenat, že existuje správná Live Activity.
 
-AlarmKit vlastní celý odchodový countdown a alert. Commander Live Activity se před prvním Stop nepřipravuje jako samostatná budoucí karta. První Stop ji vytvoří, další Stopy aktualizují dynamický `ContentState` téže jediné aktivity. Fronta uvnitř `ContentState` nese nejbližší neskončené události; do `startAt` hlavní položka ukazuje `Začíná za`, od `startAt` `Právě…` a v `endAt` se tatáž karta posune na další položku. Pro jeden projekční průchod musí AlarmKit, Commander Live Activity a Watch používat stejné zachycené `LeadTimeOverrides` a stejnou `projectionRevision`; změna lokálního předstihu během `await` se nesmí promítnout jen do jedné projekce. Existence ani selhání Commander vrstvy nesmí měnit ověření AlarmKitu.
+AlarmKit vlastní celý odchodový countdown a alert. Commander Live Activity se připravuje z legitimního foreground execution time ještě před Stopem: pokud je kotevní procedura v budoucnu, používá ActivityKit scheduled start v jejím canonical `leaveAt`; pokud už tento okamžik nastal a aplikace je v popředí, aktivita se spustí okamžitě. Stop intent Commander aktivitu nikdy nevytváří z backgroundu. Fronta uvnitř `ContentState` nese nejbližší neskončené události v jednom omezeném okně; do `startAt` hlavní položka ukazuje `Následuje`, od `startAt` `Právě probíhá` a v `endAt` se tatáž karta posune na další položku. Pro jeden projekční průchod musí AlarmKit, Commander Live Activity a Watch používat stejné zachycené `LeadTimeOverrides` a stejnou `projectionRevision`; změna lokálního předstihu během `await` se nesmí promítnout jen do jedné projekce. Existence ani selhání Commander vrstvy nesmí měnit ověření AlarmKitu.
 
 ### Watch synchronizovány
 
@@ -90,13 +90,13 @@ Záznam musí vznikat před opravnou mutací i po ní, aby následný foreground
 Schválený runtime tok je:
 
 1. před odchodem AlarmKit vlastní systémový countdown,
-2. v `leaveAt` AlarmKit vlastní `VYRAZIT TEĎ` a skutečný alarm,
-3. první úspěšný Stop vytvoří **jedinou** vlastní Commander Live Activity, pokud ještě neexistuje,
-4. každý další Stop pouze aktualizuje `ContentState` téže Commander aktivity; další Commander instance se nezakládá,
-5. dynamický stav nese chronologickou frontu nejvýše šesti nejbližších neskončených událostí a `staleDate` se posouvá na konec poslední známé položky,
-6. před `startAt` tatáž karta zobrazuje `ZAČÍNÁ ZA`; v `startAt` se přes explicitní `TimelineView` přepne na `PRÁVĚ JÍDLO` / `PRÁVĚ PROBÍHÁ` a změní stavové zvýraznění; po `endAt` přejde na další známou událost nebo na skončený stav,
+2. foreground/bootstrap synchronizace z canonical rozpisu naplánuje nejvýše jednu Commander Live Activity; kotevní událostí je první ještě relevantní povinná procedura a scheduled start je její canonical `leaveAt`,
+3. v `leaveAt` AlarmKit vlastní `ČAS VYRAZIT` a skutečný alarm; Commander aktivita se ve stejném časovém okně aktivuje systémovým scheduled startem, nikoli background requestem ze Stop intentu,
+4. Stop pouze zastaví AlarmKit alarm; vlastní Commander ActivityKit instanci nevytváří ani nezakládá konkurenční handoff cestu,
+5. dynamický stav nese chronologickou frontu nejvýše šesti neskončených událostí uvnitř jednoho maximálně 7 h 50 min okna a `staleDate` nepřekračuje toto okno,
+6. před `startAt` tatáž karta zobrazuje `NÁSLEDUJE`; v `startAt` se přes explicitní `TimelineView` přepne na `PRÁVĚ PROBÍHÁ` a po `endAt` přejde na další známou událost nebo na skončený stav,
 7. při překryvu zůstává jako hlavní dříve zahájená stále probíhající událost; následující událost je zobrazena pod ní a po konci první automaticky převezme hlavní pozici,
-8. foreground reconciliation pouze doplní/aktualizuje frontu téže aktivity z posledního validního canonical rozpisu a případné duplicitní staré Commander instance ukončí.
+8. foreground reconciliation aktualizuje jediného keepera, ukončí historické duplicity a pokud žádná aktivita neexistuje, smí naplánovat právě jednu novou scheduled/foreground instanci.
 
 ActivityKit dynamický obsah je uložen v `ContentState`; event-specifická data se proto nemají modelovat jako série nových Commander aktivit. `staleDate` není příkaz k ukončení, ale okamžik zastarání obsahu a při update se posouvá dál. Systémová AlarmKit countdown/alert prezentace je samostatná systémová vrstva a během odchodové fáze může dočasně koexistovat s jedinou Commander Live Activity; aplikace ale nesmí vytvářet druhou vlastní Commander kartu kvůli další proceduře nebo jídlu.
 
@@ -129,8 +129,8 @@ Fyzický PASS vzniká až skutečným průchodem na zařízení. CI/build ani di
 
 Dokud nebude výslovně doplněn systémový background/push transport, není garantováno, že změna `schedule.json` během dlouhodobě suspendované aplikace sama probudí iPhone a okamžitě přepíše jeho lokální alarmy.
 
-Commander používá nejvýše jednu vlastní Live Activity současně. Události se nepřipravují jako více ActivityKit instancí; jsou uložené jako omezená fronta v dynamickém ContentState jediné aktivity. První Stop ji může vytvořit, každý další Stop tutéž instanci aktualizuje a foreground reconciliation pouze doplňuje její frontu. Pokud se dvě události překrývají, dříve začatá dosud běžící událost zůstává hlavní a překrývající událost se zobrazuje jako „Současně“; po konci první se tatáž Live Activity automaticky přepne na druhou.
+Commander používá nejvýše jednu vlastní Live Activity současně. Události se nepřipravují jako více ActivityKit instancí; jsou uložené jako omezená fronta v dynamickém `ContentState` jediné aktivity. Vznik aktivity patří foreground/scheduled coordinatoru, nikoli Stop intentu. Pokud se dvě události překrývají, dříve začatá dosud běžící událost zůstává hlavní a překrývající událost se zobrazuje jako „Současně“; po konci první se tatáž Live Activity automaticky přepne na druhou.
 
-ActivityKit má systémový limit: jedna Live Activity může být aktivní nejvýše osm hodin. Po jeho dosažení ji iOS ukončí; další Stop smí v takovém případě vytvořit novou instanci, ale produkční invariant zůstává „nejvýše jedna aktivní Commander Live Activity současně“. Proto není garantována jedna fyzická ActivityKit instance přes celý lázeňský den delší než osm hodin. Celodenní garantovanou upozorňovací vrstvou zůstává AlarmKit; Commander mezi alarmy používá jednu průběžně aktualizovanou aktivitu.
+ActivityKit má systémový limit aktivní životnosti. Commander proto plánuje okno maximálně 7 h 50 min od canonical `leaveAt` kotevní procedury a nezařazuje do fronty události, které by skončily za touto hranicí. Není tedy garantována jedna fyzická ActivityKit instance přes celý lázeňský den delší než toto okno. Celodenní garantovanou upozorňovací vrstvou zůstává AlarmKit; Commander pokrývá povinnou procedurální část dne jednou předem připravenou aktivitou.
 
 Tato mez nesnižuje spolehlivost již jednou ověřených budoucích AlarmKit alarmů; odděluje pouze distribuci nové canonical verze od jejího lokálního provedení.
