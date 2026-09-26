@@ -99,7 +99,7 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
       }.prefix(2))
     } ?? []
     let stayPeriod = CommanderStayPresentation.period(stay: schedule.stay, now: now)
-    let nextProcedure = timeline.isEmpty && stayPeriod?.phase != .finished
+    let nextProcedure = stayPeriod?.phase != .finished
       ? firstFutureProcedure(schedule: schedule, now: now, overrides: overrides)
       : nil
 

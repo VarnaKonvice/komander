@@ -201,8 +201,11 @@ struct CommanderApprovedVisualProof: View {
           VStack(spacing: CommanderDesignTokens.Spacing.medium) {
             CommanderGlassHeader(tab: "")
             if Self.mode == "program" || Self.mode == "program-later" {
-              CommanderDayTimelineView(items: Self.mode == "program"
-                ? Array(days[0].events.prefix(5)) : Array(days[0].events.suffix(5)))
+              CommanderDayTimelineView(
+                items: Self.mode == "program"
+                  ? Array(days[0].events.prefix(5)) : Array(days[0].events.suffix(5)),
+                excludedStableIDs: []
+              )
             } else {
               let isToday = Self.mode == "week-today"
               CommanderWeekDayTile(day: days[isToday ? 0 : 1],

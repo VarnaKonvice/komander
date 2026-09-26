@@ -1,6 +1,80 @@
 import LazenskyCommanderCore
 import SwiftUI
 
+enum CommanderScheduleAuditVisualStatus: Equatable {
+  case unavailable
+  case ok
+  case warning(Int)
+  case error(Int)
+
+  var attentionColor: Color? {
+    switch self {
+    case .unavailable, .ok: nil
+    case .warning: CommanderDesignTokens.Colors.urgentOrange
+    case .error: CommanderDesignTokens.Colors.criticalRed
+    }
+  }
+
+  var sectionAccent: Color {
+    switch self {
+    case .unavailable: CommanderDesignTokens.Colors.locationBlue
+    case .ok: CommanderDesignTokens.Colors.mealGreen
+    case .warning: CommanderDesignTokens.Colors.urgentOrange
+    case .error: CommanderDesignTokens.Colors.criticalRed
+    }
+  }
+
+  var shouldOpenAuditFromSettingsTab: Bool {
+    switch self {
+    case .warning: true
+    case .unavailable, .ok, .error: false
+    }
+  }
+
+  var symbol: String {
+    switch self {
+    case .unavailable: "checkmark.shield.fill"
+    case .ok: "checkmark.circle.fill"
+    case .warning: "exclamationmark.triangle.fill"
+    case .error: "exclamationmark.octagon.fill"
+    }
+  }
+
+  var subtitle: String {
+    switch self {
+    case .unavailable:
+      "Rozpis ještě není načten"
+    case .ok:
+      "Rozpis je v pořádku"
+    case .warning(let count):
+      switch count {
+      case 1: "1 položka čeká na kontrolu"
+      case 2...4: "\(count) položky čekají na kontrolu"
+      default: "\(count) položek čeká na kontrolu"
+      }
+    case .error(let count):
+      switch count {
+      case 1: "1 chyba vyžaduje zásah"
+      case 2...4: "\(count) chyby vyžadují zásah"
+      default: "\(count) chyb vyžaduje zásah"
+      }
+    }
+  }
+}
+
+@MainActor
+func commanderScheduleAuditVisualStatus(for model: CommanderViewModel) -> CommanderScheduleAuditVisualStatus {
+  guard let schedule = model.latestSchedule else { return .unavailable }
+  let report = CommanderScheduleAudit.run(schedule, policy: .petrSpaOperational)
+  let review = CommanderScheduleAuditReview.resolve(
+    report: report,
+    acknowledgements: model.scheduleAuditAcknowledgements
+  )
+  if !review.errors.isEmpty { return .error(review.errors.count) }
+  if !review.openWarnings.isEmpty { return .warning(review.openWarnings.count) }
+  return .ok
+}
+
 struct CommanderSettingsView: View {
   @ObservedObject var model: CommanderViewModel
 
@@ -86,9 +160,9 @@ struct CommanderScheduleAuditView: View {
 
         if let report, let review {
           statusCard(report, review: review)
+          issuesCard(report, review: review)
           summaryCard(report)
           alarmVerificationCard
-          issuesCard(report, review: review)
         } else {
           CommanderSectionCard(
             title: "Rozpis není načten",
@@ -396,6 +470,10 @@ private struct CommanderScheduleSettingsCard: View {
   @ObservedObject var model: CommanderViewModel
   @Environment(\.commanderOpenScheduleAudit) private var openScheduleAudit
 
+  private var auditStatus: CommanderScheduleAuditVisualStatus {
+    commanderScheduleAuditVisualStatus(for: model)
+  }
+
   private var needsAlarmPermission: Bool {
     model.accessStatus.contains("not been requested") || model.accessStatus.contains("denied")
   }
@@ -404,16 +482,16 @@ private struct CommanderScheduleSettingsCard: View {
     CommanderSectionCard(
       title: "Rozpis",
       symbol: "calendar",
-      accent: CommanderDesignTokens.Colors.locationBlue
+      accent: auditStatus.sectionAccent
     ) {
       Button {
         openScheduleAudit()
       } label: {
         CommanderNavigationRow(
           title: "Kontrola rozpisu",
-          subtitle: "Anomálie, změny a potvrzení",
-          symbol: "checkmark.shield.fill",
-          accent: CommanderDesignTokens.Colors.locationBlue
+          subtitle: auditStatus.subtitle,
+          symbol: auditStatus.symbol,
+          accent: auditStatus.sectionAccent
         )
       }
       .buttonStyle(.plain)

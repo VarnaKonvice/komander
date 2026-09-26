@@ -14,30 +14,8 @@ struct CommanderAppTabs: View {
 
   }
 
-  private enum AuditAttention {
-    case none
-    case warning
-    case error
-
-    var color: Color? {
-      switch self {
-      case .none: nil
-      case .warning: CommanderDesignTokens.Colors.urgentOrange
-      case .error: CommanderDesignTokens.Colors.criticalRed
-      }
-    }
-  }
-
-  private var auditAttention: AuditAttention {
-    guard let schedule = model.latestSchedule else { return .none }
-    let report = CommanderScheduleAudit.run(schedule, policy: .petrSpaOperational)
-    let review = CommanderScheduleAuditReview.resolve(
-      report: report,
-      acknowledgements: model.scheduleAuditAcknowledgements
-    )
-    if !review.errors.isEmpty { return .error }
-    if !review.openWarnings.isEmpty { return .warning }
-    return .none
+  private var auditStatus: CommanderScheduleAuditVisualStatus {
+    commanderScheduleAuditVisualStatus(for: model)
   }
 
   private static func previewTabIndex() -> Int {
@@ -113,11 +91,15 @@ struct CommanderAppTabs: View {
         selection: Binding(
           get: { isScheduleAuditPresented ? 4 : selectedTab },
           set: { newSelection in
-            isScheduleAuditPresented = false
             selectedTab = newSelection
+            if newSelection == 4 && auditStatus.shouldOpenAuditFromSettingsTab {
+              isScheduleAuditPresented = true
+            } else {
+              isScheduleAuditPresented = false
+            }
           }
         ),
-        settingsAttentionColor: auditAttention.color
+        settingsAttentionColor: auditStatus.attentionColor
       )
         .padding(.horizontal, CommanderDesignTokens.Spacing.page)
         .padding(.top, 5)

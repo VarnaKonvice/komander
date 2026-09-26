@@ -8,7 +8,7 @@ struct CommanderNextEventView: View {
 
   private var detail: String {
     let target = item.leaveAt > now ? item.leaveAt : item.startAt
-    let prefix = item.leaveAt > now ? "Odchod za" : "Začátek za"
+    let prefix = item.leaveAt > now ? "Odchod" : "Začátek za"
     let minutes = max(0, Int(ceil(target.timeIntervalSince(now) / 60)))
     return "\(prefix) \(minutes) min"
   }

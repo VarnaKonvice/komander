@@ -38,6 +38,16 @@ import Testing
   #expect(dashboard.dayOverview.firstRelevantTitle == "Koupel")
 }
 
+@Test func dayOverviewFreeBeforeDinnerCountsDownOnlyAfterFreeTimeStarts() {
+  let overview = summaryPresentation(summarySchedule(summaryEvents()), "08:30").dayOverview
+
+  #expect(overview.remainingFreeBeforeDinnerMinutes(at: summaryDate("13:00")) == 190)
+  #expect(overview.remainingFreeBeforeDinnerMinutes(at: summaryDate("14:20")) == 190)
+  #expect(overview.remainingFreeBeforeDinnerMinutes(at: summaryDate("15:00")) == 150)
+  #expect(overview.remainingFreeBeforeDinnerMinutes(at: summaryDate("17:29")) == 1)
+  #expect(overview.remainingFreeBeforeDinnerMinutes(at: summaryDate("17:30")) == 0)
+}
+
 @Test func dayOverviewDoesNotInventFreeBeforeDinnerWithoutProceduresOrDinner() {
   let mealsOnly = summaryPresentation(summarySchedule(summaryEvents().filter { $0.kind == .meal }), "14:00").dayOverview
   #expect(mealsOnly.procedureCount == 0)

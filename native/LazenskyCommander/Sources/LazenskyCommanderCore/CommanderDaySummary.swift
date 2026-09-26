@@ -88,6 +88,13 @@ public struct CommanderDayOverview: Equatable, Sendable {
     freeBeforeDinner.map { Int(ceil($0.duration / 60)) }
   }
 
+  public func remainingFreeBeforeDinnerMinutes(at now: Date) -> Int? {
+    guard let interval = freeBeforeDinner else { return nil }
+    let effectiveStart = max(now, interval.start)
+    guard effectiveStart < interval.end else { return 0 }
+    return Int(ceil(interval.end.timeIntervalSince(effectiveStart) / 60))
+  }
+
   public static func make(date: Date, timeline: [CommanderDashboardEvent], now: Date) -> Self {
     let summary = CommanderDaySummary.make(timeline: timeline, now: now)
     let dinner = timeline.first { CommanderDaySummary.isDinner($0.event) }

@@ -17,7 +17,8 @@ struct CommanderWeekView: View {
     TimelineView(.everyMinute) { context in
       weekContent(
         days: days(at: context.date),
-        today: Self.calendar.startOfDay(for: context.date)
+        today: Self.calendar.startOfDay(for: context.date),
+        now: context.date
       )
     }
   }
@@ -36,7 +37,7 @@ struct CommanderWeekView: View {
     }
   }
 
-  private func weekContent(days: [CommanderWeekDay]?, today: Date) -> some View {
+  private func weekContent(days: [CommanderWeekDay]?, today: Date, now: Date) -> some View {
     ScrollViewReader { proxy in
       VStack(spacing: 0) {
         CommanderPinnedTabHeader(
@@ -52,13 +53,16 @@ struct CommanderWeekView: View {
                 && day.date == days[min(1, days.count - 1)].date
               CommanderWeekDayTile(
                 day: day, isExpanded: expandedDays.contains(day.date) || previewExpanded,
-                isPast: day.date < today, isToday: day.date == today
+                isPast: day.date < today, isToday: day.date == today,
+                now: day.date == today ? now : nil
               ) {
                 if expandedDays.contains(day.date) {
-                  expandedDays.remove(day.date)
+                  withAnimation(.easeOut(duration: 0.18)) {
+                    expandedDays.remove(day.date)
+                  }
                 } else {
-                  expandedDays = [day.date]
-                  DispatchQueue.main.async {
+                  withAnimation(.easeOut(duration: 0.20)) {
+                    expandedDays = [day.date]
                     proxy.scrollTo(day.date, anchor: .top)
                   }
                 }
@@ -108,13 +112,29 @@ struct CommanderWeekDayTile: View {
   let isExpanded: Bool
   var isPast = false
   var isToday = false
+  var now: Date? = nil
   let toggle: () -> Void
+
+  private var focusItem: CommanderDashboardEvent? {
+    guard isToday else { return nil }
+    return day.events.first(where: { $0.phase == .current })
+      ?? day.events.first(where: { $0.phase == .future })
+  }
+
+  private var focusAccent: Color? {
+    focusItem.map { CommanderEventAppearance.accent(for: $0.event) }
+  }
+
+  private var tileAccent: Color {
+    focusAccent
+      ?? (isToday ? CommanderDesignTokens.Colors.procedureCyan : CommanderDesignTokens.Colors.locationBlue)
+  }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
       Button(action: toggle) {
         CommanderDaySummaryCard(
-          overview: day.overview, isExpanded: isExpanded, embedded: true
+          overview: day.overview, isExpanded: isExpanded, now: now, embedded: true
         )
         .contentShape(Rectangle())
       }
@@ -131,7 +151,10 @@ struct CommanderWeekDayTile: View {
         } else {
           LazyVStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
             ForEach(day.events, id: \.event.stableId) { item in
-              CommanderEventRow(item: item)
+              CommanderEventRow(
+                item: item,
+                isEmphasized: item.event.stableId == focusItem?.event.stableId
+              )
             }
           }
           .padding(.horizontal, 8)
@@ -140,12 +163,21 @@ struct CommanderWeekDayTile: View {
       }
     }
     // Expansion adds rows, never shrinks or replaces the full summary.
-    .commanderCard(
-      accent: isToday ? CommanderDesignTokens.Colors.procedureCyan : CommanderDesignTokens.Colors.locationBlue,
-      surface: .depthCard
-    )
+    .commanderCard(accent: tileAccent, surface: .depthCard)
     .overlay {
-      if isToday {
+      if let focusAccent {
+        RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.card)
+          .strokeBorder(
+            LinearGradient(
+              colors: [focusAccent.opacity(0.96), Color.white.opacity(0.70), focusAccent.opacity(0.82)],
+              startPoint: .topLeading,
+              endPoint: .bottomTrailing
+            ),
+            lineWidth: 1.6
+          )
+          .shadow(color: focusAccent.opacity(0.24), radius: 2.2)
+          .allowsHitTesting(false)
+      } else if isToday {
         RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.card)
           .strokeBorder(CommanderDesignTokens.Colors.procedureCyan.opacity(0.28), lineWidth: 1.1)
           .allowsHitTesting(false)
@@ -160,6 +192,7 @@ struct CommanderDaySummaryCard: View {
   let overview: CommanderDayOverview
   var isExpanded: Bool? = nil
   var stayPeriod: CommanderStayPeriod? = nil
+  var now: Date? = nil
   var embedded = false
 
   var body: some View {
@@ -225,7 +258,7 @@ struct CommanderDaySummaryCard: View {
           .accessibilityLabel("Den pobytu \(day) z \(period.totalDays)")
         }
       }
-      CommanderDayMetrics(overview: overview)
+      CommanderDayMetrics(overview: overview, now: now)
     }
     .padding(.horizontal, 12)
     .padding(.top, 14)
@@ -245,6 +278,7 @@ struct CommanderDaySummaryCard: View {
 /// Identical geometry in Today and in every collapsed / expanded week summary.
 struct CommanderDayMetrics: View {
   let overview: CommanderDayOverview
+  var now: Date? = nil
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   var body: some View {
@@ -276,7 +310,14 @@ struct CommanderDayMetrics: View {
   }
 
   private var freeTime: String {
-    guard let minutes = overview.freeBeforeDinnerMinutes else { return "—" }
+    let minutes: Int?
+    if let now {
+      minutes = overview.remainingFreeBeforeDinnerMinutes(at: now)
+    } else {
+      minutes = overview.freeBeforeDinnerMinutes
+    }
+
+    guard let minutes else { return "—" }
     let hours = minutes / 60
     let remainder = minutes % 60
     // Keep number + unit together; mixed durations have one deliberate line break.

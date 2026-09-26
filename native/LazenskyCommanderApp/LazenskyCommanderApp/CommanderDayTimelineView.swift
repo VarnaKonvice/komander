@@ -3,34 +3,88 @@ import SwiftUI
 
 struct CommanderDayTimelineView: View {
   let items: [CommanderDashboardEvent]
+  let excludedStableIDs: Set<String>
+  @State private var showPast = false
+
+  private var remainingItems: [CommanderDashboardEvent] {
+    items.filter {
+      $0.phase == .future && !excludedStableIDs.contains($0.event.stableId)
+    }
+  }
+
+  private var pastItems: [CommanderDashboardEvent] {
+    items.filter { $0.phase == .past }
+  }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      HStack(alignment: .firstTextBaseline) {
-        Text("Dnešní program")
-          .commanderFont(.section)
-          .foregroundStyle(.white)
-          .accessibilityAddTraits(.isHeader)
-        Spacer(minLength: 8)
-        Text(eventCountText)
-          .font(.system(size: 15, weight: .semibold))
-          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+    if !remainingItems.isEmpty || !pastItems.isEmpty {
+      VStack(alignment: .leading, spacing: 8) {
+      if !remainingItems.isEmpty {
+        HStack(alignment: .firstTextBaseline) {
+          Text("Dál dnes")
+            .commanderFont(.section)
+            .foregroundStyle(.white)
+            .accessibilityAddTraits(.isHeader)
+          Spacer(minLength: 8)
+          Text(eventCountText(remainingItems.count))
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        }
+
+        LazyVStack(spacing: 5) {
+          ForEach(remainingItems, id: \.event.stableId) { item in
+            CommanderEventRow(item: item, compact: true)
+          }
+        }
       }
-      LazyVStack(spacing: 5) {
-        ForEach(items, id: \.event.stableId) { item in
-          CommanderEventRow(item: item, compact: true)
+
+      if !pastItems.isEmpty {
+        if !remainingItems.isEmpty {
+          Divider()
+            .overlay(CommanderDesignTokens.Colors.textSecondary.opacity(0.18))
+            .padding(.vertical, 2)
+        }
+
+        Button {
+          withAnimation(.easeOut(duration: 0.18)) {
+            showPast.toggle()
+          }
+        } label: {
+          HStack(spacing: 8) {
+            Image(systemName: showPast ? "chevron.up" : "chevron.down")
+              .font(.system(size: 14, weight: .bold))
+            Text("Proběhlé dnes")
+              .font(.system(size: 17, weight: .bold))
+            Spacer(minLength: 8)
+            Text("\(pastItems.count)")
+              .font(.system(size: 15, weight: .semibold))
+              .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          }
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityValue(showPast ? "Rozbaleno" : "Sbaleno")
+
+        if showPast {
+          LazyVStack(spacing: 5) {
+            ForEach(pastItems, id: \.event.stableId) { item in
+              CommanderEventRow(item: item, compact: true)
+            }
+          }
         }
       }
     }
-    .padding(10)
-    .commanderCard(accent: CommanderDesignTokens.Colors.procedureCyan, surface: .depthCard)
+      .padding(10)
+      .commanderCard(accent: CommanderDesignTokens.Colors.procedureCyan, surface: .depthCard)
+    }
   }
 
-  private var eventCountText: String {
-    switch items.count {
+  private func eventCountText(_ count: Int) -> String {
+    switch count {
     case 1: "1 událost"
-    case 2...4: "\(items.count) události"
-    default: "\(items.count) událostí"
+    case 2...4: "\(count) události"
+    default: "\(count) událostí"
     }
   }
 }
@@ -38,11 +92,13 @@ struct CommanderDayTimelineView: View {
 struct CommanderEventRow: View {
   let item: CommanderDashboardEvent
   var compact = false
+  var isEmphasized = false
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
   private var accent: Color { CommanderEventAppearance.accent(for: item.event) }
   private var isPast: Bool { item.phase == .past }
   private var isCurrent: Bool { item.phase == .current }
+  private var shouldHighlight: Bool { isCurrent || isEmphasized }
   private var rowAccent: Color { accent }
   private var isSingleWordTitle: Bool {
     !item.event.title.contains { $0.isWhitespace }
@@ -106,7 +162,7 @@ struct CommanderEventRow: View {
     .frame(maxWidth: .infinity, alignment: .leading)
     .commanderCard(accent: accent, surface: .eventRow)
     .overlay {
-      if isCurrent {
+      if shouldHighlight {
         RoundedRectangle(cornerRadius: CommanderDesignTokens.Radius.eventRow)
           .strokeBorder(
             LinearGradient(
@@ -120,22 +176,11 @@ struct CommanderEventRow: View {
           .allowsHitTesting(false)
       }
     }
-    .overlay(alignment: .leading) {
-      if isCurrent {
-        Capsule()
-          .fill(rowAccent)
-          .frame(width: 4)
-          .padding(.vertical, 11)
-          .offset(x: 3)
-          .shadow(color: rowAccent.opacity(0.38), radius: 2)
-          .allowsHitTesting(false)
-      }
-    }
     .grayscale(isPast ? 0.55 : 0)
     .saturation(isPast ? 0.30 : 1)
     .opacity(isPast ? 0.72 : 1)
     .accessibilityElement(children: .combine)
-    .accessibilityValue(isCurrent ? "Právě probíhá" : isPast ? "Dokončeno" : "")
+    .accessibilityValue(isCurrent ? "Právě probíhá" : isEmphasized ? "Následuje" : isPast ? "Dokončeno" : "")
   }
 
   private var departure: some View {

@@ -48,6 +48,21 @@ import Testing
   #expect(presentation.timeline.map(\.event.stableId) == ["past", "current", "future"])
 }
 
+@Test func dashboardPresentationAfterDayUsesNextProcedureAndIgnoresOptionalMeal() throws {
+  let schedule = dashboardSchedule(events: [
+    dashboardEvent("today", start: "17:00", end: "17:30", title: "Poslední dnešní procedura"),
+    dashboardEvent("breakfast", date: "2026-08-21", start: "07:30", end: "08:00", title: "Snídaně", kind: .meal),
+    dashboardEvent("tomorrow-procedure", date: "2026-08-21", start: "09:00", end: "09:30", title: "Magnetoterapie")
+  ])
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T20:00:00")
+  let presentation = CommanderDashboardPresentation.make(schedule: schedule, now: now)
+
+  #expect(presentation.mode == .dayDone)
+  #expect(presentation.currentEvent == nil)
+  #expect(presentation.nextProcedure?.event.stableId == "tomorrow-procedure")
+  #expect(presentation.nextProcedure?.event.kind == .procedure)
+}
+
 @Test func dashboardPresentationIdentifiesOnlyCanonicalMealEvents() throws {
   let schedule = dashboardSchedule(events: [
     dashboardEvent("breakfast", start: "07:30", end: "08:00", title: "Snídaně", kind: .meal),
@@ -110,6 +125,7 @@ private func dashboardSchedule(events: [ScheduleEvent], lead: Int = 20) -> Sched
 
 private func dashboardEvent(
   _ stableId: String,
+  date: String = "2026-08-20",
   start: String,
   end: String,
   title: String,
@@ -117,7 +133,7 @@ private func dashboardEvent(
 ) -> ScheduleEvent {
   ScheduleEvent(
     stableId: stableId,
-    date: "2026-08-20",
+    date: date,
     start: start,
     end: end,
     title: title,
