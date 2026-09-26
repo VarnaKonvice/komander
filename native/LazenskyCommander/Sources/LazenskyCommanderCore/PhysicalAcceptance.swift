@@ -153,13 +153,14 @@ public struct PhysicalAcceptancePreflight: Sendable {
   public var verifiedAlarmCount: Int { rows.filter { $0.issues.isEmpty }.count }
   public var ready: Bool { issues.isEmpty && rows.count == 2 && verifiedAlarmCount == 2 }
 
-  public init(run: PhysicalAcceptanceRun, observations: [PhysicalAlarmObservation], managed: ManagedAlarmState, syncVerified: Bool, procedureActivityPrepared _: Bool, now: Date) throws {
+  public init(run: PhysicalAcceptanceRun, observations: [PhysicalAlarmObservation], managed: ManagedAlarmState, syncVerified: Bool, procedureActivityPrepared: Bool, now: Date) throws {
     checkedAt = now
     let payload = try run.payload()
     var problems: [String] = []
     if !syncVerified { problems.append("Synchronizace zatím není ověřená.") }
-    // Commander Live Activity intentionally starts only after the person taps Stop on AlarmKit.
-    // It is therefore not a preflight requirement.
+    if !procedureActivityPrepared {
+      problems.append("Commander Live Activity zatím není naplánovaná ani aktivní.")
+    }
     if observations.count != 2 || Set(observations.map(\.platformID)).count != 2 || Set(observations.map(\.platformID)) != Set(managed.records.values.map(\.platformAlarmID)) {
       problems.append("Počet nebo identita systémových alarmů neodpovídá dvěma spravovaným alarmům.")
     }

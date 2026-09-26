@@ -178,7 +178,7 @@ import Testing
   }
 }
 
-@Test func physicalPreflightRequiresAlarmReadinessButNotPrecreatedCommanderActivity() async throws {
+@Test func physicalPreflightRequiresAlarmAndScheduledCommanderReadiness() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let readings = await adapter.readings(), state = await session.alarmStore.load()
   let payload = try run.payload()
@@ -187,7 +187,8 @@ import Testing
   let missingActivity = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state, syncVerified: true, procedureActivityPrepared: false, now: run.now)
   let unverified = try PhysicalAcceptancePreflight(run: run, observations: readings, managed: state, syncVerified: false, procedureActivityPrepared: true, now: run.now)
   #expect(!late.ready)
-  #expect(missingActivity.ready)
+  #expect(!missingActivity.ready)
+  #expect(missingActivity.issues.contains("Commander Live Activity zatím není naplánovaná ani aktivní."))
   #expect(!unverified.ready)
 }
 
