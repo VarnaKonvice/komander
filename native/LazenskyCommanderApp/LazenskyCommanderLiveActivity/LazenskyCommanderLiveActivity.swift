@@ -156,7 +156,7 @@ private struct CommanderProcedureIslandCenter: View {
       iconKey: display.iconKey,
       title: display.title
     )
-    Text(display.status)
+    CommanderProcedureStatusText(display: display)
       .font(.system(size: 13, weight: .bold))
       .foregroundStyle(CommanderActivityTokens.procedureStateAccent(
         mode: display.presentationMode,
@@ -164,7 +164,7 @@ private struct CommanderProcedureIslandCenter: View {
         eventAccent: eventAccent
       ))
       .lineLimit(1)
-      .minimumScaleFactor(0.85)
+      .minimumScaleFactor(0.76)
   }
 }
 
@@ -270,7 +270,7 @@ private struct CommanderProcedureWatchLiveActivityView: View {
       title: display.title
     )
     CommanderSmartStackCard(
-      status: display.status,
+      display: display,
       title: display.title,
       iconKey: display.iconKey,
       kind: display.kind,
@@ -290,7 +290,7 @@ private struct CommanderProcedureWatchLiveActivityView: View {
 /// Compact 49 mm Smart Stack content is about 191 x 81.5 pt. The timer and title
 /// occupy different rows, so a long title can never squeeze or cover the clock.
 private struct CommanderSmartStackCard<Clock: View>: View {
-  let status: String
+  let display: CommanderProcedureDisplay
   let title: String
   let iconKey: String?
   let kind: ScheduleKind?
@@ -305,10 +305,10 @@ private struct CommanderSmartStackCard<Clock: View>: View {
         HStack(spacing: 6) {
           CommanderActivityBrandMark(size: 30)
           VStack(spacing: 0) {
-            Text(status)
+            CommanderProcedureStatusText(display: display)
               .font(.system(size: 11, weight: .bold))
               .lineLimit(1)
-              .minimumScaleFactor(0.85)
+              .minimumScaleFactor(0.72)
             clock()
               .font(.system(size: 29, weight: .heavy, design: .rounded).monospacedDigit())
               .lineLimit(1)
@@ -487,10 +487,11 @@ private struct CommanderProcedureDisplayHero: View {
   var body: some View {
     ZStack {
       VStack(spacing: 0) {
-        Text(display.status)
+        CommanderProcedureStatusText(display: display)
           .font(.system(size: 16, weight: .bold, design: .rounded))
           .foregroundStyle(accent)
           .lineLimit(1)
+          .minimumScaleFactor(0.76)
 
         if display.isStale {
           Text("Skončilo")
@@ -903,6 +904,35 @@ private struct CommanderProcedureDisplay {
       return leaveAt.formatted(date: .omitted, time: .shortened)
     case .eventContext:
       return endAt.formatted(date: .omitted, time: .shortened)
+    }
+  }
+}
+
+private struct CommanderProcedureStatusText: View {
+  let display: CommanderProcedureDisplay
+
+  @ViewBuilder
+  var body: some View {
+    if display.isStale {
+      Text("Skončilo")
+    } else {
+      switch display.presentationMode {
+      case .departureCountdown:
+        Text("Vyrazit za")
+      case .eventContext:
+        HStack(spacing: 3) {
+          Text("Start")
+          Text(
+            .currentDate,
+            format: .reference(
+              to: display.startAt,
+              allowedFields: [.minute, .second],
+              maxFieldCount: 1,
+              thresholdField: .second
+            )
+          )
+        }
+      }
     }
   }
 }

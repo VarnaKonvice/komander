@@ -76,7 +76,7 @@ Dosavadní fyzické testy už prokázaly samostatně:
 - historický přechod `Právě probíhá → 0:00 → Skončilo` patří ke staré TimelineView variantě; build 7 ji už nepoužívá,
 - systémovou replikaci Live Activity do Apple Watch Smart Stack/detail.
 
-Další fyzický test nejdřív ověří krátký tok `Vyrazit za → AlarmKit alert → Stop → stabilní eventContext` na iPhonu a Watch. `eventContext` po Stop ukazuje `Začátek HH:mm`, absolutní konec a odpočet do `endAt`; bez dalšího triggeru se nesnaží předstírat strukturální přechod v `startAt`. Celý zrychlený lázeňský den se spustí až po PASS tohoto základu.
+Další fyzický test nejdřív ověří krátký tok `Vyrazit za → AlarmKit alert → Stop → stabilní eventContext` na iPhonu a Watch. `eventContext` po Stop ukazuje systémově živé `Start za …`, po `startAt` automaticky `Start před …`, absolutní konec a odpočet do `endAt`; bez dalšího triggeru se nesnaží předstírat strukturální přechod `Právě probíhá`. Celý zrychlený lázeňský den se spustí až po PASS tohoto základu.
 
 ## Systémové limity
 

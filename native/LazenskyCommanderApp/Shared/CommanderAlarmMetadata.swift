@@ -95,7 +95,7 @@ enum CommanderLiveActivityPresentationMode: String, Codable, Hashable, Sendable 
 }
 
 struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
-  static let currentRendererRevision = 8
+  static let currentRendererRevision = 9
 
   struct ContentState: Codable, Hashable {
     let scheduleVersion: Int

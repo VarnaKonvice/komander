@@ -327,3 +327,29 @@ Watch physical-signing check for build 8:
 - a signed build targeting physical `Petr – Apple Watch` currently fails before compilation signing because the installed provisioning profiles for `com.varnakonvice.lazenskycommander.watchkitapp` and `.watchkitapp.widget` do not include device `00008310-001C09693CE0E01E`,
 - therefore the native Commander Watch app/widget cannot currently be installed on this Watch until provisioning is regenerated for this device,
 - this provisioning limitation does not by itself disprove system ActivityKit forwarding, which Apple supports even without a Watch app, but it removes the native Watch widget as a physical fallback until signing is fixed.
+
+### 2026-09-27 physical single-renderer build 8 result
+
+Build 8 (`bfda089`) physically fixed the two build-7 system failures:
+
+- Commander Live Activity appeared on Apple Watch Smart Stack/detail and on iPhone Lock Screen/Dynamic Island.
+- The alert-only AlarmKit alarm fired at canonical `leaveAt` and no AlarmKit countdown Live Activity competed with Commander.
+- Stop at 18:29:06 updated the already-existing Commander activity; diagnostics confirmed no new `Activity.request` path.
+- After Stop, Commander remained active on iPhone and Watch.
+
+The remaining presentation limitation was observed at `startAt`: without another ActivityKit content update, the static event-context label cannot automatically change to a new structural phrase such as `Právě probíhá`. Apple-supported self-updating `Text` time formats can advance themselves, but Live Activities do not use widget timelines for arbitrary structural updates.
+
+### Build 9 self-updating event-context status
+
+Build 9 replaces the static event-context heading with Apple's system `DateReference` text. It now renders `Start za …` before `startAt` and automatically becomes the localized equivalent of `Start před …` after `startAt`, while the main timer continues counting down to `endAt`. This keeps the card truthful across the start boundary without `TimelineView`, background execution, or a server push.
+
+The same system-updating status view is used on Lock Screen, Dynamic Island and Apple Watch Smart Stack. `TimelineView` remains absent.
+
+Build 9 programming gate:
+
+- Swift suite: **233 tests in 3 suites passed**,
+- CoreCheck: passed,
+- `git diff --check`: passed,
+- production generic iOS build: passed,
+- Physical Acceptance generic iOS build: passed,
+- Watch generic watchOS build: passed.
