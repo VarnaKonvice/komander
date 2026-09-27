@@ -159,11 +159,20 @@ actor CommanderProcedureLiveActivityCoordinator {
           continue
         }
 
+        let presentation = keeper.activityState == .pending
+          ? (plan.anchorStableID, CommanderLiveActivityPresentationMode.departureCountdown)
+          : Self.presentationState(
+              snapshots: snapshots,
+              now: now,
+              fallbackStableID: plan.anchorStableID
+            )
         let expectedState = CommanderProcedureLiveActivityPolicy.contentState(
           scheduleVersion: schedule.scheduleVersion,
           projectionRevision: projectionRevision,
           events: snapshots,
-          attributes: keeper.attributes
+          attributes: keeper.attributes,
+          focusStableId: presentation.0,
+          presentationMode: presentation.1
         )
 
         if keeper.activityState == .pending {
@@ -308,11 +317,20 @@ actor CommanderProcedureLiveActivityCoordinator {
       else { continue }
 
       let snapshots = plan.includedStableIDs.compactMap { candidateByID[$0] }.map(Self.snapshot)
+      let presentation = activity.activityState == .pending
+        ? (plan.anchorStableID, CommanderLiveActivityPresentationMode.departureCountdown)
+        : Self.presentationState(
+            snapshots: snapshots,
+            now: now,
+            fallbackStableID: plan.anchorStableID
+          )
       let expectedState = CommanderProcedureLiveActivityPolicy.contentState(
         scheduleVersion: schedule.scheduleVersion,
         projectionRevision: projectionRevision,
         events: snapshots,
-        attributes: activity.attributes
+        attributes: activity.attributes,
+        focusStableId: presentation.0,
+        presentationMode: presentation.1
       )
       guard activity.content.state.scheduleVersion == expectedState.scheduleVersion,
             activity.content.state.projectionRevision == expectedState.projectionRevision,
@@ -322,6 +340,33 @@ actor CommanderProcedureLiveActivityCoordinator {
       prepared.insert(plan.anchorStableID)
     }
     return prepared
+  }
+
+  private static func presentationState(
+    snapshots: [CommanderAlarmEventSnapshot],
+    now: Date,
+    fallbackStableID: String
+  ) -> (String, CommanderLiveActivityPresentationMode) {
+    let timelineEvents = snapshots.compactMap { snapshot -> CommanderLiveActivityTimelineEvent? in
+      guard let leaveAt = try? NativeAlarmContract.date(fromLocalISO: snapshot.leaveAt),
+            let startAt = try? NativeAlarmContract.date(fromLocalISO: snapshot.startAt),
+            let endAt = try? NativeAlarmContract.date(fromLocalISO: snapshot.endAt)
+      else { return nil }
+      return CommanderLiveActivityTimelineEvent(
+        stableId: snapshot.stableId,
+        leaveAt: leaveAt,
+        startAt: startAt,
+        endAt: endAt
+      )
+    }
+    guard let resolution = CommanderLiveActivityTimeline.resolve(events: timelineEvents, at: now) else {
+      return (fallbackStableID, .departureCountdown)
+    }
+    let mode: CommanderLiveActivityPresentationMode =
+      resolution.phase == .upcoming && !resolution.departureDue
+        ? .departureCountdown
+        : .eventContext
+    return (resolution.primaryStableId, mode)
   }
 
   private static func staticIdentityMatches(

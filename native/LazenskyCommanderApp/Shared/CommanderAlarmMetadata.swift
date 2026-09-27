@@ -89,28 +89,41 @@ enum CommanderPhysicalAcceptanceDiagnostics {
   }
 }
 
+enum CommanderLiveActivityPresentationMode: String, Codable, Hashable, Sendable {
+  case departureCountdown
+  case eventContext
+}
+
 struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
-  static let currentRendererRevision = 6
+  static let currentRendererRevision = 7
 
   struct ContentState: Codable, Hashable {
     let scheduleVersion: Int
     let projectionRevision: Int
     let events: [CommanderAlarmEventSnapshot]
+    let focusStableId: String?
+    let presentationMode: CommanderLiveActivityPresentationMode
 
     private enum CodingKeys: String, CodingKey {
       case scheduleVersion
       case projectionRevision
       case events
+      case focusStableId
+      case presentationMode
     }
 
     init(
       scheduleVersion: Int = 0,
       projectionRevision: Int = 0,
-      events: [CommanderAlarmEventSnapshot] = []
+      events: [CommanderAlarmEventSnapshot] = [],
+      focusStableId: String? = nil,
+      presentationMode: CommanderLiveActivityPresentationMode = .departureCountdown
     ) {
       self.scheduleVersion = scheduleVersion
       self.projectionRevision = projectionRevision
       self.events = events
+      self.focusStableId = focusStableId
+      self.presentationMode = presentationMode
     }
 
     init(from decoder: Decoder) throws {
@@ -118,6 +131,11 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
       scheduleVersion = try container.decodeIfPresent(Int.self, forKey: .scheduleVersion) ?? 0
       projectionRevision = try container.decodeIfPresent(Int.self, forKey: .projectionRevision) ?? 0
       events = try container.decodeIfPresent([CommanderAlarmEventSnapshot].self, forKey: .events) ?? []
+      focusStableId = try container.decodeIfPresent(String.self, forKey: .focusStableId)
+      presentationMode = try container.decodeIfPresent(
+        CommanderLiveActivityPresentationMode.self,
+        forKey: .presentationMode
+      ) ?? .departureCountdown
     }
 
     func encode(to encoder: Encoder) throws {
@@ -125,6 +143,8 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
       try container.encode(scheduleVersion, forKey: .scheduleVersion)
       try container.encode(projectionRevision, forKey: .projectionRevision)
       try container.encode(events, forKey: .events)
+      try container.encodeIfPresent(focusStableId, forKey: .focusStableId)
+      try container.encode(presentationMode, forKey: .presentationMode)
     }
   }
 
@@ -179,14 +199,22 @@ enum CommanderProcedureLiveActivityPolicy {
     scheduleVersion: Int,
     projectionRevision: Int,
     events: [CommanderAlarmEventSnapshot],
-    attributes: CommanderProcedureLiveActivityAttributes
+    attributes: CommanderProcedureLiveActivityAttributes,
+    focusStableId: String? = nil,
+    presentationMode: CommanderLiveActivityPresentationMode = .departureCountdown
   ) -> CommanderProcedureLiveActivityAttributes.ContentState {
     var bounded = Array(events.prefix(maximumQueuedEvents))
+    let preferredFocus = focusStableId ?? attributes.stableId
     while true {
+      let boundedFocus = bounded.contains(where: { $0.stableId == preferredFocus })
+        ? preferredFocus
+        : bounded.first?.stableId
       let state = CommanderProcedureLiveActivityAttributes.ContentState(
         scheduleVersion: scheduleVersion,
         projectionRevision: max(0, projectionRevision),
-        events: bounded
+        events: bounded,
+        focusStableId: boundedFocus,
+        presentationMode: presentationMode
       )
       guard bounded.count > 1 else { return state }
       let encoder = JSONEncoder()

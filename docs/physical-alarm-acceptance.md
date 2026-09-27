@@ -38,17 +38,15 @@ První okno tedy obsahuje Snídani → Magnetoterapii → Rehabilitaci. Večeře
 
 ## Co musí scénář prokázat
 
-1. **Před snídaní:** Commander se objeví před prvním odchodem a ukazuje Snídani, odchod a následující Magnetoterapii.
+1. **Před snídaní:** Commander se objeví před prvním odchodem a ukazuje Snídani, `Vyrazit za`, odchod a následující Magnetoterapii.
 2. **T+4:** zazvoní AlarmKit pro Snídani.
-3. **T+5:** karta přejde na `Právě probíhá – Snídaně`.
-4. **T+6 během snídaně:** zazvoní AlarmKit pro Magnetoterapii a Commander musí dát prioritu stavu `Čas vyrazit – Magnetoterapie`, i když Snídaně ještě formálně běží.
-5. **T+9:** Magnetoterapie přejde na `Právě probíhá`; jako další je vidět Rehabilitace.
-6. **T+12:** zazvoní AlarmKit pro Rehabilitaci.
-7. **T+14 až T+16:** probíhá Rehabilitace.
-8. **Po T+16:** první Commander blok skončí. Následuje zrychlené „dlouhé volno“.
-9. **T+18:** má vzniknout samostatný pending/active blok pro Večeři (3 min před jejím začátkem, 1 min před leaveAt).
-10. **T+19:** zazvoní AlarmKit pro Večeři.
-11. **T+21 až T+24:** karta ukazuje probíhající Večeři a následně `Skončilo`.
+3. Po **Stop** se stejná Commander Live Activity aktualizuje na fokus Snídaně a ukazuje `Konec za`, absolutní začátek a další Magnetoterapii.
+4. **T+6 během snídaně:** zazvoní AlarmKit pro Magnetoterapii. Po Stop se fokus stejné Commander aktivity přepne na Magnetoterapii a jako další zůstane Rehabilitace.
+5. **T+12:** zazvoní AlarmKit pro Rehabilitaci. Po Stop se fokus přepne na Rehabilitaci.
+6. **Po T+16:** první Commander blok může zestárnout; přesné automatické strukturální ukončení bez push není acceptance požadavek.
+7. **T+18:** má vzniknout samostatný pending/active blok pro Večeři (3 min před jejím začátkem, 1 min před leaveAt).
+8. **T+19:** zazvoní AlarmKit pro Večeři. Po Stop se fokus večeřního bloku přepne na `eventContext`.
+9. **T+21 až T+24:** systémový timer v režimu `eventContext` odpočítává do konce Večeře; přesná textová změna v `startAt/endAt` bez ActivityKit update se nevyžaduje.
 
 Současně se průběžně ověřují Lock Screen, Dynamic Island a Apple Watch Smart Stack/detail.
 
@@ -78,9 +76,9 @@ READY je důkaz přípravy, nikoli fyzický PASS.
 
 ## PASS / FAIL
 
-**PASS:** všechny čtyři alarmy zazvoní v canonical `leaveAt`; první Live Activity projde Snídaně → Magnetoterapie → Rehabilitace včetně priority odchodu na Magnetoterapii během Snídaně; po delší mezeře vznikne samostatný blok Večeře; stavy, barvy, ikony, další událost, Dynamic Island a Watch odpovídají stejnému příběhu.
+**PASS:** všechny čtyři alarmy zazvoní v canonical `leaveAt`; po každém Stop se stejná Commander Live Activity bez `Activity.request` přepne na správný stable ID v režimu `eventContext`; po delší mezeře vznikne samostatný blok Večeře; barvy, ikony, další událost, Dynamic Island a Watch odpovídají stejnému příběhu.
 
-**FAIL:** některý alarm má jiný fire time, další odchod nepřevezme prioritu, vzniknou překrývající se vlastní Commander karty, následný blok se neaktivuje, Watch nedostanou Live Activity, nebo se objeví background `Activity.request` cesta ze Stop intentu.
+**FAIL:** některý alarm má jiný fire time, Stop neaktualizuje existující Commander fokus/režim, vzniknou překrývající se vlastní Commander karty, následný blok se neaktivuje, Watch nedostanou Live Activity, nebo se objeví background `Activity.request` cesta ze Stop intentu.
 
 ## Gate před fyzickým během
 

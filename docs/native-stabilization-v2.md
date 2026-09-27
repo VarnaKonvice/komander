@@ -12,16 +12,15 @@ Tento soubor popisuje současnou podporovanou architekturu po sjednocení denní
 4. Jídlo i procedura mohou být kotvou okna.
 5. Události s volnou mezerou do 2 hodin mohou zůstat v jednom okně. Delší volno blok ukončí a další blok se připraví jako nový scheduled start.
 6. Jedno okno obsahuje nejvýše 6 událostí a nejvýše 7 h 50 min aktivního časového rozpočtu. Coordinator připravuje nejvýše 3 nejbližší okna.
-7. Časový příběh jedné události je:
-   - před `leaveAt`: **Vyrazit za** + odpočet do odchodu,
-   - `leaveAt...startAt`: **Čas vyrazit** + odpočet do začátku,
-   - `startAt...endAt`: **Právě probíhá** + odpočet do konce,
-   - po `endAt`: další položka nebo **Skončilo**.
+7. Časový příběh jedné události je explicitně stavový:
+   - před alarmem: **Vyrazit za** + systémový timer do `leaveAt`,
+   - po uživatelském **Stop**: stejná Commander Live Activity přejde na **Konec za** + absolutní začátek události,
+   - další AlarmKit Stop může fokus stejné aktivity posunout na další událost.
 8. Karta ukazuje následující událost jako **Potom** nebo **Současně**. Lock Screen zobrazuje název, čas i místo.
-9. Pokud `leaveAt` následující události nastane ještě během aktuální události, odchod na další událost převezme hlavní pozici. Po jejím `startAt` zůstává novější událost hlavní i při časovém překryvu se starší.
-10. Schválená ikona a barva jsou odvozené od typu konkrétní události. Odchodový urgentní stav má vlastní výrazný akcent.
-11. Stop intent nikdy nezakládá ani neaktualizuje Commander Live Activity z backgroundu.
-12. Stejná ActivityKit instance se používá pro Lock Screen, Dynamic Island a systémovou replikaci na Apple Watch.
+9. Foreground reconciliation může fokus srovnat podle aktuálního času; bez APNs/push se negarantuje přesná automatická strukturální změna v `startAt` nebo `endAt`.
+10. Schválená ikona a barva jsou odvozené od typu konkrétní události. Urgentní alert vrstvu vlastní AlarmKit.
+11. Stop intent nikdy nezakládá Commander Live Activity z backgroundu; smí aktualizovat už existující aktivitu pomocí `Activity.update`.
+12. Renderer Live Activity nepoužívá `TimelineView`; dynamický čas kreslí pouze systémový timer. Stejná ActivityKit instance se používá pro Lock Screen, Dynamic Island a systémovou replikaci na Apple Watch.
 
 ## AlarmKit a Commander
 
@@ -29,7 +28,7 @@ AlarmKit a Commander používají stejný canonical rozpis, ale nekreslí souča
 
 Jediným produkčním místem, které smí volat `Activity<CommanderProcedureLiveActivityAttributes>.request`, je `CommanderProcedureLiveActivityCoordinator`. Budoucí okna používají scheduled start a tichý `CommanderSilentAlert.wav`, takže Commander nepřidává druhý zvuk vedle AlarmKitu.
 
-`CommanderAlarmStopIntent` nesmí obsahovat `Activity.request`. Selhání Commander Live Activity nesmí změnit správně naplánované AlarmKit alarmy.
+`CommanderAlarmStopIntent` nesmí obsahovat `Activity.request`. Smí najít již aktivní Commander Live Activity a aktualizovat její `focusStableId` + `presentationMode` přes `Activity.update`. Selhání Commander Live Activity nesmí změnit správně naplánované AlarmKit alarmy.
 
 ## Plánování oken
 
@@ -67,17 +66,17 @@ Live Activity používá stejný schválený vizuální kontrakt jako aplikace:
 - Terapie/fallback růžová,
 - skončený stav neutrální.
 
-Běžný upcoming/active stav používá barvu konkrétní události. `Čas vyrazit` může použít urgentní odchodový akcent.
+Commander používá schválenou barvu konkrétní události v obou režimech `departureCountdown` i `eventContext`. Urgentní systémovou alert prezentaci vlastní AlarmKit.
 
 ## Fyzický acceptance
 
 Dosavadní fyzické testy už prokázaly samostatně:
 - AlarmKit reálné zvonění,
 - Lock Screen a Dynamic Island,
-- přechod `Právě probíhá → 0:00 → Skončilo`,
+- historický přechod `Právě probíhá → 0:00 → Skončilo` patří ke staré TimelineView variantě; build 7 ji už nepoužívá,
 - systémovou replikaci Live Activity do Apple Watch Smart Stack/detail.
 
-Další fyzický test už nemá opakovat izolované probe. Má být zrychlený E2E „lázeňský den“ s několika událostmi a musí ověřit celý příběh včetně `Vyrazit za → Čas vyrazit → Právě probíhá → Potom/Současně → další blok` a změny předstihu.
+Další fyzický test nejdřív ověří krátký tok `Vyrazit za → AlarmKit alert → Stop → Konec za` na iPhonu a Watch. Celý zrychlený lázeňský den se spustí až po PASS tohoto základu.
 
 ## Systémové limity
 

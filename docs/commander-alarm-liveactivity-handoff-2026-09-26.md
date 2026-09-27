@@ -267,3 +267,11 @@ Programming gate for this probe:
 - production generic iOS build: passed,
 - Physical Acceptance generic iOS build: passed,
 - Watch generic watchOS build: passed.
+
+### 2026-09-27 build 7 — Stop-driven presentation supersedes TimelineView
+
+Physical single-renderer build 6 proved that `TimelineView` did not reliably trigger a structural Live Activity redraw: Commander remained at `0:00` at 16:09 and was still at `0:00` at 16:10:36 although the event had already started. AlarmKit was already alert-only in this run, so the failure was isolated to the Commander renderer/update model.
+
+Build 7 therefore removes `TimelineView` completely from the Live Activity renderer. `ContentState` now carries explicit `focusStableId` and `presentationMode` (`departureCountdown` / `eventContext`). Before the alarm Commander shows `Vyrazit za` using the system timer to `leaveAt`. `CommanderAlarmStopIntent` never creates a Live Activity, but may update the already-active Commander activity to `eventContext` for the stopped alarm's stable ID. That mode shows `Konec za`, absolute start time, location, and the next event; the system timer counts to `endAt`.
+
+Foreground reconciliation may correct focus/mode from the tested core timeline resolver. Without APNs/push transport, exact automatic structural changes at `startAt` or `endAt` are no longer claimed. The renderer contains zero `TimelineView` calls and exactly one Commander `ActivityConfiguration`.

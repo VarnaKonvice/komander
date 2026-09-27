@@ -41,8 +41,41 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
   }
 
   func perform() async throws -> some IntentResult {
+    var updatedStableIDs: [String] = []
+
+    if let payloadData = Data(base64Encoded: activityPayload),
+       let metadata = try? JSONDecoder().decode(CommanderAlarmMetadata.self, from: payloadData) {
+      for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
+      where activity.activityState == .active || activity.activityState == .stale {
+        let currentState = activity.content.state
+        guard currentState.events.contains(where: { $0.stableId == metadata.stableId }) ||
+                activity.attributes.stableId == metadata.stableId
+        else { continue }
+
+        let updatedState = CommanderProcedureLiveActivityAttributes.ContentState(
+          scheduleVersion: currentState.scheduleVersion,
+          projectionRevision: max(
+            currentState.projectionRevision,
+            metadata.projectionRevision ?? currentState.projectionRevision
+          ),
+          events: currentState.events,
+          focusStableId: metadata.stableId,
+          presentationMode: .eventContext
+        )
+        await activity.update(ActivityContent(
+          state: updatedState,
+          staleDate: activity.content.staleDate,
+          relevanceScore: 1_000
+        ))
+        updatedStableIDs.append(metadata.stableId)
+      }
+    }
+
+    let result = updatedStableIDs.isEmpty
+      ? "Commander update chybí"
+      : "Commander update eventContext: \(updatedStableIDs.joined(separator: ","))"
     CommanderPhysicalAcceptanceDiagnostics.record(
-      "Stop · \(alarmID) · Commander Live Activity se nevytváří z backgroundu"
+      "Stop · \(alarmID) · \(result) · bez Activity.request"
     )
     return .result()
   }
