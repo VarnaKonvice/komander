@@ -259,7 +259,9 @@ import Testing
 
   let live = try String(contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderLiveActivity/LazenskyCommanderLiveActivity.swift"), encoding: .utf8)
   #expect(live.contains("CommanderCompactBrandEventMark"))
-  #expect(live.contains("CommanderAlarmIslandCountdown(mode: context.state.mode, size: .minimal)"))
+  #expect(live.contains("CommanderProcedureIslandTiming(context: context, size: .minimal)"))
+  #expect(!live.contains("ActivityConfiguration(for: AlarmAttributes<CommanderAlarmMetadata>.self)"))
+  #expect(!live.contains("LazenskyCommanderAlarmLiveActivity"))
   #expect(!live.contains("isDepartureBridge"))
 }
 

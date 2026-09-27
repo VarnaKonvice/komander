@@ -205,3 +205,25 @@ AlarmKit is now **traditional alert-only** for every event:
 - AlarmKit remains the sole audible alert at `leaveAt`.
 
 `AlarmPresentationContext.deliveryStyle = alertOnlyV1` provides a one-time migration discriminator: older stored countdown-shaped alarm presentation contexts decode with `deliveryStyle == nil` and are reconciled once into the new alert-only contract.
+
+### 2026-09-27 single-renderer cleanup
+
+After the alert-only AlarmKit change, the widget extension was simplified further:
+
+- `LazenskyCommanderAlarmLiveActivity` and all AlarmKit countdown/alert Live Activity UI were removed from the extension,
+- the extension now contains exactly one `ActivityConfiguration`: `CommanderProcedureLiveActivityAttributes`,
+- `.supplementalActivityFamilies([.small])` remains on the Commander configuration for Apple Watch Smart Stack/detail replication,
+- AlarmKit remains alert-only in the app target; legacy `Activity<AlarmAttributes<CommanderAlarmMetadata>>` reads in the adapter exist only for migration/read-back/cleanup of already-created historical AlarmKit activities, not for new rendering,
+- renderer revision and all app/extension/watch build numbers are now **6**.
+
+Programming gate after this cleanup:
+
+- Swift suite: **227 tests in 3 suites passed**,
+- CoreCheck: passed,
+- `git diff --check`: passed,
+- production generic iOS build: passed,
+- Physical Acceptance generic iOS build: passed,
+- Watch generic watchOS build: passed,
+- widget extension source contains exactly **1** `ActivityConfiguration`.
+
+No physical alarm run has been started after this cleanup. The next physical run must first prove the single-renderer invariant on real hardware before the full accelerated spa-day E2E is repeated.

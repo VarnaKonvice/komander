@@ -7,7 +7,7 @@ Tento soubor popisuje současnou podporovanou architekturu po sjednocení denní
 ## Podporovaný lifecycle
 
 1. Canonical rozpis určuje `startAt` a `endAt`; efektivní předstih určuje canonical `leaveAt`.
-2. AlarmKit vlastní pouze skutečný alert, zvonění a Stop v canonical `leaveAt`. Předodchodový countdown zobrazuje výhradně Commander.
+2. AlarmKit vlastní pouze skutečný alert, zvonění a Stop v canonical `leaveAt`. Předodchodový countdown zobrazuje výhradně Commander a widget extension obsahuje jediný `ActivityConfiguration` pro `CommanderProcedureLiveActivityAttributes`.
 3. Foreground/bootstrap reconciliation rozdělí den do několika Commander Live Activity oken. Standardně okno začíná 60 minut před první událostí, nebo dříve v jejím `leaveAt`, pokud je předstih delší.
 4. Jídlo i procedura mohou být kotvou okna.
 5. Události s volnou mezerou do 2 hodin mohou zůstat v jednom okně. Delší volno blok ukončí a další blok se připraví jako nový scheduled start.

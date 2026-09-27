@@ -90,7 +90,7 @@ enum CommanderPhysicalAcceptanceDiagnostics {
 }
 
 struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
-  static let currentRendererRevision = 5
+  static let currentRendererRevision = 6
 
   struct ContentState: Codable, Hashable {
     let scheduleVersion: Int

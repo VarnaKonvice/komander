@@ -154,6 +154,53 @@ import Testing
   #expect(sameContent.succeeded && sameContent.appliedUpdate == 0)
 }
 
+@Test func legacyCountdownDeliveryStyleMigratesExactlyOnceToAlertOnly() async throws {
+  let schedule = stabilizationSchedule()
+  let runtime = ContextRuntime()
+  let store = InMemoryAlarmStateStore()
+  let service = AlarmSyncService(
+    scheduleService: StabilizationSource(schedule: schedule),
+    store: store,
+    adapter: runtime
+  )
+
+  let first = try await service.synchronize(now: stabilizationDate("09:00"))
+  #expect(first.succeeded && first.appliedCreate == 2)
+
+  let current = await store.load()
+  var json = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(current)) as? [String: Any])
+  var records = try #require(json["records"] as? [String: [String: Any]])
+  for id in records.keys {
+    guard var context = records[id]?["presentationContext"] as? [String: Any] else {
+      Issue.record("Chybí presentationContext pro \(id)")
+      continue
+    }
+    context.removeValue(forKey: "deliveryStyle")
+    context["countdownWindow"] = 300
+    records[id]?["presentationContext"] = context
+  }
+  json["records"] = records
+  let legacy = try JSONDecoder().decode(
+    ManagedAlarmState.self,
+    from: JSONSerialization.data(withJSONObject: json)
+  )
+  await store.save(legacy)
+
+  let migrated = try await service.synchronize(now: stabilizationDate("09:00"))
+  #expect(migrated.succeeded)
+  #expect(migrated.appliedUpdate == 2)
+
+  let stored = await store.load()
+  #expect(stored.records.values.allSatisfy {
+    $0.presentationContext?.deliveryStyle == AlarmPresentationContext.currentDeliveryStyle
+  })
+
+  let repeated = try await service.synchronize(now: stabilizationDate("09:00"))
+  #expect(repeated.succeeded)
+  #expect(repeated.appliedUpdate == 0)
+  #expect(repeated.plan.unchanged.count == 2)
+}
+
 @Test func legacyAlarmPersistenceMigratesContextOnceWithoutChangingCanonicalPayload() async throws {
   let schedule = stabilizationSchedule()
   let payload = try NativeAlarmContract.payload(schedule: schedule)

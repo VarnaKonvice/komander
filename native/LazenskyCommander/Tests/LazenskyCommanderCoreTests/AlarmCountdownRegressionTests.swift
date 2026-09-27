@@ -120,8 +120,11 @@ import Testing
   #expect(adapter.contains("countdownDeadlines[activity.content.state.alarmID.uuidString] = countdown.fireDate"))
   #expect(adapter.contains("if let visibleIDs, !visibleIDs.contains(platformID) { continue }"))
   #expect(!adapter.contains("countdown(id:"))
-  #expect(widget.contains("ActivityConfiguration(for: AlarmAttributes<CommanderAlarmMetadata>.self)"))
-  #expect(widget.contains("Text(countdown.fireDate, style: .timer)"))
+  #expect(!widget.contains("ActivityConfiguration(for: AlarmAttributes<CommanderAlarmMetadata>.self)"))
+  #expect(!widget.contains("LazenskyCommanderAlarmLiveActivity"))
+  #expect(widget.components(separatedBy: "ActivityConfiguration(for:").count - 1 == 1)
+  #expect(widget.contains("ActivityConfiguration(for: CommanderProcedureLiveActivityAttributes.self)"))
+  #expect(widget.contains(".supplementalActivityFamilies([.small])"))
 }
 
 private func regressionDate(_ time: String) throws -> Date {

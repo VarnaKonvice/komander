@@ -92,7 +92,7 @@ Záznam musí vznikat před opravnou mutací i po ní, aby následný foreground
 Schválený runtime tok je:
 
 1. Canonical rozpis a lokální předstihy určují pro každou událost `leaveAt`, `startAt` a `endAt`.
-2. AlarmKit zůstává jedinou zvonící bezpečnostní vrstvou. Každá událost používá tradiční alert-only fixed alarm přímo v canonical `leaveAt`; `countdownDuration` se nepoužívá.
+2. AlarmKit zůstává jedinou zvonící bezpečnostní vrstvou. Každá událost používá tradiční alert-only fixed alarm přímo v canonical `leaveAt`; `countdownDuration` se nepoužívá a widget extension neobsahuje AlarmKit `ActivityConfiguration`.
 3. Foreground/bootstrap reconciliation rozdělí zbývající den na nejvýše tři předem naplánovaná Commander okna. Standardní kontext začíná 60 minut před první událostí okna; pokud efektivní `leaveAt` vychází dříve, okno začne už v `leaveAt`.
 4. Jídlo i procedura mohou být kotvou okna. Události s volnou mezerou nejvýše dvě hodiny mohou zůstat v jednom okně; delší mezera vytvoří další okno. Jedno okno má hard cap šest událostí a nesmí překročit 7 h 50 min aktivního rozpočtu.
 5. Budoucí okna se připravují jako ActivityKit scheduled start s tichým `CommanderSilentAlert.wav`; skutečný zvuk odchodu zůstává pouze AlarmKitu.
