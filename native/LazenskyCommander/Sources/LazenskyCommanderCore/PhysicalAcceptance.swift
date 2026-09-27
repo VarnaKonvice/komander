@@ -28,12 +28,13 @@ public struct PhysicalAcceptanceRun: Equatable, Sendable {
   public init(now: Date, id: UUID = UUID()) throws {
     self.id = id
     self.now = now
-    // Keep this human-observable: the first alarm is roughly 4-5 minutes after
-    // generation and the full two-event sequence takes about a quarter hour.
+    // Accelerated spa-day E2E. It deliberately contains an alarm for the next
+    // procedure while breakfast is still running, a following procedure in the
+    // same Live Activity window, and a later dinner in a separate window.
     let anchor = Date(timeIntervalSince1970: ceil(now.timeIntervalSince1970 / 60) * 60)
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
-    guard calendar.isDate(now, inSameDayAs: anchor.addingTimeInterval(15 * 60)) else {
+    guard calendar.isDate(now, inSameDayAs: anchor.addingTimeInterval(24 * 60)) else {
       throw PhysicalAcceptanceError.midnightBoundary
     }
     let formatter = DateFormatter()
@@ -44,10 +45,12 @@ public struct PhysicalAcceptanceRun: Equatable, Sendable {
     formatter.dateFormat = "HH:mm"
     func time(_ minute: Int) -> String { formatter.string(from: anchor.addingTimeInterval(Double(minute * 60))) }
     let prefix = Self.stableIDPrefix + id.uuidString
-    schedule = Schedule(schemaVersion: 1, scheduleVersion: 1, updatedAt: ISO8601DateFormatter().string(from: now), stay: ["spa": "Lokální fyzický test"], events: [
-      ScheduleEvent(stableId: prefix + ".meal", date: day, start: time(6), end: time(8), title: "TEST – Jídlo", location: "Testovací jídelna", kind: .meal, procedureType: nil, mealType: "Oběd", leadTimeMinutes: 2),
-      ScheduleEvent(stableId: prefix + ".procedure", date: day, start: time(13), end: time(15), title: "TEST – Magnetoterapie", location: "Testovací elektroléčba", kind: .procedure, procedureType: "Magnetoterapie", mealType: nil, leadTimeMinutes: 2)
-    ], settings: ScheduleSettings(defaultLeadTimeMinutes: 2, procedureTypeOverrides: [:], mealOverrides: ["Oběd": 2]))
+    schedule = Schedule(schemaVersion: 1, scheduleVersion: 1, updatedAt: ISO8601DateFormatter().string(from: now), stay: ["spa": "Lokální fyzický E2E"], events: [
+      ScheduleEvent(stableId: prefix + ".breakfast", date: day, start: time(5), end: time(10), title: "TEST – Snídaně", location: "Testovací jídelna", kind: .meal, procedureType: nil, mealType: "Snídaně", leadTimeMinutes: 1),
+      ScheduleEvent(stableId: prefix + ".magnet", date: day, start: time(9), end: time(12), title: "TEST – Magnetoterapie", location: "Elektroléčba · budova 2", kind: .procedure, procedureType: "Magnetoterapie", mealType: nil, leadTimeMinutes: 3),
+      ScheduleEvent(stableId: prefix + ".rehab", date: day, start: time(14), end: time(16), title: "TEST – Rehabilitace", location: "Rehabilitace · tělocvična", kind: .procedure, procedureType: "Rehabilitace", mealType: nil, leadTimeMinutes: 2),
+      ScheduleEvent(stableId: prefix + ".dinner", date: day, start: time(21), end: time(24), title: "TEST – Večeře", location: "Testovací jídelna", kind: .meal, procedureType: nil, mealType: "Večeře", leadTimeMinutes: 2)
+    ], settings: ScheduleSettings(defaultLeadTimeMinutes: 2, procedureTypeOverrides: [:], mealOverrides: [:]))
     try NativeAlarmContract.validateCanonical(schedule)
   }
 
@@ -149,9 +152,9 @@ public struct PhysicalAcceptancePreflight: Sendable {
   public let checkedAt: Date
   public let rows: [PhysicalPreflightRow]
   public let issues: [String]
-  public var expectedAlarmCount: Int { 2 }
+  public var expectedAlarmCount: Int { rows.count }
   public var verifiedAlarmCount: Int { rows.filter { $0.issues.isEmpty }.count }
-  public var ready: Bool { issues.isEmpty && rows.count == 2 && verifiedAlarmCount == 2 }
+  public var ready: Bool { !rows.isEmpty && issues.isEmpty && verifiedAlarmCount == rows.count }
 
   public init(run: PhysicalAcceptanceRun, observations: [PhysicalAlarmObservation], managed: ManagedAlarmState, syncVerified: Bool, procedureActivityPrepared: Bool, now: Date) throws {
     checkedAt = now
@@ -161,8 +164,11 @@ public struct PhysicalAcceptancePreflight: Sendable {
     if !procedureActivityPrepared {
       problems.append("Commander Live Activity zatím není naplánovaná ani aktivní.")
     }
-    if observations.count != 2 || Set(observations.map(\.platformID)).count != 2 || Set(observations.map(\.platformID)) != Set(managed.records.values.map(\.platformAlarmID)) {
-      problems.append("Počet nebo identita systémových alarmů neodpovídá dvěma spravovaným alarmům.")
+    let expectedCount = payload.alarms.count
+    if observations.count != expectedCount ||
+       Set(observations.map(\.platformID)).count != expectedCount ||
+       Set(observations.map(\.platformID)) != Set(managed.records.values.map(\.platformAlarmID)) {
+      problems.append("Počet nebo identita systémových alarmů neodpovídá \(expectedCount) spravovaným alarmům.")
     }
     if let first = payload.alarms.first, try NativeAlarmContract.date(fromLocalISO: first.leaveAt).timeIntervalSince(now) < 60 {
       problems.append("Do prvního alarmu zbývá méně než minuta. Tento běh není připravený.")
@@ -181,20 +187,33 @@ public struct PhysicalAcceptancePreflight: Sendable {
         if managed.records[alarm.stableId]?.platformAlarmID != actual.platformID { errors.append("Nesouhlasí spravované ID.") }
         if actual.postAlert != nil { errors.append("Neočekávaný postAlert.") }
 
-        if let preAlert = actual.preAlert, preAlert.isFinite, abs(preAlert - plan.countdownWindow) <= 1 {} else {
-          errors.append("Nesouhlasí uložený preAlert.")
-        }
-        if let start = plan.scheduledStartAt {
-          if actual.scheduleKind != "fixed" || actual.fixedScheduleAt.map({ abs($0.timeIntervalSince(start)) <= 1 }) != true {
-            errors.append("Nesouhlasí pevný začátek odpočtu.")
+        if plan.countdownWindow > 0 {
+          if let preAlert = actual.preAlert, preAlert.isFinite, abs(preAlert - plan.countdownWindow) <= 1 {} else {
+            errors.append("Nesouhlasí uložený preAlert.")
           }
-          if actual.state != "scheduled" { errors.append("Budoucí odpočet není naplánovaný.") }
+          if let start = plan.scheduledStartAt {
+            if actual.scheduleKind != "fixed" || actual.fixedScheduleAt.map({ abs($0.timeIntervalSince(start)) <= 1 }) != true {
+              errors.append("Nesouhlasí pevný začátek odpočtu.")
+            }
+            if actual.state != "scheduled" { errors.append("Budoucí odpočet není naplánovaný.") }
+          } else {
+            if actual.scheduleKind != "none" || actual.fixedScheduleAt != nil {
+              errors.append("Okamžitý odpočet nemá schedule=nil.")
+            }
+            if actual.state != "countdown" {
+              errors.append("Systém nepotvrdil běžící okamžitý odpočet.")
+            }
+          }
         } else {
-          if actual.scheduleKind != "none" || actual.fixedScheduleAt != nil {
-            errors.append("Okamžitý odpočet nemá schedule=nil.")
+          if actual.preAlert != nil {
+            errors.append("Alert-only alarm nemá mít preAlert.")
           }
-          if actual.state != "countdown" {
-            errors.append("Systém nepotvrdil běžící okamžitý odpočet.")
+          if actual.scheduleKind != "fixed" ||
+             actual.fixedScheduleAt.map({ abs($0.timeIntervalSince(plan.scheduledAlertAt)) <= 1 }) != true {
+            errors.append("Alert-only alarm není naplánovaný přímo na leaveAt.")
+          }
+          if actual.state != "scheduled" {
+            errors.append("Budoucí alert-only alarm není naplánovaný.")
           }
         }
 

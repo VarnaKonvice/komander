@@ -372,7 +372,12 @@ final class PhysicalAcceptanceModel: ObservableObject {
     do {
       let runID = UUID()
       let adapter = try AlarmKitAdapter(physicalAcceptanceRunID: runID, ownership: ownership)
-      let procedureActivities = CommanderProcedureLiveActivityCoordinator()
+      let procedureActivities = CommanderProcedureLiveActivityCoordinator(
+        contextLeadTime: 3 * 60,
+        maximumIdleGap: 3 * 60,
+        maximumScheduledActivities: 3,
+        maximumActiveLifetime: 30 * 60
+      )
       self.adapter = adapter
       self.procedureActivities = procedureActivities
       if await adapter.authorizationStatus() != .authorized { try await adapter.requestAuthorization() }
@@ -387,7 +392,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
       let session = PhysicalAcceptanceSession(run: run, adapter: adapter)
       var summary: AlarmSyncSummary?
       var syncAttempts = 0
-      status = "Ověřuji 2 systémové alarmy a plánovanou Commander Live Activity"
+      status = "Ověřuji \(run.schedule.events.count) systémové alarmy a plánovaná Commander Live Activity okna"
       for tick in 0..<20 {
         if [0, 4, 10].contains(tick), syncAttempts < maxAttempts,
            summary?.succeeded != true {
@@ -415,10 +420,10 @@ final class PhysicalAcceptanceModel: ObservableObject {
         readAt = now
         if check.ready {
           readyCommanderStableIDs = preparedCommanderStableIDs
-          recordDiagnostic("READY · alarmy 2/2 · Commander Live Activity naplánována před Stop")
+          recordDiagnostic("READY · alarmy \(check.verifiedAlarmCount)/\(check.expectedAlarmCount) · Commander Live Activity okna připravena")
           recordSnapshot(run: run, readings: observations)
           startActivityStateObservers(run: run)
-          status = "PŘIPRAVENO – 2/2 ověřeno. Zamkněte telefon."
+          status = "PŘIPRAVENO – \(check.verifiedAlarmCount)/\(check.expectedAlarmCount) alarmů ověřeno. Zamkněte telefon."
           startReadOnlyObservations(runID: runID)
           return
         }
@@ -531,7 +536,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
       lines += ["Run ID: \(run.id)", "now: \(Self.time(run.now))", "namespace: \(run.namespace)", "projectionRevision: \(run.projectionRevision)"]
     }
     if let preflight {
-      lines += ["Ověřeno: \(Self.time(preflight.checkedAt))", "Očekávané alarmy: 2; ověřené: \(preflight.verifiedAlarmCount)", "Skutečné alarmy při posledním čtení: \(observations.count)", "Commander Live Activity: naplánována před Stop; aktivní/pending nyní: \(preparedCommanderStableIDs.count)"]
+      lines += ["Ověřeno: \(Self.time(preflight.checkedAt))", "Očekávané alarmy: \(preflight.expectedAlarmCount); ověřené: \(preflight.verifiedAlarmCount)", "Skutečné alarmy při posledním čtení: \(observations.count)", "Commander Live Activity: okna připravena před prvními odchody; aktivní/pending nyní: \(preparedCommanderStableIDs.count)"]
       for row in preflight.rows {
         lines += ["\(row.alarm.stableId) | \(row.alarm.title)", "lead: \(row.leadTime.minutes) min; source: \(Self.source(row.leadTime.source))", "canonical leaveAt / expected fire: \(row.alarm.leaveAt)", "expected visible/system transition: \(Self.time(row.expectedCountdownStart))"]
         if let actual = observations.first(where: { $0.stableID == row.alarm.stableId }) ?? row.actual {

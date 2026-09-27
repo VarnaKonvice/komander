@@ -150,8 +150,8 @@ import Testing
     encoding: .utf8
   )
   #expect(physical.contains("readyCommanderStableIDs = preparedCommanderStableIDs"))
-  #expect(physical.contains("Commander Live Activity: naplánována před Stop"))
-  #expect(physical.contains("Commander Live Activity naplánována před Stop"))
+  #expect(physical.contains("Commander Live Activity: okna připravena před prvními odchody"))
+  #expect(physical.contains("Commander Live Activity okna připravena"))
   #expect(shared.contains("physicalAcceptance.timeline.v2"))
   #expect(shared.contains("stringArray(forKey: timelineKey)"))
 }

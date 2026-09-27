@@ -12,9 +12,14 @@ actor CommanderProcedureLiveActivityCoordinator {
   static let maximumScheduledActivities = CommanderLiveActivityPlan.defaultMaximumScheduledWindows
   static let maximumActiveLifetime: TimeInterval = 7 * 60 * 60 + 50 * 60
   static let contextLeadTime = CommanderLiveActivityPlan.defaultContextLeadTime
+  static let maximumIdleGap = CommanderLiveActivityPlan.defaultMaximumIdleGap
   static let silentAlertSoundName = "CommanderSilentAlert.wav"
 
   private let enabled: Bool
+  private let planningContextLeadTime: TimeInterval
+  private let planningMaximumIdleGap: TimeInterval
+  private let planningMaximumScheduledActivities: Int
+  private let planningMaximumActiveLifetime: TimeInterval
   private(set) var issue: String?
   private var reconciliationTail: Task<Void, Never>?
   private var reconciliationGeneration = 0
@@ -27,8 +32,18 @@ actor CommanderProcedureLiveActivityCoordinator {
     let endAt: Date
   }
 
-  init(enabled: Bool = true) {
+  init(
+    enabled: Bool = true,
+    contextLeadTime: TimeInterval = CommanderProcedureLiveActivityCoordinator.contextLeadTime,
+    maximumIdleGap: TimeInterval = CommanderProcedureLiveActivityCoordinator.maximumIdleGap,
+    maximumScheduledActivities: Int = CommanderProcedureLiveActivityCoordinator.maximumScheduledActivities,
+    maximumActiveLifetime: TimeInterval = CommanderProcedureLiveActivityCoordinator.maximumActiveLifetime
+  ) {
     self.enabled = enabled
+    planningContextLeadTime = contextLeadTime
+    planningMaximumIdleGap = maximumIdleGap
+    planningMaximumScheduledActivities = maximumScheduledActivities
+    planningMaximumActiveLifetime = maximumActiveLifetime
   }
 
   func reconcile(
@@ -80,10 +95,11 @@ actor CommanderProcedureLiveActivityCoordinator {
       schedule: schedule,
       payload: payload,
       now: now,
-      contextLeadTime: Self.contextLeadTime,
-      maximumActiveLifetime: Self.maximumActiveLifetime,
+      contextLeadTime: planningContextLeadTime,
+      maximumIdleGap: planningMaximumIdleGap,
+      maximumActiveLifetime: planningMaximumActiveLifetime,
       maximumEvents: CommanderProcedureLiveActivityPolicy.maximumQueuedEvents,
-      maximumWindows: Self.maximumScheduledActivities
+      maximumWindows: planningMaximumScheduledActivities
     )
 
     let existing = Activity<CommanderProcedureLiveActivityAttributes>.activities
@@ -270,10 +286,11 @@ actor CommanderProcedureLiveActivityCoordinator {
       schedule: schedule,
       payload: payload,
       now: now,
-      contextLeadTime: Self.contextLeadTime,
-      maximumActiveLifetime: Self.maximumActiveLifetime,
+      contextLeadTime: planningContextLeadTime,
+      maximumIdleGap: planningMaximumIdleGap,
+      maximumActiveLifetime: planningMaximumActiveLifetime,
       maximumEvents: CommanderProcedureLiveActivityPolicy.maximumQueuedEvents,
-      maximumWindows: Self.maximumScheduledActivities
+      maximumWindows: planningMaximumScheduledActivities
     )
     let activities = Activity<CommanderProcedureLiveActivityAttributes>.activities
       .filter { Self.isOngoing($0.activityState) }
