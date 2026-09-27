@@ -99,6 +99,41 @@ import Testing
   #expect(rehabRunning.phase == .active)
 }
 
+@Test func singleRendererPhysicalScenarioHasOneAlertOnlyAlarmAndOneCommanderWindow() throws {
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-09-27T10:00:00")
+  let run = try PhysicalAcceptanceRun(now: now, scenario: .singleRenderer)
+  let payload = try run.payload()
+
+  #expect(run.scenario == .singleRenderer)
+  #expect(run.schedule.events.count == 1)
+  #expect(payload.alarms.count == 1)
+
+  let alarm = try #require(payload.alarms.first)
+  #expect(alarm.title == "TEST – Magnetoterapie")
+  #expect(alarm.effectiveLeadTimeMinutes == 2)
+
+  let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+  let startAt = try NativeAlarmContract.date(fromLocalISO: alarm.startAt)
+  let endAt = try NativeAlarmContract.date(fromLocalISO: alarm.endAt)
+  #expect(startAt.timeIntervalSince(leaveAt) == 2 * 60)
+  #expect(endAt.timeIntervalSince(startAt) == 3 * 60)
+
+  let plans = CommanderLiveActivityPlan.makeWindows(
+    schedule: run.schedule,
+    payload: payload,
+    now: run.now,
+    contextLeadTime: 5 * 60,
+    maximumIdleGap: 3 * 60,
+    maximumActiveLifetime: 15 * 60,
+    maximumEvents: 6,
+    maximumWindows: 1
+  )
+  #expect(plans.count == 1)
+  #expect(plans[0].includedStableIDs == [alarm.stableId])
+  #expect(plans[0].activationStart < leaveAt)
+  #expect(leaveAt.timeIntervalSince(plans[0].activationStart) == 3 * 60)
+}
+
 @Test func localPhysicalTestDoesNotCrossCanonicalMidnightBoundary() throws {
   let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-30T23:58:00")
   #expect(throws: PhysicalAcceptanceError.self) { try PhysicalAcceptanceRun(now: now) }
@@ -291,7 +326,11 @@ import Testing
   }
   #expect(source.contains("CommanderSynchronizationRequestQueue"))
   #expect(source.contains("AlarmManager.shared.alarmUpdates"))
-  #expect(source.contains("Commander NÁSLEDUJE → v startu PRÁVĚ PROBÍHÁ → po konci POTOM / Skončilo"))
+  #expect(source.contains("--single-renderer-probe"))
+  #expect(source.contains("startSingleRendererProbe()"))
+  #expect(source.contains("case .singleRenderer:"))
+  #expect(source.contains("maximumScheduledActivities: 1"))
+  #expect(source.contains("Commander odpočet → AlarmKit v odchodu → Zastavit → Commander pokračuje"))
 
   let adapter = try String(contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp/AlarmKitAdapter.swift"), encoding: .utf8)
   let coordinator = try String(contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp/CommanderProcedureLiveActivityCoordinator.swift"), encoding: .utf8)

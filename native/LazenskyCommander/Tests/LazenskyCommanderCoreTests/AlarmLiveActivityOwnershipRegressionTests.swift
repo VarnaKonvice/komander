@@ -182,12 +182,14 @@ import Testing
     contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/PhysicalAcceptance/PhysicalAcceptanceApp.swift"),
     encoding: .utf8
   )
-  let start = try #require(physical.range(of: "func start()"))
-  let begin = try #require(physical.range(of: "private func beginTimedRun()"))
+  let start = try #require(physical.range(of: "private func startScenario(_ scenario: PhysicalAcceptanceScenario)"))
+  let begin = try #require(physical.range(of: "private func beginTimedRun(_ scenario: PhysicalAcceptanceScenario)"))
   let startBody = String(physical[start.lowerBound..<begin.lowerBound])
   #expect(startBody.contains("if !liveActivitiesPrimed"))
   #expect(startBody.contains("prepareOrConfirmLiveActivities()"))
-  #expect(startBody.contains("beginTimedRun()"))
+  #expect(startBody.contains("beginTimedRun(scenario)"))
+  #expect(physical.contains("func startSingleRendererProbe()"))
+  #expect(physical.contains("startScenario(.singleRenderer)"))
   #expect(physical.contains("private actor PhysicalAcceptanceLiveActivityPrimer"))
   #expect(physical.contains("Commander Test – příprava"))
   #expect(physical.contains("try await liveActivityPrimer.prepare()"))

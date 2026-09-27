@@ -219,6 +219,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
   private var activityStateTasks: [Task<Void, Never>] = []
   private var lastSnapshotFingerprint: String?
   private var requests = CommanderSynchronizationRequestQueue()
+  private var pendingScenario: PhysicalAcceptanceScenario = .fullSpaDay
 
   var primaryActionTitle: String {
     if liveActivitiesPrimed { return "Spustit fyzický test" }
@@ -300,11 +301,20 @@ final class PhysicalAcceptanceModel: ObservableObject {
   }
 
   func start() {
+    startScenario(.fullSpaDay)
+  }
+
+  func startSingleRendererProbe() {
+    startScenario(.singleRenderer)
+  }
+
+  private func startScenario(_ scenario: PhysicalAcceptanceScenario) {
     guard !isBusy else { return }
+    pendingScenario = scenario
     if !liveActivitiesPrimed, ActivityAuthorizationInfo().areActivitiesEnabled {
       liveActivitiesPrimed = true
       liveActivityPrimerStatus = "Povoleno systémem"
-      beginTimedRun()
+      beginTimedRun(scenario)
       return
     }
     if !liveActivitiesPrimed {
@@ -312,12 +322,12 @@ final class PhysicalAcceptanceModel: ObservableObject {
       Task { await prepareOrConfirmLiveActivities() }
       return
     }
-    beginTimedRun()
+    beginTimedRun(scenario)
   }
 
-  private func beginTimedRun() {
+  private func beginTimedRun(_ scenario: PhysicalAcceptanceScenario) {
     isBusy = true
-    Task { await startQueued() }
+    Task { await startQueued(scenario: scenario) }
   }
 
   private func prepareOrConfirmLiveActivities() async {
@@ -333,7 +343,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
         liveActivitiesPrimed = true
         liveActivityPrimerStatus = "Ověřeno před časovaným během"
         status = "Live Activities připravené – spouštím časovaný test"
-        beginTimedRun()
+        beginTimedRun(pendingScenario)
         return
       }
 
@@ -348,18 +358,21 @@ final class PhysicalAcceptanceModel: ObservableObject {
     }
   }
 
-  private func startQueued() async {
+  private func startQueued(scenario: PhysicalAcceptanceScenario) async {
     guard var request = requests.submit(maxAttempts: 3, automatic: false) else { return }
     isBusy = true
     defer { isBusy = false }
     while true {
-      await perform(maxAttempts: request.maxAttempts)
+      await perform(maxAttempts: request.maxAttempts, scenario: scenario)
       guard let next = requests.completeCurrentAndTakeNext() else { return }
       request = next
     }
   }
 
-  private func perform(maxAttempts: Int) async {
+  private func perform(
+    maxAttempts: Int,
+    scenario: PhysicalAcceptanceScenario = .fullSpaDay
+  ) async {
     await liveActivityPrimer.clearVisualProbe()
     observationTask?.cancel()
     observationTask = nil
@@ -372,12 +385,23 @@ final class PhysicalAcceptanceModel: ObservableObject {
     do {
       let runID = UUID()
       let adapter = try AlarmKitAdapter(physicalAcceptanceRunID: runID, ownership: ownership)
-      let procedureActivities = CommanderProcedureLiveActivityCoordinator(
-        contextLeadTime: 3 * 60,
-        maximumIdleGap: 3 * 60,
-        maximumScheduledActivities: 3,
-        maximumActiveLifetime: 30 * 60
-      )
+      let procedureActivities: CommanderProcedureLiveActivityCoordinator
+      switch scenario {
+      case .fullSpaDay:
+        procedureActivities = CommanderProcedureLiveActivityCoordinator(
+          contextLeadTime: 3 * 60,
+          maximumIdleGap: 3 * 60,
+          maximumScheduledActivities: 3,
+          maximumActiveLifetime: 30 * 60
+        )
+      case .singleRenderer:
+        procedureActivities = CommanderProcedureLiveActivityCoordinator(
+          contextLeadTime: 5 * 60,
+          maximumIdleGap: 3 * 60,
+          maximumScheduledActivities: 1,
+          maximumActiveLifetime: 15 * 60
+        )
+      }
       self.adapter = adapter
       self.procedureActivities = procedureActivities
       if await adapter.authorizationStatus() != .authorized { try await adapter.requestAuthorization() }
@@ -386,7 +410,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
       }
       await liveActivityPrimer.clearAllPhysicalAcceptanceActivities()
       try await AlarmKitAdapter.clearPreviousPhysicalAcceptance(ownership: ownership)
-      let run = try PhysicalAcceptanceRun(now: Date(), id: runID)
+      let run = try PhysicalAcceptanceRun(now: Date(), id: runID, scenario: scenario)
       self.run = run
       recordDiagnostic("RUN vytvořen · \(runID.uuidString)")
       let session = PhysicalAcceptanceSession(run: run, adapter: adapter)
@@ -631,7 +655,7 @@ struct PhysicalAcceptanceView: View {
                 .padding(.vertical, 4)
               }
             }
-            Text("Sled: Odchod → alarm → Zastavit → Commander NÁSLEDUJE → v startu PRÁVĚ PROBÍHÁ → po konci POTOM / Skončilo; stejně pro druhou událost.")
+            Text("Sled: Commander odpočet → AlarmKit v odchodu → Zastavit → Commander pokračuje → v startu PRÁVĚ PROBÍHÁ → po konci Skončilo / další událost.")
               .font(.footnote)
               .foregroundStyle(.secondary)
           } else {
@@ -681,7 +705,7 @@ struct PhysicalAcceptanceView: View {
         }
         Section {
           field("Poslední systémové ověření", PhysicalAcceptanceModel.time(model.readAt))
-          Text("Stav PŘIPRAVENO potvrzuje konfiguraci. Úspěšný fyzický test vyžaduje oba skutečné alarmy a viditelné živé stavy ve výše uvedených časech.").font(.footnote)
+          Text("Stav PŘIPRAVENO potvrzuje konfiguraci. Úspěšný fyzický test vyžaduje všechny očekávané alarmy a viditelné živé stavy ve výše uvedených časech.").font(.footnote)
           ShareLink(item: model.report) { Label("Sdílet diagnostiku", systemImage: "square.and.arrow.up") }
         }
       }
@@ -711,6 +735,8 @@ struct PhysicalAcceptanceApp: App {
             model.startScheduledProbe()
           } else if ProcessInfo.processInfo.arguments.contains("--visual-probe") {
             model.startVisualProbe()
+          } else if ProcessInfo.processInfo.arguments.contains("--single-renderer-probe") {
+            model.startSingleRendererProbe()
           } else if ProcessInfo.processInfo.arguments.contains("--auto-run") {
             model.start()
           }

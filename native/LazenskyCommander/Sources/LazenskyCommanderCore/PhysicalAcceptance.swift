@@ -14,43 +14,98 @@ public enum PhysicalAcceptanceError: LocalizedError {
   }
 }
 
+public enum PhysicalAcceptanceScenario: Equatable, Sendable {
+  case fullSpaDay
+  case singleRenderer
+}
+
 public struct PhysicalAcceptanceRun: Equatable, Sendable {
   public static let bundleID = "com.varnakonvice.lazenskycommander.physicalacceptance"
   public static let storageSuite = "com.varnakonvice.lazenskycommander.physicalAcceptance.v1"
   public static let stableIDPrefix = "physicalAcceptance."
   public let id: UUID
   public let now: Date
+  public let scenario: PhysicalAcceptanceScenario
   public let schedule: Schedule
   public let projectionRevision = 1
   public var namespace: String { Self.stableIDPrefix + id.uuidString }
   public var overrides: LeadTimeOverrides { LeadTimeOverrides() }
 
-  public init(now: Date, id: UUID = UUID()) throws {
+  public init(
+    now: Date,
+    id: UUID = UUID(),
+    scenario: PhysicalAcceptanceScenario = .fullSpaDay
+  ) throws {
     self.id = id
     self.now = now
-    // Accelerated spa-day E2E. It deliberately contains an alarm for the next
-    // procedure while breakfast is still running, a following procedure in the
-    // same Live Activity window, and a later dinner in a separate window.
+    self.scenario = scenario
+
     let anchor = Date(timeIntervalSince1970: ceil(now.timeIntervalSince1970 / 60) * 60)
     var calendar = Calendar(identifier: .gregorian)
     calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
-    guard calendar.isDate(now, inSameDayAs: anchor.addingTimeInterval(24 * 60)) else {
+    let finalMinute = scenario == .singleRenderer ? 10 : 24
+    guard calendar.isDate(now, inSameDayAs: anchor.addingTimeInterval(Double(finalMinute * 60))) else {
       throw PhysicalAcceptanceError.midnightBoundary
     }
+
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "en_US_POSIX")
     formatter.timeZone = calendar.timeZone
     formatter.dateFormat = "yyyy-MM-dd"
     let day = formatter.string(from: now)
     formatter.dateFormat = "HH:mm"
-    func time(_ minute: Int) -> String { formatter.string(from: anchor.addingTimeInterval(Double(minute * 60))) }
+    func time(_ minute: Int) -> String {
+      formatter.string(from: anchor.addingTimeInterval(Double(minute * 60)))
+    }
     let prefix = Self.stableIDPrefix + id.uuidString
-    schedule = Schedule(schemaVersion: 1, scheduleVersion: 1, updatedAt: ISO8601DateFormatter().string(from: now), stay: ["spa": "Lokální fyzický E2E"], events: [
-      ScheduleEvent(stableId: prefix + ".breakfast", date: day, start: time(5), end: time(10), title: "TEST – Snídaně", location: "Testovací jídelna", kind: .meal, procedureType: nil, mealType: "Snídaně", leadTimeMinutes: 1),
-      ScheduleEvent(stableId: prefix + ".magnet", date: day, start: time(9), end: time(12), title: "TEST – Magnetoterapie", location: "Elektroléčba · budova 2", kind: .procedure, procedureType: "Magnetoterapie", mealType: nil, leadTimeMinutes: 3),
-      ScheduleEvent(stableId: prefix + ".rehab", date: day, start: time(14), end: time(16), title: "TEST – Rehabilitace", location: "Rehabilitace · tělocvična", kind: .procedure, procedureType: "Rehabilitace", mealType: nil, leadTimeMinutes: 2),
-      ScheduleEvent(stableId: prefix + ".dinner", date: day, start: time(21), end: time(24), title: "TEST – Večeře", location: "Testovací jídelna", kind: .meal, procedureType: nil, mealType: "Večeře", leadTimeMinutes: 2)
-    ], settings: ScheduleSettings(defaultLeadTimeMinutes: 2, procedureTypeOverrides: [:], mealOverrides: [:]))
+
+    let events: [ScheduleEvent]
+    let stayLabel: String
+    switch scenario {
+    case .fullSpaDay:
+      // Accelerated spa-day E2E. It deliberately contains an alarm for the next
+      // procedure while breakfast is still running, another procedure in the same
+      // Live Activity window, and a later dinner in a separate window.
+      stayLabel = "Lokální fyzický E2E"
+      events = [
+        ScheduleEvent(stableId: prefix + ".breakfast", date: day, start: time(5), end: time(10), title: "TEST – Snídaně", location: "Testovací jídelna", kind: .meal, procedureType: nil, mealType: "Snídaně", leadTimeMinutes: 1),
+        ScheduleEvent(stableId: prefix + ".magnet", date: day, start: time(9), end: time(12), title: "TEST – Magnetoterapie", location: "Elektroléčba · budova 2", kind: .procedure, procedureType: "Magnetoterapie", mealType: nil, leadTimeMinutes: 3),
+        ScheduleEvent(stableId: prefix + ".rehab", date: day, start: time(14), end: time(16), title: "TEST – Rehabilitace", location: "Rehabilitace · tělocvična", kind: .procedure, procedureType: "Rehabilitace", mealType: nil, leadTimeMinutes: 2),
+        ScheduleEvent(stableId: prefix + ".dinner", date: day, start: time(21), end: time(24), title: "TEST – Večeře", location: "Testovací jídelna", kind: .meal, procedureType: nil, mealType: "Večeře", leadTimeMinutes: 2)
+      ]
+    case .singleRenderer:
+      // Isolates the system invariant we care about before the full E2E:
+      // Commander starts first, AlarmKit alerts later without its own countdown UI,
+      // and the same Commander activity continues through the procedure.
+      stayLabel = "Single-renderer fyzický test"
+      events = [
+        ScheduleEvent(
+          stableId: prefix + ".single",
+          date: day,
+          start: time(7),
+          end: time(10),
+          title: "TEST – Magnetoterapie",
+          location: "Elektroléčba · budova 2",
+          kind: .procedure,
+          procedureType: "Magnetoterapie",
+          mealType: nil,
+          leadTimeMinutes: 2
+        )
+      ]
+    }
+
+    schedule = Schedule(
+      schemaVersion: 1,
+      scheduleVersion: 1,
+      updatedAt: ISO8601DateFormatter().string(from: now),
+      stay: ["spa": stayLabel],
+      events: events,
+      settings: ScheduleSettings(
+        defaultLeadTimeMinutes: 2,
+        procedureTypeOverrides: [:],
+        mealOverrides: [:]
+      )
+    )
     try NativeAlarmContract.validateCanonical(schedule)
   }
 

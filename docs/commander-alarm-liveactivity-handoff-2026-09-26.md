@@ -245,3 +245,25 @@ Current programming gate:
 - Physical Acceptance generic iOS build: passed,
 - Watch generic watchOS build: passed,
 - renderer/build identity remains **6** and no build 6 has yet been installed for the next physical verification.
+
+### 2026-09-27 short single-renderer physical probe
+
+Before repeating the full accelerated spa-day E2E, Physical Acceptance now has an isolated `--single-renderer-probe` scenario:
+
+- one `TEST – Magnetoterapie` event only,
+- Commander context starts 5 minutes before procedure start,
+- AlarmKit alert-only fires 2 minutes before procedure start,
+- this leaves 3 minutes for Commander Live Activity to replicate to Apple Watch before the AlarmKit alert,
+- only one Commander window may be scheduled,
+- after Stop, the same Commander activity must remain and continue into `Právě probíhá` and `Skončilo`.
+
+This probe exists only to prove the system invariant: one Commander Live Activity + one later AlarmKit alert, with no competing AlarmKit countdown renderer. It is intentionally shorter than the full spa-day E2E.
+
+Programming gate for this probe:
+
+- Swift suite: **233 tests in 3 suites passed**,
+- CoreCheck: passed,
+- `git diff --check`: passed,
+- production generic iOS build: passed,
+- Physical Acceptance generic iOS build: passed,
+- Watch generic watchOS build: passed.
