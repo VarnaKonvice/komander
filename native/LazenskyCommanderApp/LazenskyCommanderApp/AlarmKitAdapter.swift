@@ -123,9 +123,6 @@ actor AlarmKitAdapter: AlarmAdapting {
     let schedule = scheduleContext
     let event = schedule?.events.first(where: { $0.stableId == alarm.stableId })
     let iconKey = event.flatMap { CommanderVisualAssets.icon(for: $0)?.key } ?? ""
-    let countdown = AlarmPresentation.Countdown(
-      title: LocalizedStringResource(stringLiteral: "Odchod · \(alarm.title)")
-    )
     let eventEndAt = event.map { Self.localISO(date: $0.date, time: $0.end) }
     let nextEvent = schedule.flatMap {
       Self.nextEventSnapshot(after: alarm, schedule: $0, overrides: scheduleOverrides)
@@ -144,11 +141,6 @@ actor AlarmKitAdapter: AlarmAdapting {
       nextEvent: nextEvent
     )
     let tintColor = Self.alarmTint(kind: alarm.kind, iconKey: iconKey, title: alarm.title)
-    let countdownAttributes = AlarmAttributes(
-      presentation: AlarmPresentation(alert: alert, countdown: countdown),
-      metadata: metadata,
-      tintColor: tintColor
-    )
     let alertOnlyAttributes = AlarmAttributes(
       presentation: AlarmPresentation(alert: alert),
       metadata: metadata,
@@ -158,37 +150,16 @@ actor AlarmKitAdapter: AlarmAdapting {
 
     let now = Date()
     guard leaveAt > now else { throw AlarmKitAdapterError.departureDeadlinePassed }
-    let countdownPlan: AlarmCountdownPlan
-    if let schedule {
-      countdownPlan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
-    } else {
-      countdownPlan = AlarmCountdown.plan(
-        leaveAt: leaveAt,
-        countdownWindow: AlarmCountdown.maximumWindow,
-        now: now
-      )
-    }
 
-    let configuration: AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>
-    if countdownPlan.countdownWindow > 0 {
-      configuration = AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>(
-        countdownDuration: Alarm.CountdownDuration(
-          preAlert: countdownPlan.countdownWindow,
-          postAlert: nil
-        ),
-        schedule: countdownPlan.scheduledStartAt.map { .fixed($0) },
-        attributes: countdownAttributes,
-        stopIntent: stopIntent,
-        sound: .default
-      )
-    } else {
-      configuration = .alarm(
-        schedule: .fixed(countdownPlan.scheduledAlertAt),
-        attributes: alertOnlyAttributes,
-        stopIntent: stopIntent,
-        sound: .default
-      )
-    }
+    // Commander owns all pre-departure visual countdowns. AlarmKit is deliberately
+    // traditional alert-only so its own Live Activity never competes with Commander
+    // on the Lock Screen, Dynamic Island, or Apple Watch Smart Stack.
+    let configuration = AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>.alarm(
+      schedule: .fixed(leaveAt),
+      attributes: alertOnlyAttributes,
+      stopIntent: stopIntent,
+      sound: .default
+    )
 
     if let physicalRunID, let physicalOwnership {
       await physicalOwnership.remember(id.uuidString, runID: physicalRunID)

@@ -523,7 +523,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
       if preflight?.ready == true, let finalEnd, now >= finalEnd {
         status = "TEST DOKONČEN – zkontrolujte diagnostickou časovou osu"
       } else if preflight?.ready == true,
-                let first = preflight?.rows.first?.expectedPlan.scheduledAlertAt,
+                let first = preflight?.rows.first?.expectedAlertAt,
                 now >= first {
         status = "Test probíhá – výsledek potvrďte fyzicky"
       }
@@ -538,7 +538,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
     if let preflight {
       lines += ["Ověřeno: \(Self.time(preflight.checkedAt))", "Očekávané alarmy: \(preflight.expectedAlarmCount); ověřené: \(preflight.verifiedAlarmCount)", "Skutečné alarmy při posledním čtení: \(observations.count)", "Commander Live Activity: okna připravena před prvními odchody; aktivní/pending nyní: \(preparedCommanderStableIDs.count)"]
       for row in preflight.rows {
-        lines += ["\(row.alarm.stableId) | \(row.alarm.title)", "lead: \(row.leadTime.minutes) min; source: \(Self.source(row.leadTime.source))", "canonical leaveAt / expected fire: \(row.alarm.leaveAt)", "expected visible/system transition: \(Self.time(row.expectedCountdownStart))"]
+        lines += ["\(row.alarm.stableId) | \(row.alarm.title)", "lead: \(row.leadTime.minutes) min; source: \(Self.source(row.leadTime.source))", "canonical leaveAt / AlarmKit fire: \(row.alarm.leaveAt)", "AlarmKit režim: alert-only fixed"]
         if let actual = observations.first(where: { $0.stableID == row.alarm.stableId }) ?? row.actual {
           lines += ["AlarmKit ID: \(actual.platformID)", "state: \(actual.state); fixed: \(Self.time(actual.fixedScheduleAt)); schedule: \(actual.scheduleKind)", "preAlert: \(Self.duration(actual.preAlert)); postAlert: \(Self.duration(actual.postAlert)); system fireDate: \(Self.time(actual.fireDate))"]
         }
@@ -623,7 +623,7 @@ struct PhysicalAcceptanceView: View {
                  let end = try? NativeAlarmContract.dateTime(date: event.date, time: event.end) {
                 VStack(alignment: .leading, spacing: 5) {
                   Text(event.title).font(.headline)
-                  Text("Odchod / alarm: \(PhysicalAcceptanceModel.time(row.expectedPlan.scheduledAlertAt))")
+                  Text("Odchod / alarm: \(PhysicalAcceptanceModel.time(row.expectedAlertAt))")
                     .font(.title3.bold()).foregroundStyle(.orange)
                   Text("Začátek: \(PhysicalAcceptanceModel.time(start)) · konec: \(PhysicalAcceptanceModel.time(end))")
                     .font(.subheadline)
@@ -652,7 +652,7 @@ struct PhysicalAcceptanceView: View {
 
       if let check = model.preflight {
         Section("Předběžná kontrola") {
-          field("Očekávané alarmy", "2")
+          field("Očekávané alarmy", "\(check.expectedAlarmCount)")
           field("Ověřené alarmy", "\(check.verifiedAlarmCount)")
           field("Skutečné alarmy", "\(model.observations.count)")
           field("Commander Live Activity", "předem naplánována; aktivní/pending \(model.preparedCommanderStableIDs.count)")
@@ -662,8 +662,8 @@ struct PhysicalAcceptanceView: View {
         ForEach(check.rows, id: \.alarm.stableId) { row in
           Section(row.alarm.title) {
             field("Čas na odchod", row.alarm.leaveAt)
-            field("Přechod k alarmu", PhysicalAcceptanceModel.time(row.expectedCountdownStart))
-            field("Čas alarmu", PhysicalAcceptanceModel.time(row.expectedPlan.scheduledAlertAt))
+            field("AlarmKit režim", "alert-only")
+            field("Čas alarmu", PhysicalAcceptanceModel.time(row.expectedAlertAt))
             field("Předstih", "\(row.leadTime.minutes) min")
             if let actual = model.observations.first(where: { $0.stableID == row.alarm.stableId }) {
               field("Stav alarmu", actual.state)

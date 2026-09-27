@@ -111,7 +111,7 @@ import Testing
   #expect(plan.unknownIDs == ["foreign"])
 }
 
-@Test func physicalPreflightRequiresFourMatchingActualAlarmRecords() async throws {
+@Test func physicalPreflightRequiresFourMatchingAlertOnlyAlarmRecords() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let state = await session.alarmStore.load()
   let readings = await adapter.readings()
@@ -119,75 +119,82 @@ import Testing
   #expect(check.ready && check.expectedAlarmCount == 4 && check.verifiedAlarmCount == 4)
   #expect(check.rows[0].leadTime.source == .eventOverride)
   #expect(check.rows[1].leadTime.source == .eventOverride)
-  let first = try #require(readings.first { $0.stableID == run.schedule.events[0].stableId })
-  let magnet = try #require(readings.first { $0.stableID == run.schedule.events[1].stableId })
-  let rehab = try #require(readings.first { $0.stableID == run.schedule.events[2].stableId })
+
   let payload = try run.payload()
-  let magnetPlan = try AlarmCountdown.plan(for: payload.alarms[1], in: run.schedule, now: run.now)
-  let rehabPlan = try AlarmCountdown.plan(for: payload.alarms[2], in: run.schedule, now: run.now)
-  #expect(first.preAlert != nil && first.state == "countdown")
-  #expect(magnetPlan.countdownWindow > 0 && magnetPlan.scheduledStartAt == nil)
-  #expect(magnet.preAlert.map { abs($0 - magnetPlan.countdownWindow) <= 1 } == true)
-  #expect(magnet.scheduleKind == "none" && magnet.state == "countdown")
-  #expect(rehabPlan.countdownWindow == 0)
-  #expect(rehab.preAlert == nil && rehab.scheduleKind == "fixed" && rehab.state == "scheduled")
-  #expect(rehab.fixedScheduleAt.map { abs($0.timeIntervalSince(rehabPlan.scheduledAlertAt)) <= 1 } == true)
+  for alarm in payload.alarms {
+    let reading = try #require(readings.first { $0.stableID == alarm.stableId })
+    let expected = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+    #expect(reading.preAlert == nil)
+    #expect(reading.postAlert == nil)
+    #expect(reading.scheduleKind == "fixed")
+    #expect(reading.state == "scheduled")
+    #expect(reading.fixedScheduleAt.map { abs($0.timeIntervalSince(expected)) <= 1 } == true)
+  }
+
   #expect(try !acceptanceCheck(run, [readings[0]], state).ready)
   #expect(try !acceptanceCheck(run, [readings[0], readings[0]], state).ready)
   #expect(try !acceptanceCheck(run, readings + [readings[1]], state).ready)
   #expect(try !acceptanceCheck(run, readings, ManagedAlarmState()).ready)
 }
 
-@Test func physicalPreflightRejectsHistoricalFixedLeaveAtPlusPreAlertRegression() async throws {
+@Test func physicalPreflightRejectsLegacyCountdownShapedAlarm() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let readings = await adapter.readings()
-  let first = try #require(readings.first { $0.state == "countdown" })
-  let payload = try run.payload()
-  let firstAlarm = payload.alarms[0]
+  let first = try #require(readings.first { $0.stableID == run.schedule.events[0].stableId })
   let brokenFirst = PhysicalAlarmObservation(
-    platformID: first.platformID, stableID: first.stableID, configuredAt: first.configuredAt,
-    scheduleKind: "fixed", fixedScheduleAt: try NativeAlarmContract.date(fromLocalISO: firstAlarm.leaveAt),
-    preAlert: first.preAlert, postAlert: nil, state: "scheduled", fireDate: nil
+    platformID: first.platformID,
+    stableID: first.stableID,
+    configuredAt: first.configuredAt,
+    scheduleKind: "fixed",
+    fixedScheduleAt: first.fixedScheduleAt,
+    preAlert: 60,
+    postAlert: nil,
+    state: "scheduled",
+    fireDate: nil
   )
   let brokenReadings = readings.map { $0.platformID == first.platformID ? brokenFirst : $0 }
   let check = try await acceptanceCheck(run, brokenReadings, session.alarmStore.load())
   #expect(!check.ready && check.verifiedAlarmCount == 3)
-  #expect(check.rows[0].issues.contains("Výsledný čas alarmu neodpovídá času odchodu."))
+  #expect(check.rows[0].issues.contains("Alert-only alarm nemá mít preAlert."))
 }
 
-@Test func physicalPreflightAcceptsCountdownAndAlertOnlyAlarmsWhenCommanderWindowsArePrepared() async throws {
+@Test func physicalPreflightAcceptsOnlyAlertOnlyAlarmsWhenCommanderWindowsArePrepared() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let readings = await adapter.readings()
   let check = try await acceptanceCheck(run, readings, session.alarmStore.load())
   #expect(check.ready)
-  #expect(check.rows.filter { $0.expectedPlan.countdownWindow > 0 }.allSatisfy { $0.actual?.preAlert != nil })
-  #expect(check.rows.filter { $0.expectedPlan.countdownWindow == 0 }.allSatisfy {
-    $0.actual?.preAlert == nil && $0.actual?.scheduleKind == "fixed"
+  #expect(check.rows.allSatisfy {
+    $0.actual?.preAlert == nil &&
+    $0.actual?.postAlert == nil &&
+    $0.actual?.scheduleKind == "fixed" &&
+    $0.actual?.state == "scheduled"
   })
 }
 
-@Test func physicalPreflightAcceptsMissingImmediateFireDateButRejectsWrongStateDurationOrEndpoint() async throws {
+@Test func physicalPreflightRejectsCountdownStatePreAlertAndWrongFixedEndpoint() async throws {
   let (run, session, adapter) = try await acceptanceSetup()
   let readings = await adapter.readings()
-  let first = try #require(readings.first { $0.state == "countdown" })
-  let limited = PhysicalAlarmObservation(
-    platformID: first.platformID, stableID: first.stableID, configuredAt: first.configuredAt,
-    scheduleKind: "none", fixedScheduleAt: nil, preAlert: first.preAlert,
-    postAlert: nil, state: "countdown", fireDate: nil
-  )
-  let limitedReadings = readings.map { $0.platformID == first.platformID ? limited : $0 }
-  #expect(try await acceptanceCheck(run, limitedReadings, session.alarmStore.load()).ready)
+  let first = try #require(readings.first { $0.stableID == run.schedule.events[0].stableId })
 
-  for (preAlert, state, fire) in [
-    (first.preAlert, "scheduled", first.fireDate),
-    (nil as TimeInterval?, "countdown", first.fireDate),
-    (first.preAlert, "countdown", first.fireDate?.addingTimeInterval(60))
-  ] {
-    let bad = PhysicalAlarmObservation(
+  let wrongCases: [PhysicalAlarmObservation] = [
+    PhysicalAlarmObservation(
       platformID: first.platformID, stableID: first.stableID, configuredAt: first.configuredAt,
-      scheduleKind: "none", fixedScheduleAt: nil, preAlert: preAlert,
-      postAlert: nil, state: state, fireDate: fire
+      scheduleKind: "fixed", fixedScheduleAt: first.fixedScheduleAt, preAlert: 60,
+      postAlert: nil, state: "scheduled", fireDate: nil
+    ),
+    PhysicalAlarmObservation(
+      platformID: first.platformID, stableID: first.stableID, configuredAt: first.configuredAt,
+      scheduleKind: "none", fixedScheduleAt: nil, preAlert: nil,
+      postAlert: nil, state: "countdown", fireDate: nil
+    ),
+    PhysicalAlarmObservation(
+      platformID: first.platformID, stableID: first.stableID, configuredAt: first.configuredAt,
+      scheduleKind: "fixed", fixedScheduleAt: first.fixedScheduleAt?.addingTimeInterval(60), preAlert: nil,
+      postAlert: nil, state: "scheduled", fireDate: nil
     )
+  ]
+
+  for bad in wrongCases {
     let badReadings = readings.map { $0.platformID == first.platformID ? bad : $0 }
     let check = try await acceptanceCheck(run, badReadings, session.alarmStore.load())
     #expect(!check.ready && check.verifiedAlarmCount == 3)
@@ -226,7 +233,8 @@ import Testing
   #expect(!adapter.contains("hasVerifiedFreeTimeHandoff"))
   #expect(!adapter.contains("phase: .departureStandby"))
   #expect(adapter.contains("presentation: AlarmPresentation(alert: alert)"))
-  #expect(adapter.contains("presentation: AlarmPresentation(alert: alert, countdown: countdown)"))
+  #expect(!adapter.contains("presentation: AlarmPresentation(alert: alert, countdown: countdown)"))
+  #expect(!adapter.contains("countdownDuration: Alarm.CountdownDuration("))
   #expect(!adapter.contains("Activity<AlarmAttributes<CommanderAlarmMetadata>>.request"))
   #expect(!adapter.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
   #expect(coordinator.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
@@ -318,20 +326,19 @@ private actor AcceptanceTestAdapter: AlarmAdapting {
   func authorizationStatus() -> AlarmAuthorizationStatus { .authorized }
   func requestAuthorization() {}
   func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) throws -> String {
-    let schedule = try #require(context)
-    let plan = try AlarmCountdown.plan(for: alarm, in: schedule, now: now)
+    _ = try #require(context)
+    let alertAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
     let id = UUID().uuidString
-    let alertOnly = plan.countdownWindow == 0
     observations[id] = PhysicalAlarmObservation(
       platformID: id,
       stableID: alarm.stableId,
       configuredAt: now,
-      scheduleKind: alertOnly ? "fixed" : (plan.scheduledStartAt == nil ? "none" : "fixed"),
-      fixedScheduleAt: alertOnly ? plan.scheduledAlertAt : plan.scheduledStartAt,
-      preAlert: alertOnly ? nil : plan.countdownWindow,
+      scheduleKind: "fixed",
+      fixedScheduleAt: alertAt,
+      preAlert: nil,
       postAlert: nil,
-      state: alertOnly ? "scheduled" : (plan.scheduledStartAt == nil ? "countdown" : "scheduled"),
-      fireDate: alertOnly ? nil : (plan.scheduledStartAt == nil ? now.addingTimeInterval(plan.countdownWindow) : nil)
+      state: "scheduled",
+      fireDate: nil
     )
     return id
   }

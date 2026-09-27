@@ -7,7 +7,7 @@ Tento soubor popisuje současnou podporovanou architekturu po sjednocení denní
 ## Podporovaný lifecycle
 
 1. Canonical rozpis určuje `startAt` a `endAt`; efektivní předstih určuje canonical `leaveAt`.
-2. AlarmKit vlastní skutečný odchodový countdown, zvonění a Stop.
+2. AlarmKit vlastní pouze skutečný alert, zvonění a Stop v canonical `leaveAt`. Předodchodový countdown zobrazuje výhradně Commander.
 3. Foreground/bootstrap reconciliation rozdělí den do několika Commander Live Activity oken. Standardně okno začíná 60 minut před první událostí, nebo dříve v jejím `leaveAt`, pokud je předstih delší.
 4. Jídlo i procedura mohou být kotvou okna.
 5. Události s volnou mezerou do 2 hodin mohou zůstat v jednom okně. Delší volno blok ukončí a další blok se připraví jako nový scheduled start.
@@ -25,7 +25,7 @@ Tento soubor popisuje současnou podporovanou architekturu po sjednocení denní
 
 ## AlarmKit a Commander
 
-AlarmKit a Commander jsou dvě systémové prezentační vrstvy nad stejným canonical rozpisem. AlarmKit je bezpečnostní autorita pro odchod; Commander je kontext a navigace kolem něj.
+AlarmKit a Commander používají stejný canonical rozpis, ale nekreslí současně dvě průběžné odpočtové vrstvy. AlarmKit je bezpečnostní autorita pro samotné zazvonění v `leaveAt`; Commander je jediný předodchodový vizuální countdown, kontext a navigace kolem něj.
 
 Jediným produkčním místem, které smí volat `Activity<CommanderProcedureLiveActivityAttributes>.request`, je `CommanderProcedureLiveActivityCoordinator`. Budoucí okna používají scheduled start a tichý `CommanderSilentAlert.wav`, takže Commander nepřidává druhý zvuk vedle AlarmKitu.
 

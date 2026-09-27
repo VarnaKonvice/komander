@@ -45,7 +45,7 @@ Read-back musí proběhnout po zápisu. Pouhé uložení lokálního mapování 
 
 Musí být vyhodnocena samostatně. `AlarmKit ověřeno` nesmí implicitně znamenat, že existuje správná Live Activity.
 
-AlarmKit vlastní skutečný odchodový countdown a zvonění. Commander nad stejným canonical rozpisem připravuje několik časově navazujících Live Activity oken tak, aby uživatel dostal kontext už před odchodem a po dlouhém volnu se karta nemusela držet celý den. Každé okno se z foreground/bootstrap reconciliation naplánuje předem; standardně začíná hodinu před první událostí, nebo už v canonical `leaveAt`, pokud je tento čas dřívější. Jídlo může být stejnou kotvou jako procedura. Stop intent Commander aktivitu nikdy nevytváří z backgroundu.
+AlarmKit vlastní pouze skutečný zvukový alert v canonical `leaveAt`; vlastní předodchodový countdown záměrně nepoužívá. Commander nad stejným canonical rozpisem připravuje několik časově navazujících Live Activity oken a je jedinou průběžnou vizuální vrstvou před odchodem, aby si AlarmKit a Commander nekonkurovaly na Lock Screenu, Dynamic Islandu ani Apple Watch. Každé okno se z foreground/bootstrap reconciliation naplánuje předem; standardně začíná hodinu před první událostí, nebo už v canonical `leaveAt`, pokud je tento čas dřívější. Jídlo může být stejnou kotvou jako procedura. Stop intent Commander aktivitu nikdy nevytváří z backgroundu.
 
 Uvnitř okna nese `ContentState` nejvýše šest chronologických událostí. Před `leaveAt` hlavní položka ukazuje `Vyrazit za` a odpočet do odchodu; od `leaveAt` do `startAt` ukazuje `Čas vyrazit` a odpočet do začátku; od `startAt` do `endAt` ukazuje `Právě probíhá`; po `endAt` se posune na další položku nebo `Skončilo`. Pokud `leaveAt` další události nastane ještě během předchozí události, odchod na další událost dostává prezentační prioritu. Pro jeden projekční průchod musí AlarmKit, Commander Live Activity a Watch používat stejné zachycené `LeadTimeOverrides` a stejnou `projectionRevision`; změna lokálního předstihu během `await` se nesmí promítnout jen do jedné projekce. Existence ani selhání Commander vrstvy nesmí měnit ověření AlarmKitu.
 
@@ -92,7 +92,7 @@ Záznam musí vznikat před opravnou mutací i po ní, aby následný foreground
 Schválený runtime tok je:
 
 1. Canonical rozpis a lokální předstihy určují pro každou událost `leaveAt`, `startAt` a `endAt`.
-2. AlarmKit zůstává jedinou zvonící bezpečnostní vrstvou a jeho skutečný alert nastává v canonical `leaveAt`.
+2. AlarmKit zůstává jedinou zvonící bezpečnostní vrstvou. Každá událost používá tradiční alert-only fixed alarm přímo v canonical `leaveAt`; `countdownDuration` se nepoužívá.
 3. Foreground/bootstrap reconciliation rozdělí zbývající den na nejvýše tři předem naplánovaná Commander okna. Standardní kontext začíná 60 minut před první událostí okna; pokud efektivní `leaveAt` vychází dříve, okno začne už v `leaveAt`.
 4. Jídlo i procedura mohou být kotvou okna. Události s volnou mezerou nejvýše dvě hodiny mohou zůstat v jednom okně; delší mezera vytvoří další okno. Jedno okno má hard cap šest událostí a nesmí překročit 7 h 50 min aktivního rozpočtu.
 5. Budoucí okna se připravují jako ActivityKit scheduled start s tichým `CommanderSilentAlert.wav`; skutečný zvuk odchodu zůstává pouze AlarmKitu.

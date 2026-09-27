@@ -18,12 +18,12 @@ import Testing
   #expect(try AlarmPresentationContext(alarm: changedMeal, schedule: changed) == originalContext)
 }
 
-@Test func alarmPresentationContextTracksPreviousEventCountdownWindow() throws {
+@Test func alarmPresentationContextUsesAlertOnlyStyleAndIgnoresPreviousEventEnd() throws {
   let original = stabilizationSchedule()
   let originalProcedure = try NativeAlarmContract.payload(schedule: original).alarms[1]
   let originalContext = try AlarmPresentationContext(alarm: originalProcedure, schedule: original)
-  #expect(originalContext.countdownWindow == 5 * 60)
   #expect(originalContext.procedureType == "Magnetoterapie")
+  #expect(originalContext.deliveryStyle == AlarmPresentationContext.currentDeliveryStyle)
 
   let laterMealEnd = ScheduleEvent(
     stableId: "meal", date: "2026-09-06", start: "10:10", end: "10:18",
@@ -33,9 +33,20 @@ import Testing
   let changed = stabilizationSchedule(version: 2, events: [laterMealEnd, original.events[1]])
   let changedProcedure = try NativeAlarmContract.payload(schedule: changed).alarms[1]
   #expect(changedProcedure == originalProcedure)
-  #expect(try AlarmPresentationContext(alarm: changedProcedure, schedule: changed).countdownWindow == 2 * 60)
+  #expect(try AlarmPresentationContext(alarm: changedProcedure, schedule: changed) == originalContext)
 }
 
+@Test func legacyAlarmPresentationContextDecodesWithoutDeliveryStyleAndForcesOneUpdate() throws {
+  let legacy = #"{"countdownWindow":300,"procedureType":"Magnetoterapie","mealType":null}"#.data(using: .utf8)!
+  let decoded = try JSONDecoder().decode(AlarmPresentationContext.self, from: legacy)
+  #expect(decoded.deliveryStyle == nil)
+
+  let schedule = stabilizationSchedule()
+  let alarm = try NativeAlarmContract.payload(schedule: schedule).alarms[1]
+  let current = try AlarmPresentationContext(alarm: alarm, schedule: schedule)
+  #expect(current.deliveryStyle == AlarmPresentationContext.currentDeliveryStyle)
+  #expect(current != decoded)
+}
 @Test func entireAlarmFlowAgreesAcrossDashboardWatchAndCanonicalBoundaries() throws {
   let schedule = stabilizationSchedule()
   for (time, state, id): (String, CommanderLiveState, String?) in [

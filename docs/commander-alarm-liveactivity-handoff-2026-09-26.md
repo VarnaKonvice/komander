@@ -175,3 +175,33 @@ A long free interval can therefore end one Commander window and a later meal (fo
 - Swift suite: **225 tests in 3 suites passed**.
 - Production generic iOS build: passed after the multi-window and departure-phase changes.
 - No physical AlarmKit run was performed after this architecture change on 2026-09-26 evening; physical E2E is intentionally deferred to the next session.
+
+## 2026-09-27 physical E2E — AlarmKit countdown competition discovered
+
+Accelerated physical run `C958339A-5186-4065-8879-EEB182183263` reached READY with 4/4 AlarmKit alarms and two Commander windows prepared. Diagnostics confirmed:
+
+- breakfast Commander window: `pending` at 09:14:44, `active` at 09:17:02,
+- dinner Commander window remained `pending`,
+- breakfast Stop at 09:19:13 and magnet Stop at 09:21:10 never created Commander from background,
+- Commander remained `active` after both Stops.
+
+The system presentation did **not** match the intended single Commander story:
+
+- AlarmKit countdown Live Activities occupied the Lock Screen / Dynamic Island before the alert,
+- after Stop an AlarmKit presentation could linger at `0:00`,
+- Apple Watch showed the AlarmKit alert but did not surface the already-active Commander Smart Stack card during this competing presentation,
+- therefore the run was intentionally aborted before the remaining rehab/dinner alarms.
+
+This was classified as an architecture conflict, not a failed Commander request: the Commander activity was active according to ActivityKit diagnostics but was being visually competed with by AlarmKit countdown activities.
+
+### Superseding rule
+
+AlarmKit is now **traditional alert-only** for every event:
+
+- fixed schedule = canonical `leaveAt`,
+- no `countdownDuration`,
+- no `preAlert` / `postAlert`,
+- Commander is the sole pre-departure visual countdown on Lock Screen, Dynamic Island, and Apple Watch,
+- AlarmKit remains the sole audible alert at `leaveAt`.
+
+`AlarmPresentationContext.deliveryStyle = alertOnlyV1` provides a one-time migration discriminator: older stored countdown-shaped alarm presentation contexts decode with `deliveryStyle == nil` and are reconciled once into the new alert-only contract.

@@ -52,14 +52,16 @@ První okno tedy obsahuje Snídani → Magnetoterapii → Rehabilitaci. Večeře
 
 Současně se průběžně ověřují Lock Screen, Dynamic Island a Apple Watch Smart Stack/detail.
 
-## AlarmKit zvláštnost při překryvu
+## AlarmKit kontrakt
 
-Pokud pro další událost nevzniká smysluplný countdown window, produkční adapter používá **alert-only fixed alarm přímo v canonical `leaveAt`**. Physical preflight proto rozlišuje:
+Všechny testovací i produkční AlarmKit alarmy jsou **alert-only fixed** přímo v canonical `leaveAt`.
 
-- countdown alarm: `countdownDuration.preAlert > 0`,
-- alert-only alarm: žádný preAlert, fixed schedule přesně v `leaveAt`.
+- `countdownDuration` je vždy nil,
+- `preAlert` i `postAlert` jsou nil,
+- fixed schedule je přesně `leaveAt`,
+- předodchodový odpočet zobrazuje pouze Commander Live Activity.
 
-To je důležité právě pro těsné nebo překrývající se události.
+Důvodem je fyzický E2E z 27. 9. 2026: AlarmKit countdown Live Activities obsazovaly Lock Screen, Dynamic Island i Apple Watch a přebíjely současně aktivní Commander Live Activity.
 
 ## READY podmínky
 

@@ -23,7 +23,7 @@ import Testing
   #expect(stopIntent.contains("return .result()"))
 }
 
-@Test func alarmKitOwnsDepartureAndStopHandsOffToCommander() throws {
+@Test func alarmKitOwnsOnlyDepartureAlertWhileCommanderOwnsVisibleCountdown() throws {
   let repo = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent()
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -40,9 +40,11 @@ import Testing
     encoding: .utf8
   )
 
-  #expect(adapter.contains("countdownDuration: Alarm.CountdownDuration("))
-  #expect(adapter.contains("preAlert: countdownPlan.countdownWindow"))
-  #expect(adapter.contains("LocalizedStringResource(stringLiteral: \"Odchod · \\(alarm.title)\")"))
+  #expect(adapter.contains("AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>.alarm("))
+  #expect(adapter.contains("schedule: .fixed(leaveAt)"))
+  #expect(adapter.contains("presentation: AlarmPresentation(alert: alert)"))
+  #expect(!adapter.contains("countdownDuration: Alarm.CountdownDuration("))
+  #expect(!adapter.contains("LocalizedStringResource(stringLiteral: \"Odchod · \\(alarm.title)\")"))
   #expect(!adapter.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))
   #expect(!adapter.contains("CommanderAlarmStopHandoffGate"))
   #expect(coordinator.contains("Activity<CommanderProcedureLiveActivityAttributes>.request"))

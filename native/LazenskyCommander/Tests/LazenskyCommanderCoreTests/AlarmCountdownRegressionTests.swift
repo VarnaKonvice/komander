@@ -107,14 +107,15 @@ import Testing
   #expect(await store.load().records.values.allSatisfy { $0.alarm.leaveAt == $0.alarm.startAt })
 }
 
-@Test func SDKAdapterAndBothActivitySurfacesUseSystemCountdownContract() throws {
+@Test func SDKAdapterUsesTraditionalAlertOnlyAlarmWhileCommanderOwnsVisibleCountdown() throws {
   let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
   let adapter = try String(contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp/AlarmKitAdapter.swift"), encoding: .utf8)
   let widget = try String(contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderLiveActivity/LazenskyCommanderLiveActivity.swift"), encoding: .utf8)
-  #expect(adapter.contains("schedule: countdownPlan.scheduledStartAt.map { .fixed($0) }"))
-  #expect(adapter.contains("countdownDuration: Alarm.CountdownDuration("))
-  #expect(adapter.contains("preAlert: countdownPlan.countdownWindow"))
-  #expect(adapter.contains("postAlert: nil"))
+  #expect(adapter.contains("AlarmManager.AlarmConfiguration<CommanderAlarmMetadata>.alarm("))
+  #expect(adapter.contains("schedule: .fixed(leaveAt)"))
+  #expect(adapter.contains("presentation: AlarmPresentation(alert: alert)"))
+  #expect(!adapter.contains("countdownDuration: Alarm.CountdownDuration("))
+  #expect(!adapter.contains("AlarmPresentation(alert: alert, countdown:"))
   #expect(adapter.contains("Activity<AlarmAttributes<CommanderAlarmMetadata>>.activities"))
   #expect(adapter.contains("countdownDeadlines[activity.content.state.alarmID.uuidString] = countdown.fireDate"))
   #expect(adapter.contains("if let visibleIDs, !visibleIDs.contains(platformID) { continue }"))
