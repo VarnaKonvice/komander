@@ -353,3 +353,29 @@ Build 9 programming gate:
 - production generic iOS build: passed,
 - Physical Acceptance generic iOS build: passed,
 - Watch generic watchOS build: passed.
+
+### 2026-09-27 build 10 — approved visual design pass
+
+Build 10 is a design-only pass. AlarmKit / ActivityKit ownership and timing logic are unchanged.
+
+- Live Activity and Watch no longer use the Commander lotus as a procedure icon.
+- Native procedure badges now use the approved category language everywhere: meal `fork.knife` #50B863, water `drop` #2ED4FF, rehabilitation `figure.run` #2EE6C4, massage `leaf.fill` #FF7A59, heat/wrap custom three rising waves + lower line #FFC857, electro `atom` #D6B4FE, fallback `cross.case.fill` #FF5DA8.
+- Lock Screen uses one 50 pt current-procedure badge in the hero; the footer no longer duplicates the same icon. Following events keep their own smaller badge.
+- Category accent remains the only live-state accent for an event. The previous orange / generic purple / green presentation palette is not used by Live Activity or Watch for upcoming/active states; ended remains neutral.
+- Lock Screen category tint was reduced so the card stays dark and the approved accent appears primarily in badge, border, typography and timing.
+- Compact Dynamic Island uses the procedure badge on the leading side. Expanded Dynamic Island uses the procedure badge on the left, state glyph on the right, and a centered timer/body so the timer no longer drifts to the far left.
+- Apple Watch Smart Stack/detail uses the full ActivityKit content area instead of drawing another small bordered card inside it. The roomy Watch surface adds location and following event; compact Smart Stack keeps the same hierarchy at reduced scale.
+- The standalone Watch app follows the same approved category accent/badge language.
+- The old yellow `LC / TEST / OK` visual-probe Dynamic Island branch was removed; visual probes now render the real production layout.
+- Renderer revision and app/extension/watch build identity are **10**.
+
+Build 10 programming gate:
+
+- Swift suite: **234 tests in 3 suites passed**,
+- CoreCheck: passed,
+- `git diff --check`: passed,
+- production generic iOS build: passed,
+- Physical Acceptance generic iOS build: passed,
+- Watch generic watchOS build: passed.
+
+No new functional/alarm physical acceptance was run for this design-only pass.

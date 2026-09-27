@@ -159,21 +159,109 @@ enum CommanderBrandAssets {
             .lowercased(with: Locale(identifier: "cs_CZ"))
     }
 }
-/// Original approved artwork, never a semantic SF Symbol or a recolored template.
+/// One approved visual language for procedure/category icons on every native surface.
+/// Small surfaces scale the same badge; they never fall back to the Commander lotus mark.
 struct CommanderProcedureArtwork: View {
     let iconKey: String?
     let title: String
     let size: CGFloat
+    var kind: ScheduleKind? = nil
+
+    private var isMeal: Bool {
+        if kind == .meal || iconKey?.hasPrefix("meal_") == true { return true }
+        let normalized = title
+            .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "cs_CZ"))
+            .lowercased(with: Locale(identifier: "cs_CZ"))
+        return ["snidane", "obed", "vecere"].contains(where: normalized.contains)
+    }
+
+    private var family: CommanderBrandAssets.ProcedureFamily {
+        CommanderBrandAssets.procedureFamily(
+            iconKey: iconKey,
+            title: title,
+            isMeal: isMeal
+        )
+    }
+
+    private var accent: Color {
+        Color(commanderPresentationHex: family.accentHex)
+    }
 
     var body: some View {
-        let key = CommanderBrandAssets.approvedIcon(iconKey: iconKey, title: title)?.key
-        Image(key ?? CommanderBrandAssets.circularMarkName, bundle: .main)
-            .renderingMode(.original)
-            .resizable()
-            .scaledToFit()
-            .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: size * 0.18))
-            .accessibilityHidden(true)
+        ZStack {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            accent.opacity(0.13),
+                            Color(commanderPresentationHex: "#052D78")
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+            Circle()
+                .strokeBorder(accent, lineWidth: size >= 32 ? 1.45 : 1.0)
+
+            if family.symbol == "commander.heat.waves" {
+                CommanderHeatWavesArtwork(color: accent)
+                    .frame(width: size * 0.55, height: size * 0.55)
+            } else {
+                Image(systemName: family.symbol)
+                    .resizable()
+                    .scaledToFit()
+                    .symbolRenderingMode(.monochrome)
+                    .foregroundStyle(accent)
+                    .frame(width: size * 0.54, height: size * 0.54)
+            }
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct CommanderHeatWavesArtwork: View {
+    let color: Color
+
+    var body: some View {
+        GeometryReader { proxy in
+            let w = proxy.size.width
+            let h = proxy.size.height
+            let stroke = max(1.3, min(w, h) * 0.085)
+
+            ZStack {
+                ForEach([0.29, 0.50, 0.71], id: \.self) { factor in
+                    Path { path in
+                        let x = w * factor
+                        path.move(to: CGPoint(x: x, y: h * 0.66))
+                        path.addCurve(
+                            to: CGPoint(x: x, y: h * 0.47),
+                            control1: CGPoint(x: x - w * 0.055, y: h * 0.60),
+                            control2: CGPoint(x: x + w * 0.055, y: h * 0.54)
+                        )
+                        path.addCurve(
+                            to: CGPoint(x: x, y: h * 0.28),
+                            control1: CGPoint(x: x - w * 0.055, y: h * 0.41),
+                            control2: CGPoint(x: x + w * 0.055, y: h * 0.35)
+                        )
+                        path.addCurve(
+                            to: CGPoint(x: x, y: h * 0.11),
+                            control1: CGPoint(x: x - w * 0.050, y: h * 0.22),
+                            control2: CGPoint(x: x + w * 0.050, y: h * 0.16)
+                        )
+                    }
+                    .stroke(
+                        color,
+                        style: StrokeStyle(lineWidth: stroke, lineCap: .round, lineJoin: .round)
+                    )
+                }
+
+                Capsule()
+                    .fill(color)
+                    .frame(width: w * 0.58, height: stroke * 1.15)
+                    .position(x: w * 0.50, y: h * 0.84)
+            }
+        }
     }
 }
 

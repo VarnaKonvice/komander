@@ -74,7 +74,7 @@ Celý pobyt zůstává aktivní do konce poslední události plus 24 hodin. Roll
 
 ## Vizuální kontrakt
 
-`assets/icons/lazensky-v1/icon-map.json` a `colors.json` jsou společný vizuální kontrakt PWA, iPhonu, Live Activity, Watch app a widgetu. PWA používá 256px varianty, iPhone 512px a malé nativní plochy 128px varianty stejné schválené kresby. Neznámá procedura nedostává `individual_rehab` ani jinou falešnou kategorii: zachová zdrojový text, nemá ikonový klíč a používá neutrální Commander purple.
+`assets/icons/lazensky-v1/icon-map.json` a `colors.json` zůstávají společným klasifikačním a barevným kontraktem. Pro nativní iPhone / Live Activity / Watch / Widget je autoritativní vizuální zdroj `docs/commander-approved-visual-source-2026-09-24.md`: Jídlo `fork.knife` #50B863, Vodoléčba `drop` #2ED4FF, Rehabilitace `figure.run` #2EE6C4, Masáže `leaf.fill` #FF7A59, Zábaly/teplo vlastní tři stoupající vlny + spodní čára #FFC857, Elektroléčba `atom` #D6B4FE a fallback `cross.case.fill` #FF5DA8. Malé systémové plochy používají zmenšený tentýž kruhový badge; Commander lotus se nikdy nepoužívá jako náhrada procedurní ikony. Neznámá procedura se nepřeklasifikuje na jinou proceduru.
 
 ## Google Calendar sync
 

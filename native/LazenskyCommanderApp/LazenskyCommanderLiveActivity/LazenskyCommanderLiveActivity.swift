@@ -8,18 +8,10 @@ private enum CommanderActivityTokens {
   static let background = Color(commanderActivityHex: CommanderBrandAssets.Colors.background)
   static let panel = Color(commanderActivityHex: CommanderBrandAssets.Colors.panel)
   static let panelStroke = Color(commanderActivityHex: CommanderBrandAssets.Colors.panelStroke)
-  static let primaryPurple = Color(commanderActivityHex: CommanderBrandAssets.Colors.primaryPurple)
   static let locationBlue = Color(commanderActivityHex: CommanderBrandAssets.Colors.locationBlue)
-  static let mealGreen = Color(commanderActivityHex: CommanderBrandAssets.Colors.mealGreen)
-  static let amber = CommanderBrandAssets.Presentation.countdown
-  static let freeBlue = Color(commanderActivityHex: CommanderBrandAssets.Colors.freeBlue)
-  static let procedureCyan = Color(commanderActivityHex: CommanderBrandAssets.Colors.procedureCyan)
-  static let urgentOrange = Color(commanderActivityHex: CommanderBrandAssets.Colors.urgentOrange)
-  static let criticalRed = CommanderBrandAssets.Presentation.alert
   static let textPrimary = Color.white
   static let textSecondary = Color(commanderActivityHex: CommanderBrandAssets.Colors.textSecondary)
 
-  static let insetRadius: CGFloat = 12
   static let cardRadius: CGFloat = 24
   static let lockScreenMinHeight: CGFloat = 164
   static let heroTimeSize: CGFloat = 58
@@ -83,55 +75,35 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
         isStale: preview.isStale,
         eventAccent: eventAccent
       )
-      let isVisualProbe = context.attributes.stableId == "physicalAcceptance.visualProbe"
-
       return DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
-          if isVisualProbe {
-            Text("LC").font(.headline).foregroundStyle(.yellow)
-          } else {
-            CommanderActivityBrandMark(size: 32)
-          }
+          CommanderProcedureArtwork(
+            iconKey: preview.iconKey,
+            title: preview.title,
+            size: 30,
+            kind: preview.kind
+          )
         }
         DynamicIslandExpandedRegion(.center) {
-          if isVisualProbe {
-            Text("TEST").font(.headline).foregroundStyle(.yellow)
-          } else {
-            CommanderProcedureIslandCenter(context: context)
-          }
+          CommanderProcedureIslandCenter(context: context)
         }
         DynamicIslandExpandedRegion(.trailing) {
-          if isVisualProbe {
-            Image(systemName: "bolt.fill").foregroundStyle(.yellow)
-          } else {
-            CommanderProcedureIslandArtwork(context: context)
-          }
+          CommanderProcedureIslandStateMark(context: context)
         }
         DynamicIslandExpandedRegion(.bottom) {
-          if isVisualProbe {
-            Text("Dynamic Island").font(.caption).foregroundStyle(.white)
-          } else {
-            CommanderProcedureIslandBottom(context: context)
-          }
+          CommanderProcedureIslandBottom(context: context)
         }
       } compactLeading: {
-        if isVisualProbe {
-          Text("LC").font(.caption2.bold()).foregroundStyle(.yellow)
-        } else {
-          CommanderCompactBrandEventMark()
-        }
+        CommanderProcedureArtwork(
+          iconKey: preview.iconKey,
+          title: preview.title,
+          size: 20,
+          kind: preview.kind
+        )
       } compactTrailing: {
-        if isVisualProbe {
-          Text("OK").font(.caption2.bold()).foregroundStyle(.yellow)
-        } else {
-          CommanderProcedureIslandTiming(context: context, size: .compact)
-        }
+        CommanderProcedureIslandTiming(context: context, size: .compact)
       } minimal: {
-        if isVisualProbe {
-          Text("LC").font(.caption2.bold()).foregroundStyle(.yellow)
-        } else {
-          CommanderProcedureIslandTiming(context: context, size: .minimal)
-        }
+        CommanderProcedureIslandTiming(context: context, size: .minimal)
       }
       .keylineTint(keylineAccent)
       .contentMargins(.horizontal, 4, for: .expanded)
@@ -228,7 +200,7 @@ private struct CommanderProcedureIslandBottom: View {
   }
 }
 
-private struct CommanderProcedureIslandArtwork: View {
+private struct CommanderProcedureIslandStateMark: View {
   let context: ActivityViewContext<CommanderProcedureLiveActivityAttributes>
 
   var body: some View {
@@ -237,7 +209,16 @@ private struct CommanderProcedureIslandArtwork: View {
       state: context.state,
       isStale: context.isStale
     )
-    CommanderProcedureArtwork(iconKey: display.iconKey, title: display.title, size: 32)
+    let accent = CommanderActivityTokens.eventAccent(
+      kind: display.kind,
+      iconKey: display.iconKey,
+      title: display.title
+    )
+
+    Image(systemName: display.presentationMode == .departureCountdown ? "figure.walk" : "clock.badge")
+      .font(.system(size: 18, weight: .semibold))
+      .foregroundStyle(accent)
+      .frame(width: 30, height: 30)
   }
 }
 
@@ -274,8 +255,11 @@ private struct CommanderProcedureWatchLiveActivityView: View {
       title: display.title,
       iconKey: display.iconKey,
       kind: display.kind,
+      location: display.location,
       timeLabel: display.timeLabel,
       timeValue: display.timeValue,
+      nextEvent: display.nextEvent,
+      nextEventLabel: display.nextEventLabel,
       stateAccent: CommanderActivityTokens.procedureStateAccent(
         mode: display.presentationMode,
         isStale: display.isStale,
@@ -294,60 +278,102 @@ private struct CommanderSmartStackCard<Clock: View>: View {
   let title: String
   let iconKey: String?
   let kind: ScheduleKind?
+  let location: String
   let timeLabel: String
   let timeValue: String
+  let nextEvent: CommanderAlarmEventSnapshot?
+  let nextEventLabel: String
   let stateAccent: Color
   @ViewBuilder var clock: () -> Clock
 
   var body: some View {
     GeometryReader { geometry in
-      VStack(spacing: 2) {
-        HStack(spacing: 6) {
-          CommanderActivityBrandMark(size: 30)
-          VStack(spacing: 0) {
-            CommanderProcedureStatusText(display: display)
-              .font(.system(size: 11, weight: .bold))
-              .lineLimit(1)
-              .minimumScaleFactor(0.72)
-            clock()
-              .font(.system(size: 29, weight: .heavy, design: .rounded).monospacedDigit())
-              .lineLimit(1)
-              .minimumScaleFactor(0.72)
-              .frame(maxWidth: .infinity)
-              .frame(height: 32)
-              .layoutPriority(1)
-          }
-          .foregroundStyle(stateAccent)
-        }
-        Rectangle().fill(stateAccent.opacity(0.55)).frame(height: 0.5)
-        HStack(spacing: 5) {
-          CommanderProcedureArtwork(iconKey: iconKey, title: title, size: 22)
+      let roomy = geometry.size.height >= 100 || geometry.size.width >= 220
+      VStack(spacing: roomy ? 5 : 3) {
+        HStack(alignment: .center, spacing: roomy ? 9 : 6) {
+          CommanderProcedureArtwork(
+            iconKey: iconKey,
+            title: title,
+            size: roomy ? 40 : 30,
+            kind: kind
+          )
+
           VStack(alignment: .leading, spacing: 0) {
-            Text(title)
-              .font(.system(size: 11, weight: .bold))
-              .foregroundStyle(Color(commanderPresentationHex: CommanderBrandAssets.procedureAccentHex(
-                iconKey: iconKey,
-                title: title,
-                isMeal: kind == .meal
-              )))
+            CommanderProcedureStatusText(display: display)
+              .font(.system(size: roomy ? 13 : 10.5, weight: .bold))
+              .foregroundStyle(stateAccent)
               .lineLimit(1)
-              .minimumScaleFactor(0.82)
-              .truncationMode(.tail)
-              .frame(maxWidth: .infinity, alignment: .leading)
-            if geometry.size.height >= 78 && geometry.size.width >= 170 {
-              Text(timeLabel + " " + timeValue)
-                .font(.system(size: 9, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.85))
+              .minimumScaleFactor(0.70)
+
+            HStack(spacing: 5) {
+              clock()
+                .font(.system(size: roomy ? 34 : 27, weight: .heavy, design: .rounded).monospacedDigit())
+                .foregroundStyle(stateAccent)
                 .lineLimit(1)
+                .minimumScaleFactor(0.70)
+                .layoutPriority(1)
+
+              Spacer(minLength: 2)
+
+              VStack(alignment: .trailing, spacing: 0) {
+                Text(timeLabel)
+                  .font(.system(size: roomy ? 9 : 8, weight: .medium))
+                  .foregroundStyle(CommanderActivityTokens.textSecondary)
+                Text(timeValue)
+                  .font(.system(size: roomy ? 11 : 9.5, weight: .bold).monospacedDigit())
+                  .foregroundStyle(.white)
+              }
             }
           }
         }
+
+        Rectangle()
+          .fill(stateAccent.opacity(0.48))
+          .frame(height: 0.5)
+
+        VStack(alignment: .leading, spacing: roomy ? 2 : 0) {
+          Text(title)
+            .font(.system(size: roomy ? 14 : 11, weight: .bold))
+            .foregroundStyle(Color(commanderPresentationHex: CommanderBrandAssets.procedureAccentHex(
+              iconKey: iconKey,
+              title: title,
+              isMeal: kind == .meal
+            )))
+            .lineLimit(1)
+            .minimumScaleFactor(0.78)
+            .truncationMode(.tail)
+
+          if roomy, !location.isEmpty {
+            Label(location, systemImage: "mappin.circle.fill")
+              .font(.system(size: 9.5, weight: .medium))
+              .foregroundStyle(CommanderActivityTokens.locationBlue)
+              .lineLimit(1)
+              .minimumScaleFactor(0.72)
+          }
+
+          if roomy, let nextEvent {
+            CommanderNextEventLine(
+              event: nextEvent,
+              compact: true,
+              label: nextEventLabel
+            )
+          }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
       }
-      .padding(5)
-      .frame(width: geometry.size.width, height: geometry.size.height)
-      .background(LinearGradient(colors: [stateAccent.opacity(0.18), .black], startPoint: .topLeading, endPoint: .bottomTrailing))
-      .clipShape(RoundedRectangle(cornerRadius: 12))
-      .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(stateAccent.opacity(0.8), lineWidth: 1))
+      .padding(.horizontal, roomy ? 8 : 6)
+      .padding(.vertical, roomy ? 7 : 4)
+      .frame(width: geometry.size.width, height: geometry.size.height, alignment: .center)
+      .background(
+        LinearGradient(
+          colors: [
+            Color(commanderActivityHex: CommanderBrandAssets.Colors.panel),
+            Color.black.opacity(0.92)
+          ],
+          startPoint: .topLeading,
+          endPoint: .bottomTrailing
+        )
+      )
     }
     .accessibilityElement(children: .combine)
   }
@@ -364,14 +390,20 @@ private struct CommanderExpandedEventBody<Clock: View>: View {
   @ViewBuilder var clock: () -> Clock
 
   var body: some View {
-    VStack(spacing: 3) {
-      clock()
-        .font(.system(size: 44, weight: .heavy, design: .rounded).monospacedDigit())
-        .foregroundStyle(stateAccent)
-        .lineLimit(1)
-        .minimumScaleFactor(0.72)
-        .frame(maxWidth: .infinity)
-        .layoutPriority(2)
+    VStack(spacing: 4) {
+      HStack(spacing: 0) {
+        Spacer(minLength: 0)
+        clock()
+          .font(.system(size: 38, weight: .heavy, design: .rounded).monospacedDigit())
+          .foregroundStyle(stateAccent)
+          .lineLimit(1)
+          .minimumScaleFactor(0.78)
+          .multilineTextAlignment(.center)
+          .layoutPriority(2)
+        Spacer(minLength: 0)
+      }
+      .frame(maxWidth: .infinity, alignment: .center)
+
       Text(title)
         .font(.system(size: 15, weight: .bold))
         .foregroundStyle(Color(commanderPresentationHex: CommanderBrandAssets.procedureAccentHex(
@@ -380,18 +412,21 @@ private struct CommanderExpandedEventBody<Clock: View>: View {
           isMeal: kind == .meal
         )))
         .lineLimit(1)
-        .minimumScaleFactor(0.85)
+        .minimumScaleFactor(0.84)
         .truncationMode(.tail)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .center)
+
       if !location.isEmpty {
         Label(location, systemImage: "mappin.circle.fill")
-          .font(.system(size: 12, weight: .medium))
-          .foregroundStyle(.white.opacity(0.9))
+          .font(.system(size: 11.5, weight: .medium))
+          .foregroundStyle(CommanderActivityTokens.locationBlue)
           .lineLimit(1)
-          .padding(.horizontal, 10)
-          .padding(.vertical, 4)
-          .background(stateAccent.opacity(0.15), in: Capsule())
+          .minimumScaleFactor(0.74)
+          .padding(.horizontal, 9)
+          .padding(.vertical, 3)
+          .background(stateAccent.opacity(0.10), in: Capsule())
       }
+
       if let nextEvent {
         CommanderNextEventLine(
           event: nextEvent,
@@ -400,7 +435,9 @@ private struct CommanderExpandedEventBody<Clock: View>: View {
         )
       }
     }
+    .padding(.horizontal, 8)
     .padding(.bottom, 4)
+    .frame(maxWidth: .infinity, alignment: .center)
   }
 }
 
@@ -450,11 +487,6 @@ private struct CommanderProcedureLockScreenView: View {
       iconKey: display.iconKey,
       title: display.title
     )
-    let eventIconKey = CommanderActivityTokens.eventIconKey(
-      kind: display.kind,
-      iconKey: display.iconKey,
-      title: display.title
-    )
     let stateAccent = CommanderActivityTokens.procedureStateAccent(
       mode: display.presentationMode,
       isStale: display.isStale,
@@ -467,7 +499,6 @@ private struct CommanderProcedureLockScreenView: View {
       CommanderActivityEventFooter(
         title: display.title,
         location: display.location,
-        iconKey: eventIconKey,
         eventAccent: eventAccent,
         timeLabel: display.timeLabel,
         timeValue: display.timeValue,
@@ -511,8 +542,13 @@ private struct CommanderProcedureDisplayHero: View {
       .frame(maxWidth: .infinity)
 
       HStack(spacing: 0) {
-        CommanderActivityBrandMark(size: 74)
-          .frame(width: 82, alignment: .leading)
+        CommanderProcedureArtwork(
+          iconKey: display.iconKey,
+          title: display.title,
+          size: 50,
+          kind: display.kind
+        )
+        .frame(width: 72, alignment: .leading)
 
         Spacer(minLength: 0)
 
@@ -573,7 +609,6 @@ private struct CommanderActivityDivider: View {
 private struct CommanderActivityEventFooter: View {
   let title: String
   let location: String?
-  let iconKey: String
   let eventAccent: Color
   let timeLabel: String
   let timeValue: String
@@ -583,8 +618,6 @@ private struct CommanderActivityEventFooter: View {
 
   var body: some View {
     HStack(alignment: .center, spacing: 10) {
-      CommanderProcedureArtwork(iconKey: iconKey, title: title, size: 36)
-
       VStack(alignment: .leading, spacing: 1) {
         Text(title)
           .font(.system(size: 21, weight: .bold))
@@ -678,7 +711,12 @@ private struct CommanderNextEventLine: View {
       HStack(spacing: 5) {
         Text(label)
           .foregroundStyle(CommanderActivityTokens.textSecondary)
-        CommanderProcedureArtwork(iconKey: iconKey, title: event.title, size: 18)
+        CommanderProcedureArtwork(
+          iconKey: iconKey,
+          title: event.title,
+          size: 18,
+          kind: event.kind
+        )
         Text(event.title)
           .fontWeight(.semibold)
           .foregroundStyle(accent)
@@ -720,15 +758,15 @@ private struct CommanderActivityCardStyle: ViewModifier {
         ZStack {
           CommanderActivityTokens.backgroundGradient
           LinearGradient(
-            colors: [accent.opacity(0.31), accent.opacity(0.13), accent.opacity(0.22)],
+            colors: [accent.opacity(0.11), accent.opacity(0.035), accent.opacity(0.07)],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
           )
           RadialGradient(
-            colors: [accent.opacity(0.18), .clear],
+            colors: [accent.opacity(0.10), .clear],
             center: .topLeading,
-            startRadius: 12,
-            endRadius: 220
+            startRadius: 10,
+            endRadius: 210
           )
         }
       }
@@ -742,13 +780,6 @@ private struct CommanderActivityCardStyle: ViewModifier {
 private extension View {
   func commanderActivityCard(accent: Color) -> some View {
     modifier(CommanderActivityCardStyle(accent: accent))
-  }
-}
-
-private struct CommanderCompactBrandEventMark: View {
-  var body: some View {
-    CommanderActivityBrandMark(size: 22)
-      .accessibilityHidden(true)
   }
 }
 
@@ -986,18 +1017,6 @@ private struct CommanderProcedurePhaseTiming: View {
     case .regular: return .subheadline.weight(.heavy).monospacedDigit()
     case .large: return .title2.weight(.heavy).monospacedDigit()
     }
-  }
-}
-
-private struct CommanderActivityBrandMark: View {
-  let size: CGFloat
-
-  var body: some View {
-    CommanderBrandAssets.circularMark
-      .resizable()
-      .scaledToFit()
-      .frame(width: size, height: size)
-      .accessibilityHidden(true)
   }
 }
 

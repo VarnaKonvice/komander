@@ -369,7 +369,12 @@ import Testing
   #expect(adapter.range(of: "await physicalOwnership.remember(id.uuidString, runID: physicalRunID)")!.lowerBound < adapter.range(of: "let scheduled = try await AlarmManager.shared.schedule")!.lowerBound)
 
   let live = try String(contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderLiveActivity/LazenskyCommanderLiveActivity.swift"), encoding: .utf8)
-  #expect(live.contains("CommanderCompactBrandEventMark"))
+  #expect(live.contains("CommanderProcedureArtwork("))
+  #expect(live.contains("kind: preview.kind"))
+  #expect(!live.contains("CommanderCompactBrandEventMark"))
+  #expect(!live.contains("CommanderActivityBrandMark"))
+  #expect(!live.contains("isVisualProbe"))
+  #expect(!live.contains("Text(\"LC\").font(.headline).foregroundStyle(.yellow)"))
   #expect(live.contains("CommanderProcedureIslandTiming(context: context, size: .minimal)"))
   #expect(!live.contains("ActivityConfiguration(for: AlarmAttributes<CommanderAlarmMetadata>.self)"))
   #expect(!live.contains("LazenskyCommanderAlarmLiveActivity"))

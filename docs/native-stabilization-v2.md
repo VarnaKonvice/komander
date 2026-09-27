@@ -66,7 +66,7 @@ Live Activity používá stejný schválený vizuální kontrakt jako aplikace:
 - Terapie/fallback růžová,
 - skončený stav neutrální.
 
-Commander používá schválenou barvu konkrétní události v obou režimech `departureCountdown` i `eventContext`. Urgentní systémovou alert prezentaci vlastní AlarmKit.
+Commander používá schválenou barvu konkrétní události v obou režimech `departureCountdown` i `eventContext`. Stejný schválený kruhový kategorický badge se škáluje pro Lock Screen, Dynamic Island, Watch Smart Stack/detail a Watch app; Commander lotus není procedurní ikona. Watch a Dynamic Island nepoužívají vlastní stavové oranžové/zelené/fialové palety — barvu určuje kategorie události, skončený stav je neutrální. Urgentní systémovou alert prezentaci vlastní AlarmKit.
 
 ## Fyzický acceptance
 

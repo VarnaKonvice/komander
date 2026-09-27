@@ -25,10 +25,10 @@ private struct WatchCommanderStateView: View {
 
   private var stateAccent: Color {
     switch liveState.state {
-    case .upcoming: CommanderBrandAssets.Presentation.countdown
-    case .leaveNow: CommanderBrandAssets.Presentation.alert
-    case .inProgress: CommanderBrandAssets.Presentation.active
-    case .dayDone, .noSchedule: CommanderBrandAssets.Presentation.neutral
+    case .upcoming, .leaveNow, .inProgress:
+      return liveState.event == nil ? CommanderBrandAssets.Presentation.neutral : eventAccent
+    case .dayDone, .noSchedule:
+      return CommanderBrandAssets.Presentation.neutral
     }
   }
 
@@ -55,14 +55,22 @@ private struct WatchCommanderStateView: View {
     GeometryReader { geometry in
       VStack(spacing: 4) {
         HStack {
-          CommanderBrandAssets.circularMark
-            .resizable()
-            .scaledToFit()
-            .frame(width: 36, height: 36)
-            .accessibilityHidden(true)
+          if let event = liveState.event {
+            CommanderProcedureArtwork(
+              iconKey: icon?.key,
+              title: event.title,
+              size: 40,
+              kind: event.kind
+            )
+          }
           Spacer(minLength: 12)
           if let event = liveState.event {
-            CommanderProcedureArtwork(iconKey: icon?.key, title: event.title, size: 36)
+            Text(event.title)
+              .font(.system(size: 13, weight: .bold))
+              .foregroundStyle(eventAccent)
+              .lineLimit(2)
+              .minimumScaleFactor(0.78)
+              .multilineTextAlignment(.trailing)
           }
         }
         Text(status)
@@ -96,7 +104,7 @@ private struct WatchCommanderStateView: View {
           if !event.location.isEmpty {
             Label(event.location, systemImage: "mappin.circle.fill")
               .font(.system(size: 11, weight: .medium))
-              .foregroundStyle(.white.opacity(0.9))
+              .foregroundStyle(Color(commanderPresentationHex: CommanderBrandAssets.Colors.locationBlue))
               .lineLimit(1)
               .padding(.horizontal, 8)
               .padding(.vertical, 5)

@@ -3,27 +3,64 @@ import Testing
 @testable import LazenskyCommanderCore
 
 @Test(arguments: [
-  ("Magnetoterapie", "electro_therapy"),
-  ("Individuální rehabilitace", "individual_rehab"),
-  ("Jodobromová koupel", "iodobrom"),
-  ("Čtyřkomorová lázeň", "electro_therapy"),
-  ("Snídaně", "meal_breakfast"),
-  ("Oběd", "meal_lunch"),
-  ("Večeře", "meal_dinner"),
-  ("Hydrojet", "hydrojet"),
-  ("iMoove", "imoove")
+  ("Magnetoterapie", "electro_therapy", "#D6B4FE"),
+  ("Individuální rehabilitace", "individual_rehab", "#2EE6C4"),
+  ("Jodobromová koupel", "iodobrom", "#FFC857"),
+  ("Čtyřkomorová lázeň", "electro_therapy", "#D6B4FE"),
+  ("Snídaně", "meal_breakfast", "#50B863"),
+  ("Oběd", "meal_lunch", "#50B863"),
+  ("Večeře", "meal_dinner", "#50B863"),
+  ("Hydrojet", "hydrojet", "#FF7A59"),
+  ("iMoove", "imoove", "#2EE6C4")
 ])
-func approvedPresentationUsesCanonicalArtworkAndProcedureColor(title: String, key: String) throws {
+func approvedPresentationUsesApprovedCategoryColor(
+  title: String,
+  key: String,
+  expectedColor: String
+) throws {
   let root = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent().deletingLastPathComponent()
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-    .appendingPathComponent("assets/icons/lazensky-v1")
-  let map = try JSONDecoder().decode(CommanderIconMap.self, from: Data(contentsOf: root.appendingPathComponent("icon-map.json")))
-  let colors = try JSONDecoder().decode(CommanderColorMap.self, from: Data(contentsOf: root.appendingPathComponent("colors.json")))
+  let assets = root.appendingPathComponent("assets/icons/lazensky-v1")
+  let map = try JSONDecoder().decode(
+    CommanderIconMap.self,
+    from: Data(contentsOf: assets.appendingPathComponent("icon-map.json"))
+  )
+  let colors = try JSONDecoder().decode(
+    CommanderColorMap.self,
+    from: Data(contentsOf: assets.appendingPathComponent("colors.json"))
+  )
   let icon = try #require(map.classify(title: title))
   #expect(icon.key == key)
-  #expect(icon.accent == colors.procedures[key.hasPrefix("meal_") ? "meal" : key])
-  let png = try Data(contentsOf: root.appendingPathComponent("icons/128/\(key).png"))
-  #expect(Array(png.prefix(8)) == [137, 80, 78, 71, 13, 10, 26, 10])
+  #expect(icon.accent == expectedColor)
+  #expect(colors.procedures[key.hasPrefix("meal_") ? "meal" : key] == expectedColor)
   #expect(map.classify(title: "Neznámá procedura XYZ") == nil)
+}
+
+@Test func approvedNativeProcedureSymbolsMatchVisualSourceOfTruth() throws {
+  let root = URL(fileURLWithPath: #filePath)
+    .deletingLastPathComponent().deletingLastPathComponent()
+    .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+  let source = try String(
+    contentsOf: root.appendingPathComponent(
+      "native/LazenskyCommanderApp/Shared/CommanderBrandAssets.swift"
+    ),
+    encoding: .utf8
+  )
+
+  #expect(source.contains("case .meal: return Colors.mealGreen"))
+  #expect(source.contains("case .water: return Colors.waterAqua"))
+  #expect(source.contains("case .rehabilitation: return Colors.rehabilitationBlue"))
+  #expect(source.contains("case .massage: return Colors.massageCoral"))
+  #expect(source.contains("case .heatWrap: return Colors.heatOchre"))
+  #expect(source.contains("case .electro: return Colors.electroIndigo"))
+  #expect(source.contains("case .fallback: return Colors.therapyPink"))
+
+  #expect(source.contains("case .meal: return \"fork.knife\""))
+  #expect(source.contains("case .water: return \"drop\""))
+  #expect(source.contains("case .rehabilitation: return \"figure.run\""))
+  #expect(source.contains("case .massage: return \"leaf.fill\""))
+  #expect(source.contains("case .heatWrap: return \"commander.heat.waves\""))
+  #expect(source.contains("case .electro: return \"atom\""))
+  #expect(source.contains("case .fallback: return \"cross.case.fill\""))
 }
