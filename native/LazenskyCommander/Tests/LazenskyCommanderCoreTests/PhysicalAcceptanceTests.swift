@@ -31,6 +31,74 @@ import Testing
   #expect(dinnerStart.timeIntervalSince(rehabEnd) == 5 * 60)
 }
 
+@Test func acceleratedSpaDayPlannerAndTimelineTellOneConsistentStory() throws {
+  let run = try acceptanceRun()
+  let payload = try run.payload()
+  let ids = run.schedule.events.map(\.stableId)
+
+  let plans = CommanderLiveActivityPlan.makeWindows(
+    schedule: run.schedule,
+    payload: payload,
+    now: run.now,
+    contextLeadTime: 3 * 60,
+    maximumIdleGap: 3 * 60,
+    maximumActiveLifetime: 30 * 60,
+    maximumEvents: 6,
+    maximumWindows: 3
+  )
+
+  #expect(plans.count == 2)
+  #expect(plans[0].includedStableIDs == Array(ids.prefix(3)))
+  #expect(plans[1].includedStableIDs == [ids[3]])
+  #expect(plans[0].windowEnd <= plans[1].activationStart)
+
+  let firstWindowEvents = try payload.alarms.prefix(3).map {
+    CommanderLiveActivityTimelineEvent(
+      stableId: $0.stableId,
+      leaveAt: try NativeAlarmContract.date(fromLocalISO: $0.leaveAt),
+      startAt: try NativeAlarmContract.date(fromLocalISO: $0.startAt),
+      endAt: try NativeAlarmContract.date(fromLocalISO: $0.endAt)
+    )
+  }
+
+  let breakfast = payload.alarms[0]
+  let magnet = payload.alarms[1]
+  let rehab = payload.alarms[2]
+  let magnetLeave = try NativeAlarmContract.date(fromLocalISO: magnet.leaveAt)
+  let magnetStart = try NativeAlarmContract.date(fromLocalISO: magnet.startAt)
+  let rehabStart = try NativeAlarmContract.date(fromLocalISO: rehab.startAt)
+
+  let beforeMagnetLeave = try #require(CommanderLiveActivityTimeline.resolve(
+    events: firstWindowEvents,
+    at: magnetLeave.addingTimeInterval(-1)
+  ))
+  #expect(beforeMagnetLeave.primaryStableId == breakfast.stableId)
+  #expect(beforeMagnetLeave.phase == .active)
+
+  let magnetDeparture = try #require(CommanderLiveActivityTimeline.resolve(
+    events: firstWindowEvents,
+    at: magnetLeave
+  ))
+  #expect(magnetDeparture.primaryStableId == magnet.stableId)
+  #expect(magnetDeparture.phase == .upcoming)
+  #expect(magnetDeparture.departureDue)
+  #expect(magnetDeparture.countdownTarget == magnetStart)
+
+  let magnetRunning = try #require(CommanderLiveActivityTimeline.resolve(
+    events: firstWindowEvents,
+    at: magnetStart
+  ))
+  #expect(magnetRunning.primaryStableId == magnet.stableId)
+  #expect(magnetRunning.phase == .active)
+
+  let rehabRunning = try #require(CommanderLiveActivityTimeline.resolve(
+    events: firstWindowEvents,
+    at: rehabStart
+  ))
+  #expect(rehabRunning.primaryStableId == rehab.stableId)
+  #expect(rehabRunning.phase == .active)
+}
+
 @Test func localPhysicalTestDoesNotCrossCanonicalMidnightBoundary() throws {
   let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-30T23:58:00")
   #expect(throws: PhysicalAcceptanceError.self) { try PhysicalAcceptanceRun(now: now) }

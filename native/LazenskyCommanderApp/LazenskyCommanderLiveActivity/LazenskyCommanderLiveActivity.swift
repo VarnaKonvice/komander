@@ -43,7 +43,7 @@ private enum CommanderActivityTokens {
   }
 
   static func procedureStateAccent(
-    phase: CommanderProcedureVisualPhase,
+    phase: CommanderLiveActivityTimelinePhase,
     departureDue: Bool,
     eventAccent: Color
   ) -> Color {
@@ -769,12 +769,6 @@ private enum CommanderTimingSize {
   case compact, minimal, regular, large
 }
 
-private enum CommanderProcedureVisualPhase {
-  case upcoming
-  case active
-  case ended
-}
-
 private struct CommanderProcedureDisplay {
   let title: String
   let location: String
@@ -783,16 +777,19 @@ private struct CommanderProcedureDisplay {
   let leaveAt: Date
   let startAt: Date
   let endAt: Date
-  let phase: CommanderProcedureVisualPhase
+  let phase: CommanderLiveActivityTimelinePhase
   let departureDue: Bool
+  let countdownTarget: Date
   let nextEvent: CommanderAlarmEventSnapshot?
   let nextEventLabel: String
 
   private struct ResolvedEvent {
     let snapshot: CommanderAlarmEventSnapshot
-    let leaveAt: Date
-    let startAt: Date
-    let endAt: Date
+    let timeline: CommanderLiveActivityTimelineEvent
+
+    var leaveAt: Date { timeline.leaveAt }
+    var startAt: Date { timeline.startAt }
+    var endAt: Date { timeline.endAt }
   }
 
   static func resolve(
@@ -802,65 +799,56 @@ private struct CommanderProcedureDisplay {
     isStale: Bool = false
   ) -> CommanderProcedureDisplay {
     let events = resolvedEvents(attributes: attributes, state: state)
-    guard !events.isEmpty else {
-      let resolvedPhase = isStale ? CommanderProcedureVisualPhase.ended : phase(
-        at: date,
-        startAt: attributes.startAt,
-        endAt: attributes.endAt
-      )
-      return CommanderProcedureDisplay(
-        title: attributes.title,
-        location: attributes.location,
-        kind: attributes.kind,
-        iconKey: attributes.iconKey,
-        leaveAt: attributes.leaveAt,
-        startAt: attributes.startAt,
-        endAt: attributes.endAt,
-        phase: resolvedPhase,
-        departureDue: resolvedPhase == .upcoming && date >= attributes.leaveAt,
-        nextEvent: attributes.nextEvent,
-        nextEventLabel: "Potom:"
-      )
-    }
 
-    let primaryIndex: Int
-    if let departureIndex = events.firstIndex(where: {
-      $0.leaveAt <= date && date < $0.startAt
-    }) {
-      // A later departure deadline is more actionable than an earlier event that is
-      // technically still running (for example breakfast while it is time to leave).
-      primaryIndex = departureIndex
-    } else if let activeIndex = events.firstIndex(where: {
-      $0.startAt <= date && date < $0.endAt
-    }) {
-      primaryIndex = activeIndex
-    } else if let upcomingIndex = events.firstIndex(where: { $0.startAt > date }) {
-      primaryIndex = upcomingIndex
-    } else {
-      primaryIndex = events.indices.last!
-    }
-
-    let primary = events[primaryIndex]
-    let resolvedPhase = isStale ? CommanderProcedureVisualPhase.ended : phase(
+    if let resolution = CommanderLiveActivityTimeline.resolve(
+      events: events.map(\.timeline),
       at: date,
-      startAt: primary.startAt,
-      endAt: primary.endAt
-    )
-    let following = events.dropFirst(primaryIndex + 1).first(where: { $0.endAt > date })
-    let followingIsActive = following.map { $0.startAt <= date && date < $0.endAt } ?? false
+      isStale: isStale
+    ),
+    let primary = events.first(where: { $0.snapshot.stableId == resolution.primaryStableId }) {
+      let following = resolution.nextStableId.flatMap { stableId in
+        events.first(where: { $0.snapshot.stableId == stableId })?.snapshot
+      }
+      return CommanderProcedureDisplay(
+        title: primary.snapshot.title,
+        location: primary.snapshot.location,
+        kind: primary.snapshot.kind,
+        iconKey: primary.snapshot.iconKey,
+        leaveAt: primary.leaveAt,
+        startAt: primary.startAt,
+        endAt: primary.endAt,
+        phase: resolution.phase,
+        departureDue: resolution.departureDue,
+        countdownTarget: resolution.countdownTarget,
+        nextEvent: following,
+        nextEventLabel: resolution.nextRelation == .concurrent ? "Současně:" : "Potom:"
+      )
+    }
 
+    let fallback = CommanderLiveActivityTimelineEvent(
+      stableId: attributes.stableId,
+      leaveAt: attributes.leaveAt,
+      startAt: attributes.startAt,
+      endAt: attributes.endAt
+    )
+    let resolution = CommanderLiveActivityTimeline.resolve(
+      events: [fallback],
+      at: date,
+      isStale: isStale
+    )!
     return CommanderProcedureDisplay(
-      title: primary.snapshot.title,
-      location: primary.snapshot.location,
-      kind: primary.snapshot.kind,
-      iconKey: primary.snapshot.iconKey,
-      leaveAt: primary.leaveAt,
-      startAt: primary.startAt,
-      endAt: primary.endAt,
-      phase: resolvedPhase,
-      departureDue: resolvedPhase == .upcoming && date >= primary.leaveAt,
-      nextEvent: following?.snapshot,
-      nextEventLabel: followingIsActive ? "Současně:" : "Potom:"
+      title: attributes.title,
+      location: attributes.location,
+      kind: attributes.kind,
+      iconKey: attributes.iconKey,
+      leaveAt: attributes.leaveAt,
+      startAt: attributes.startAt,
+      endAt: attributes.endAt,
+      phase: resolution.phase,
+      departureDue: resolution.departureDue,
+      countdownTarget: resolution.countdownTarget,
+      nextEvent: attributes.nextEvent,
+      nextEventLabel: "Potom:"
     )
   }
 
@@ -869,16 +857,30 @@ private struct CommanderProcedureDisplay {
     state: CommanderProcedureLiveActivityAttributes.ContentState
   ) -> [Date] {
     let events = resolvedEvents(attributes: attributes, state: state)
-    let dates = events.flatMap { [$0.leaveAt, $0.startAt, $0.endAt] }
-    if !dates.isEmpty { return Array(Set(dates)).sorted() }
-
-    var fallback = [attributes.leaveAt, attributes.startAt, attributes.endAt]
-    if let next = attributes.nextEvent {
-      if let leave = CommanderAlarmTime.startDate(from: next.leaveAt) { fallback.append(leave) }
-      if let start = CommanderAlarmTime.startDate(from: next.startAt) { fallback.append(start) }
-      if let end = CommanderAlarmTime.startDate(from: next.endAt) { fallback.append(end) }
+    if !events.isEmpty {
+      return CommanderLiveActivityTimeline.boundaryDates(events: events.map(\.timeline))
     }
-    return Array(Set(fallback)).sorted()
+
+    var fallback = [
+      CommanderLiveActivityTimelineEvent(
+        stableId: attributes.stableId,
+        leaveAt: attributes.leaveAt,
+        startAt: attributes.startAt,
+        endAt: attributes.endAt
+      )
+    ]
+    if let next = attributes.nextEvent,
+       let leave = CommanderAlarmTime.startDate(from: next.leaveAt),
+       let start = CommanderAlarmTime.startDate(from: next.startAt),
+       let end = CommanderAlarmTime.startDate(from: next.endAt) {
+      fallback.append(CommanderLiveActivityTimelineEvent(
+        stableId: next.stableId,
+        leaveAt: leave,
+        startAt: start,
+        endAt: end
+      ))
+    }
+    return CommanderLiveActivityTimeline.boundaryDates(events: fallback)
   }
 
   private static func resolvedEvents(
@@ -909,9 +911,12 @@ private struct CommanderProcedureDisplay {
       else { return nil }
       return ResolvedEvent(
         snapshot: snapshot,
-        leaveAt: leaveAt,
-        startAt: startAt,
-        endAt: endAt
+        timeline: CommanderLiveActivityTimelineEvent(
+          stableId: snapshot.stableId,
+          leaveAt: leaveAt,
+          startAt: startAt,
+          endAt: endAt
+        )
       )
     }.sorted {
       if $0.startAt != $1.startAt { return $0.startAt < $1.startAt }
@@ -938,13 +943,6 @@ private struct CommanderProcedureDisplay {
     }
   }
 
-  var countdownTarget: Date {
-    switch phase {
-    case .upcoming: return departureDue ? startAt : leaveAt
-    case .active, .ended: return endAt
-    }
-  }
-
   var countdownLabel: String {
     switch phase {
     case .upcoming: return departureDue ? "Do začátku" : "Do odchodu"
@@ -967,12 +965,6 @@ private struct CommanderProcedureDisplay {
     case .active, .ended:
       return endAt.formatted(date: .omitted, time: .shortened)
     }
-  }
-
-  private static func phase(at date: Date, startAt: Date, endAt: Date) -> CommanderProcedureVisualPhase {
-    if date < startAt { return .upcoming }
-    if date < endAt { return .active }
-    return .ended
   }
 }
 

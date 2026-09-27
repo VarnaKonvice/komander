@@ -97,7 +97,7 @@ Schválený runtime tok je:
 4. Jídlo i procedura mohou být kotvou okna. Události s volnou mezerou nejvýše dvě hodiny mohou zůstat v jednom okně; delší mezera vytvoří další okno. Jedno okno má hard cap šest událostí a nesmí překročit 7 h 50 min aktivního rozpočtu.
 5. Budoucí okna se připravují jako ActivityKit scheduled start s tichým `CommanderSilentAlert.wav`; skutečný zvuk odchodu zůstává pouze AlarmKitu.
 6. Před `leaveAt` Commander ukazuje `VYRAZIT ZA` a odpočet do odchodu. Od `leaveAt` do `startAt` ukazuje `ČAS VYRAZIT` a odpočet do začátku. Od `startAt` do `endAt` ukazuje `PRÁVĚ PROBÍHÁ`.
-7. Karta současně ukazuje následující událost jako `Potom` / `Současně`, včetně názvu, času a na Lock Screenu také místa. Pokud nastane `leaveAt` další události ještě během probíhající předchozí události, další odchod převezme hlavní pozici.
+7. Karta současně ukazuje následující událost jako `Potom` / `Současně`, včetně názvu, času a na Lock Screenu také místa. Pokud nastane `leaveAt` další události ještě během probíhající předchozí události, další odchod převezme hlavní pozici. Jakmile novější událost dosáhne `startAt`, zůstává hlavní i při překryvu s dřívější událostí; UI se nesmí vrátit zpět ke starší události.
 8. Každá událost používá schválenou kategorickou ikonu a barvu; odchodový urgentní stav může dočasně použít výrazný odchodový akcent.
 9. Stop intent pouze zastaví AlarmKit alarm. Nevytváří ani neaktualizuje Commander Live Activity z backgroundu.
 10. Foreground reconciliation aktualizuje správná aktivní/pending okna, nahrazuje zastaralé pending snapshoty a odstraňuje historické duplicity nebo již nežádoucí instance.

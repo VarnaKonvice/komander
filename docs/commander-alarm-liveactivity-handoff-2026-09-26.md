@@ -227,3 +227,21 @@ Programming gate after this cleanup:
 - widget extension source contains exactly **1** `ActivityConfiguration`.
 
 No physical alarm run has been started after this cleanup. The next physical run must first prove the single-renderer invariant on real hardware before the full accelerated spa-day E2E is repeated.
+
+### 2026-09-27 shared timeline resolver
+
+The Live Activity phase-selection algorithm was moved from the SwiftUI extension into the pure `LazenskyCommanderCore` type `CommanderLiveActivityTimeline`. The real renderer now delegates primary-event selection, departure priority, phase, countdown target, next relation, and explicit boundary dates to this tested core resolver.
+
+New boundary tests exposed one real bug in the previous renderer logic: after a later event had taken over at its `leaveAt`, the UI could return to an earlier still-running overlapping event exactly when the later event reached `startAt`. The resolver now selects the most recently started active event, so a handoff remains stable after the new event begins. Equal-start concurrent events still expose `Současně` deterministically.
+
+The accelerated physical schedule is also tested end-to-end in core: it creates two non-overlapping Live Activity windows and resolves Snídaně → Magnetoterapie → Rehabilitace correctly at the exact departure/start boundaries.
+
+Current programming gate:
+
+- Swift suite: **232 tests in 3 suites passed**,
+- CoreCheck: passed,
+- `git diff --check`: passed,
+- production generic iOS build: passed,
+- Physical Acceptance generic iOS build: passed,
+- Watch generic watchOS build: passed,
+- renderer/build identity remains **6** and no build 6 has yet been installed for the next physical verification.

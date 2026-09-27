@@ -18,7 +18,7 @@ Tento soubor popisuje současnou podporovanou architekturu po sjednocení denní
    - `startAt...endAt`: **Právě probíhá** + odpočet do konce,
    - po `endAt`: další položka nebo **Skončilo**.
 8. Karta ukazuje následující událost jako **Potom** nebo **Současně**. Lock Screen zobrazuje název, čas i místo.
-9. Pokud `leaveAt` následující události nastane ještě během aktuální události, odchod na další událost převezme hlavní pozici.
+9. Pokud `leaveAt` následující události nastane ještě během aktuální události, odchod na další událost převezme hlavní pozici. Po jejím `startAt` zůstává novější událost hlavní i při časovém překryvu se starší.
 10. Schválená ikona a barva jsou odvozené od typu konkrétní události. Odchodový urgentní stav má vlastní výrazný akcent.
 11. Stop intent nikdy nezakládá ani neaktualizuje Commander Live Activity z backgroundu.
 12. Stejná ActivityKit instance se používá pro Lock Screen, Dynamic Island a systémovou replikaci na Apple Watch.
