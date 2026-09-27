@@ -76,7 +76,7 @@ READY je důkaz přípravy, nikoli fyzický PASS.
 
 ## PASS / FAIL
 
-**PASS:** všechny čtyři alarmy zazvoní v canonical `leaveAt`; po každém Stop se stejná Commander Live Activity bez `Activity.request` přepne na správný stable ID v režimu `eventContext`; po delší mezeře vznikne samostatný blok Večeře; barvy, ikony, další událost, Dynamic Island a Watch odpovídají stejnému příběhu.
+**PASS:** všechny čtyři alarmy zazvoní v canonical `leaveAt`; po každém Stop se stejná Commander Live Activity bez `Activity.request` přepne na správný stable ID v režimu `eventContext`; eventContext zůstává pravdivý před i po `startAt` a Watch obdrží stejný ActivityKit update; po delší mezeře vznikne samostatný blok Večeře; barvy, ikony, další událost a Dynamic Island odpovídají stejnému příběhu.
 
 **FAIL:** některý alarm má jiný fire time, Stop neaktualizuje existující Commander fokus/režim, vzniknou překrývající se vlastní Commander karty, následný blok se neaktivuje, Watch nedostanou Live Activity, nebo se objeví background `Activity.request` cesta ze Stop intentu.
 

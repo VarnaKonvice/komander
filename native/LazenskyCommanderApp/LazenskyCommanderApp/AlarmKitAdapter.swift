@@ -40,6 +40,13 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     activityPayload = (try? JSONEncoder().encode(metadata).base64EncodedString()) ?? ""
   }
 
+  private static func clockTime(_ localISO: String) -> String {
+    guard localISO.count >= 16 else { return localISO }
+    let start = localISO.index(localISO.startIndex, offsetBy: 11)
+    let end = localISO.index(start, offsetBy: 5)
+    return String(localISO[start..<end])
+  }
+
   func perform() async throws -> some IntentResult {
     var updatedStableIDs: [String] = []
 
@@ -62,11 +69,21 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
           focusStableId: metadata.stableId,
           presentationMode: .eventContext
         )
-        await activity.update(ActivityContent(
-          state: updatedState,
-          staleDate: activity.content.staleDate,
-          relevanceScore: 1_000
-        ))
+        let watchAlert = ActivityKit.AlertConfiguration(
+          title: LocalizedStringResource(stringLiteral: "Lázeňský Commander"),
+          body: LocalizedStringResource(
+            stringLiteral: "\(metadata.title) · začátek \(Self.clockTime(metadata.startAt))"
+          ),
+          sound: .named("CommanderSilentAlert.wav")
+        )
+        await activity.update(
+          ActivityContent(
+            state: updatedState,
+            staleDate: activity.content.staleDate,
+            relevanceScore: 1_000
+          ),
+          alertConfiguration: watchAlert
+        )
         updatedStableIDs.append(metadata.stableId)
       }
     }

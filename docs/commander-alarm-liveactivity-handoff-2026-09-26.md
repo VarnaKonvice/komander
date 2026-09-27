@@ -275,3 +275,55 @@ Physical single-renderer build 6 proved that `TimelineView` did not reliably tri
 Build 7 therefore removes `TimelineView` completely from the Live Activity renderer. `ContentState` now carries explicit `focusStableId` and `presentationMode` (`departureCountdown` / `eventContext`). Before the alarm Commander shows `Vyrazit za` using the system timer to `leaveAt`. `CommanderAlarmStopIntent` never creates a Live Activity, but may update the already-active Commander activity to `eventContext` for the stopped alarm's stable ID. That mode shows `Konec za`, absolute start time, location, and the next event; the system timer counts to `endAt`.
 
 Foreground reconciliation may correct focus/mode from the tested core timeline resolver. Without APNs/push transport, exact automatic structural changes at `startAt` or `endAt` are no longer claimed. The renderer contains zero `TimelineView` calls and exactly one Commander `ActivityConfiguration`.
+
+### 2026-09-27 build 7 physical single-renderer result
+
+Physical run at 17:49–17:57 proved:
+
+- 1/1 AlarmKit alert-only alarm was READY and fired at 17:55,
+- the Commander activity transitioned from pending to active at 17:52:04,
+- AlarmKit Stop at 17:55:03 updated the already-active Commander activity to `eventContext` without any `Activity.request`,
+- Commander remained visible on the iPhone after Stop; the earlier AlarmKit/Commander presentation collision was gone.
+
+The run also exposed two remaining issues:
+
+- build 7 `eventContext` rendered `Konec za` immediately after Stop, even though the procedure did not start until 17:57; this was semantically misleading,
+- Commander did not become visibly prominent on Apple Watch during the observed run. Because the captured Watch views were the watch face rather than an opened Smart Stack, this is treated as a failed user experience, not yet as proof that ActivityKit replication itself was absent.
+
+### 2026-09-27 build 8 — truthful eventContext + Watch-promoting Stop update
+
+Build 8 removes the misleading post-Stop phase claim. `eventContext` is deliberately stable across `startAt`:
+
+- header: `Začátek HH:mm`,
+- primary system timer: counts to `endAt`,
+- side/footer absolute time: `Konec HH:mm`,
+- location and next event remain visible.
+
+This is truthful both before and after procedure start without relying on `TimelineView`, background execution, or an unguaranteed structural refresh.
+
+`CommanderAlarmStopIntent` still never creates a Live Activity. Its existing `Activity.update` now carries a silent ActivityKit `AlertConfiguration` (`CommanderSilentAlert.wav`). Apple documents alert-configured Live Activity updates as the mechanism that presents an alert on a paired Apple Watch and can bring the Live Activity to the top of the Smart Stack. The alert text identifies the event and its start time.
+
+Watch audit also confirmed:
+
+- Commander Live Activity configuration still opts into `.supplementalActivityFamilies([.small])`,
+- the watchOS target already declares `WKSupportsLiveActivityLaunchAttributeTypes`,
+- no Lazensky Commander Watch app was found in the physical Watch app inventory during this test session; ActivityKit itself does not require a Watch app to display a Smart Stack Live Activity, but the native Commander Watch widget cannot act as a fallback unless the Watch app/widget is installed.
+
+Programming gate after build 8 changes:
+
+- Swift suite: **233 tests in 3 suites passed**,
+- CoreCheck: passed,
+- `git diff --check`: passed,
+- production generic iOS build: passed,
+- Physical Acceptance generic iOS build: passed,
+- Watch generic watchOS build: passed,
+- renderer revision / app-extension-watch build identity: **8**.
+
+No further physical alarm run was started after these build 8 changes.
+
+Watch physical-signing check for build 8:
+
+- unsigned/generic watchOS build passes,
+- a signed build targeting physical `Petr – Apple Watch` currently fails before compilation signing because the installed provisioning profiles for `com.varnakonvice.lazenskycommander.watchkitapp` and `.watchkitapp.widget` do not include device `00008310-001C09693CE0E01E`,
+- therefore the native Commander Watch app/widget cannot currently be installed on this Watch until provisioning is regenerated for this device,
+- this provisioning limitation does not by itself disprove system ActivityKit forwarding, which Apple supports even without a Watch app, but it removes the native Watch widget as a physical fallback until signing is fixed.

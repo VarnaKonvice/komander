@@ -867,8 +867,10 @@ private struct CommanderProcedureDisplay {
   var status: String {
     if isStale { return "Skončilo" }
     switch presentationMode {
-    case .departureCountdown: return "Vyrazit za"
-    case .eventContext: return "Konec za"
+    case .departureCountdown:
+      return "Vyrazit za"
+    case .eventContext:
+      return "Začátek " + startAt.formatted(date: .omitted, time: .shortened)
     }
   }
 
@@ -891,7 +893,7 @@ private struct CommanderProcedureDisplay {
     if isStale { return "Konec" }
     switch presentationMode {
     case .departureCountdown: return "Odchod"
-    case .eventContext: return "Začátek"
+    case .eventContext: return "Konec"
     }
   }
 
@@ -900,7 +902,7 @@ private struct CommanderProcedureDisplay {
     case .departureCountdown:
       return leaveAt.formatted(date: .omitted, time: .shortened)
     case .eventContext:
-      return startAt.formatted(date: .omitted, time: .shortened)
+      return endAt.formatted(date: .omitted, time: .shortened)
     }
   }
 }
