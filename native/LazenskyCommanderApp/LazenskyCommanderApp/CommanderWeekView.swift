@@ -112,6 +112,7 @@ struct CommanderWeekDayTile: View {
   let isExpanded: Bool
   var isPast = false
   var isToday = false
+  @State private var showPastEvents = false
   var now: Date? = nil
   let toggle: () -> Void
 
@@ -123,6 +124,16 @@ struct CommanderWeekDayTile: View {
 
   private var focusAccent: Color? {
     focusItem.map { CommanderEventAppearance.accent(for: $0.event) }
+  }
+
+  private var visibleEvents: [CommanderDashboardEvent] {
+    guard isToday else { return day.events }
+    return day.events.filter { $0.phase != .past }
+  }
+
+  private var pastEvents: [CommanderDashboardEvent] {
+    guard isToday else { return [] }
+    return day.events.filter { $0.phase == .past }
   }
 
   private var tileAccent: Color {
@@ -149,12 +160,53 @@ struct CommanderWeekDayTile: View {
             .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
             .padding(12)
         } else {
-          LazyVStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
-            ForEach(day.events, id: \.event.stableId) { item in
-              CommanderEventRow(
-                item: item,
-                isEmphasized: item.event.stableId == focusItem?.event.stableId
-              )
+          VStack(spacing: 8) {
+            if !visibleEvents.isEmpty {
+              LazyVStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
+                ForEach(visibleEvents, id: \.event.stableId) { item in
+                  CommanderEventRow(
+                    item: item,
+                    isEmphasized: item.event.stableId == focusItem?.event.stableId
+                  )
+                }
+              }
+            }
+
+            if !pastEvents.isEmpty {
+              if !visibleEvents.isEmpty {
+                Divider()
+                  .overlay(CommanderDesignTokens.Colors.textSecondary.opacity(0.18))
+                  .padding(.vertical, 2)
+              }
+
+              Button {
+                withAnimation(.easeOut(duration: 0.18)) {
+                  showPastEvents.toggle()
+                }
+              } label: {
+                HStack(spacing: 8) {
+                  Image(systemName: showPastEvents ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 14, weight: .bold))
+                  Text("Proběhlé dnes")
+                    .font(.system(size: 17, weight: .bold))
+                  Spacer(minLength: 8)
+                  Text("\(pastEvents.count)")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+                }
+                .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+                .contentShape(Rectangle())
+              }
+              .buttonStyle(.plain)
+              .accessibilityValue(showPastEvents ? "Rozbaleno" : "Sbaleno")
+
+              if showPastEvents {
+                LazyVStack(spacing: 5) {
+                  ForEach(pastEvents, id: \.event.stableId) { item in
+                    CommanderEventRow(item: item, compact: true)
+                  }
+                }
+              }
             }
           }
           .padding(.horizontal, 8)

@@ -46,6 +46,15 @@ public enum CommanderVisualReviewSchedule {
 
     var events: [ScheduleEvent] = [
       event(
+        id: "past-massage",
+        offsetMinutes: -55,
+        durationMinutes: 20,
+        title: "Klasická masáž",
+        location: "Masáže",
+        kind: .procedure,
+        procedureType: "Klasická masáž"
+      ),
+      event(
         id: "current-rehab",
         offsetMinutes: -5,
         durationMinutes: 20,
