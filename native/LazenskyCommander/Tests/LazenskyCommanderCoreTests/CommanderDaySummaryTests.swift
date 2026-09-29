@@ -141,7 +141,8 @@ import Testing
     summaryEvent("then", "14:00", "14:30")
   ])
   let presentation = summaryPresentation(schedule, "11:00")
-  #expect(presentation.currentEvent?.event.stableId == "hero")
+  // Same overlap priority as Live Activity: a later active event keeps the focus.
+  #expect(presentation.currentEvent?.event.stableId == "overlap")
   #expect(presentation.nextEvent?.event.stableId == "next")
   #expect(presentation.thenEvent?.event.stableId == "then")
   #expect(presentation.timeline.map(\.phase) == [.current, .past, .current, .future, .future])

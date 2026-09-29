@@ -46,6 +46,22 @@ actor CommanderProcedureLiveActivityCoordinator {
     planningMaximumActiveLifetime = maximumActiveLifetime
   }
 
+  func activityState(schedule: Schedule) -> String {
+    let ids = Set(schedule.events.map(\.stableId))
+    let matches = Activity<CommanderProcedureLiveActivityAttributes>.activities.filter {
+      ids.contains($0.attributes.stableId)
+    }
+    if matches.contains(where: { $0.activityState == .active }) { return "active" }
+    if matches.contains(where: { $0.activityState == .pending }) { return "pending" }
+    return matches.isEmpty ? "missing" : "inactive"
+  }
+
+  func hasOngoingActivities() -> Bool {
+    Activity<CommanderProcedureLiveActivityAttributes>.activities.contains {
+      Self.isOngoing($0.activityState)
+    }
+  }
+
   func reconcile(
     schedule: Schedule,
     overrides: LeadTimeOverrides? = nil,
@@ -79,7 +95,13 @@ actor CommanderProcedureLiveActivityCoordinator {
     now: Date
   ) async {
     issue = nil
-    guard enabled else { return }
+    guard enabled else {
+      for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
+        where Self.isOngoing(activity.activityState) {
+        await activity.end(nil, dismissalPolicy: .immediate)
+      }
+      return
+    }
     guard ActivityAuthorizationInfo().areActivitiesEnabled else {
       issue = "Živé aktivity nejsou povolené."
       return
@@ -362,10 +384,13 @@ actor CommanderProcedureLiveActivityCoordinator {
     guard let resolution = CommanderLiveActivityTimeline.resolve(events: timelineEvents, at: now) else {
       return (fallbackStableID, .departureCountdown)
     }
-    let mode: CommanderLiveActivityPresentationMode =
-      resolution.phase == .upcoming && !resolution.departureDue
-        ? .departureCountdown
-        : .eventContext
+    let mode: CommanderLiveActivityPresentationMode
+    switch resolution.phase {
+    case .upcoming:
+      mode = resolution.departureDue ? .startCountdown : .departureCountdown
+    case .active, .ended:
+      mode = .eventContext
+    }
     return (resolution.primaryStableId, mode)
   }
 
@@ -397,21 +422,10 @@ actor CommanderProcedureLiveActivityCoordinator {
     schedule: Schedule,
     payload: NativeAlarmPayload
   ) -> [RawCandidate] {
-    let alarmByID = Dictionary(uniqueKeysWithValues: payload.alarms.map { ($0.stableId, $0) })
-    return schedule.events.compactMap { event -> RawCandidate? in
-      guard let alarm = alarmByID[event.stableId],
-            let leaveAt = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt),
-            let startAt = try? NativeAlarmContract.date(fromLocalISO: alarm.startAt),
-            let endAt = try? NativeAlarmContract.date(fromLocalISO: alarm.endAt)
-      else { return nil }
-      return RawCandidate(
-        event: event,
-        alarm: alarm,
-        leaveAt: leaveAt,
-        startAt: startAt,
-        endAt: endAt
-      )
-    }.sorted(by: rawCandidateOrder)
+    guard let projected = try? CommanderScheduleProjection.events(schedule: schedule, payload: payload) else { return [] }
+    return projected.map {
+      RawCandidate(event: $0.event, alarm: $0.alarm, leaveAt: $0.leaveAt, startAt: $0.startAt, endAt: $0.endAt)
+    }
   }
 
   private static func snapshot(_ candidate: RawCandidate) -> CommanderAlarmEventSnapshot {

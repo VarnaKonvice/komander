@@ -13,19 +13,8 @@ public enum CommanderWeekPresentation {
     now: Date,
     overrides: LeadTimeOverrides? = nil
   ) throws -> [CommanderWeekDay] {
-    let payload = try NativeAlarmContract.payload(schedule: schedule, overrides: overrides)
-    let events = Dictionary(uniqueKeysWithValues: schedule.events.map { ($0.stableId, $0) })
-    let items = try payload.alarms.map { alarm in
-      let start = try NativeAlarmContract.date(fromLocalISO: alarm.startAt)
-      let end = try NativeAlarmContract.date(fromLocalISO: alarm.endAt)
-      return CommanderDashboardEvent(
-        event: events[alarm.stableId]!,
-        startAt: start,
-        endAt: end,
-        leaveAt: try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt),
-        phase: now >= end ? .past : now >= start ? .current : .future
-      )
-    }
+    let projection = try CommanderScheduleProjection(schedule: schedule, overrides: overrides)
+    let items = projection.events.map { $0.dashboardEvent(at: now) }
     let grouped = Dictionary(grouping: items) { CommanderScheduleCalendar.prague.startOfDay(for: $0.startAt) }
     let days = stayDays(schedule: schedule) ?? grouped.keys.sorted()
     return days.map { day in

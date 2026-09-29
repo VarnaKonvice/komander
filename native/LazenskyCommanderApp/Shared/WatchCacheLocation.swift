@@ -2,10 +2,26 @@ import Foundation
 import LazenskyCommanderCore
 
 enum WatchCacheLocation {
+  private static var dataset: CommanderScheduleDataset {
+    #if COMMANDER_ACCEPTANCE_FIXTURES
+    .acceptance
+    #else
+    .production
+    #endif
+  }
+
+  private static var cacheDirectoryName: String {
+    #if COMMANDER_ACCEPTANCE_FIXTURES
+    "CommanderAcceptanceCache"
+    #else
+    CommanderWatchWidgetContract.cacheDirectoryName
+    #endif
+  }
+
   static func makeCache(
     didStore: (@Sendable (WatchScheduleSnapshot) async -> Void)? = nil
   ) -> FileWatchScheduleCache {
-    FileWatchScheduleCache(directoryURL: directoryURL(), didStore: didStore)
+    FileWatchScheduleCache(directoryURL: directoryURL(), dataset: dataset, didStore: didStore)
   }
 
   static func directoryURL(fileManager: FileManager = .default) -> URL {
@@ -15,7 +31,7 @@ enum WatchCacheLocation {
       preconditionFailure("Watch schedule App Group container is unavailable.")
     }
     return base.appendingPathComponent(
-      CommanderWatchWidgetContract.cacheDirectoryName,
+      cacheDirectoryName,
       isDirectory: true
     )
   }

@@ -12,14 +12,17 @@ public actor FileWatchScheduleCache {
 
   private let directoryURL: URL
   private let fileURL: URL
+  private let dataset: CommanderScheduleDataset?
   private let didStore: (@Sendable (WatchScheduleSnapshot) async -> Void)?
 
   public init(
     directoryURL: URL,
     fileName: String = defaultFileName,
+    dataset: CommanderScheduleDataset? = nil,
     didStore: (@Sendable (WatchScheduleSnapshot) async -> Void)? = nil
   ) {
     self.directoryURL = directoryURL
+    self.dataset = dataset
     self.fileURL = directoryURL.appendingPathComponent(fileName, isDirectory: false)
     self.didStore = didStore
   }
@@ -29,6 +32,7 @@ public actor FileWatchScheduleCache {
     let data = try Data(contentsOf: fileURL)
     guard
       let snapshot = try? JSONDecoder().decode(WatchScheduleSnapshot.self, from: data),
+      dataset?.accepts(snapshot.schedule) != false,
       snapshot.contractVersion == WatchScheduleSnapshot.currentContractVersion,
       (try? WatchScheduleTransportCodec.encode(snapshot)) != nil
     else { return nil }
@@ -37,6 +41,7 @@ public actor FileWatchScheduleCache {
 
   @discardableResult
   public func accept(_ snapshot: WatchScheduleSnapshot) async throws -> WatchScheduleCacheDecision {
+    guard dataset?.accepts(snapshot.schedule) != false else { return .rejectedInvalid }
     let decision = WatchScheduleCachePolicy.decision(incoming: snapshot, existing: try load())
     guard decision == .stored else { return decision }
 

@@ -61,11 +61,8 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
     now: Date,
     overrides: LeadTimeOverrides? = nil
   ) -> CommanderDashboardPresentation {
-    let liveState = CommanderLiveStateCalculator.compute(
-      schedule: schedule,
-      now: now,
-      overrides: overrides
-    )
+    let projection = schedule.flatMap { try? CommanderScheduleProjection(schedule: $0, overrides: overrides) }
+    let liveState = projection?.liveState(at: now) ?? .init(state: .noSchedule, now: now)
     guard let schedule else {
       return CommanderDashboardPresentation(
         mode: .unsynchronized,
@@ -87,7 +84,7 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
       )
     }
 
-    let timeline = todayEvents(schedule: schedule, now: now, overrides: overrides)
+    let timeline = projection?.events(on: now).map { $0.dashboardEvent(at: now) } ?? []
     let day = pragueCalendar.startOfDay(for: now)
     let mode = timeline.isEmpty ? .noSchedule : dashboardMode(for: liveState.state)
     let currentEvent = liveState.event.flatMap { liveEvent in
@@ -100,7 +97,7 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
     } ?? []
     let stayPeriod = CommanderStayPresentation.period(stay: schedule.stay, now: now)
     let nextProcedure = stayPeriod?.phase != .finished
-      ? firstFutureProcedure(schedule: schedule, now: now, overrides: overrides)
+      ? projection?.events.first { $0.event.kind == .procedure && $0.startAt > now }?.dashboardEvent(at: now)
       : nil
 
     return CommanderDashboardPresentation(
@@ -117,84 +114,6 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
       meals: timeline.filter { $0.event.kind == .meal },
       now: now
     )
-  }
-
-  private static func firstFutureProcedure(
-    schedule: Schedule,
-    now: Date,
-    overrides: LeadTimeOverrides?
-  ) -> CommanderDashboardEvent? {
-    guard let payload = try? NativeAlarmContract.payload(schedule: schedule, overrides: overrides) else {
-      return nil
-    }
-    let events = Dictionary(uniqueKeysWithValues: schedule.events.map { ($0.stableId, $0) })
-    return payload.alarms.compactMap { alarm in
-      guard
-        alarm.kind == .procedure,
-        let event = events[alarm.stableId],
-        let startAt = try? NativeAlarmContract.date(fromLocalISO: alarm.startAt),
-        let endAt = try? NativeAlarmContract.date(fromLocalISO: alarm.endAt),
-        let leaveAt = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt),
-        startAt > now
-      else {
-        return nil
-      }
-      return CommanderDashboardEvent(
-        event: event,
-        startAt: startAt,
-        endAt: endAt,
-        leaveAt: leaveAt,
-        phase: .future
-      )
-    }
-    .min {
-      if $0.startAt != $1.startAt { return $0.startAt < $1.startAt }
-      if $0.endAt != $1.endAt { return $0.endAt < $1.endAt }
-      return $0.event.stableId < $1.event.stableId
-    }
-  }
-
-  private static func todayEvents(
-    schedule: Schedule,
-    now: Date,
-    overrides: LeadTimeOverrides?
-  ) -> [CommanderDashboardEvent] {
-    var calendar = Calendar(identifier: .gregorian)
-    calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
-    let today = calendar.dateComponents([.year, .month, .day], from: now)
-
-    return schedule.events.compactMap { event in
-      guard
-        let alarm = try? NativeAlarmContract.alarm(event: event, schedule: schedule, overrides: overrides),
-        let startAt = try? NativeAlarmContract.date(fromLocalISO: alarm.startAt),
-        let endAt = try? NativeAlarmContract.date(fromLocalISO: alarm.endAt),
-        let leaveAt = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt),
-        calendar.dateComponents([.year, .month, .day], from: startAt) == today
-      else {
-        return nil
-      }
-
-      let phase: CommanderTimelinePhase
-      if now >= endAt {
-        phase = .past
-      } else if now >= startAt {
-        phase = .current
-      } else {
-        phase = .future
-      }
-      return CommanderDashboardEvent(
-        event: event,
-        startAt: startAt,
-        endAt: endAt,
-        leaveAt: leaveAt,
-        phase: phase
-      )
-    }
-    .sorted {
-      if $0.startAt != $1.startAt { return $0.startAt < $1.startAt }
-      if $0.endAt != $1.endAt { return $0.endAt < $1.endAt }
-      return $0.event.stableId < $1.event.stableId
-    }
   }
 
   private static func dashboardMode(for state: CommanderLiveState) -> CommanderDashboardMode {

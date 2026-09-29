@@ -1,7 +1,7 @@
 import Foundation
 
 public enum LeadTimeSource: String, Codable, Sendable {
-  case localEventOverride, localTypeOverride, localDefault
+  case localEventOverride, localTypeOverride, localCategoryOverride, localDefault
   case eventOverride, scheduleTypeOverride, scheduleDefault
 }
 
@@ -73,24 +73,60 @@ public enum NativeAlarmContract {
   }
 
   public static func resolvedTypeLeadTime(kind: ScheduleKind, type: String, schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> ResolvedLeadTime {
-    let type = normalized(type)
+    let normalizedType = normalized(type)
     let localType = kind == .meal ? overrides?.mealOverrides : overrides?.procedureTypeOverrides
-    if let value = value(for: type, in: localType) { try validateLeadTime(value, field: "overrides.type"); return .init(minutes: value, source: .localTypeOverride) }
-    if let value = overrides?.defaultLeadTimeMinutes { try validateLeadTime(value, field: "overrides.defaultLeadTimeMinutes"); return .init(minutes: value, source: .localDefault) }
+    if let value = value(for: normalizedType, in: localType) {
+      try validateLeadTime(value, field: "overrides.type")
+      return .init(minutes: value, source: .localTypeOverride)
+    }
+    if kind == .procedure {
+      let category = CommanderProcedureCategory.classify(type).rawValue
+      if let value = overrides?.procedureCategoryOverrides[category] {
+        try validateLeadTime(value, field: "overrides.procedureCategoryOverrides.\(category)")
+        return .init(minutes: value, source: .localCategoryOverride)
+      }
+    }
+    if let value = overrides?.defaultLeadTimeMinutes {
+      try validateLeadTime(value, field: "overrides.defaultLeadTimeMinutes")
+      return .init(minutes: value, source: .localDefault)
+    }
     let sourceType = kind == .meal ? schedule.settings.mealOverrides : schedule.settings.procedureTypeOverrides
-    if let value = value(for: type, in: sourceType) { return .init(minutes: value, source: .scheduleTypeOverride) }
+    if let value = value(for: normalizedType, in: sourceType) {
+      return .init(minutes: value, source: .scheduleTypeOverride)
+    }
     return .init(minutes: schedule.settings.defaultLeadTimeMinutes, source: .scheduleDefault)
   }
 
   public static func resolvedLeadTime(event: ScheduleEvent, schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> ResolvedLeadTime {
-    let type = normalized(event.kind == .meal ? (event.mealType ?? event.title) : (event.procedureType ?? event.title))
-    if let value = overrides?.eventOverrides[event.stableId] { try validateLeadTime(value, field: "overrides.eventOverrides.\(event.stableId)"); return .init(minutes: value, source: .localEventOverride) }
+    let rawType = event.kind == .meal ? (event.mealType ?? event.title) : (event.procedureType ?? event.title)
+    let normalizedType = normalized(rawType)
+    if let value = overrides?.eventOverrides[event.stableId] {
+      try validateLeadTime(value, field: "overrides.eventOverrides.\(event.stableId)")
+      return .init(minutes: value, source: .localEventOverride)
+    }
     let localType = event.kind == .meal ? overrides?.mealOverrides : overrides?.procedureTypeOverrides
-    if let value = value(for: type, in: localType) { try validateLeadTime(value, field: "overrides.type"); return .init(minutes: value, source: .localTypeOverride) }
-    if let value = overrides?.defaultLeadTimeMinutes { try validateLeadTime(value, field: "overrides.defaultLeadTimeMinutes"); return .init(minutes: value, source: .localDefault) }
-    if let value = event.leadTimeMinutes { return .init(minutes: value, source: .eventOverride) }
+    if let value = value(for: normalizedType, in: localType) {
+      try validateLeadTime(value, field: "overrides.type")
+      return .init(minutes: value, source: .localTypeOverride)
+    }
+    if event.kind == .procedure {
+      let category = CommanderProcedureCategory.classify(rawType).rawValue
+      if let value = overrides?.procedureCategoryOverrides[category] {
+        try validateLeadTime(value, field: "overrides.procedureCategoryOverrides.\(category)")
+        return .init(minutes: value, source: .localCategoryOverride)
+      }
+    }
+    if let value = overrides?.defaultLeadTimeMinutes {
+      try validateLeadTime(value, field: "overrides.defaultLeadTimeMinutes")
+      return .init(minutes: value, source: .localDefault)
+    }
+    if let value = event.leadTimeMinutes {
+      return .init(minutes: value, source: .eventOverride)
+    }
     let sourceType = event.kind == .meal ? schedule.settings.mealOverrides : schedule.settings.procedureTypeOverrides
-    if let value = value(for: type, in: sourceType) { return .init(minutes: value, source: .scheduleTypeOverride) }
+    if let value = value(for: normalizedType, in: sourceType) {
+      return .init(minutes: value, source: .scheduleTypeOverride)
+    }
     return .init(minutes: schedule.settings.defaultLeadTimeMinutes, source: .scheduleDefault)
   }
 

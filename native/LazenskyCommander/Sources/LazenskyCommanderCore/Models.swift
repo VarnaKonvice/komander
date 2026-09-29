@@ -33,15 +33,57 @@ public struct Schedule: Codable, Equatable, Sendable {
   public let settings: ScheduleSettings
 }
 
+
+
+public enum CommanderProcedureCategory: String, Codable, CaseIterable, Sendable {
+  case rehabilitation
+  case electro
+  case water
+  case massage
+  case heatWrap
+  case other
+
+  public static func classify(_ value: String) -> CommanderProcedureCategory {
+    let normalized = value
+      .folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "cs_CZ"))
+      .lowercased(with: Locale(identifier: "cs_CZ"))
+
+    if ["jodobrom", "parafin", "parafango", "slatin", "raselin", "zabal"].contains(where: normalized.contains) {
+      return .heatWrap
+    }
+    if ["elektro", "magnet", "ultrazvuk", "galvan", "ctyrkomor", "razov", "shockwave"].contains(where: normalized.contains) {
+      return .electro
+    }
+    if ["hydrojet", "hydro jet", "masaz"].contains(where: normalized.contains) {
+      return .massage
+    }
+    if ["vodolec", "viriv", "whirlpool", "perlick", "uhlicit", "bazen", "plav", "koupel"].contains(where: normalized.contains) {
+      return .water
+    }
+    if ["imoove", "i-moove", "fyzioter", "fyzio", "rehab", "ltv", "ergoter", "cvic", "chuze", "chodici pas", "walking pas", "senzomotor", "motodlaha"].contains(where: normalized.contains) {
+      return .rehabilitation
+    }
+    return .other
+  }
+}
+
 public struct LeadTimeOverrides: Codable, Equatable, Sendable {
   public var defaultLeadTimeMinutes: Int?
   public var procedureTypeOverrides: [String: Int]
+  public var procedureCategoryOverrides: [String: Int]
   public var mealOverrides: [String: Int]
   public var eventOverrides: [String: Int]
 
-  public init(defaultLeadTimeMinutes: Int? = nil, procedureTypeOverrides: [String: Int] = [:], mealOverrides: [String: Int] = [:], eventOverrides: [String: Int] = [:]) {
+  public init(
+    defaultLeadTimeMinutes: Int? = nil,
+    procedureTypeOverrides: [String: Int] = [:],
+    procedureCategoryOverrides: [String: Int] = [:],
+    mealOverrides: [String: Int] = [:],
+    eventOverrides: [String: Int] = [:]
+  ) {
     self.defaultLeadTimeMinutes = defaultLeadTimeMinutes
     self.procedureTypeOverrides = procedureTypeOverrides
+    self.procedureCategoryOverrides = procedureCategoryOverrides
     self.mealOverrides = mealOverrides
     self.eventOverrides = eventOverrides
   }
@@ -49,6 +91,7 @@ public struct LeadTimeOverrides: Codable, Equatable, Sendable {
   private enum CodingKeys: String, CodingKey {
     case defaultLeadTimeMinutes
     case procedureTypeOverrides
+    case procedureCategoryOverrides
     case mealOverrides
     case eventOverrides
   }
@@ -57,6 +100,7 @@ public struct LeadTimeOverrides: Codable, Equatable, Sendable {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     defaultLeadTimeMinutes = try values.decodeIfPresent(Int.self, forKey: .defaultLeadTimeMinutes)
     procedureTypeOverrides = try values.decodeIfPresent([String: Int].self, forKey: .procedureTypeOverrides) ?? [:]
+    procedureCategoryOverrides = try values.decodeIfPresent([String: Int].self, forKey: .procedureCategoryOverrides) ?? [:]
     mealOverrides = try values.decodeIfPresent([String: Int].self, forKey: .mealOverrides) ?? [:]
     eventOverrides = try values.decodeIfPresent([String: Int].self, forKey: .eventOverrides) ?? [:]
   }

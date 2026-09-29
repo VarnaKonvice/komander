@@ -567,13 +567,80 @@ private struct CommanderSettingsActionRow: View {
 private struct CommanderLeadTimeSettingsView: View {
   @ObservedObject var model: CommanderViewModel
 
-  private var procedureTypes: [String] {
-    guard let schedule = model.latestSchedule else { return [] }
-    return Array(Set(schedule.events.compactMap { event -> String? in
+  private enum LeadTimeCategory: Int, CaseIterable, Identifiable {
+    case rehabilitation
+    case electro
+    case water
+    case massage
+    case heat
+    case meal
+    case other
+
+    var id: Int { rawValue }
+
+    var title: String {
+      switch self {
+      case .rehabilitation: "Rehabilitace a pohyb"
+      case .electro: "Elektroléčba"
+      case .water: "Vodoléčba"
+      case .massage: "Masáže"
+      case .heat: "Teplo a zábaly"
+      case .meal: "Jídlo"
+      case .other: "Ostatní"
+      }
+    }
+
+    var representativeTitle: String {
+      switch self {
+      case .rehabilitation: "Individuální rehabilitace"
+      case .electro: "Magnetoterapie"
+      case .water: "Bazén"
+      case .massage: "Masáž"
+      case .heat: "Rašelinový zábal"
+      case .meal: "Snídaně"
+      case .other: "Procedura"
+      }
+    }
+
+    var kind: ScheduleKind {
+      self == .meal ? .meal : .procedure
+    }
+
+    var coreCategory: CommanderProcedureCategory? {
+      switch self {
+      case .rehabilitation: .rehabilitation
+      case .electro: .electro
+      case .water: .water
+      case .massage: .massage
+      case .heat: .heatWrap
+      case .other: .other
+      case .meal: nil
+      }
+    }
+
+    var accent: Color {
+      Color(commanderPresentationHex: accentHex)
+    }
+
+    private var accentHex: String {
+      switch self {
+      case .rehabilitation: CommanderBrandAssets.Colors.rehabilitationBlue
+      case .electro: CommanderBrandAssets.Colors.electroIndigo
+      case .water: CommanderBrandAssets.Colors.waterAqua
+      case .massage: CommanderBrandAssets.Colors.massageCoral
+      case .heat: CommanderBrandAssets.Colors.heatOchre
+      case .meal: CommanderBrandAssets.Colors.mealGreen
+      case .other: CommanderBrandAssets.Colors.therapyPink
+      }
+    }
+  }
+
+  private var procedureCategories: [LeadTimeCategory] {
+    let present = Set((model.latestSchedule?.events ?? []).compactMap { event -> LeadTimeCategory? in
       guard event.kind == .procedure else { return nil }
-      let value = event.procedureType ?? event.title
-      return value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : value
-    })).sorted()
+      return category(for: event)
+    })
+    return LeadTimeCategory.allCases.filter { $0 != .meal && present.contains($0) }
   }
 
   private var mealTypes: [String] {
@@ -587,135 +654,381 @@ private struct CommanderLeadTimeSettingsView: View {
 
   private var events: [ScheduleEvent] {
     (model.latestSchedule?.events ?? []).sorted {
+      let lhsRank = eventCategoryRank($0)
+      let rhsRank = eventCategoryRank($1)
+      if lhsRank != rhsRank { return lhsRank < rhsRank }
       if $0.date != $1.date { return $0.date < $1.date }
       if $0.start != $1.start { return $0.start < $1.start }
       return $0.stableId < $1.stableId
     }
   }
 
+  private func eventCategoryRank(_ event: ScheduleEvent) -> Int {
+    if event.kind == .meal { return 5 }
+    switch CommanderProcedureCategory.classify(event.procedureType ?? event.title) {
+    case .rehabilitation: return 0
+    case .electro: return 1
+    case .water: return 2
+    case .massage: return 3
+    case .heatWrap: return 4
+    case .other: return 6
+    }
+  }
+
   var body: some View {
-    Form {
-      Section("Výchozí čas") {
-        Stepper(
-          "\(model.defaultLeadTimeMinutes) min před začátkem",
-          value: Binding(
-            get: { model.defaultLeadTimeMinutes },
-            set: { model.setDefaultLeadTimeMinutes($0) }
-          ),
-          in: 0...180,
-          step: 1
-        )
-        if model.leadTimeOverrides.defaultLeadTimeMinutes != nil,
-           let source = model.latestSchedule?.settings.defaultLeadTimeMinutes {
-          Button("Použít hodnotu z rozpisu (\(source) min)") {
-            model.resetDefaultLeadTime()
+    ScrollView {
+      LazyVStack(alignment: .leading, spacing: 16) {
+        sectionTitle("Výchozí čas")
+        defaultLeadTimeCard
+
+        if !procedureCategories.isEmpty {
+          sectionTitle("Podle kategorie")
+          ForEach(procedureCategories) { category in
+            if let coreCategory = category.coreCategory {
+              leadTimeCard(
+                title: category.title,
+                value: categoryLeadTime(category),
+                category: category,
+                subtitle: "Výchozí pro tuto kategorii",
+                isOverridden: model.leadTimeOverrides.procedureCategoryOverrides[coreCategory.rawValue] != nil,
+                set: { model.setProcedureCategoryLeadTimeMinutes($0, category: coreCategory) },
+                resetTitle: "Použít výchozí čas",
+                reset: { model.resetProcedureCategoryLeadTime(category: coreCategory) }
+              )
+            }
           }
         }
-        Text("Tato hodnota určuje skutečný čas odchodu. Třicet minut je pouze maximální délka odpočtu před alarmem, ne pevný čas odchodu.")
-          .font(.footnote)
-          .foregroundStyle(.secondary)
-      }
 
-      if !procedureTypes.isEmpty {
-        Section("Podle procedury") {
-          ForEach(procedureTypes, id: \.self) { type in
-            leadTimeRow(
-              title: type,
-              value: procedureLeadTime(type),
-              isOverridden: model.leadTimeOverrides.procedureTypeOverrides[type] != nil,
-              set: { model.setProcedureLeadTimeMinutes($0, procedureType: type) },
-              reset: { model.resetProcedureLeadTime(procedureType: type) }
-            )
-          }
-        }
-      }
-
-      if !mealTypes.isEmpty {
-        Section("Podle jídla") {
+        if !mealTypes.isEmpty {
+          sectionTitle("Podle jídla")
           ForEach(mealTypes, id: \.self) { type in
-            leadTimeRow(
+            leadTimeCard(
               title: type,
               value: mealLeadTime(type),
+              category: .meal,
+              subtitle: "Odchod před jídlem",
               isOverridden: model.leadTimeOverrides.mealOverrides[type] != nil,
               set: { model.setMealLeadTimeMinutes($0, mealType: type) },
+              resetTitle: "Použít obecné nastavení",
               reset: { model.resetMealLeadTime(mealType: type) }
             )
           }
         }
-      }
 
-      if !events.isEmpty {
-        Section("Jednotlivé události") {
-          ForEach(events, id: \.stableId) { event in
-            VStack(alignment: .leading, spacing: 5) {
-              Text("\(event.date) · \(event.start) · \(event.title)")
-                .font(.subheadline)
-              Stepper(
-                "Odchod \(model.effectiveLeadTimeMinutes(for: event)) min předem",
-                value: Binding(
-                  get: { model.effectiveLeadTimeMinutes(for: event) },
-                  set: { model.setEventLeadTimeMinutes($0, stableId: event.stableId) }
-                ),
-                in: 0...180,
-                step: 1
-              )
-              if model.leadTimeOverrides.eventOverrides[event.stableId] != nil {
-                Button("Zrušit výjimku") {
-                  model.resetEventLeadTime(stableId: event.stableId)
-                }
-                .font(.footnote)
-              }
+        if !events.isEmpty {
+          sectionTitle("Jednotlivé události")
+
+          VStack(spacing: 8) {
+            ForEach(events, id: \.stableId) { event in
+              eventLeadTimeCard(event, category: category(for: event))
             }
           }
         }
-      }
 
-      if model.leadTimeOverrides != LeadTimeOverrides() {
-        Section {
-          Button("Vrátit všechny časy k rozpisu", role: .destructive) {
+        if model.leadTimeOverrides != LeadTimeOverrides() {
+          Button(role: .destructive) {
             model.resetAllLeadTimeOverrides()
+          } label: {
+            Label("Vrátit všechny časy k rozpisu", systemImage: "arrow.uturn.backward.circle.fill")
+              .font(.system(size: 16, weight: .bold))
+              .frame(maxWidth: .infinity)
+              .padding(.vertical, 13)
           }
+          .buttonStyle(.plain)
+          .foregroundStyle(CommanderDesignTokens.Colors.criticalRed)
+          .commanderCard(
+            accent: CommanderDesignTokens.Colors.criticalRed,
+            surface: .depthInset
+          )
+          .padding(.top, 2)
         }
       }
+      .padding(.horizontal, CommanderDesignTokens.Spacing.page)
+      .padding(.top, 12)
+      .padding(.bottom, CommanderDesignTokens.Spacing.tabBarClearance)
     }
-    .scrollContentBackground(.hidden)
     .background(CommanderDepthBackground().ignoresSafeArea())
     .navigationTitle("Čas na odchod")
     .navigationBarTitleDisplayMode(.inline)
   }
 
+  private var defaultLeadTimeCard: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      HStack(spacing: 10) {
+        ZStack {
+          Circle()
+            .fill(CommanderDesignTokens.Colors.primaryPurple.opacity(0.18))
+          Image(systemName: "figure.walk.departure")
+            .font(.system(size: 20, weight: .bold))
+            .foregroundStyle(CommanderDesignTokens.Colors.primaryPurple)
+        }
+        .frame(width: 38, height: 38)
+
+        VStack(alignment: .leading, spacing: 2) {
+          Text("Základní předstih")
+            .font(.system(size: 18, weight: .bold))
+            .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          Text("Platí, pokud kategorie, jídlo nebo událost nemá vlastní čas")
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        }
+
+        Spacer(minLength: 8)
+      }
+
+      leadTimeControl(
+        value: model.defaultLeadTimeMinutes,
+        accent: CommanderDesignTokens.Colors.primaryPurple,
+        set: { model.setDefaultLeadTimeMinutes($0) }
+      )
+
+      if model.leadTimeOverrides.defaultLeadTimeMinutes != nil,
+         let source = model.latestSchedule?.settings.defaultLeadTimeMinutes {
+        Button("Použít hodnotu z rozpisu (\(source) min)") {
+          model.resetDefaultLeadTime()
+        }
+        .font(.system(size: 13, weight: .semibold))
+        .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
+      }
+
+      Text("Předstih určuje skutečný čas odchodu. 30 minut je jen maximální délka systémového odpočtu před alarmem.")
+        .font(.system(size: 13, weight: .medium))
+        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    .padding(12)
+    .commanderCard(
+      accent: CommanderDesignTokens.Colors.primaryPurple,
+      surface: .depthInset
+    )
+  }
+
   @ViewBuilder
-  private func leadTimeRow(
+  private func sectionTitle(_ title: String) -> some View {
+    Text(title)
+      .font(.system(size: 19, weight: .bold))
+      .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(.horizontal, 2)
+  }
+
+
+  @ViewBuilder
+  private func leadTimeCard(
     title: String,
     value: Int,
+    category: LeadTimeCategory,
+    subtitle: String,
     isOverridden: Bool,
     set: @escaping (Int) -> Void,
+    resetTitle: String,
     reset: @escaping () -> Void
   ) -> some View {
-    VStack(alignment: .leading, spacing: 4) {
-      Text(title)
-        .font(.subheadline)
-      Stepper(
-        "\(value) min předem",
-        value: Binding(get: { value }, set: set),
-        in: 0...180,
-        step: 1
-      )
-      if isOverridden {
-        Button("Použít obecné nastavení") { reset() }
-          .font(.footnote)
+    VStack(alignment: .leading, spacing: 9) {
+      HStack(spacing: 10) {
+        CommanderProcedureArtwork(
+          iconKey: nil,
+          title: title,
+          size: 38,
+          kind: category.kind
+        )
+
+        VStack(alignment: .leading, spacing: 2) {
+          Text(title)
+            .font(.system(size: 17, weight: .bold))
+            .foregroundStyle(category.accent)
+            .lineLimit(2)
+          Text(subtitle)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        }
+
+        Spacer(minLength: 6)
       }
+
+      leadTimeControl(value: value, accent: category.accent, set: set)
+
+      if isOverridden {
+        Button(resetTitle) { reset() }
+          .font(.system(size: 12, weight: .semibold))
+          .foregroundStyle(category.accent)
+      }
+    }
+    .padding(11)
+    .commanderCard(accent: category.accent, surface: .depthInset)
+  }
+
+  @ViewBuilder
+  private func eventLeadTimeCard(
+    _ event: ScheduleEvent,
+    category: LeadTimeCategory
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 9) {
+      HStack(alignment: .center, spacing: 9) {
+        CommanderProcedureArtwork(
+          iconKey: nil,
+          title: event.procedureType ?? event.mealType ?? event.title,
+          size: 34,
+          kind: event.kind
+        )
+
+        VStack(alignment: .leading, spacing: 2) {
+          Text(event.title)
+            .font(.system(size: 16, weight: .bold))
+            .foregroundStyle(category.accent)
+            .lineLimit(2)
+
+          Text(eventTimeLabel(event))
+            .font(.system(size: 12, weight: .semibold).monospacedDigit())
+            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        }
+
+        Spacer(minLength: 6)
+      }
+
+      leadTimeControl(
+        value: model.effectiveLeadTimeMinutes(for: event),
+        accent: category.accent,
+        set: { model.setEventLeadTimeMinutes($0, stableId: event.stableId) }
+      )
+
+      if model.leadTimeOverrides.eventOverrides[event.stableId] != nil {
+        Button("Zrušit výjimku") {
+          model.resetEventLeadTime(stableId: event.stableId)
+        }
+        .font(.system(size: 12, weight: .semibold))
+        .foregroundStyle(category.accent)
+      }
+    }
+    .padding(10)
+    .commanderCard(accent: category.accent, surface: .eventRow)
+  }
+
+  @ViewBuilder
+  private func leadTimeControl(
+    value: Int,
+    accent: Color,
+    set: @escaping (Int) -> Void
+  ) -> some View {
+    HStack(spacing: 10) {
+      Button {
+        set(max(0, value - 1))
+      } label: {
+        Image(systemName: "minus")
+          .font(.system(size: 15, weight: .heavy))
+          .frame(width: 34, height: 34)
+          .background(accent.opacity(0.20), in: Circle())
+          .overlay(Circle().strokeBorder(accent.opacity(0.75), lineWidth: 1))
+      }
+      .buttonStyle(.plain)
+      .foregroundStyle(accent)
+      .disabled(value <= 0)
+      .opacity(value <= 0 ? 0.42 : 1)
+      .accessibilityLabel("Snížit předstih")
+
+      Text("\(value) min")
+        .font(.system(size: 18, weight: .bold).monospacedDigit())
+        .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        .frame(minWidth: 76)
+        .padding(.vertical, 7)
+        .background(
+          RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(accent.opacity(0.10))
+        )
+        .overlay(
+          RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .strokeBorder(accent.opacity(0.34), lineWidth: 0.8)
+        )
+
+      Button {
+        set(min(180, value + 1))
+      } label: {
+        Image(systemName: "plus")
+          .font(.system(size: 15, weight: .heavy))
+          .frame(width: 34, height: 34)
+          .background(accent.opacity(0.20), in: Circle())
+          .overlay(Circle().strokeBorder(accent.opacity(0.75), lineWidth: 1))
+      }
+      .buttonStyle(.plain)
+      .foregroundStyle(accent)
+      .disabled(value >= 180)
+      .opacity(value >= 180 ? 0.42 : 1)
+      .accessibilityLabel("Zvýšit předstih")
+
+      Spacer(minLength: 0)
+
+      Text("předem")
+        .font(.system(size: 13, weight: .semibold))
+        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
     }
   }
 
-  private func procedureLeadTime(_ type: String) -> Int {
+  private func category(for event: ScheduleEvent) -> LeadTimeCategory {
+    if event.kind == .meal { return .meal }
+    return category(forCoreCategory: CommanderProcedureCategory.classify(
+      event.procedureType ?? event.title
+    ))
+  }
+
+  private func category(forCoreCategory category: CommanderProcedureCategory) -> LeadTimeCategory {
+    switch category {
+    case .rehabilitation: return .rehabilitation
+    case .electro: return .electro
+    case .water: return .water
+    case .massage: return .massage
+    case .heatWrap: return .heat
+    case .other: return .other
+    }
+  }
+
+  private func eventTimeLabel(_ event: ScheduleEvent) -> String {
+    guard let start = try? NativeAlarmContract.dateTime(date: event.date, time: event.start) else {
+      return "\(event.date) · \(event.start)"
+    }
+
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+
+    let day: String
+    if calendar.isDateInToday(start) {
+      day = "Dnes"
+    } else if calendar.isDateInTomorrow(start) {
+      day = "Zítra"
+    } else {
+      day = start.formatted(
+        .dateTime
+          .day()
+          .month(.defaultDigits)
+          .locale(Locale(identifier: "cs_CZ"))
+      )
+    }
+
+    return "\(day) · \(event.start)"
+  }
+
+  private func categoryLeadTime(_ category: LeadTimeCategory) -> Int {
+    guard let coreCategory = category.coreCategory else { return model.defaultLeadTimeMinutes }
+
+    if let override = model.leadTimeOverrides.procedureCategoryOverrides[coreCategory.rawValue] {
+      return override
+    }
+
     guard let schedule = model.latestSchedule else { return model.defaultLeadTimeMinutes }
-    return (try? NativeAlarmContract.typeLeadTime(
-      kind: .procedure,
-      type: type,
-      schedule: schedule,
-      overrides: model.leadTimeOverrides
-    )) ?? model.defaultLeadTimeMinutes
+    let values = Set(schedule.events.compactMap { event -> Int? in
+      guard event.kind == .procedure,
+            CommanderProcedureCategory.classify(event.procedureType ?? event.title) == coreCategory
+      else { return nil }
+
+      let type = event.procedureType ?? event.title
+      return try? NativeAlarmContract.typeLeadTime(
+        kind: .procedure,
+        type: type,
+        schedule: schedule,
+        overrides: model.leadTimeOverrides
+      )
+    })
+
+    return values.count == 1 ? (values.first ?? model.defaultLeadTimeMinutes) : model.defaultLeadTimeMinutes
   }
 
   private func mealLeadTime(_ type: String) -> Int {

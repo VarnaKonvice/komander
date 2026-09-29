@@ -4,10 +4,14 @@ import WatchConnectivity
 
 enum IPhoneWatchConnectivityError: LocalizedError {
   case unsupported
+  case activationTimedOut
 
   var errorDescription: String? {
     switch self {
-    case .unsupported: "WatchConnectivity není na tomto zařízení dostupné."
+    case .unsupported:
+      "WatchConnectivity není na tomto zařízení dostupné."
+    case .activationTimedOut:
+      "WatchConnectivity se včas neaktivovalo."
     }
   }
 }
@@ -28,13 +32,17 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
       return
     }
     session.delegate = self
-    recordAcknowledgement(Self.acknowledgement(from: session.receivedApplicationContext))
+    let receivedContext = session.receivedApplicationContext
+    recordAcknowledgement(Self.acknowledgement(from: receivedContext))
     session.activate()
   }
 
   func deliver(_ snapshot: WatchScheduleSnapshot) async throws -> WatchScheduleDeliveryDisposition {
     guard let session else { throw IPhoneWatchConnectivityError.unsupported }
-    let applicationContext = try WatchScheduleTransportCodec.applicationContext(for: snapshot)
+    // Production replaces the transport envelope; a persisted probe is never replayed.
+    var applicationContext: [String: Any] = [:]
+    applicationContext[WatchScheduleTransportCodec.applicationContextKey] =
+      try WatchScheduleTransportCodec.encode(snapshot)
     pendingApplicationContext = applicationContext
 
     guard session.activationState == .activated else {
@@ -45,6 +53,7 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
     return try publishPendingContext(using: session)
   }
 
+
   func verifiedScheduleVersion() async -> Int? {
     acknowledgedProjectionIdentity?.scheduleVersion
   }
@@ -52,6 +61,7 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
   func verifiedProjectionIdentity() async -> WatchScheduleProjectionIdentity? {
     acknowledgedProjectionIdentity
   }
+
 
   private func publishPendingContext(using session: WCSession) throws -> WatchScheduleDeliveryDisposition {
     guard let pendingApplicationContext else { return .sent }
@@ -71,7 +81,10 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
     try? WatchScheduleAcknowledgementCodec.decode(applicationContext: applicationContext)
   }
 
-  private func didActivate(errorDescription: String?, acknowledgement: WatchScheduleAcknowledgement?) {
+  private func didActivate(
+    errorDescription: String?,
+    acknowledgement: WatchScheduleAcknowledgement?
+  ) {
     if let errorDescription {
       diagnostic = "Aktivace WatchConnectivity selhala: \(errorDescription)"
       return
@@ -101,9 +114,13 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
     error: Error?
   ) {
     let errorDescription = error?.localizedDescription
-    let acknowledgement = Self.acknowledgement(from: session.receivedApplicationContext)
+    let receivedContext = session.receivedApplicationContext
+    let acknowledgement = Self.acknowledgement(from: receivedContext)
     Task { @MainActor [weak self] in
-      self?.didActivate(errorDescription: errorDescription, acknowledgement: acknowledgement)
+      self?.didActivate(
+        errorDescription: errorDescription,
+        acknowledgement: acknowledgement
+      )
     }
   }
 

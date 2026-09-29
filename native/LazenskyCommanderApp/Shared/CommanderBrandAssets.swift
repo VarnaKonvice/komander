@@ -45,7 +45,8 @@ enum CommanderBrandAssets {
         static let freeTimeCyan = "#2ED4FF"
     }
 
-    private static let iconMap: CommanderIconMap? = decode("icon-map")
+    static let iconMap: CommanderIconMap? = decode("icon-map")
+    static let colors: CommanderColorMap? = decode("colors")
     private static let palette: [String: [String: String]]? = decode("colors")
 
     private static func decode<T: Decodable>(_ name: String) -> T? {
@@ -95,28 +96,17 @@ enum CommanderBrandAssets {
     static func procedureFamily(iconKey: String?, title: String, isMeal: Bool) -> ProcedureFamily {
         if isMeal || iconKey?.hasPrefix("meal_") == true { return .meal }
 
-        let normalized = normalizedTitle(title)
-
-        // One source of truth for every screen. Order is intentional.
-        if ["jodobrom", "parafin", "parafango", "slatin", "raselin", "zabal"].contains(where: normalized.contains) {
-            return .heatWrap
-        }
-        if ["elektro", "magnet", "ultrazvuk", "galvan", "galvanika", "ctyrkomor", "ctyrkomorovka", "razov", "shockwave"].contains(where: normalized.contains) {
-            return .electro
-        }
-        if ["hydrojet", "hydro jet", "masaz"].contains(where: normalized.contains) {
-            return .massage
-        }
-        if ["viriv", "whirlpool", "perlick", "uhlicit", "bazen", "plav", "koupel"].contains(where: normalized.contains) {
-            return .water
-        }
-        if ["imoove", "i-moove", "fyzioter", "fyzio", "rehab", "ltv", "ergoter", "cvic", "chuze", "chodici pas", "walking pas", "senzomotor", "motodlaha"].contains(where: normalized.contains) {
-            return .rehabilitation
+        switch CommanderProcedureCategory.classify(title) {
+        case .rehabilitation: return .rehabilitation
+        case .electro: return .electro
+        case .water: return .water
+        case .massage: return .massage
+        case .heatWrap: return .heatWrap
+        case .other:
+            break
         }
 
         switch iconKey {
-        case "meal_breakfast", "meal_lunch", "meal_dinner":
-            return .meal
         case "iodobrom", "peat_wrap":
             return .heatWrap
         case "electro_therapy":
@@ -274,4 +264,23 @@ extension Color {
                   green: Double((rgb >> 8) & 0xff) / 255,
                   blue: Double(rgb & 0xff) / 255)
     }
+}
+
+/// One timer renderer for system-hosted presentations. Watch foreground uses the
+/// same semantic target with a snapshot string because it has its own TimelineView.
+struct CommanderSystemCountdown: View {
+  let target: Date
+
+  var body: some View {
+    // Use SwiftUI's widget-safe timer primitive. A zero-length interval is
+    // intentional once the target is in the past, so the system never has to
+    // archive an invalid/reversed timer range.
+    let lowerBound = min(Date.now, target)
+    Text(
+      timerInterval: lowerBound...target,
+      pauseTime: target,
+      countsDown: true,
+      showsHours: true
+    )
+  }
 }

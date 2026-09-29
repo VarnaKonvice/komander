@@ -1,511 +1,48 @@
+import Foundation
 import SwiftUI
 import LazenskyCommanderCore
 import UserNotifications
 import WidgetKit
-private enum CommanderDesignPreview {
-#if targetEnvironment(simulator)
-  static let enabled = true
-#else
-  // Preview data must never replace the real schedule on a physical production build.
-  // It can still be enabled explicitly for a controlled device design session.
-  static let enabled = true
-#endif
 
-  static let schedule: Schedule = {
-    let data = Data(json.utf8)
-    return try! JSONDecoder().decode(Schedule.self, from: data)
+private enum CommanderDesignPreview {
+  private static let flagKey = "commander.visualReview.enabled"
+
+  static let enabled: Bool = {
+    #if COMMANDER_VISUAL_REVIEW
+    return true
+    #elseif DEBUG
+    let arguments = ProcessInfo.processInfo.arguments
+    let defaults = UserDefaults(
+      suiteName: CommanderWatchWidgetContract.appGroupIdentifier
+    )
+
+    if arguments.contains("-CommanderDisableDesignPreview") {
+      defaults?.set(false, forKey: flagKey)
+      return false
+    }
+
+    if arguments.contains("-CommanderDesignPreview")
+      || arguments.contains("-CommanderApprovedVisualProof") {
+      defaults?.set(true, forKey: flagKey)
+      return true
+    }
+
+    return defaults?.bool(forKey: flagKey) ?? false
+    #else
+    return false
+    #endif
   }()
 
-  private static let json = #"""
-{
-  "schemaVersion": 1,
-  "scheduleVersion": 1001,
-  "updatedAt": "2026-09-22T11:30:00.000Z",
-  "stay": {
-    "spa": "Rehabilitační sanatorium Darkov",
-    "dateFrom": "2026-09-22",
-    "dateTo": "2026-09-28",
-    "room": "208",
-    "doctor": "MUDr. Novák",
-    "diagnosis": "Neuvedeno",
-    "mealShift": "I. směna"
-  },
-  "events": [
-    {
-      "stableId": "demo-20260922-breakfast",
-      "date": "2026-09-22",
-      "start": "07:30",
-      "end": "08:00",
-      "title": "Snídaně",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Snídaně"
-    },
-    {
-      "stableId": "demo-20260922-rehab",
-      "date": "2026-09-22",
-      "start": "09:00",
-      "end": "09:30",
-      "title": "Individuální rehabilitace",
-      "location": "Rehabilitace",
-      "kind": "procedure",
-      "procedureType": "Individuální rehabilitace"
-    },
-    {
-      "stableId": "demo-20260922-magnet",
-      "date": "2026-09-22",
-      "start": "10:15",
-      "end": "10:35",
-      "title": "Magnetoterapie",
-      "location": "Elektroléčba",
-      "kind": "procedure",
-      "procedureType": "Magnetoterapie"
-    },
-    {
-      "stableId": "demo-20260922-lunch",
-      "date": "2026-09-22",
-      "start": "12:00",
-      "end": "12:40",
-      "title": "Oběd",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Oběd"
-    },
-    {
-      "stableId": "demo-20260922-massage",
-      "date": "2026-09-22",
-      "start": "14:00",
-      "end": "14:20",
-      "title": "Masáž",
-      "location": "Rehabilitace",
-      "kind": "procedure",
-      "procedureType": "Masáž"
-    },
-    {
-      "stableId": "demo-20260922-hydrojet",
-      "date": "2026-09-22",
-      "start": "15:30",
-      "end": "15:50",
-      "title": "Hydrojet",
-      "location": "Vodoléčba",
-      "kind": "procedure",
-      "procedureType": "Hydrojet"
-    },
-    {
-      "stableId": "demo-20260922-dinner",
-      "date": "2026-09-22",
-      "start": "17:30",
-      "end": "18:00",
-      "title": "Večeře",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Večeře"
-    },
-    {
-      "stableId": "demo-20260923-breakfast",
-      "date": "2026-09-23",
-      "start": "07:30",
-      "end": "08:00",
-      "title": "Snídaně",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Snídaně"
-    },
-    {
-      "stableId": "demo-20260923-iodobrom",
-      "date": "2026-09-23",
-      "start": "08:20",
-      "end": "08:40",
-      "title": "Jodobromová koupel",
-      "location": "Vodoléčba",
-      "kind": "procedure",
-      "procedureType": "Jodobromová koupel"
-    },
-    {
-      "stableId": "demo-20260923-ltv",
-      "date": "2026-09-23",
-      "start": "09:15",
-      "end": "09:45",
-      "title": "LTV",
-      "location": "Tělocvična",
-      "kind": "procedure",
-      "procedureType": "LTV"
-    },
-    {
-      "stableId": "demo-20260923-ultrasound",
-      "date": "2026-09-23",
-      "start": "10:15",
-      "end": "10:30",
-      "title": "Ultrazvuk",
-      "location": "Elektroléčba",
-      "kind": "procedure",
-      "procedureType": "Ultrazvuk"
-    },
-    {
-      "stableId": "demo-20260923-lunch",
-      "date": "2026-09-23",
-      "start": "12:00",
-      "end": "12:40",
-      "title": "Oběd",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Oběd"
-    },
-    {
-      "stableId": "demo-20260923-imoove",
-      "date": "2026-09-23",
-      "start": "14:10",
-      "end": "14:30",
-      "title": "iMoove",
-      "location": "Rehabilitace",
-      "kind": "procedure",
-      "procedureType": "iMoove"
-    },
-    {
-      "stableId": "demo-20260923-dinner",
-      "date": "2026-09-23",
-      "start": "17:30",
-      "end": "18:00",
-      "title": "Večeře",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Večeře"
-    },
-    {
-      "stableId": "demo-20260924-breakfast",
-      "date": "2026-09-24",
-      "start": "07:30",
-      "end": "08:00",
-      "title": "Snídaně",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Snídaně"
-    },
-    {
-      "stableId": "demo-20260924-rehab",
-      "date": "2026-09-24",
-      "start": "08:30",
-      "end": "09:00",
-      "title": "Individuální rehabilitace",
-      "location": "Rehabilitace",
-      "kind": "procedure",
-      "procedureType": "Individuální rehabilitace"
-    },
-    {
-      "stableId": "demo-20260924-peat",
-      "date": "2026-09-24",
-      "start": "09:30",
-      "end": "09:50",
-      "title": "Rašelinový zábal",
-      "location": "Zábaly",
-      "kind": "procedure",
-      "procedureType": "Rašelinový zábal"
-    },
-    {
-      "stableId": "demo-20260924-pool",
-      "date": "2026-09-24",
-      "start": "10:30",
-      "end": "11:00",
-      "title": "Bazén",
-      "location": "Bazén",
-      "kind": "procedure",
-      "procedureType": "Bazén"
-    },
-    {
-      "stableId": "demo-20260924-lunch",
-      "date": "2026-09-24",
-      "start": "12:00",
-      "end": "12:40",
-      "title": "Oběd",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Oběd"
-    },
-    {
-      "stableId": "demo-20260924-massage",
-      "date": "2026-09-24",
-      "start": "14:00",
-      "end": "14:20",
-      "title": "Masáž",
-      "location": "Rehabilitace",
-      "kind": "procedure",
-      "procedureType": "Masáž"
-    },
-    {
-      "stableId": "demo-20260924-dinner",
-      "date": "2026-09-24",
-      "start": "17:30",
-      "end": "18:00",
-      "title": "Večeře",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Večeře"
-    },
-    {
-      "stableId": "demo-20260925-breakfast",
-      "date": "2026-09-25",
-      "start": "07:30",
-      "end": "08:00",
-      "title": "Snídaně",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Snídaně"
-    },
-    {
-      "stableId": "demo-20260925-whirlpool",
-      "date": "2026-09-25",
-      "start": "08:30",
-      "end": "08:50",
-      "title": "Vířivá vana",
-      "location": "Vodoléčba",
-      "kind": "procedure",
-      "procedureType": "Vířivá vana"
-    },
-    {
-      "stableId": "demo-20260925-ergo",
-      "date": "2026-09-25",
-      "start": "09:20",
-      "end": "09:50",
-      "title": "Ergoterapie",
-      "location": "Rehabilitace",
-      "kind": "procedure",
-      "procedureType": "Ergoterapie"
-    },
-    {
-      "stableId": "demo-20260925-electro",
-      "date": "2026-09-25",
-      "start": "10:20",
-      "end": "10:40",
-      "title": "Elektroléčba",
-      "location": "Elektroléčba",
-      "kind": "procedure",
-      "procedureType": "Elektroléčba"
-    },
-    {
-      "stableId": "demo-20260925-lunch",
-      "date": "2026-09-25",
-      "start": "12:00",
-      "end": "12:40",
-      "title": "Oběd",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Oběd"
-    },
-    {
-      "stableId": "demo-20260925-hydrojet",
-      "date": "2026-09-25",
-      "start": "14:30",
-      "end": "14:50",
-      "title": "Hydrojet",
-      "location": "Vodoléčba",
-      "kind": "procedure",
-      "procedureType": "Hydrojet"
-    },
-    {
-      "stableId": "demo-20260925-dinner",
-      "date": "2026-09-25",
-      "start": "17:30",
-      "end": "18:00",
-      "title": "Večeře",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Večeře"
-    },
-    {
-      "stableId": "demo-20260926-breakfast",
-      "date": "2026-09-26",
-      "start": "08:00",
-      "end": "08:30",
-      "title": "Snídaně",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Snídaně"
-    },
-    {
-      "stableId": "demo-20260926-rehab",
-      "date": "2026-09-26",
-      "start": "09:15",
-      "end": "09:45",
-      "title": "Individuální rehabilitace",
-      "location": "Rehabilitace",
-      "kind": "procedure",
-      "procedureType": "Individuální rehabilitace"
-    },
-    {
-      "stableId": "demo-20260926-massage",
-      "date": "2026-09-26",
-      "start": "10:20",
-      "end": "10:40",
-      "title": "Masáž",
-      "location": "Rehabilitace",
-      "kind": "procedure",
-      "procedureType": "Masáž"
-    },
-    {
-      "stableId": "demo-20260926-lunch",
-      "date": "2026-09-26",
-      "start": "12:00",
-      "end": "12:40",
-      "title": "Oběd",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Oběd"
-    },
-    {
-      "stableId": "demo-20260926-pool",
-      "date": "2026-09-26",
-      "start": "14:30",
-      "end": "15:00",
-      "title": "Bazén",
-      "location": "Bazén",
-      "kind": "procedure",
-      "procedureType": "Bazén"
-    },
-    {
-      "stableId": "demo-20260926-dinner",
-      "date": "2026-09-26",
-      "start": "17:30",
-      "end": "18:00",
-      "title": "Večeře",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Večeře"
-    },
-    {
-      "stableId": "demo-20260927-breakfast",
-      "date": "2026-09-27",
-      "start": "08:00",
-      "end": "08:30",
-      "title": "Snídaně",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Snídaně"
-    },
-    {
-      "stableId": "demo-20260927-imoove",
-      "date": "2026-09-27",
-      "start": "09:30",
-      "end": "09:50",
-      "title": "iMoove",
-      "location": "Rehabilitace",
-      "kind": "procedure",
-      "procedureType": "iMoove"
-    },
-    {
-      "stableId": "demo-20260927-lunch",
-      "date": "2026-09-27",
-      "start": "12:00",
-      "end": "12:40",
-      "title": "Oběd",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Oběd"
-    },
-    {
-      "stableId": "demo-20260927-whirlpool",
-      "date": "2026-09-27",
-      "start": "14:30",
-      "end": "14:50",
-      "title": "Vířivá vana",
-      "location": "Vodoléčba",
-      "kind": "procedure",
-      "procedureType": "Vířivá vana"
-    },
-    {
-      "stableId": "demo-20260927-dinner",
-      "date": "2026-09-27",
-      "start": "17:30",
-      "end": "18:00",
-      "title": "Večeře",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Večeře"
-    },
-    {
-      "stableId": "demo-20260928-breakfast",
-      "date": "2026-09-28",
-      "start": "07:30",
-      "end": "08:00",
-      "title": "Snídaně",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Snídaně"
-    },
-    {
-      "stableId": "demo-20260928-rehab",
-      "date": "2026-09-28",
-      "start": "08:30",
-      "end": "09:00",
-      "title": "Individuální rehabilitace",
-      "location": "Rehabilitace",
-      "kind": "procedure",
-      "procedureType": "Individuální rehabilitace"
-    },
-    {
-      "stableId": "demo-20260928-iodobrom",
-      "date": "2026-09-28",
-      "start": "09:30",
-      "end": "09:50",
-      "title": "Jodobromová koupel",
-      "location": "Vodoléčba",
-      "kind": "procedure",
-      "procedureType": "Jodobromová koupel"
-    },
-    {
-      "stableId": "demo-20260928-magnet",
-      "date": "2026-09-28",
-      "start": "10:20",
-      "end": "10:40",
-      "title": "Magnetoterapie",
-      "location": "Elektroléčba",
-      "kind": "procedure",
-      "procedureType": "Magnetoterapie"
-    },
-    {
-      "stableId": "demo-20260928-lunch",
-      "date": "2026-09-28",
-      "start": "12:00",
-      "end": "12:40",
-      "title": "Oběd",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Oběd"
-    },
-    {
-      "stableId": "demo-20260928-massage",
-      "date": "2026-09-28",
-      "start": "14:00",
-      "end": "14:20",
-      "title": "Masáž",
-      "location": "Rehabilitace",
-      "kind": "procedure",
-      "procedureType": "Masáž"
-    },
-    {
-      "stableId": "demo-20260928-dinner",
-      "date": "2026-09-28",
-      "start": "17:30",
-      "end": "18:00",
-      "title": "Večeře",
-      "location": "Jídelna",
-      "kind": "meal",
-      "mealType": "Večeře"
-    }
-  ],
-  "settings": {
-    "defaultLeadTimeMinutes": 20,
-    "procedureTypeOverrides": {
-      "Jodobromová koupel": 25,
-      "Bazén": 25
-    },
-    "mealOverrides": {
-      "Snídaně": 15,
-      "Oběd": 15,
-      "Večeře": 15
-    }
+  static var schedule: Schedule {
+    CommanderVisualReviewSchedule.make(now: .now)
   }
-}
-"""#
+
+  static func publishSharedFlag() {
+    guard let defaults = UserDefaults(
+      suiteName: CommanderWatchWidgetContract.appGroupIdentifier
+    ) else { return }
+    defaults.set(enabled, forKey: flagKey)
+  }
 }
 
 @MainActor
@@ -538,17 +75,21 @@ final class CommanderViewModel: ObservableObject {
   private var delayedRecoveryTask: Task<Void, Never>?
   private var synchronizationRequests = CommanderSynchronizationRequestQueue()
 
-  init() {
+  private let clock: @Sendable () -> Date
+
+  init(clock: @escaping @Sendable () -> Date = { Date() }) {
+    self.clock = clock
     let configuration = AppConfiguration()
     let adapter = AlarmKitAdapter(channel: configuration.channel)
     let procedureActivities = CommanderProcedureLiveActivityCoordinator(
-      enabled: configuration.channel == .production
+      enabled: configuration.channel == .production && !CommanderDesignPreview.enabled
     )
-    let scheduleService = URLSessionScheduleService(configuration: configuration)
-    let namespace = configuration.channel.rawValue
+    let input = CommanderLaunchInput(configuration: configuration, now: clock())
+    let scheduleService = input.scheduleService
+    let namespace = input.namespace
     let service = AlarmSyncService(
       scheduleService: scheduleService,
-      store: UserDefaultsAlarmStateStore(key: "lazensky.commander.managedAlarms.\(namespace).v1"),
+      store: UserDefaultsAlarmStateStore(key: "lazensky.commander.managedAlarms.\(configuration.channel.rawValue).v1"),
       adapter: adapter
     )
     let watchConnectivity = IPhoneWatchConnectivityCoordinator()
@@ -574,7 +115,8 @@ final class CommanderViewModel: ObservableObject {
       scheduleService: scheduleService,
       alarmSyncService: service,
       scheduleStore: UserDefaultsScheduleSnapshotStore(key: "lazensky.commander.scheduleSnapshot.\(namespace).v1"),
-      watchDelivery: configuration.channel == .production ? watchConnectivity : nil
+      watchDelivery: configuration.channel == .production ? watchConnectivity : nil,
+      clock: clock
     )
   }
 
@@ -587,6 +129,63 @@ final class CommanderViewModel: ObservableObject {
       )
     }
   }
+
+  #if COMMANDER_ACCEPTANCE_FIXTURES
+  private func writeAcceptanceStatus(
+    phase: String, expectedToken: String? = nil, observedToken: String? = nil,
+    message: String? = nil
+  ) {
+    guard let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+    else { return }
+    var payload: [String: Any] = [
+      "phase": phase, "timestamp": ISO8601DateFormatter().string(from: clock())
+    ]
+    payload["expectedToken"] = expectedToken
+    payload["observedToken"] = observedToken
+    payload["message"] = message
+    if let data = try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys]) {
+      try? data.write(to: documents.appendingPathComponent("commander-acceptance-status.json"), options: .atomic)
+    }
+  }
+
+  // Observes the result of the same bootstrap used by a normal launch. It does
+  // not request activities, schedule alarms or send an alternate Watch payload.
+  func reportAcceptanceBootstrap() async {
+    guard summary?.readbackCoverage.isComplete == true, let snapshot = watchScheduleSnapshot else {
+      writeAcceptanceStatus(phase: "failed-alarm-sync", message: errorMessage ?? "AlarmKit read-back není úplný")
+      return
+    }
+    let mode = CommanderAcceptanceLaunchMode.current
+    if mode == .cleanup, await procedureActivities.hasOngoingActivities() {
+      writeAcceptanceStatus(phase: "failed-live-activity", message: "ActivityKit stále obsahuje aktivní nebo čekající aktivitu")
+      return
+    }
+    let prepared = await procedureActivities.preparedStableIDs(
+      schedule: snapshot.schedule, overrides: snapshot.leadTimeOverrides,
+      projectionRevision: snapshot.projectionRevision
+    )
+    if mode != .cleanup, !snapshot.schedule.events.isEmpty, prepared.isEmpty {
+      writeAcceptanceStatus(phase: "failed-live-activity", message: liveActivityIssue ?? "Chybí plánovaná aktivita")
+      return
+    }
+    let expected = snapshot.projectionIdentity
+    let expectedToken = "\(expected.scheduleVersion)/\(expected.projectionRevision)"
+    for attempt in 0..<120 {
+      if await watchConnectivity.verifiedProjectionIdentity() == expected {
+        let state = await procedureActivities.activityState(schedule: snapshot.schedule)
+        let phase = mode == .cleanup ? "cleaned"
+          : mode == .readback ? (state == "active" ? "activity-active" : "activity-not-active")
+          : "watch-acknowledged"
+        writeAcceptanceStatus(phase: phase, expectedToken: expectedToken, observedToken: expectedToken,
+          message: "state=\(state); alarms=\(summary?.desiredAlarmCount ?? 0); prepared=\(prepared.count)")
+        return
+      }
+      if attempt < 119 { try? await Task.sleep(for: .milliseconds(250)) }
+    }
+    writeAcceptanceStatus(phase: "failed-watch-ack", expectedToken: expectedToken,
+      message: "Watch nepotvrdily canonical snapshot z cache")
+  }
+  #endif
 
   private func reloadHomeWidgets() {
     WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.iPhoneKind)
@@ -610,6 +209,7 @@ final class CommanderViewModel: ObservableObject {
   }
 
   func bootstrap() async {
+    CommanderDesignPreview.publishSharedFlag()
     if CommanderDesignPreview.enabled {
       latestSchedule = CommanderDesignPreview.schedule
       reloadHomeWidgets()
@@ -644,7 +244,7 @@ final class CommanderViewModel: ObservableObject {
   func handleForeground() async {
     if CommanderDesignPreview.enabled { return }
     await reconcileProcedureActivitiesFromLatestSchedule()
-    if let lastAutomaticAttempt, Date().timeIntervalSince(lastAutomaticAttempt) < 10 { return }
+    if let lastAutomaticAttempt, clock().timeIntervalSince(lastAutomaticAttempt) < 10 { return }
     if latestSchedule != nil {
       await synchronizeWithRecovery(maxAttempts: 3, automatic: true, source: .cached)
     }
@@ -657,7 +257,8 @@ final class CommanderViewModel: ObservableObject {
     await procedureActivities.reconcile(
       schedule: latestSchedule,
       overrides: leadTimeOverrides,
-      projectionRevision: leadTimeProjectionRevision
+      projectionRevision: leadTimeProjectionRevision,
+      now: clock()
     )
     liveActivityIssue = await procedureActivities.issue
   }
@@ -718,6 +319,22 @@ final class CommanderViewModel: ObservableObject {
   func resetProcedureLeadTime(procedureType: String) {
     var updated = leadTimeOverrides
     updated.procedureTypeOverrides.removeValue(forKey: procedureType)
+    applyLeadTimeOverrides(updated)
+  }
+
+  func setProcedureCategoryLeadTimeMinutes(_ minutes: Int, category: CommanderProcedureCategory) {
+    var updated = leadTimeOverrides
+    updated.procedureCategoryOverrides[category.rawValue] = Self.clampedLeadTime(minutes)
+    for key in updated.procedureTypeOverrides.keys
+      where CommanderProcedureCategory.classify(key) == category {
+      updated.procedureTypeOverrides.removeValue(forKey: key)
+    }
+    applyLeadTimeOverrides(updated)
+  }
+
+  func resetProcedureCategoryLeadTime(category: CommanderProcedureCategory) {
+    var updated = leadTimeOverrides
+    updated.procedureCategoryOverrides.removeValue(forKey: category.rawValue)
     applyLeadTimeOverrides(updated)
   }
 
@@ -817,6 +434,7 @@ final class CommanderViewModel: ObservableObject {
     automatic: Bool,
     source: CommanderScheduleSource = .remote
   ) async {
+    guard !CommanderDesignPreview.enabled else { return }
     guard var request = synchronizationRequests.submit(
       maxAttempts: maxAttempts,
       automatic: automatic,
@@ -844,7 +462,7 @@ final class CommanderViewModel: ObservableObject {
     automatic: Bool,
     source: CommanderScheduleSource
   ) async {
-    if automatic { lastAutomaticAttempt = Date() }
+    if automatic { lastAutomaticAttempt = clock() }
     delayedRecoveryTask?.cancel()
     delayedRecoveryTask = nil
 
@@ -865,7 +483,8 @@ final class CommanderViewModel: ObservableObject {
         await procedureActivities.reconcile(
           schedule: result.schedule,
           overrides: projectionOverrides,
-          projectionRevision: projectionRevision
+          projectionRevision: projectionRevision,
+          now: clock()
         )
         liveActivityIssue = await procedureActivities.issue
         watchTransferStatus = result.watchDeliveryStatus.diagnosticText
@@ -916,7 +535,8 @@ final class CommanderViewModel: ObservableObject {
       do {
         if try await fallbackNotifications.arm(
           schedule: latestSchedule,
-          overrides: leadTimeOverrides
+          overrides: leadTimeOverrides,
+          now: clock()
         ) {
           fallbackStatus = "Aktivní a ověřená bezpečnostní pojistka"
           requiresUserAction = false
@@ -988,6 +608,7 @@ private final class LeadTimePreferencesStore {
     LeadTimeOverrides(
       defaultLeadTimeMinutes: valid(overrides.defaultLeadTimeMinutes),
       procedureTypeOverrides: valid(overrides.procedureTypeOverrides),
+      procedureCategoryOverrides: valid(overrides.procedureCategoryOverrides),
       mealOverrides: valid(overrides.mealOverrides),
       eventOverrides: valid(overrides.eventOverrides)
     )
@@ -1136,6 +757,61 @@ private final class IPhoneFallbackNotificationService {
   }
 }
 
+// Only input selection differs in an acceptance build. All lifecycle and UI
+// code below is shared; reopening without arguments reuses the persisted times.
+private enum CommanderAcceptanceLaunchMode {
+  case none, visual, cleanup, readback
+
+  static var current: Self {
+    #if COMMANDER_ACCEPTANCE_FIXTURES
+    let arguments = ProcessInfo.processInfo.arguments
+    if arguments.contains("--acceptance-cleanup") { return .cleanup }
+    if arguments.contains("--acceptance-readback") { return .readback }
+    if arguments.contains("--acceptance-visual") || arguments.contains("--acceptance-iphone-visual") { return .visual }
+    #endif
+    return .none
+  }
+}
+
+private struct CommanderLaunchInput {
+  let scheduleService: any ScheduleServing
+  let namespace: String
+
+  init(configuration: AppConfiguration, now: Date) {
+    #if COMMANDER_ACCEPTANCE_FIXTURES
+    let key = "lazensky.commander.acceptance.input.v1"
+    let saved = UserDefaults.standard.data(forKey: key).flatMap {
+      try? JSONDecoder().decode(Schedule.self, from: $0)
+    }
+    let mode = CommanderAcceptanceLaunchMode.current
+    let result = Result<Schedule, Error> {
+      if mode != .visual && mode != .cleanup {
+        guard let saved else { throw CommanderScheduleSyncError.noValidatedSnapshot }
+        return saved
+      }
+      let fixture = try CommanderAcceptanceSchedule(
+        now: now, previousVersion: saved?.scheduleVersion ?? 0,
+        cleanup: mode != .visual
+      ).schedule
+      UserDefaults.standard.set(try JSONEncoder().encode(fixture), forKey: key)
+      return fixture
+    }
+    scheduleService = InjectedScheduleService(result: result)
+    // A new fixture starts with an empty snapshot store, so bootstrap cannot
+    // reconcile a previous run before fetching the new input. Relaunches reuse it.
+    namespace = "acceptance.\((try? result.get().scheduleVersion) ?? 0)"
+    #else
+    scheduleService = URLSessionScheduleService(configuration: configuration)
+    namespace = CommanderDesignPreview.enabled ? "designPreview" : configuration.channel.rawValue
+    #endif
+  }
+}
+
+private struct InjectedScheduleService: ScheduleServing {
+  let result: Result<Schedule, Error>
+  func fetchSchedule() async throws -> Schedule { try result.get() }
+}
+
 @main
 struct LazenskyCommanderApp: App {
   @Environment(\.scenePhase) private var scenePhase
@@ -1144,12 +820,17 @@ struct LazenskyCommanderApp: App {
   var body: some Scene {
     WindowGroup {
       CommanderAppTabs(model: model)
-      .preferredColorScheme(.dark)
-      .task { await model.bootstrap() }
-      .onChange(of: scenePhase) { _, phase in
-        guard phase == .active else { return }
-        Task { await model.handleForeground() }
-      }
+        .preferredColorScheme(.dark)
+        .task {
+          await model.bootstrap()
+          #if COMMANDER_ACCEPTANCE_FIXTURES
+          await model.reportAcceptanceBootstrap()
+          #endif
+        }
+        .onChange(of: scenePhase) { _, phase in
+          guard phase == .active else { return }
+          Task { await model.handleForeground() }
+        }
     }
   }
 }

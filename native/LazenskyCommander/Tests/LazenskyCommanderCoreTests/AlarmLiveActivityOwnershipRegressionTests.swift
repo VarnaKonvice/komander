@@ -17,7 +17,9 @@ import Testing
   #expect(stopIntent.contains("static let supportedModes: IntentModes = [.background]"))
   #expect(stopIntent.contains("activityPayload"))
   #expect(stopIntent.contains("Activity<CommanderProcedureLiveActivityAttributes>.activities"))
-  #expect(stopIntent.contains("presentationMode: .eventContext"))
+  #expect(stopIntent.contains("presentationMode = .startCountdown"))
+  #expect(stopIntent.contains("presentationMode = .eventContext"))
+  #expect(stopIntent.contains("Date.now < startAt"))
   #expect(stopIntent.contains("focusStableId: metadata.stableId"))
   #expect(stopIntent.contains("ActivityKit.AlertConfiguration("))
   #expect(stopIntent.contains("sound: .named(\"CommanderSilentAlert.wav\")"))
@@ -76,20 +78,17 @@ import Testing
   #expect(live.contains("state.focusStableId ?? attributes.stableId"))
   #expect(live.contains("presentationMode: state.presentationMode"))
   #expect(live.contains("case .departureCountdown:"))
-  #expect(live.contains("return \"Vyrazit za\""))
   #expect(live.contains("private struct CommanderProcedureStatusText"))
   #expect(live.contains("Text(\"Start\")"))
   #expect(live.contains("format: .reference("))
   #expect(live.contains("to: display.startAt"))
   #expect(live.contains("allowedFields: [.minute, .second]"))
-  #expect(live.contains("case .departureCountdown: return leaveAt"))
-  #expect(live.contains("case .eventContext: return endAt"))
-  #expect(live.contains("nextEventLabel: followingIsConcurrent ? \"Současně:\" : \"Potom:\""))
   #expect(!live.contains("TimelineView("))
   #expect(!live.contains("CommanderLiveActivityTimeline.resolve("))
   #expect(live.contains("private struct CommanderClampedCountdown"))
+  #expect(live.contains("CommanderSystemCountdown(target: target)"))
+  #expect(live.contains("private typealias CommanderProcedureDisplay = CommanderActivityPresentation"))
   #expect(live.contains(".currentDate"))
-  #expect(live.contains("countingDownIn: interval"))
   #expect(!live.contains("pauseTime: target"))
   #expect(!live.contains("isDepartureBridge"))
   #expect(!live.contains("runningGreen"))
@@ -219,6 +218,14 @@ import Testing
     contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderLiveActivity/LazenskyCommanderLiveActivity.swift"),
     encoding: .utf8
   )
+  let activityPresentation = try String(
+    contentsOf: repo.appendingPathComponent("native/LazenskyCommander/Sources/LazenskyCommanderCore/CommanderActivityPresentation.swift"),
+    encoding: .utf8
+  )
+  let countdownPresentation = try String(
+    contentsOf: repo.appendingPathComponent("native/LazenskyCommander/Sources/LazenskyCommanderCore/CommanderCountdownPresentation.swift"),
+    encoding: .utf8
+  )
 
   #expect(coordinator.contains("start: plan.activationStart"))
   #expect(coordinator.contains("maximumActiveActivities = 1"))
@@ -232,19 +239,18 @@ import Testing
 
   #expect(!live.contains("TimelineView("))
   #expect(live.contains("CommanderProcedureDisplay.resolve("))
-  #expect(live.contains("let focusStableID = state.focusStableId ?? attributes.stableId"))
+  #expect(activityPresentation.contains("let focusStableID = focusStableId ?? seed.stableId"))
   #expect(live.contains("presentationMode: state.presentationMode"))
-  #expect(live.contains("return \"Vyrazit za\""))
   #expect(live.contains("private struct CommanderProcedureStatusText"))
   #expect(live.contains("Text(\"Start\")"))
   #expect(live.contains("format: .reference("))
   #expect(live.contains("to: display.startAt"))
-  #expect(live.contains("case .departureCountdown: return \"Odchod\""))
-  #expect(live.contains("case .eventContext: return \"Konec\""))
+  #expect(countdownPresentation.contains("case .startCountdown:"))
+  #expect(countdownPresentation.contains("countdownLabel: \"Začíná za\""))
+  #expect(countdownPresentation.contains("target: startAt"))
   #expect(coordinator.contains("CommanderLiveActivityTimeline.resolve(events: timelineEvents, at: now)"))
-  #expect(coordinator.contains("resolution.phase == .upcoming && !resolution.departureDue"))
-  #expect(coordinator.contains("? .departureCountdown"))
-  #expect(coordinator.contains(": .eventContext"))
+  #expect(coordinator.contains("mode = resolution.departureDue ? .startCountdown : .departureCountdown"))
+  #expect(coordinator.contains("mode = .eventContext"))
   #expect(!live.contains("CommanderProcedureHero"))
   #expect(!live.contains("CommanderProcedureStaticStart"))
 }
@@ -265,6 +271,10 @@ import Testing
     contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/Shared/CommanderAlarmMetadata.swift"),
     encoding: .utf8
   )
+  let activityPresentation = try String(
+    contentsOf: repo.appendingPathComponent("native/LazenskyCommander/Sources/LazenskyCommanderCore/CommanderActivityPresentation.swift"),
+    encoding: .utf8
+  )
   let coordinator = try String(
     contentsOf: repo.appendingPathComponent("native/LazenskyCommanderApp/LazenskyCommanderApp/CommanderProcedureLiveActivityCoordinator.swift"),
     encoding: .utf8
@@ -272,13 +282,13 @@ import Testing
 
   #expect(!project.contains("CURRENT_PROJECT_VERSION = 4;"))
   #expect(!project.contains("CURRENT_PROJECT_VERSION = \"4\";"))
-  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = 10;").count - 1 == 8)
-  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = \"10\";").count - 1 == 4)
+  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = 11;").count - 1 == 8)
+  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = \"11\";").count - 1 == 4)
   #expect(appInfo.contains("<string>$(MARKETING_VERSION)</string>"))
   #expect(appInfo.contains("<string>$(CURRENT_PROJECT_VERSION)</string>"))
-  #expect(metadata.contains("static let currentRendererRevision = 10"))
-  #expect(metadata.contains("case departureCountdown"))
-  #expect(metadata.contains("case eventContext"))
+  #expect(metadata.contains("static let currentRendererRevision = 11"))
+  #expect(activityPresentation.contains("case departureCountdown"))
+  #expect(activityPresentation.contains("case eventContext"))
   #expect(metadata.contains("let focusStableId: String?"))
   #expect(metadata.contains("let presentationMode: CommanderLiveActivityPresentationMode"))
   #expect(metadata.contains("let activationStart: Date?"))

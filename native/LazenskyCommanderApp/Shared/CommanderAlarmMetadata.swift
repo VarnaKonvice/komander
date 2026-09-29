@@ -3,17 +3,6 @@ import AlarmKit
 import Foundation
 import LazenskyCommanderCore
 
-struct CommanderAlarmEventSnapshot: Codable, Hashable, Sendable {
-  let stableId: String
-  let iconKey: String
-  let title: String
-  let location: String
-  let kind: ScheduleKind
-  let startAt: String
-  let endAt: String
-  let leaveAt: String
-}
-
 struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
   let stableId: String
   let scheduleVersion: Int
@@ -89,13 +78,8 @@ enum CommanderPhysicalAcceptanceDiagnostics {
   }
 }
 
-enum CommanderLiveActivityPresentationMode: String, Codable, Hashable, Sendable {
-  case departureCountdown
-  case eventContext
-}
-
 struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
-  static let currentRendererRevision = 10
+  static let currentRendererRevision = 11
 
   struct ContentState: Codable, Hashable {
     let scheduleVersion: Int

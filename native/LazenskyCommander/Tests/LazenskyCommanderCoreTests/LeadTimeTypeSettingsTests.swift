@@ -60,6 +60,59 @@ import Testing
   #expect(try NativeAlarmContract.resolvedTypeLeadTime(kind: .procedure, type: "Koupel", schedule: schedule, overrides: LeadTimeOverrides(defaultLeadTimeMinutes: 12)) == ResolvedLeadTime(minutes: 12, source: .localDefault))
 }
 
+@Test func procedureCategoryLeadTimeAppliesAcrossTypesInTheSameFamily() throws {
+  let schedule = settingsLeadTimeSchedule()
+  let overrides = LeadTimeOverrides(
+    procedureCategoryOverrides: [CommanderProcedureCategory.water.rawValue: 18]
+  )
+
+  #expect(
+    try NativeAlarmContract.resolvedTypeLeadTime(
+      kind: .procedure,
+      type: "Perličková koupel",
+      schedule: schedule,
+      overrides: overrides
+    ) == ResolvedLeadTime(minutes: 18, source: .localCategoryOverride)
+  )
+  #expect(
+    try NativeAlarmContract.resolvedLeadTime(
+      event: schedule.events[1],
+      schedule: schedule,
+      overrides: overrides
+    ) == ResolvedLeadTime(minutes: 18, source: .localCategoryOverride)
+  )
+}
+
+@Test func individualEventOverrideStaysAboveProcedureCategory() throws {
+  let schedule = settingsLeadTimeSchedule()
+  let overrides = LeadTimeOverrides(
+    procedureCategoryOverrides: [CommanderProcedureCategory.water.rawValue: 18],
+    eventOverrides: ["procedure-a": 3]
+  )
+
+  #expect(
+    try NativeAlarmContract.resolvedLeadTime(
+      event: schedule.events[0],
+      schedule: schedule,
+      overrides: overrides
+    ) == ResolvedLeadTime(minutes: 3, source: .localEventOverride)
+  )
+}
+
+@Test func waterCategoryRecognizesTheCategoryLabelItself() {
+  #expect(CommanderProcedureCategory.classify("Vodoléčba") == .water)
+  #expect(CommanderProcedureCategory.classify("Perličková koupel") == .water)
+}
+
+@Test func legacyLeadTimeOverridesDecodeWithEmptyCategoryOverrides() throws {
+  let data = Data(#"{"defaultLeadTimeMinutes":20,"procedureTypeOverrides":{"Koupel":25},"mealOverrides":{},"eventOverrides":{}}"#.utf8)
+  let decoded = try JSONDecoder().decode(LeadTimeOverrides.self, from: data)
+
+  #expect(decoded.defaultLeadTimeMinutes == 20)
+  #expect(decoded.procedureTypeOverrides["Koupel"] == 25)
+  #expect(decoded.procedureCategoryOverrides.isEmpty)
+}
+
 @Test func settingsViewUsesTypeLeadTimeForGeneralRows() throws {
   let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()

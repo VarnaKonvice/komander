@@ -151,6 +151,21 @@ public enum WatchScheduleAcknowledgementCodec {
     return [applicationContextKey: try JSONEncoder().encode(acknowledgement)]
   }
 
+  public static func merging(
+    scheduleVersion: Int,
+    projectionRevision: Int = 0,
+    into baseContext: [String: Any]
+  ) -> [String: Any] {
+    var merged = baseContext
+    if let acknowledgementContext = try? applicationContext(
+      scheduleVersion: scheduleVersion,
+      projectionRevision: projectionRevision
+    ), let payload = acknowledgementContext[applicationContextKey] {
+      merged[applicationContextKey] = payload
+    }
+    return merged
+  }
+
   public static func decode(applicationContext: [String: Any]) throws -> WatchScheduleAcknowledgement {
     guard let data = applicationContext[applicationContextKey] as? Data else {
       throw WatchScheduleTransportError.missingApplicationContextPayload

@@ -59,6 +59,14 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
                 activity.attributes.stableId == metadata.stableId
         else { continue }
 
+        let presentationMode: CommanderLiveActivityPresentationMode
+        if let startAt = try? NativeAlarmContract.date(fromLocalISO: metadata.startAt),
+           Date.now < startAt {
+          presentationMode = .startCountdown
+        } else {
+          presentationMode = .eventContext
+        }
+
         let updatedState = CommanderProcedureLiveActivityAttributes.ContentState(
           scheduleVersion: currentState.scheduleVersion,
           projectionRevision: max(
@@ -67,7 +75,7 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
           ),
           events: currentState.events,
           focusStableId: metadata.stableId,
-          presentationMode: .eventContext
+          presentationMode: presentationMode
         )
         let watchAlert = ActivityKit.AlertConfiguration(
           title: LocalizedStringResource(stringLiteral: "Lázeňský Commander"),
@@ -90,7 +98,7 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
 
     let result = updatedStableIDs.isEmpty
       ? "Commander update chybí"
-      : "Commander update eventContext: \(updatedStableIDs.joined(separator: ","))"
+      : "Commander update phase: \(updatedStableIDs.joined(separator: ","))"
     CommanderPhysicalAcceptanceDiagnostics.record(
       "Stop · \(alarmID) · \(result) · bez Activity.request"
     )

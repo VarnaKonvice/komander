@@ -663,13 +663,7 @@ private struct CommanderNowDeck: View {
   }
 
   private func ringValueText(_ item: CommanderDashboardEvent) -> String {
-    let target: Date
-    switch presentation.mode {
-    case .upcoming: target = item.leaveAt
-    case .leaveNow: target = item.startAt
-    case .inProgress: target = item.endAt
-    default: return "—"
-    }
+    guard let target = CommanderCountdownPresentation(liveState: presentation.liveState).target else { return "—" }
     let minutes = max(0, Int(ceil(target.timeIntervalSince(presentation.now) / 60)))
     if minutes == 0 { return "teď" }
     let hours = minutes / 60

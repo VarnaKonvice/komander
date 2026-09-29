@@ -8,8 +8,7 @@ struct WatchCommanderView: View {
     TimelineView(.periodic(from: .now, by: 1)) { context in
       let liveState = CommanderLiveStateCalculator.compute(
         schedule: WatchScheduleExpiryPolicy.activeSchedule(model.schedule, at: context.date),
-        now: context.date,
-        overrides: model.leadTimeOverrides
+        now: context.date, overrides: model.leadTimeOverrides
       )
       WatchCommanderStateView(liveState: liveState, model: model)
     }
@@ -32,92 +31,118 @@ private struct WatchCommanderStateView: View {
     }
   }
 
-  private var status: String {
-    switch liveState.state {
-    case .upcoming: "Odchod za"
-    case .leaveNow: "Vyrazit teď"
-    case .inProgress: liveState.event?.kind == .meal ? "Právě jídlo" : "Právě probíhá"
-    case .dayDone: "Skončilo"
-    case .noSchedule: "Žádný program"
-    }
+  private var timing: CommanderCountdownPresentation { .init(liveState: liveState) }
+  private var status: String { timing.status }
+  private var countdownLabel: String? {
+    liveState.state == .leaveNow || liveState.state == .inProgress ? timing.countdownLabel : nil
   }
-
-  private var deadline: Date? {
-    switch liveState.state {
-    case .upcoming: liveState.leaveAt
-    case .leaveNow: liveState.startAt
-    case .inProgress: liveState.endAt
-    case .dayDone, .noSchedule: nil
-    }
-  }
+  private var referenceLabel: String? { timing.referenceLabel }
+  private var referenceDate: Date? { timing.referenceDate }
+  private var countdownText: String? { timing.countdownText(at: liveState.now) }
 
   var body: some View {
-    GeometryReader { geometry in
-      VStack(spacing: 4) {
-        HStack {
-          if let event = liveState.event {
+    ScrollView(.vertical) {
+      VStack(spacing: 5) {
+        ZStack {
+          HStack {
+            CommanderBrandAssets.circularMark
+              .resizable()
+              .scaledToFit()
+              .frame(width: 30, height: 30)
+              .accessibilityLabel("Lázeňský Commander")
+            Spacer(minLength: 0)
+          }
+
+          VStack(spacing: 1) {
+            Image(systemName: timing.symbol)
+              .font(.system(size: 20, weight: .semibold))
+              .foregroundStyle(stateAccent)
+
+            Text(status)
+              .font(.system(size: 10.5, weight: .bold))
+              .foregroundStyle(stateAccent)
+              .lineLimit(1)
+              .minimumScaleFactor(0.82)
+          }
+          .frame(maxWidth: 88)
+        }
+        .frame(height: 34)
+
+        if let countdownLabel {
+          Text(countdownLabel)
+            .font(.system(size: 10.5, weight: .semibold))
+            .foregroundStyle(CommanderBrandAssets.Presentation.neutral)
+        }
+
+        Text(countdownText ?? (liveState.state == .dayDone ? "Hotovo" : "—"))
+          .font(.system(size: 50, weight: .heavy, design: .rounded).monospacedDigit())
+          .foregroundStyle(stateAccent)
+          .lineLimit(1)
+          .minimumScaleFactor(0.60)
+          .frame(maxWidth: .infinity)
+          .multilineTextAlignment(.center)
+          .accessibilityLabel(countdownText ?? status)
+
+        if let referenceLabel, let referenceDate {
+          HStack(spacing: 4) {
+            Image(systemName: "clock.fill")
+              .font(.system(size: 10, weight: .semibold))
+            Text(referenceLabel)
+              .font(.system(size: 10.5, weight: .medium))
+            Text(referenceDate.formatted(date: .omitted, time: .shortened))
+              .font(.system(size: 11.5, weight: .bold).monospacedDigit())
+          }
+          .foregroundStyle(stateAccent)
+        }
+
+        if let event = liveState.event {
+          Divider()
+            .overlay(stateAccent.opacity(0.45))
+
+          HStack(alignment: .center, spacing: 7) {
             CommanderProcedureArtwork(
               iconKey: icon?.key,
               title: event.title,
-              size: 40,
+              size: 32,
               kind: event.kind
             )
-          }
-          Spacer(minLength: 12)
-          if let event = liveState.event {
+
             Text(event.title)
-              .font(.system(size: 13, weight: .bold))
+              .font(.system(size: 15, weight: .bold))
               .foregroundStyle(eventAccent)
               .lineLimit(2)
-              .minimumScaleFactor(0.78)
-              .multilineTextAlignment(.trailing)
+              .minimumScaleFactor(0.86)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .accessibilityLabel(event.title)
           }
-        }
-        Text(status)
-          .font(.system(size: 14, weight: .bold))
-          .foregroundStyle(stateAccent)
-          .lineLimit(1)
-          .minimumScaleFactor(0.85)
-        Group {
-          if let deadline {
-            Text(deadline, style: .timer)
-          } else {
-            Text(liveState.state == .dayDone ? "Hotovo" : "—")
-          }
-        }
-        .font(.system(size: geometry.size.width < 170 ? 46 : 56, weight: .heavy, design: .rounded).monospacedDigit())
-        .foregroundStyle(stateAccent)
-        .lineLimit(1)
-        .minimumScaleFactor(0.65)
-        .frame(maxWidth: .infinity)
-        .layoutPriority(2)
 
-        if let event = liveState.event {
-          Text(event.title)
-            .font(.system(size: 15, weight: .bold))
-            .foregroundStyle(eventAccent)
-            .lineLimit(1)
-            .minimumScaleFactor(0.82)
-            .truncationMode(.tail)
-            .frame(maxWidth: .infinity)
-            .accessibilityLabel(event.title)
           if !event.location.isEmpty {
             Label(event.location, systemImage: "mappin.circle.fill")
-              .font(.system(size: 11, weight: .medium))
+              .font(.system(size: 11, weight: .semibold))
               .foregroundStyle(Color(commanderPresentationHex: CommanderBrandAssets.Colors.locationBlue))
               .lineLimit(1)
+              .minimumScaleFactor(0.82)
               .padding(.horizontal, 8)
               .padding(.vertical, 5)
-              .frame(maxWidth: .infinity)
-              .background(stateAccent.opacity(0.17), in: Capsule())
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .background(stateAccent.opacity(0.14), in: RoundedRectangle(cornerRadius: 9))
           }
         }
-        Spacer(minLength: 0)
+
+        if let error = model.cacheError ?? model.transportError ?? model.notificationError {
+          Text(error)
+            .font(.system(size: 9.5, weight: .medium))
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 2)
+        }
       }
       .padding(.horizontal, 6)
-      .padding(.top, 2)
-      .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+      .padding(.vertical, 4)
     }
+    .defaultScrollAnchor(.top)
+    .contentMargins(.top, 0, for: .scrollContent)
+    .scrollIndicators(.hidden)
     .background(.black)
     .accessibilityElement(children: .contain)
   }

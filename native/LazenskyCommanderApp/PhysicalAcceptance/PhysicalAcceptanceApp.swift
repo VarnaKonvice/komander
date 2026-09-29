@@ -44,10 +44,15 @@ private actor PhysicalAcceptanceLiveActivityPrimer {
     guard ActivityAuthorizationInfo().areActivitiesEnabled else {
       throw AlarmAdapterError.unavailable("Live Activities jsou v systému vypnuté.")
     }
+    guard Bundle.main.url(forResource: "CommanderSilentAlert", withExtension: "wav") != nil else {
+      throw AlarmAdapterError.unavailable("Chybí CommanderSilentAlert.wav.")
+    }
 
     let now = Date()
-    let startAt = now.addingTimeInterval(5 * 60)
-    let endAt = now.addingTimeInterval(10 * 60)
+    let activationStart = now.addingTimeInterval(3)
+    let leaveAt = now.addingTimeInterval(5 * 60)
+    let startAt = now.addingTimeInterval(10 * 60)
+    let endAt = now.addingTimeInterval(15 * 60)
     let attributes = CommanderProcedureLiveActivityAttributes(
       stableId: Self.visualProbeID,
       scheduleVersion: 0,
@@ -55,7 +60,8 @@ private actor PhysicalAcceptanceLiveActivityPrimer {
       title: "TEST – Magnetoterapie",
       location: "Vizuální test",
       kind: .procedure,
-      leaveAt: now,
+      activationStart: activationStart,
+      leaveAt: leaveAt,
       startAt: startAt,
       endAt: endAt,
       nextEvent: nil
@@ -65,11 +71,18 @@ private actor PhysicalAcceptanceLiveActivityPrimer {
       staleDate: endAt,
       relevanceScore: 1_000
     )
+    let alert = ActivityKit.AlertConfiguration(
+      title: LocalizedStringResource(stringLiteral: "Lázeňský Commander"),
+      body: LocalizedStringResource(stringLiteral: "Následuje · TEST – Magnetoterapie"),
+      sound: .named("CommanderSilentAlert.wav")
+    )
     _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
       attributes: attributes,
       content: content,
       pushType: nil,
-      style: .standard
+      style: .standard,
+      alertConfiguration: alert,
+      start: activationStart
     )
   }
 
@@ -605,6 +618,7 @@ final class PhysicalAcceptanceModel: ObservableObject {
     switch source {
     case .localEventOverride: "lokální override události"
     case .localTypeOverride: "lokální override typu"
+    case .localCategoryOverride: "lokální override kategorie"
     case .localDefault: "lokální výchozí override"
     case .eventOverride: "event override (event.leadTimeMinutes)"
     case .scheduleTypeOverride: "rozpis (settings: override typu)"

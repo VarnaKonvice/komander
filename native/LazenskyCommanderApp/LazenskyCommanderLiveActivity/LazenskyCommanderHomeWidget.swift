@@ -75,10 +75,14 @@ struct CommanderHomeWidgetProvider: TimelineProvider {
   }
 
   private func cachedSnapshot() async -> WatchScheduleSnapshot? {
+#if COMMANDER_VISUAL_REVIEW
+    return WatchScheduleSnapshot(schedule: CommanderVisualReviewSchedule.make(now: Date()))
+#else
 #if DEBUG
-    if let preview = bundledDesignPreviewSnapshot(),
-       WatchScheduleExpiryPolicy.activeSchedule(preview.schedule, at: Date()) != nil {
-      return preview
+    if UserDefaults(
+      suiteName: CommanderWatchWidgetContract.appGroupIdentifier
+    )?.bool(forKey: "commander.visualReview.enabled") == true {
+      return WatchScheduleSnapshot(schedule: CommanderVisualReviewSchedule.make(now: Date()))
     }
 #endif
     do {
@@ -89,19 +93,10 @@ struct CommanderHomeWidgetProvider: TimelineProvider {
     } catch {
       return nil
     }
+#endif
   }
 
-#if DEBUG
-  private func bundledDesignPreviewSnapshot() -> WatchScheduleSnapshot? {
-    guard let url = Bundle.main.url(
-      forResource: "CommanderDesignPreviewSchedule",
-      withExtension: "json"
-    ), let data = try? Data(contentsOf: url),
-       let schedule = try? JSONDecoder().decode(Schedule.self, from: data)
-    else { return nil }
-    return WatchScheduleSnapshot(schedule: schedule)
-  }
-#endif
+
 }
 
 private enum CommanderWidgetCountdownText {
@@ -191,8 +186,8 @@ struct LazenskyCommanderProcedureCountWidget: Widget {
     ) { entry in
       CommanderProcedureCountWidgetView(entry: entry)
     }
-    .configurationDisplayName("Commander – procedury")
-    .description("Kolik procedur vás dnes ještě čeká.")
+    .configurationDisplayName("Commander – odpočet")
+    .description("Kruhový odpočet do odchodu, začátku nebo konce aktuální události.")
     .supportedFamilies([.accessoryCircular])
   }
 }
@@ -432,20 +427,31 @@ private struct CommanderMediumHomeWidget: View {
             .fill(accent.opacity(0.30))
             .frame(height: 0.6)
 
-          HStack(spacing: 6) {
+          VStack(alignment: .leading, spacing: 2) {
             Text("Potom")
-              .font(.system(size: 10, weight: .semibold))
+              .font(.system(size: 9, weight: .bold))
               .foregroundStyle(CommanderWidgetTokens.textSecondary)
-            Text(next.title)
-              .font(.system(size: 12, weight: .bold))
-              .foregroundStyle(CommanderWidgetTokens.accent(for: next))
-              .lineLimit(1)
-              .minimumScaleFactor(0.76)
-            Spacer(minLength: 4)
-            if let start = try? NativeAlarmContract.dateTime(date: next.date, time: next.start) {
-              Text(start.formatted(date: .omitted, time: .shortened))
-                .font(.system(size: 12, weight: .bold).monospacedDigit())
-                .foregroundStyle(CommanderWidgetTokens.textPrimary)
+
+            HStack(spacing: 6) {
+              compactNextIcon(next)
+                .fixedSize()
+                .layoutPriority(1)
+
+              Text(next.title)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(CommanderWidgetTokens.accent(for: next))
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+
+              Spacer(minLength: 4)
+
+              if let start = try? NativeAlarmContract.dateTime(date: next.date, time: next.start) {
+                Text("Začátek \(start.formatted(date: .omitted, time: .shortened))")
+                  .font(.system(size: 11, weight: .bold).monospacedDigit())
+                  .foregroundStyle(CommanderWidgetTokens.textPrimary)
+                  .lineLimit(1)
+                  .minimumScaleFactor(0.78)
+              }
             }
           }
         }
@@ -455,9 +461,39 @@ private struct CommanderMediumHomeWidget: View {
       }
     }
     .padding(.horizontal, 10)
-    .padding(.top, 10)
-    .padding(.bottom, 10)
+    .padding(.top, 6)
+    .padding(.bottom, 8)
     .containerBackground(CommanderWidgetTokens.backgroundGradient, for: .widget)
+  }
+
+  @ViewBuilder
+  private func compactNextIcon(_ event: ScheduleEvent) -> some View {
+    let symbol = CommanderBrandAssets.procedureSymbol(
+      iconKey: nil,
+      title: event.procedureType ?? event.mealType ?? event.title,
+      isMeal: event.kind == .meal
+    )
+    let accent = CommanderWidgetTokens.accent(for: event)
+
+    if symbol == "commander.heat.waves" {
+      CommanderProcedureArtwork(
+        iconKey: nil,
+        title: event.title,
+        size: 18,
+        kind: event.kind
+      )
+    } else {
+      ZStack {
+        Circle()
+          .fill(accent.opacity(0.16))
+        Circle()
+          .strokeBorder(accent.opacity(0.90), lineWidth: 1)
+        Image(systemName: symbol)
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(accent)
+      }
+      .frame(width: 18, height: 18)
+    }
   }
 
   private var entryDayLabel: String {
@@ -551,16 +587,19 @@ private struct CommanderInlineLockWidget: View {
   let state: CommanderWidgetState
 
   var body: some View {
-    if let event = state.event {
-      HStack(spacing: 3) {
-        Text(inlinePrefix)
-        inlineTimer
-        Text("· \(event.title)")
+    Group {
+      if let event = state.event {
+        HStack(spacing: 3) {
+          Text(inlinePrefix)
+          inlineTimer
+          Text("· \(event.title)")
+        }
+        .lineLimit(1)
+      } else {
+        Label(state.live.state == .dayDone ? "Commander · dnes hotovo" : "Commander · bez programu", systemImage: "calendar")
       }
-      .lineLimit(1)
-    } else {
-      Label(state.live.state == .dayDone ? "Commander · dnes hotovo" : "Commander · bez programu", systemImage: "calendar")
     }
+    .containerBackground(.clear, for: .widget)
   }
 
   private var inlinePrefix: String {
@@ -592,20 +631,48 @@ private struct CommanderCircularLockWidget: View {
   var body: some View {
     ZStack {
       AccessoryWidgetBackground()
-      VStack(spacing: 0) {
-        if let target = targetDate {
-          Text(CommanderWidgetCountdownText.value(now: state.entry.date, target: target))
-            .font(.system(size: 15, weight: .bold))
-            .minimumScaleFactor(0.58)
-            .lineLimit(2)
-            .multilineTextAlignment(.center)
-        } else {
-          Text(state.live.state == .dayDone ? "✓" : "–")
-            .font(.system(size: 22, weight: .bold))
+
+      if let target = targetDate {
+        Circle()
+          .stroke(.secondary.opacity(0.25), lineWidth: 4)
+
+        Circle()
+          .trim(from: 0, to: remainingFraction)
+          .stroke(
+            accent,
+            style: StrokeStyle(lineWidth: 4, lineCap: .round)
+          )
+          .rotationEffect(.degrees(-90))
+
+        VStack(spacing: -1) {
+          Image(systemName: phaseSymbol)
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(accent)
+          Text(compactCountdown(target))
+            .font(.system(size: 15, weight: .heavy, design: .rounded))
+            .minimumScaleFactor(0.62)
+            .lineLimit(1)
         }
+      } else if state.live.state == .dayDone {
+        Image(systemName: "checkmark.circle.fill")
+          .font(.system(size: 25, weight: .bold))
+      } else {
+        Image(CommanderBrandAssets.circularMarkName, bundle: .main)
+          .renderingMode(.template)
+          .resizable()
+          .scaledToFit()
+          .frame(width: 28, height: 28)
       }
     }
     .widgetLabel(circularLabel)
+    .containerBackground(.clear, for: .widget)
+  }
+
+  private var accent: Color {
+    if let event = state.event {
+      return CommanderWidgetTokens.accent(for: event)
+    }
+    return CommanderWidgetTokens.primaryPurple
   }
 
   private var targetDate: Date? {
@@ -617,13 +684,52 @@ private struct CommanderCircularLockWidget: View {
     }
   }
 
+  private var phaseStartDate: Date? {
+    switch state.live.state {
+    case .upcoming:
+      return state.live.leaveAt?.addingTimeInterval(-30 * 60)
+    case .leaveNow:
+      return state.live.leaveAt
+    case .inProgress:
+      return state.live.startAt
+    case .dayDone, .noSchedule:
+      return nil
+    }
+  }
+
+  private var remainingFraction: Double {
+    guard let start = phaseStartDate, let target = targetDate, target > start else { return 1 }
+    let total = target.timeIntervalSince(start)
+    let remaining = target.timeIntervalSince(state.entry.date)
+    return min(1, max(0, remaining / total))
+  }
+
+  private var phaseSymbol: String {
+    switch state.live.state {
+    case .upcoming, .leaveNow: return "figure.walk"
+    case .inProgress: return "clock.fill"
+    case .dayDone: return "checkmark"
+    case .noSchedule: return "calendar"
+    }
+  }
+
+  private func compactCountdown(_ target: Date) -> String {
+    let seconds = max(0, target.timeIntervalSince(state.entry.date))
+    if seconds <= 0 { return "teď" }
+    let minutes = Int(ceil(seconds / 60))
+    if minutes < 60 { return "\(minutes)m" }
+    let hours = minutes / 60
+    let rest = minutes % 60
+    return rest == 0 ? "\(hours)h" : "\(hours)h\(rest)"
+  }
+
   private var circularLabel: String {
     switch state.live.state {
     case .upcoming: return "Do odchodu"
     case .leaveNow: return "Do začátku"
     case .inProgress: return "Do konce"
     case .dayDone: return "Dnes hotovo"
-    case .noSchedule: return "Bez programu"
+    case .noSchedule: return "Lázeňský Commander"
     }
   }
 }
@@ -787,16 +893,6 @@ private struct CommanderProcedureCountWidgetView: View {
   let entry: CommanderHomeWidgetEntry
 
   var body: some View {
-    let count = CommanderWidgetState(entry: entry).remainingProcedureCount
-    ZStack {
-      AccessoryWidgetBackground()
-      VStack(spacing: 0) {
-        Image(systemName: "cross.case.fill")
-          .font(.system(size: 13, weight: .bold))
-        Text("\(count)")
-          .font(.system(size: 20, weight: .bold).monospacedDigit())
-      }
-    }
-    .widgetLabel("Zbývající procedury")
+    CommanderCircularLockWidget(state: CommanderWidgetState(entry: entry))
   }
 }

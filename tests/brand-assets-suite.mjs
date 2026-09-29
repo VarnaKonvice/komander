@@ -148,16 +148,16 @@ await test('procedure icon contract remains unchanged and separate from branding
     'peat_wrap', 'imoove', 'massage', 'hydrojet', 'electro_therapy', 'individual_rehab'
   ]);
   assert.deepEqual(colors.procedures, {
-    meal: '#F59E0B',
-    pool: '#0EA5B7',
-    iodobrom: '#B27A2C',
-    whirlpool: '#38BDF8',
-    peat_wrap: '#5B3A29',
-    imoove: '#149B91',
-    massage: '#65A30D',
-    hydrojet: '#0EA5E9',
-    electro_therapy: '#6D5BD0',
-    individual_rehab: '#22A06B'
+    meal: '#50B863',
+    pool: '#2ED4FF',
+    iodobrom: '#FFC857',
+    whirlpool: '#2ED4FF',
+    peat_wrap: '#FFC857',
+    imoove: '#2EE6C4',
+    massage: '#FF7A59',
+    hydrojet: '#FF7A59',
+    electro_therapy: '#D6B4FE',
+    individual_rehab: '#2EE6C4'
   });
   assert.equal(iconMap.fallback.key, null);
 });

@@ -16,8 +16,8 @@ struct LazenskyCommanderWatchApp: App {
     WindowGroup {
       WatchCommanderView(model: model)
         .task {
-          await model.bootstrap()
           connectivity.activate()
+          await model.bootstrap()
         }
         .onChange(of: scenePhase) { _, phase in
           guard phase == .active else { return }

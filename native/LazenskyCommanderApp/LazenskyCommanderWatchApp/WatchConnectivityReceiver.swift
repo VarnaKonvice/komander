@@ -24,8 +24,8 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
   }
 
   private func receivePendingContext(from session: WCSession) {
-    guard let data = Self.payloadData(from: session.receivedApplicationContext) else { return }
-    receive(data)
+    let applicationContext = session.receivedApplicationContext
+    if let data = Self.payloadData(from: applicationContext) { receive(data) }
   }
 
   private func receive(_ data: Data) {
@@ -63,17 +63,18 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
 
   private func publishPendingAcknowledgement(using session: WCSession) {
     guard let identity = pendingAcknowledgement else { return }
+    let context = WatchScheduleAcknowledgementCodec.merging(
+      scheduleVersion: identity.scheduleVersion,
+      projectionRevision: identity.projectionRevision,
+      into: [:]
+    )
+
     do {
-      try session.updateApplicationContext(
-        WatchScheduleAcknowledgementCodec.applicationContext(
-          scheduleVersion: identity.scheduleVersion,
-          projectionRevision: identity.projectionRevision
-        )
-      )
+      try session.updateApplicationContext(context)
       pendingAcknowledgement = nil
       model?.recordTransportError(nil)
     } catch {
-      model?.recordTransportError("Potvrzení rozpisu iPhonu selhalo: \(error.localizedDescription)")
+      model?.recordTransportError("Potvrzení iPhonu selhalo: \(error.localizedDescription)")
     }
   }
 
@@ -87,7 +88,8 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
     error: Error?
   ) {
     let errorDescription = error?.localizedDescription
-    let payload = Self.payloadData(from: session.receivedApplicationContext)
+    let applicationContext = session.receivedApplicationContext
+    let scheduleData = Self.payloadData(from: applicationContext)
     let isActivated = activationState == .activated
     Task { @MainActor [weak self] in
       guard let self else { return }
@@ -97,14 +99,15 @@ final class WatchConnectivityReceiver: NSObject, WCSessionDelegate {
       if isActivated, let activeSession = self.session {
         publishPendingAcknowledgement(using: activeSession)
       }
-      if let payload { receive(payload) }
+      if let scheduleData { receive(scheduleData) }
     }
   }
 
   nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-    guard let payload = Self.payloadData(from: applicationContext) else { return }
+    let scheduleData = Self.payloadData(from: applicationContext)
     Task { @MainActor [weak self] in
-      self?.receive(payload)
+      if let scheduleData { self?.receive(scheduleData) }
     }
   }
+
 }

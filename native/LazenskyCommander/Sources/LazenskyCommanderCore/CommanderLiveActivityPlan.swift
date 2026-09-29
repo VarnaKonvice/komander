@@ -60,21 +60,11 @@ public struct CommanderLiveActivityPlan: Equatable, Sendable {
   ) -> [CommanderLiveActivityPlan] {
     guard maximumEvents > 0, maximumWindows > 0 else { return [] }
 
-    let alarmByID = Dictionary(uniqueKeysWithValues: payload.alarms.map { ($0.stableId, $0) })
-    let candidates = schedule.events.compactMap { event -> Candidate? in
-      guard let alarm = alarmByID[event.stableId],
-            let leaveAt = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt),
-            let startAt = try? NativeAlarmContract.date(fromLocalISO: alarm.startAt),
-            let endAt = try? NativeAlarmContract.date(fromLocalISO: alarm.endAt)
-      else { return nil }
-
-      let contextStart = min(leaveAt, startAt.addingTimeInterval(-max(0, contextLeadTime)))
-      return Candidate(
-        event: event,
-        leaveAt: leaveAt,
-        startAt: startAt,
-        endAt: endAt,
-        contextStart: contextStart
+    guard let projected = try? CommanderScheduleProjection.events(schedule: schedule, payload: payload) else { return [] }
+    let candidates = projected.map { item in
+      Candidate(
+        event: item.event, leaveAt: item.leaveAt, startAt: item.startAt, endAt: item.endAt,
+        contextStart: min(item.leaveAt, item.startAt.addingTimeInterval(-max(0, contextLeadTime)))
       )
     }.sorted(by: candidateOrder)
 

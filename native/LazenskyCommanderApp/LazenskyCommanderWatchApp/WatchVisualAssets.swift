@@ -2,8 +2,8 @@ import Foundation
 import LazenskyCommanderCore
 
 enum WatchVisualAssets {
-  static let iconMap: CommanderIconMap? = decode("icon-map")
-  static let colors: CommanderColorMap? = decode("colors")
+  static var iconMap: CommanderIconMap? { CommanderBrandAssets.iconMap }
+  static var colors: CommanderColorMap? { CommanderBrandAssets.colors }
 
   static func icon(for event: ScheduleEvent?) -> CommanderIconMap.Icon? {
     event.flatMap { iconMap?.classify($0) }
@@ -27,8 +27,4 @@ enum WatchVisualAssets {
     )
   }
 
-  private static func decode<Value: Decodable>(_ name: String) -> Value? {
-    guard let url = Bundle.main.url(forResource: name, withExtension: "json") else { return nil }
-    return try? JSONDecoder().decode(Value.self, from: Data(contentsOf: url))
-  }
 }

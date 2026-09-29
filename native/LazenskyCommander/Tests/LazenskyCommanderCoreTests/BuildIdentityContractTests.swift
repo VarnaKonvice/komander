@@ -38,13 +38,22 @@ import Testing
     contentsOf: repo.appendingPathComponent("Nainstalovat stabilizační test.command"),
     encoding: .utf8
   )
-  #expect(stabilization.contains("TARGET_BRANCH=\"lc/native-stabilization-v2\""))
-  #expect(stabilization.contains("REMOTE_COMMIT=\"$(/usr/bin/git -C \"$REPO_ROOT\" rev-parse"))
-  #expect(stabilization.contains("LC_BUILD_BRANCH = %s"))
-  #expect(stabilization.contains("LC_BUILD_COMMIT = %s"))
-  #expect(stabilization.contains("XCODE_XCCONFIG_FILE=\"$TEMP_XCCONFIG\""))
-  #expect(stabilization.contains("LC_REFRESH_TARGET_BRANCH=\"$TARGET_BRANCH\""))
-  #expect(stabilization.contains("Pokud Diagnostika ukáže jinou identitu"))
-  #expect(!stabilization.contains("LC_REFRESH_TARGET_BRANCH:-main"))
+  let unified = try String(
+    contentsOf: repo.appendingPathComponent("Otestovat Lázeňský Commander.command"),
+    encoding: .utf8
+  )
+  #expect(stabilization.contains("exec /bin/bash \"$SCRIPT_DIR/Otestovat Lázeňský Commander.command\" \"$@\""))
+  #expect(unified.contains("build_branch=\"$(/usr/bin/git -C \"$REPO_ROOT\" branch --show-current"))
+  #expect(unified.contains("build_commit=\"$(/usr/bin/git -C \"$REPO_ROOT\" rev-parse HEAD"))
+  #expect(unified.contains("LC_BUILD_BRANCH=\"$build_branch\" LC_BUILD_COMMIT=\"$build_commit\""))
+  #expect(unified.contains("BUILD_BRANCH=\"$(/usr/bin/git -C \"$REPO_ROOT\" branch --show-current"))
+  #expect(unified.contains("BUILD_COMMIT=\"$(/usr/bin/git -C \"$REPO_ROOT\" rev-parse HEAD"))
+  #expect(unified.contains("LC_BUILD_BRANCH=\"$BUILD_BRANCH\""))
+  #expect(unified.contains("LC_BUILD_COMMIT=\"$BUILD_COMMIT\""))
+  #expect(unified.contains("--build-normal"))
+  #expect(unified.contains("--install-normal"))
+  #expect(!unified.contains("git checkout"))
+  #expect(!unified.contains("git reset"))
+  #expect(!unified.contains("git clean"))
 }
 #endif
