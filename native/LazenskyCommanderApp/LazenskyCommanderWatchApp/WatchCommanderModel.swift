@@ -45,13 +45,11 @@ final class WatchCommanderModel {
 
   func bootstrap() async {
     do {
-      snapshot = try await cache.load()
-      schedule = snapshot?.schedule
+      applyCachedSnapshot(try await cache.load())
       cacheError = nil
       await reconcileStandaloneAlarms(requestAuthorization: false)
     } catch {
-      snapshot = nil
-      schedule = nil
+      // A locked or temporarily unavailable cache must not erase the last valid view.
       cacheError = error.localizedDescription
     }
   }
@@ -60,17 +58,25 @@ final class WatchCommanderModel {
   func receive(_ incoming: WatchScheduleSnapshot) async throws -> WatchScheduleCacheDecision {
     let decision = try await cache.accept(incoming)
     switch decision {
-    case .stored, .unchanged:
-      snapshot = try await cache.load()
-      schedule = snapshot?.schedule
+    case .stored, .unchanged, .rejectedVersion:
+      applyCachedSnapshot(try await cache.load())
       cacheError = nil
       // One owner for notification writes and visible errors. An unchanged snapshot
       // must also retry a previous failed write, not just acknowledge the cache.
       await reconcileStandaloneAlarms(requestAuthorization: false)
-    case .rejectedInvalid, .rejectedVersion:
+    case .rejectedInvalid:
       break
     }
     return decision
+  }
+
+  private func applyCachedSnapshot(_ incoming: WatchScheduleSnapshot?) {
+    guard let incoming else { return }
+    // MainActor methods can resume out of order after awaiting the cache actor.
+    guard WatchScheduleCachePolicy.decision(incoming: incoming, existing: snapshot) == .stored ||
+          incoming == snapshot else { return }
+    snapshot = incoming
+    schedule = incoming.schedule
   }
 
   func recordTransportError(_ message: String?) {

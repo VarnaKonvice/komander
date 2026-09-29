@@ -4,6 +4,11 @@ public struct WatchScheduleProjectionIdentity: Codable, Equatable, Sendable {
   public let scheduleVersion: Int
   public let projectionRevision: Int
 
+  public func isOlder(than other: Self) -> Bool {
+    scheduleVersion < other.scheduleVersion ||
+      (scheduleVersion == other.scheduleVersion && projectionRevision < other.projectionRevision)
+  }
+
   public init(scheduleVersion: Int, projectionRevision: Int) {
     self.scheduleVersion = scheduleVersion
     self.projectionRevision = projectionRevision

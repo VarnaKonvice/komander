@@ -41,20 +41,39 @@ free_gb() {
 acquire_lock() {
   if /bin/mkdir "$LOCK_DIR" 2>/dev/null; then
     printf '%s\n' "$$" > "$LOCK_DIR/pid"
-    trap '/bin/rm -rf "$LOCK_DIR"' EXIT INT TERM
+    trap 'release_lock' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
     return 0
   fi
 
   local owner=""
   [[ -f "$LOCK_DIR/pid" ]] && owner="$(cat "$LOCK_DIR/pid" 2>/dev/null || true)"
-  if [[ -n "$owner" ]] && /bin/kill -0 "$owner" 2>/dev/null; then
+  [[ "$owner" =~ ^[0-9]+$ ]] || fail "Zámek acceptance nemá platné PID; jeho vlastnictví nelze bezpečně ověřit."
+  if /bin/kill -0 "$owner" 2>/dev/null; then
     fail "Acceptance test už běží v procesu $owner. Druhý souběžný test nespouštím."
   fi
 
-  /bin/rm -rf "$LOCK_DIR"
-  /bin/mkdir "$LOCK_DIR" || fail "Nelze vytvořit zámek acceptance testu."
+  # Claim stale-lock recovery before removing anything; a competing launcher stops here.
+  /bin/mkdir "$LOCK_DIR/recovery" 2>/dev/null || fail "Jiný proces právě obnovuje zámek acceptance."
+  if [[ "$(cat "$LOCK_DIR/pid" 2>/dev/null)" != "$owner" ]]; then
+    /bin/rmdir "$LOCK_DIR/recovery" 2>/dev/null || true
+    fail "Vlastník zámku se změnil."
+  fi
+  # Keep the lock directory in place throughout recovery; there is no acquisition gap.
+
   printf '%s\n' "$$" > "$LOCK_DIR/pid"
-  trap '/bin/rm -rf "$LOCK_DIR"' EXIT INT TERM
+  /bin/rmdir "$LOCK_DIR/recovery" 2>/dev/null || true
+  trap 'release_lock' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+}
+
+release_lock() {
+  # A signal exits first; only EXIT releases a lock still owned by this process.
+  [[ "$(cat "$LOCK_DIR/pid" 2>/dev/null)" == "$$" ]] || return 0
+  /bin/rm -f -- "$LOCK_DIR/pid"
+  /bin/rmdir "$LOCK_DIR" 2>/dev/null || true
 }
 
 cleanup_test_artifacts() {
@@ -86,8 +105,11 @@ watch_is_unlocked() {
 
 wait_for_watch_unlock() {
   local attempt
-  for attempt in $(/usr/bin/seq 1 1800); do
-    if wait_for_watch_connected && watch_is_unlocked; then
+  local deadline=$((SECONDS + 1800))
+  attempt=0
+  while (( SECONDS < deadline )); do
+    attempt=$((attempt + 1))
+    if watch_is_unlocked; then
       status "Apple Watch jsou připojené a odemčené."
       return 0
     fi
@@ -123,7 +145,10 @@ iphone_is_unlocked() {
 
 wait_for_iphone_unlock() {
   local attempt
-  for attempt in $(/usr/bin/seq 1 1800); do
+  local deadline=$((SECONDS + 1800))
+  attempt=0
+  while (( SECONDS < deadline )); do
+    attempt=$((attempt + 1))
     if iphone_is_unlocked; then
       status "iPhone je odemčený."
       return 0

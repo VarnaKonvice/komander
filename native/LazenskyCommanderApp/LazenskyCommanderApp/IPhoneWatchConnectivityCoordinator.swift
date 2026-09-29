@@ -73,6 +73,8 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
 
   private func recordAcknowledgement(_ acknowledgement: WatchScheduleAcknowledgement?) {
     guard let acknowledgement else { return }
+    if let current = acknowledgedProjectionIdentity,
+       acknowledgement.projectionIdentity.isOlder(than: current) { return }
     acknowledgedProjectionIdentity = acknowledgement.projectionIdentity
     diagnostic = "Apple Watch ověřily rozpis v\(acknowledgement.scheduleVersion)/r\(acknowledgement.projectionRevision)"
   }

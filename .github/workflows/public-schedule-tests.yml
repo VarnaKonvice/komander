@@ -42,3 +42,6 @@ jobs:
 
       - name: Run refresh launcher safety suite
         run: node tests/refresh-launcher-suite.mjs
+
+      - name: Run acceptance launcher reliability suite (no devices)
+        run: node tests/acceptance-reliability-suite.mjs

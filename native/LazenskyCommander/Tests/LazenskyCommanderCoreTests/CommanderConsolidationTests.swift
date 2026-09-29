@@ -117,7 +117,7 @@ private func fixture() -> Schedule {
   #expect(receiver.contains("if let identity = model.projectionIdentity"))
   let watch = try source("LazenskyCommanderWatchApp/WatchCommanderModel.swift")
   #expect(watch.contains("try await cache.accept(incoming)"))
-  #expect(watch.contains("snapshot = try await cache.load()"))
+  #expect(watch.contains("applyCachedSnapshot(try await cache.load())"))
   #expect(watch.contains("WidgetCenter.shared.reloadTimelines"))
   let widget = try source("LazenskyCommanderWatchWidget/LazenskyCommanderWatchWidget.swift")
   #expect(widget.contains("WatchCacheLocation.makeCache().load()"))

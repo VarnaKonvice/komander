@@ -117,6 +117,7 @@ public extension AlarmSyncSummary {
 }
 
 public struct AlarmSyncService: Sendable {
+  private let operations = CommanderSerialOperationQueue()
   private let scheduleService: any ScheduleServing
   private let store: any AlarmStateStoring
   private let adapter: any AlarmAdapting
@@ -202,6 +203,16 @@ public struct AlarmSyncService: Sendable {
     overrides: LeadTimeOverrides?,
     projectionRevision: Int,
     now: Date
+  ) async throws -> AlarmSyncSummary {
+    try await operations.run {
+      try await self.performSynchronization(schedule: schedule, payload: payload,
+        overrides: overrides, projectionRevision: projectionRevision, now: now)
+    }
+  }
+
+  private func performSynchronization(
+    schedule: Schedule, payload: NativeAlarmPayload, overrides: LeadTimeOverrides?,
+    projectionRevision: Int, now: Date
   ) async throws -> AlarmSyncSummary {
     let desiredPayload = try desiredPayload(from: payload, now: now)
     await adapter.prepare(

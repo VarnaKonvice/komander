@@ -27,6 +27,7 @@ public struct CommanderScheduleSyncResult: Equatable, Sendable {
 }
 
 public struct CommanderScheduleSyncCoordinator: Sendable {
+  private let operations = CommanderSerialOperationQueue()
   private let clock: @Sendable () -> Date
   private let scheduleService: any ScheduleServing
   private let alarmSyncService: AlarmSyncService
@@ -56,6 +57,16 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
     now: Date? = nil
+  ) async throws -> CommanderScheduleSyncResult {
+    try await operations.run {
+      try await self.performSynchronization(source: source, overrides: overrides,
+        projectionRevision: projectionRevision, now: now)
+    }
+  }
+
+  private func performSynchronization(
+    source: CommanderScheduleSource, overrides: LeadTimeOverrides?,
+    projectionRevision: Int, now: Date?
   ) async throws -> CommanderScheduleSyncResult {
     let decision: ScheduleSnapshotDecision
     let schedule: Schedule

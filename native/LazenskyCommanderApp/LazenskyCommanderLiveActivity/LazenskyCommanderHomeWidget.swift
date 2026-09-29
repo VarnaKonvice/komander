@@ -9,6 +9,13 @@ struct CommanderHomeWidgetEntry: TimelineEntry {
 }
 
 struct CommanderHomeWidgetProvider: TimelineProvider {
+  private static let snapshotLoader = CommanderWidgetSnapshotLoader(
+    service: URLSessionScheduleService(configuration: AppConfiguration()),
+    cache: FileWatchScheduleCache(
+      directoryURL: URL.applicationSupportDirectory.appendingPathComponent("CommanderWidgetCache"),
+      dataset: .production
+    )
+  )
   func placeholder(in context: Context) -> CommanderHomeWidgetEntry {
     CommanderHomeWidgetEntry(date: Date(), snapshot: nil)
   }
@@ -85,14 +92,7 @@ struct CommanderHomeWidgetProvider: TimelineProvider {
       return WatchScheduleSnapshot(schedule: CommanderVisualReviewSchedule.make(now: Date()))
     }
 #endif
-    do {
-      let schedule = try await URLSessionScheduleService(
-        configuration: AppConfiguration()
-      ).fetchSchedule()
-      return WatchScheduleSnapshot(schedule: schedule)
-    } catch {
-      return nil
-    }
+    return await Self.snapshotLoader.load()
 #endif
   }
 
@@ -300,6 +300,7 @@ private struct CommanderHomeWidgetView: View {
         CommanderCircularLockWidget(state: state)
       case .accessoryRectangular:
         CommanderRectangularLockWidget(state: state)
+          .containerBackground(.clear, for: .widget)
       default:
         CommanderSmallHomeWidget(state: state)
       }

@@ -47,7 +47,23 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     return String(localISO[start..<end])
   }
 
+  private static let operations = CommanderSerialOperationQueue()
+
   func perform() async throws -> some IntentResult {
+    let payload = activityPayload
+    let updatedStableIDs = try await Self.operations.run {
+      await Self.updateActivities(activityPayload: payload)
+    }
+    let result = updatedStableIDs.isEmpty
+      ? "Commander update chybí nebo již použit"
+      : "Commander update phase: \(updatedStableIDs.joined(separator: ","))"
+    CommanderPhysicalAcceptanceDiagnostics.record(
+      "Stop · \(alarmID) · \(result) · bez Activity.request"
+    )
+    return .result()
+  }
+
+  private static func updateActivities(activityPayload: String) async -> [String] {
     var updatedStableIDs: [String] = []
 
     if let payloadData = Data(base64Encoded: activityPayload),
@@ -55,9 +71,16 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
       for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
       where activity.activityState == .active || activity.activityState == .stale {
         let currentState = activity.content.state
-        guard currentState.events.contains(where: { $0.stableId == metadata.stableId }) ||
-                activity.attributes.stableId == metadata.stableId
-        else { continue }
+        let stopped = CommanderAlarmEventSnapshot(
+          stableId: metadata.stableId, iconKey: metadata.iconKey, title: metadata.title,
+          location: metadata.location, kind: metadata.kind, startAt: metadata.startAt,
+          endAt: metadata.endAt ?? "", leaveAt: metadata.leaveAt
+        )
+        guard CommanderAlarmStopPolicy.canApply(
+          stopped: stopped,
+          current: currentState.events.first(where: { $0.stableId == metadata.stableId }),
+          now: Date.now
+        ) else { continue }
 
         let presentationMode: CommanderLiveActivityPresentationMode
         if let startAt = try? NativeAlarmContract.date(fromLocalISO: metadata.startAt),
@@ -69,14 +92,13 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
 
         let updatedState = CommanderProcedureLiveActivityAttributes.ContentState(
           scheduleVersion: currentState.scheduleVersion,
-          projectionRevision: max(
-            currentState.projectionRevision,
-            metadata.projectionRevision ?? currentState.projectionRevision
-          ),
+          projectionRevision: currentState.projectionRevision,
           events: currentState.events,
           focusStableId: metadata.stableId,
           presentationMode: presentationMode
         )
+        // Repeated callbacks for an already applied phase must not resend the alert.
+        guard currentState != updatedState else { continue }
         let watchAlert = ActivityKit.AlertConfiguration(
           title: LocalizedStringResource(stringLiteral: "Lázeňský Commander"),
           body: LocalizedStringResource(
@@ -96,19 +118,14 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
       }
     }
 
-    let result = updatedStableIDs.isEmpty
-      ? "Commander update chybí"
-      : "Commander update phase: \(updatedStableIDs.joined(separator: ","))"
-    CommanderPhysicalAcceptanceDiagnostics.record(
-      "Stop · \(alarmID) · \(result) · bez Activity.request"
-    )
-    return .result()
+    return updatedStableIDs
   }
 }
 
 actor AlarmKitAdapter: AlarmAdapting {
   private static let e2eOwnershipKey = "lazensky.commander.alarmkitOwned.e2e.v1"
   private let channel: ScheduleChannel
+  private let ownership: FileAlarmOwnershipStore
   private var scheduleContext: Schedule?
   private var scheduleOverrides: LeadTimeOverrides?
   private var scheduleProjectionRevision = 0
@@ -118,6 +135,7 @@ actor AlarmKitAdapter: AlarmAdapting {
 
   init(channel: ScheduleChannel) {
     self.channel = channel
+    ownership = Self.ownershipStore(channel: channel)
   }
 
   init(physicalAcceptanceRunID: UUID, ownership: PhysicalAcceptanceOwnershipStore) throws {
@@ -125,6 +143,7 @@ actor AlarmKitAdapter: AlarmAdapting {
       throw PhysicalAcceptanceError.wrongApplication
     }
     channel = .e2e
+    self.ownership = Self.ownershipStore(channel: .e2e)
     physicalRunID = physicalAcceptanceRunID
     physicalOwnership = ownership
   }
@@ -174,7 +193,16 @@ actor AlarmKitAdapter: AlarmAdapting {
       throw AlarmKitAdapterError.invalidLeaveAt(alarm.leaveAt)
     }
 
-    let id = UUID()
+    let id: UUID
+    if physicalRunID != nil {
+      id = UUID()
+    } else {
+      let reserved = try await ownership.reserve(stableID: alarm.stableId)
+      guard let uuid = UUID(uuidString: reserved) else {
+        throw AlarmKitAdapterError.invalidPlatformAlarmID(reserved)
+      }
+      id = uuid
+    }
     let alert = AlarmPresentation.Alert(
       title: LocalizedStringResource(stringLiteral: NativeAlarmPresentation.title(for: alarm))
     )
@@ -222,12 +250,14 @@ actor AlarmKitAdapter: AlarmAdapting {
     if let physicalRunID, let physicalOwnership {
       await physicalOwnership.remember(id.uuidString, runID: physicalRunID)
     }
+    // Recover an ambiguous previous schedule using its reserved ID, never a second UUID.
+    if try AlarmManager.shared.alarms.contains(where: { $0.id == id }) {
+      try AlarmManager.shared.cancel(id: id)
+    }
     let scheduled = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
     let platformID = scheduled.id.uuidString
     if physicalRunID != nil {
       physicalAttempts[platformID] = (alarm.stableId, now)
-    } else {
-      rememberE2EOwnership(platformID)
     }
     return platformID
   }
@@ -240,12 +270,18 @@ actor AlarmKitAdapter: AlarmAdapting {
     guard let id = PlatformAlarmIdentifier.uuid(from: platformAlarmID) else {
       throw AlarmKitAdapterError.invalidPlatformAlarmID(platformAlarmID)
     }
-    try AlarmManager.shared.cancel(id: id)
+    // An earlier cancellation may have succeeded before the state write failed.
+    if try AlarmManager.shared.alarms.contains(where: { $0.id == id }) {
+      if physicalRunID == nil, !(try await ownership.ids()).contains(platformAlarmID) {
+        throw AlarmAdapterError.unavailable("Alarm nemá doložené vlastnictví Commanderu.")
+      }
+      try AlarmManager.shared.cancel(id: id)
+    }
     if let physicalOwnership {
       await physicalOwnership.forget(platformAlarmID)
       physicalAttempts.removeValue(forKey: platformAlarmID)
     } else {
-      forgetE2EOwnership(platformAlarmID)
+      try await ownership.forget(platformAlarmID)
     }
   }
 
@@ -255,8 +291,7 @@ actor AlarmKitAdapter: AlarmAdapting {
     if let physicalRunID, let physicalOwnership {
       return allIDs.intersection(await physicalOwnership.ids(runID: physicalRunID))
     }
-    guard channel == .e2e else { return allIDs }
-    return allIDs.intersection(e2eOwnedPlatformIDs())
+    return allIDs.intersection(try await ownership.ids())
   }
 
   func existingPlatformAlertingAlarmIDs() async throws -> Set<String> {
@@ -282,7 +317,7 @@ actor AlarmKitAdapter: AlarmAdapting {
     if let physicalRunID, let physicalOwnership {
       visibleIDs = await physicalOwnership.ids(runID: physicalRunID)
     } else {
-      visibleIDs = channel == .e2e ? e2eOwnedPlatformIDs() : nil
+      visibleIDs = try await ownership.ids()
     }
 
     var countdownDeadlines: [String: Date] = [:]
@@ -328,9 +363,13 @@ actor AlarmKitAdapter: AlarmAdapting {
     return result
   }
 
-  private func e2eOwnedPlatformIDs() -> Set<String> {
-    guard channel == .e2e else { return [] }
-    return Set(UserDefaults.standard.stringArray(forKey: Self.e2eOwnershipKey) ?? [])
+  private static func ownershipStore(channel: ScheduleChannel) -> FileAlarmOwnershipStore {
+    FileAlarmOwnershipStore(
+      directoryURL: URL.applicationSupportDirectory.appendingPathComponent("CommanderAlarmOwnership"),
+      key: "lazensky.commander.alarmOwnership.\(channel.rawValue).v1",
+      legacyStateKey: "lazensky.commander.managedAlarms.\(channel.rawValue).v1",
+      legacyOwnershipKey: channel == .e2e ? e2eOwnershipKey : nil
+    )
   }
 
   func physicalObservations() throws -> [PhysicalAlarmObservation] {
@@ -396,20 +435,6 @@ actor AlarmKitAdapter: AlarmAdapting {
       where activity.attributes.metadata?.stableId.hasPrefix(PhysicalAcceptanceRun.stableIDPrefix) == true {
       await activity.end(nil, dismissalPolicy: .immediate)
     }
-  }
-
-  private func rememberE2EOwnership(_ platformAlarmID: String) {
-    guard channel == .e2e else { return }
-    var ids = e2eOwnedPlatformIDs()
-    ids.insert(platformAlarmID)
-    UserDefaults.standard.set(ids.sorted(), forKey: Self.e2eOwnershipKey)
-  }
-
-  private func forgetE2EOwnership(_ platformAlarmID: String) {
-    guard channel == .e2e else { return }
-    var ids = e2eOwnedPlatformIDs()
-    ids.remove(platformAlarmID)
-    UserDefaults.standard.set(ids.sorted(), forKey: Self.e2eOwnershipKey)
   }
 
   fileprivate static func isOngoing(_ state: ActivityState) -> Bool {

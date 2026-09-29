@@ -23,6 +23,7 @@ actor CommanderProcedureLiveActivityCoordinator {
   private(set) var issue: String?
   private var reconciliationTail: Task<Void, Never>?
   private var reconciliationGeneration = 0
+  private var latestProjection: WatchScheduleProjectionIdentity?
 
   private struct RawCandidate {
     let event: ScheduleEvent
@@ -111,6 +112,11 @@ actor CommanderProcedureLiveActivityCoordinator {
       return
     }
 
+    let incoming = WatchScheduleProjectionIdentity(scheduleVersion: schedule.scheduleVersion,
+      projectionRevision: projectionRevision)
+    if let latestProjection, incoming.isOlder(than: latestProjection) { return }
+    latestProjection = incoming
+
     let raw = Self.rawCandidates(schedule: schedule, payload: payload)
     let candidateByID = Dictionary(uniqueKeysWithValues: raw.map { ($0.event.stableId, $0) })
     let plans = CommanderLiveActivityPlan.makeWindows(
@@ -124,6 +130,10 @@ actor CommanderProcedureLiveActivityCoordinator {
       maximumWindows: planningMaximumScheduledActivities
     )
 
+    for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
+      where activity.activityState == .ended {
+      await activity.end(nil, dismissalPolicy: .immediate)
+    }
     let existing = Activity<CommanderProcedureLiveActivityAttributes>.activities
       .filter { Self.isOngoing($0.activityState) }
       .sorted { Self.retentionRank($0.activityState) < Self.retentionRank($1.activityState) }
@@ -257,11 +267,16 @@ actor CommanderProcedureLiveActivityCoordinator {
       endAt: anchor.endAt,
       nextEvent: snapshots.dropFirst().first
     )
+    let presentation = plan.activationStart > now
+      ? (plan.anchorStableID, CommanderLiveActivityPresentationMode.departureCountdown)
+      : Self.presentationState(snapshots: snapshots, now: now, fallbackStableID: plan.anchorStableID)
     let state = CommanderProcedureLiveActivityPolicy.contentState(
       scheduleVersion: scheduleVersion,
       projectionRevision: projectionRevision,
       events: snapshots,
-      attributes: attributes
+      attributes: attributes,
+      focusStableId: presentation.0,
+      presentationMode: presentation.1
     )
     let content = ActivityContent(
       state: state,

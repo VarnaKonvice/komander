@@ -196,12 +196,9 @@ public actor UserDefaultsAlarmStateStore: AlarmStateStoring {
 
   public func load() throws -> ManagedAlarmState {
     guard let data = defaults.data(forKey: key) else { return ManagedAlarmState() }
-    do {
-      return try JSONDecoder().decode(ManagedAlarmState.self, from: data)
-    } catch {
-      defaults.removeObject(forKey: key)
-      return ManagedAlarmState()
-    }
+    // Losing this mapping can turn a read failure into duplicate alarms. Preserve the
+    // bytes and fail closed; ownership recovery must never infer an empty system.
+    return try JSONDecoder().decode(ManagedAlarmState.self, from: data)
   }
 
   public func save(_ state: ManagedAlarmState) throws {

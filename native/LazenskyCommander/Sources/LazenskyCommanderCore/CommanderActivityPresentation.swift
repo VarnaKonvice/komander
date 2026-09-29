@@ -23,6 +23,23 @@ public enum CommanderLiveActivityPresentationMode: String, Codable, Hashable, Se
   case eventContext
 }
 
+/// Reject delayed stop callbacks whose payload no longer describes the current event.
+public enum CommanderAlarmStopPolicy {
+  public static func canApply(
+    stopped: CommanderAlarmEventSnapshot, current: CommanderAlarmEventSnapshot?, now: Date
+  ) -> Bool {
+    guard let current,
+          stopped.stableId == current.stableId,
+          stopped.startAt == current.startAt,
+          stopped.leaveAt == current.leaveAt,
+          stopped.endAt == current.endAt,
+          let start = try? NativeAlarmContract.date(fromLocalISO: current.startAt),
+          let end = try? NativeAlarmContract.date(fromLocalISO: current.endAt),
+          start < end, now < end else { return false }
+    return true
+  }
+}
+
 public struct CommanderActivityPresentation: Equatable, Sendable {
   public let title: String
   public let location: String
