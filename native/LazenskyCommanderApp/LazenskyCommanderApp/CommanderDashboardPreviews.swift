@@ -8,7 +8,7 @@ private enum CommanderDashboardPreviewFixtures {
       {"stableId":"iodobrom","date":"2026-08-20","start":"09:00","end":"09:30","title":"Jodobromová koupel","location":"Balneo","kind":"procedure","procedureType":"Jodobromová koupel"},
       {"stableId":"whirlpool","date":"2026-08-20","start":"10:00","end":"10:30","title":"Vířivá vana","location":"Vodní léčba","kind":"procedure","procedureType":"Vířivá vana"},
       {"stableId":"lunch","date":"2026-08-20","start":"12:00","end":"12:45","title":"Oběd","location":"Jídelna","kind":"meal","mealType":"Oběd"},
-      {"stableId":"massage","date":"2026-08-20","start":"14:00","end":"14:20","title":"Klasická masáž","location":"Rehabilitace","kind":"procedure","procedureType":"Klasická masáž"},
+      {"stableId":"massage","date":"2026-08-20","start":"14:00","end":"14:20","title":"Klasická masáž","location":"Rehabilitace, box 3","kind":"procedure","procedureType":"Klasická masáž"},
       {"stableId":"dinner","date":"2026-08-20","start":"17:30","end":"18:00","title":"Večeře","location":"Jídelna","kind":"meal","mealType":"Večeře"}
     """
   )
@@ -49,7 +49,8 @@ private struct CommanderDashboardPreview: View {
         isSynchronizing: false,
         synchronize: {}
       )
-      .background(CommanderDashboardPalette.background.ignoresSafeArea())
+      .background(CommanderDesignTokens.Colors.background.ignoresSafeArea())
+      .toolbar(.hidden, for: .navigationBar)
     }
     .preferredColorScheme(.dark)
   }
@@ -102,4 +103,40 @@ private struct CommanderDashboardPreview: View {
     schedule: nil,
     now: CommanderDashboardPreviewFixtures.date("2026-08-20T09:00:00")
   )
+}
+
+#Preview("Dnes - velké písmo") {
+  CommanderDashboardPreview(
+    schedule: CommanderDashboardPreviewFixtures.normalDay,
+    now: CommanderDashboardPreviewFixtures.date("2026-08-20T13:21:00")
+  )
+  .environment(\.dynamicTypeSize, .accessibility3)
+}
+
+private struct CommanderWeekDayPreview: View {
+  @State var isExpanded: Bool
+
+  var body: some View {
+    let days = try! CommanderWeekPresentation.make(
+      schedule: CommanderDashboardPreviewFixtures.normalDay,
+      now: CommanderDashboardPreviewFixtures.date("2026-08-20T13:21:00")
+    )
+    ScrollView {
+      VStack(spacing: CommanderDesignTokens.Spacing.medium) {
+        CommanderGlassHeader(tab: "Týden")
+        CommanderWeekDayTile(day: days[0], isExpanded: isExpanded) { isExpanded.toggle() }
+      }
+      .padding(CommanderDesignTokens.Spacing.page)
+    }
+    .background(CommanderDesignTokens.Colors.background.ignoresSafeArea())
+    .preferredColorScheme(.dark)
+  }
+}
+
+#Preview("Týden - sbalený den") {
+  CommanderWeekDayPreview(isExpanded: false)
+}
+
+#Preview("Týden - rozbalený den") {
+  CommanderWeekDayPreview(isExpanded: true)
 }

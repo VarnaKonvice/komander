@@ -24,5 +24,7 @@
   <string>Lázeňský Commander používá alarmy, aby vás včas upozornil, kdy máte vyrazit na proceduru nebo jídlo.</string>
   <key>NSSupportsLiveActivities</key>
   <true/>
+  <key>UILaunchScreen</key>
+  <dict/>
 </dict>
 </plist>

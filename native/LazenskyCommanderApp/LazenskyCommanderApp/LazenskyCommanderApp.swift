@@ -1,6 +1,124 @@
 import SwiftUI
 import LazenskyCommanderCore
 import UserNotifications
+#if DEBUG
+import ActivityKit
+
+private struct AlarmFreeVisualActivityOutcome: Sendable {
+  let status: String
+  let errorMessage: String?
+}
+
+private enum AlarmFreeVisualActivityReconciler {
+  static func reconcile(
+    schedule: Schedule,
+    now: Date,
+    projectionRevision: Int
+  ) async -> AlarmFreeVisualActivityOutcome {
+    guard ActivityAuthorizationInfo().areActivitiesEnabled else {
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG pobyt načtený · Live Activities nejsou povolené",
+        errorMessage: nil
+      )
+    }
+
+    let prefix = AlarmFreeVisualTestSchedule.stableIDPrefix
+    let debugActivities = Activity<CommanderProcedureLiveActivityAttributes>.activities.filter {
+      $0.attributes.stableId.hasPrefix(prefix)
+    }
+
+    guard let running = schedule.events.first(where: { event in
+      guard event.kind == .procedure,
+            event.stableId.hasPrefix(prefix),
+            let startAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.start),
+            let endAt = try? NativeAlarmContract.dateTime(date: event.date, time: event.end)
+      else { return false }
+      return startAt <= now && endAt > now
+    }),
+    let startAt = try? NativeAlarmContract.dateTime(date: running.date, time: running.start),
+    let endAt = try? NativeAlarmContract.dateTime(date: running.date, time: running.end)
+    else {
+      for activity in debugActivities {
+        await activity.end(nil, dismissalPolicy: .immediate)
+      }
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG pobyt načtený · žádná procedura právě neprobíhá",
+        errorMessage: nil
+      )
+    }
+
+    let content = ActivityContent(
+      state: CommanderProcedureLiveActivityAttributes.ContentState(
+        projectionRevision: projectionRevision
+      ),
+      staleDate: endAt,
+      relevanceScore: 1
+    )
+
+    var hasMatchingActivity = false
+    for activity in debugActivities {
+      let matches = activity.attributes.stableId == running.stableId
+        && activity.attributes.scheduleVersion == schedule.scheduleVersion
+        && activity.attributes.title == running.title
+        && activity.attributes.location == running.location
+        && abs(activity.attributes.startAt.timeIntervalSince(startAt)) <= 1
+        && abs(activity.attributes.endAt.timeIntervalSince(endAt)) <= 1
+      if matches {
+        hasMatchingActivity = true
+        await activity.update(content)
+      } else {
+        await activity.end(nil, dismissalPolicy: .immediate)
+      }
+    }
+
+    if hasMatchingActivity {
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG pobyt načtený · Live Activity běží",
+        errorMessage: nil
+      )
+    }
+
+    let attributes = CommanderProcedureLiveActivityAttributes(
+      stableId: running.stableId,
+      scheduleVersion: schedule.scheduleVersion,
+      iconKey: CommanderVisualAssets.icon(for: running)?.key ?? "",
+      title: running.title,
+      location: running.location,
+      kind: running.kind,
+      startAt: startAt,
+      endAt: endAt
+    )
+
+    do {
+      _ = try Activity<CommanderProcedureLiveActivityAttributes>.request(
+        attributes: attributes,
+        content: content,
+        pushType: nil,
+        style: .standard
+      )
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG pobyt načtený · Live Activity spuštěná",
+        errorMessage: nil
+      )
+    } catch {
+      return AlarmFreeVisualActivityOutcome(
+        status: "DEBUG pobyt načtený · Live Activity se nespustila",
+        errorMessage: error.localizedDescription
+      )
+    }
+  }
+}
+#endif
+
+enum CommanderRuntime {
+  static var alarmFreeVisualTest: Bool {
+#if DEBUG
+    ProcessInfo.processInfo.arguments.contains("--alarm-free-visual-test")
+#else
+    false
+#endif
+  }
+}
 
 @MainActor
 final class CommanderViewModel: ObservableObject {
@@ -42,7 +160,9 @@ final class CommanderViewModel: ObservableObject {
     let leadTimePreferences = LeadTimePreferencesStore(
       key: "lazensky.commander.leadTimePreferences.\(namespace).v1"
     )
-    let savedPreferences = leadTimePreferences.load()
+    let savedPreferences = CommanderRuntime.alarmFreeVisualTest
+      ? LeadTimePreferences(overrides: LeadTimeOverrides(), revision: 0)
+      : leadTimePreferences.load()
 
     self.adapter = adapter
     self.service = service
@@ -85,6 +205,12 @@ final class CommanderViewModel: ObservableObject {
   }
 
   func bootstrap() async {
+#if DEBUG
+    if CommanderRuntime.alarmFreeVisualTest {
+      await activateAlarmFreeVisualTest(createScheduleIfNeeded: true)
+      return
+    }
+#endif
     latestSchedule = try? await scheduleSync.loadLastSchedule()
     if channel == .production, let watchScheduleSnapshot {
       do {
@@ -100,15 +226,36 @@ final class CommanderViewModel: ObservableObject {
   }
 
   func handleForeground() async {
+#if DEBUG
+    if CommanderRuntime.alarmFreeVisualTest {
+      await activateAlarmFreeVisualTest(createScheduleIfNeeded: false)
+      return
+    }
+#endif
     if let lastAutomaticAttempt, Date().timeIntervalSince(lastAutomaticAttempt) < 10 { return }
     await synchronizeWithRecovery(maxAttempts: 3, automatic: true)
   }
 
   func refreshAccess() async {
+#if DEBUG
+    if CommanderRuntime.alarmFreeVisualTest {
+      accessStatus = "DEBUG test: AlarmKit je vypnutý"
+      return
+    }
+#endif
     accessStatus = await service.alarmAccessDescription()
   }
 
   func requestAuthorization() {
+#if DEBUG
+    if CommanderRuntime.alarmFreeVisualTest {
+      accessStatus = "DEBUG test: AlarmKit je vypnutý"
+      requiresUserAction = false
+      userActionMessage = nil
+      errorMessage = nil
+      return
+    }
+#endif
     Task {
       do {
         try await adapter.requestAuthorization()
@@ -126,6 +273,12 @@ final class CommanderViewModel: ObservableObject {
   }
 
   func synchronize() {
+#if DEBUG
+    if CommanderRuntime.alarmFreeVisualTest {
+      Task { await activateAlarmFreeVisualTest(createScheduleIfNeeded: false) }
+      return
+    }
+#endif
     Task { await synchronizeWithRecovery(maxAttempts: 3, automatic: false) }
   }
 
@@ -186,6 +339,13 @@ final class CommanderViewModel: ObservableObject {
     guard normalized != leadTimeOverrides else { return }
     leadTimeOverrides = normalized
     leadTimeProjectionRevision += 1
+#if DEBUG
+    if CommanderRuntime.alarmFreeVisualTest {
+      recoveryStatus = "DEBUG test: místní nastavení bez alarmů"
+      Task { await activateAlarmFreeVisualTest(createScheduleIfNeeded: false) }
+      return
+    }
+#endif
     leadTimePreferences.save(
       LeadTimePreferences(
         overrides: normalized,
@@ -199,6 +359,37 @@ final class CommanderViewModel: ObservableObject {
   private static func clampedLeadTime(_ value: Int) -> Int {
     min(180, max(0, value))
   }
+
+#if DEBUG
+  private func activateAlarmFreeVisualTest(createScheduleIfNeeded: Bool) async {
+    let now = Date()
+    let schedule: Schedule
+    if !createScheduleIfNeeded, let latestSchedule {
+      schedule = latestSchedule
+    } else {
+      schedule = AlarmFreeVisualTestSchedule.make(now: now)
+      latestSchedule = schedule
+    }
+
+    summary = nil
+    errorMessage = nil
+    isSynchronizing = false
+    requiresUserAction = false
+    userActionMessage = nil
+    accessStatus = "DEBUG test: AlarmKit je vypnutý"
+    watchTransferStatus = "DEBUG test: Watch je oddělený"
+    recoveryStatus = "DEBUG testovací pobyt bez alarmů"
+    fallbackStatus = "DEBUG test: záložní upozornění jsou vypnutá"
+
+    let outcome = await AlarmFreeVisualActivityReconciler.reconcile(
+      schedule: schedule,
+      now: now,
+      projectionRevision: leadTimeProjectionRevision
+    )
+    recoveryStatus = outcome.status
+    errorMessage = outcome.errorMessage
+  }
+#endif
 
   private func synchronizeWithRecovery(
     maxAttempts: Int,
