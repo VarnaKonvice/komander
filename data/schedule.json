@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "scheduleVersion": 11,
-  "updatedAt": "2026-09-30T10:04:23Z",
+  "scheduleVersion": 12,
+  "updatedAt": "2026-09-30T10:05:36Z",
   "stay": {
     "spa": "Rehabilitační sanatorium – Lázně Darkov",
     "dateFrom": "2026-09-30",
@@ -57,7 +57,7 @@
       "start": "08:00",
       "end": "08:20",
       "title": "Elektrický chodník",
-      "location": "FYZ29 · RS C · 2. etáž · č. 8",
+      "location": "FYZ29 · RS C/2 · č.8",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -67,7 +67,7 @@
       "start": "09:00",
       "end": "09:20",
       "title": "ILTV ergoterapie",
-      "location": "FYZ30 · RS A · 2. etáž · č. 232",
+      "location": "FYZ30 · RS A/2 · č.232",
       "kind": "procedure",
       "procedureType": "ILTV ergoterapie"
     },
@@ -87,7 +87,7 @@
       "start": "12:00",
       "end": "12:20",
       "title": "Individuální LTV",
-      "location": "FYZ7 · RS A · 2. etáž · tělocvična č. 224",
+      "location": "FYZ7 · RS A/2 · tělocv.224",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -97,7 +97,7 @@
       "start": "12:45",
       "end": "13:05",
       "title": "Čtyřkomorová lázeň",
-      "location": "FYZ25 · RS B · 2. etáž · Centrum elektroléčby I.",
+      "location": "FYZ25 · RS B/2 · Centrum elektro I.",
       "kind": "procedure",
       "procedureType": "Čtyřkomorová lázeň"
     },
@@ -107,7 +107,7 @@
       "start": "14:00",
       "end": "14:20",
       "title": "Perličková koupel+zábal",
-      "location": "LAZ11 · RS A · 4. etáž",
+      "location": "LAZ11 · RS A/4",
       "kind": "procedure",
       "procedureType": "Perličková koupel+zábal"
     },
@@ -137,7 +137,7 @@
       "start": "07:45",
       "end": "08:05",
       "title": "Vodní CO2 koupel+zábal",
-      "location": "LAZ11 · RS A · 4. etáž",
+      "location": "LAZ11 · RS A/4",
       "kind": "procedure",
       "procedureType": "Vodní CO2 koupel+zábal"
     },
@@ -147,7 +147,7 @@
       "start": "09:10",
       "end": "09:30",
       "title": "Vířivá koupel HKK",
-      "location": "LAZ1 · RS C · 1. etáž · vodoléčebný sál",
+      "location": "LAZ1 · RS C/1 · vodoléčba",
       "kind": "procedure",
       "procedureType": "Vířivá koupel HKK"
     },
@@ -157,7 +157,7 @@
       "start": "09:45",
       "end": "10:05",
       "title": "Motomed",
-      "location": "FYZ48 · RS C · 2. etáž · č. 7",
+      "location": "FYZ48 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "Motomed"
     },
@@ -177,7 +177,7 @@
       "start": "12:00",
       "end": "12:20",
       "title": "ILTV Imoove",
-      "location": "FYZ54 · RS C · 2. etáž · č. 7",
+      "location": "FYZ54 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "ILTV Imoove"
     },
@@ -187,7 +187,7 @@
       "start": "13:30",
       "end": "13:50",
       "title": "Parafango-obklad",
-      "location": "LAZ4 · RS C · 2. etáž · č. 11",
+      "location": "LAZ4 · RS C/2 · č.11",
       "kind": "procedure",
       "procedureType": "Parafango-obklad"
     },
@@ -217,7 +217,7 @@
       "start": "08:00",
       "end": "08:20",
       "title": "Elektrický chodník",
-      "location": "FYZ29 · RS C · 2. etáž · č. 8",
+      "location": "FYZ29 · RS C/2 · č.8",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -227,7 +227,7 @@
       "start": "09:45",
       "end": "10:05",
       "title": "Celotělová vířivá koupel",
-      "location": "LAZ7 · RS D · 2. etáž · Svět vitality",
+      "location": "LAZ7 · RS D/2 · Svět vitality",
       "kind": "procedure",
       "procedureType": "Celotělová vířivá koupel"
     },
@@ -297,7 +297,7 @@
       "start": "07:30",
       "end": "07:50",
       "title": "Perličková koupel+zábal",
-      "location": "LAZ11 · RS A · 4. etáž",
+      "location": "LAZ11 · RS A/4",
       "kind": "procedure",
       "procedureType": "Perličková koupel+zábal"
     },
@@ -307,7 +307,7 @@
       "start": "08:45",
       "end": "09:05",
       "title": "Motomed",
-      "location": "FYZ48 · RS C · 2. etáž · č. 7",
+      "location": "FYZ48 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "Motomed"
     },
@@ -327,7 +327,7 @@
       "start": "12:00",
       "end": "12:20",
       "title": "ILTV Imoove",
-      "location": "FYZ54 · RS C · 2. etáž · č. 7",
+      "location": "FYZ54 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "ILTV Imoove"
     },
@@ -357,7 +357,7 @@
       "start": "08:00",
       "end": "08:20",
       "title": "Elektrický chodník",
-      "location": "FYZ29 · RS C · 2. etáž · č. 8",
+      "location": "FYZ29 · RS C/2 · č.8",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -367,7 +367,7 @@
       "start": "09:30",
       "end": "09:50",
       "title": "ILTV ergoterapie",
-      "location": "FYZ30 · RS A · 2. etáž · č. 232",
+      "location": "FYZ30 · RS A/2 · č.232",
       "kind": "procedure",
       "procedureType": "ILTV ergoterapie"
     },
@@ -387,7 +387,7 @@
       "start": "12:30",
       "end": "12:50",
       "title": "Individuální LTV",
-      "location": "FYZ7 · RS A · 2. etáž · tělocvična č. 224",
+      "location": "FYZ7 · RS A/2 · tělocv.224",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -397,7 +397,7 @@
       "start": "13:15",
       "end": "13:35",
       "title": "Čtyřkomorová lázeň",
-      "location": "FYZ25 · RS B · 2. etáž · Centrum elektroléčby I.",
+      "location": "FYZ25 · RS B/2 · Centrum elektro I.",
       "kind": "procedure",
       "procedureType": "Čtyřkomorová lázeň"
     },
@@ -427,7 +427,7 @@
       "start": "08:15",
       "end": "08:35",
       "title": "Motomed",
-      "location": "FYZ48 · RS C · 2. etáž · č. 7",
+      "location": "FYZ48 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "Motomed"
     },
@@ -437,7 +437,7 @@
       "start": "09:30",
       "end": "09:50",
       "title": "Parafango-obklad",
-      "location": "LAZ4 · RS C · 2. etáž · č. 11",
+      "location": "LAZ4 · RS C/2 · č.11",
       "kind": "procedure",
       "procedureType": "Parafango-obklad"
     },
@@ -447,7 +447,7 @@
       "start": "10:15",
       "end": "10:35",
       "title": "Celotělová vířivá koupel",
-      "location": "LAZ7 · RS D · 2. etáž · Svět vitality",
+      "location": "LAZ7 · RS D/2 · Svět vitality",
       "kind": "procedure",
       "procedureType": "Celotělová vířivá koupel"
     },
@@ -467,7 +467,7 @@
       "start": "12:00",
       "end": "12:20",
       "title": "ILTV Imoove",
-      "location": "FYZ54 · RS C · 2. etáž · č. 7",
+      "location": "FYZ54 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "ILTV Imoove"
     },
@@ -497,7 +497,7 @@
       "start": "08:00",
       "end": "08:20",
       "title": "Individuální LTV",
-      "location": "FYZ7 · RS A · 2. etáž · tělocvična č. 224",
+      "location": "FYZ7 · RS A/2 · tělocv.224",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -507,7 +507,7 @@
       "start": "10:30",
       "end": "10:50",
       "title": "Elektrický chodník",
-      "location": "FYZ29 · RS C · 2. etáž · č. 8",
+      "location": "FYZ29 · RS C/2 · č.8",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -527,7 +527,7 @@
       "start": "12:45",
       "end": "13:05",
       "title": "Vodní CO2 koupel+zábal",
-      "location": "LAZ11 · RS A · 4. etáž",
+      "location": "LAZ11 · RS A/4",
       "kind": "procedure",
       "procedureType": "Vodní CO2 koupel+zábal"
     },
@@ -557,7 +557,7 @@
       "start": "08:00",
       "end": "08:20",
       "title": "Parafango-obklad",
-      "location": "LAZ4 · RS C · 2. etáž · č. 11",
+      "location": "LAZ4 · RS C/2 · č.11",
       "kind": "procedure",
       "procedureType": "Parafango-obklad"
     },
@@ -567,7 +567,7 @@
       "start": "08:50",
       "end": "09:10",
       "title": "Vířivá koupel HKK",
-      "location": "LAZ1 · RS C · 1. etáž · vodoléčebný sál",
+      "location": "LAZ1 · RS C/1 · vodoléčba",
       "kind": "procedure",
       "procedureType": "Vířivá koupel HKK"
     },
@@ -577,7 +577,7 @@
       "start": "10:15",
       "end": "10:35",
       "title": "Motomed",
-      "location": "FYZ48 · RS C · 2. etáž · č. 7",
+      "location": "FYZ48 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "Motomed"
     },
@@ -597,7 +597,7 @@
       "start": "12:15",
       "end": "12:35",
       "title": "Čtyřkomorová lázeň",
-      "location": "FYZ25 · RS B · 2. etáž · Centrum elektroléčby I.",
+      "location": "FYZ25 · RS B/2 · Centrum elektro I.",
       "kind": "procedure",
       "procedureType": "Čtyřkomorová lázeň"
     },
@@ -627,7 +627,7 @@
       "start": "08:30",
       "end": "08:50",
       "title": "Elektrický chodník",
-      "location": "FYZ29 · RS C · 2. etáž · č. 8",
+      "location": "FYZ29 · RS C/2 · č.8",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -637,7 +637,7 @@
       "start": "09:15",
       "end": "09:35",
       "title": "Celotělová vířivá koupel",
-      "location": "LAZ7 · RS D · 2. etáž · Svět vitality",
+      "location": "LAZ7 · RS D/2 · Svět vitality",
       "kind": "procedure",
       "procedureType": "Celotělová vířivá koupel"
     },
@@ -707,7 +707,7 @@
       "start": "08:00",
       "end": "08:20",
       "title": "Perličková koupel+zábal",
-      "location": "LAZ11 · RS A · 4. etáž",
+      "location": "LAZ11 · RS A/4",
       "kind": "procedure",
       "procedureType": "Perličková koupel+zábal"
     },
@@ -717,7 +717,7 @@
       "start": "09:00",
       "end": "09:20",
       "title": "ILTV ergoterapie",
-      "location": "FYZ30 · RS A · 2. etáž · č. 232",
+      "location": "FYZ30 · RS A/2 · č.232",
       "kind": "procedure",
       "procedureType": "ILTV ergoterapie"
     },
@@ -727,7 +727,7 @@
       "start": "10:30",
       "end": "10:50",
       "title": "Elektrický chodník",
-      "location": "FYZ29 · RS C · 2. etáž · č. 8",
+      "location": "FYZ29 · RS C/2 · č.8",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -747,7 +747,7 @@
       "start": "12:00",
       "end": "12:20",
       "title": "Individuální LTV",
-      "location": "FYZ7 · RS A · 2. etáž · tělocvična č. 224",
+      "location": "FYZ7 · RS A/2 · tělocv.224",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -757,7 +757,7 @@
       "start": "13:00",
       "end": "13:20",
       "title": "Klasická masáž",
-      "location": "MAS21 · RS A · 4. etáž · masérna č. 1",
+      "location": "MAS21 · RS A/4 · masérna 1",
       "kind": "procedure",
       "procedureType": "Klasická masáž"
     },
@@ -787,7 +787,7 @@
       "start": "08:00",
       "end": "08:20",
       "title": "ILTV Imoove",
-      "location": "FYZ54 · RS C · 2. etáž · č. 7",
+      "location": "FYZ54 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "ILTV Imoove"
     },
@@ -797,7 +797,7 @@
       "start": "09:15",
       "end": "09:35",
       "title": "Motomed",
-      "location": "FYZ48 · RS C · 2. etáž · č. 7",
+      "location": "FYZ48 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "Motomed"
     },
@@ -807,7 +807,7 @@
       "start": "10:15",
       "end": "10:35",
       "title": "Čtyřkomorová lázeň",
-      "location": "FYZ25 · RS B · 2. etáž · Centrum elektroléčby I.",
+      "location": "FYZ25 · RS B/2 · Centrum elektro I.",
       "kind": "procedure",
       "procedureType": "Čtyřkomorová lázeň"
     },
@@ -827,7 +827,7 @@
       "start": "12:45",
       "end": "13:05",
       "title": "Vodní CO2 koupel+zábal",
-      "location": "LAZ11 · RS A · 4. etáž",
+      "location": "LAZ11 · RS A/4",
       "kind": "procedure",
       "procedureType": "Vodní CO2 koupel+zábal"
     },
@@ -857,7 +857,7 @@
       "start": "07:30",
       "end": "07:50",
       "title": "Parafango-obklad",
-      "location": "LAZ4 · RS C · 2. etáž · č. 11",
+      "location": "LAZ4 · RS C/2 · č.11",
       "kind": "procedure",
       "procedureType": "Parafango-obklad"
     },
@@ -867,7 +867,7 @@
       "start": "08:15",
       "end": "08:35",
       "title": "Motomed",
-      "location": "FYZ48 · RS C · 2. etáž · č. 7",
+      "location": "FYZ48 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "Motomed"
     },
@@ -877,7 +877,7 @@
       "start": "10:00",
       "end": "10:20",
       "title": "Individuální LTV",
-      "location": "FYZ7 · RS A · 2. etáž · tělocvična č. 224",
+      "location": "FYZ7 · RS A/2 · tělocv.224",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -897,7 +897,7 @@
       "start": "12:30",
       "end": "12:50",
       "title": "Celotělová vířivá koupel",
-      "location": "LAZ7 · RS D · 2. etáž · Svět vitality",
+      "location": "LAZ7 · RS D/2 · Svět vitality",
       "kind": "procedure",
       "procedureType": "Celotělová vířivá koupel"
     },
@@ -927,7 +927,7 @@
       "start": "08:00",
       "end": "08:20",
       "title": "Elektrický chodník",
-      "location": "FYZ29 · RS C · 2. etáž · č. 8",
+      "location": "FYZ29 · RS C/2 · č.8",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -937,7 +937,7 @@
       "start": "09:00",
       "end": "09:20",
       "title": "Parafango-obklad",
-      "location": "LAZ4 · RS C · 2. etáž · č. 11",
+      "location": "LAZ4 · RS C/2 · č.11",
       "kind": "procedure",
       "procedureType": "Parafango-obklad"
     },
@@ -947,7 +947,7 @@
       "start": "09:50",
       "end": "10:10",
       "title": "Vířivá koupel HKK",
-      "location": "LAZ1 · RS C · 1. etáž · vodoléčebný sál",
+      "location": "LAZ1 · RS C/1 · vodoléčba",
       "kind": "procedure",
       "procedureType": "Vířivá koupel HKK"
     },
@@ -987,7 +987,7 @@
       "start": "08:15",
       "end": "08:35",
       "title": "Čtyřkomorová lázeň",
-      "location": "FYZ25 · RS B · 2. etáž · Centrum elektroléčby I.",
+      "location": "FYZ25 · RS B/2 · Centrum elektro I.",
       "kind": "procedure",
       "procedureType": "Čtyřkomorová lázeň"
     },
@@ -997,7 +997,7 @@
       "start": "10:00",
       "end": "10:20",
       "title": "ILTV Imoove",
-      "location": "FYZ54 · RS C · 2. etáž · č. 7",
+      "location": "FYZ54 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "ILTV Imoove"
     },
@@ -1017,7 +1017,7 @@
       "start": "12:45",
       "end": "13:05",
       "title": "Motomed",
-      "location": "FYZ48 · RS C · 2. etáž · č. 7",
+      "location": "FYZ48 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "Motomed"
     },
@@ -1047,7 +1047,7 @@
       "start": "08:00",
       "end": "08:20",
       "title": "Elektrický chodník",
-      "location": "FYZ29 · RS C · 2. etáž · č. 8",
+      "location": "FYZ29 · RS C/2 · č.8",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -1057,7 +1057,7 @@
       "start": "08:45",
       "end": "09:05",
       "title": "Celotělová vířivá koupel",
-      "location": "LAZ7 · RS D · 2. etáž · Svět vitality",
+      "location": "LAZ7 · RS D/2 · Svět vitality",
       "kind": "procedure",
       "procedureType": "Celotělová vířivá koupel"
     },
@@ -1127,7 +1127,7 @@
       "start": "07:30",
       "end": "07:50",
       "title": "Parafango-obklad",
-      "location": "LAZ4 · RS C · 2. etáž · č. 11",
+      "location": "LAZ4 · RS C/2 · č.11",
       "kind": "procedure",
       "procedureType": "Parafango-obklad"
     },
@@ -1137,7 +1137,7 @@
       "start": "08:30",
       "end": "08:50",
       "title": "Perličková koupel+zábal",
-      "location": "LAZ11 · RS A · 4. etáž",
+      "location": "LAZ11 · RS A/4",
       "kind": "procedure",
       "procedureType": "Perličková koupel+zábal"
     },
@@ -1147,7 +1147,7 @@
       "start": "10:15",
       "end": "10:35",
       "title": "Motomed",
-      "location": "FYZ48 · RS C · 2. etáž · č. 7",
+      "location": "FYZ48 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "Motomed"
     },
@@ -1167,7 +1167,7 @@
       "start": "12:30",
       "end": "12:50",
       "title": "ILTV Imoove",
-      "location": "FYZ54 · RS C · 2. etáž · č. 7",
+      "location": "FYZ54 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "ILTV Imoove"
     },
@@ -1197,7 +1197,7 @@
       "start": "08:00",
       "end": "08:20",
       "title": "Individuální LTV",
-      "location": "FYZ7 · RS A · 2. etáž · tělocvična č. 224",
+      "location": "FYZ7 · RS A/2 · tělocv.224",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -1207,7 +1207,7 @@
       "start": "09:30",
       "end": "09:50",
       "title": "ILTV ergoterapie",
-      "location": "FYZ30 · RS A · 2. etáž · č. 232",
+      "location": "FYZ30 · RS A/2 · č.232",
       "kind": "procedure",
       "procedureType": "ILTV ergoterapie"
     },
@@ -1217,7 +1217,7 @@
       "start": "10:15",
       "end": "10:35",
       "title": "Čtyřkomorová lázeň",
-      "location": "FYZ25 · RS B · 2. etáž · Centrum elektroléčby I.",
+      "location": "FYZ25 · RS B/2 · Centrum elektro I.",
       "kind": "procedure",
       "procedureType": "Čtyřkomorová lázeň"
     },
@@ -1237,7 +1237,7 @@
       "start": "12:30",
       "end": "12:50",
       "title": "Elektrický chodník",
-      "location": "FYZ29 · RS C · 2. etáž · č. 8",
+      "location": "FYZ29 · RS C/2 · č.8",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -1267,7 +1267,7 @@
       "start": "08:15",
       "end": "08:35",
       "title": "Motomed",
-      "location": "FYZ48 · RS C · 2. etáž · č. 7",
+      "location": "FYZ48 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "Motomed"
     },
@@ -1277,7 +1277,7 @@
       "start": "09:15",
       "end": "09:35",
       "title": "Celotělová vířivá koupel",
-      "location": "LAZ7 · RS D · 2. etáž · Svět vitality",
+      "location": "LAZ7 · RS D/2 · Svět vitality",
       "kind": "procedure",
       "procedureType": "Celotělová vířivá koupel"
     },
@@ -1287,7 +1287,7 @@
       "start": "10:30",
       "end": "10:50",
       "title": "Parafango-obklad",
-      "location": "LAZ4 · RS C · 2. etáž · č. 11",
+      "location": "LAZ4 · RS C/2 · č.11",
       "kind": "procedure",
       "procedureType": "Parafango-obklad"
     },
@@ -1307,7 +1307,7 @@
       "start": "12:00",
       "end": "12:20",
       "title": "Vířivá koupel HKK",
-      "location": "LAZ1 · RS C · 1. etáž · vodoléčebný sál",
+      "location": "LAZ1 · RS C/1 · vodoléčba",
       "kind": "procedure",
       "procedureType": "Vířivá koupel HKK"
     },
@@ -1337,7 +1337,7 @@
       "start": "08:00",
       "end": "08:20",
       "title": "ILTV Imoove",
-      "location": "FYZ54 · RS C · 2. etáž · č. 7",
+      "location": "FYZ54 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "ILTV Imoove"
     },
@@ -1347,7 +1347,7 @@
       "start": "09:15",
       "end": "09:35",
       "title": "Vodní CO2 koupel+zábal",
-      "location": "LAZ11 · RS A · 4. etáž",
+      "location": "LAZ11 · RS A/4",
       "kind": "procedure",
       "procedureType": "Vodní CO2 koupel+zábal"
     },
@@ -1357,7 +1357,7 @@
       "start": "10:15",
       "end": "10:35",
       "title": "Motomed",
-      "location": "FYZ48 · RS C · 2. etáž · č. 7",
+      "location": "FYZ48 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "Motomed"
     },
@@ -1377,7 +1377,7 @@
       "start": "12:30",
       "end": "12:50",
       "title": "Klasická masáž",
-      "location": "MAS21 · RS A · 4. etáž · masérna č. 1",
+      "location": "MAS21 · RS A/4 · masérna 1",
       "kind": "procedure",
       "procedureType": "Klasická masáž"
     },
@@ -1407,7 +1407,7 @@
       "start": "08:15",
       "end": "08:35",
       "title": "Celotělová vířivá koupel",
-      "location": "LAZ7 · RS D · 2. etáž · Svět vitality",
+      "location": "LAZ7 · RS D/2 · Svět vitality",
       "kind": "procedure",
       "procedureType": "Celotělová vířivá koupel"
     },
@@ -1417,7 +1417,7 @@
       "start": "09:15",
       "end": "09:35",
       "title": "Čtyřkomorová lázeň",
-      "location": "FYZ25 · RS B · 2. etáž · Centrum elektroléčby I.",
+      "location": "FYZ25 · RS B/2 · Centrum elektro I.",
       "kind": "procedure",
       "procedureType": "Čtyřkomorová lázeň"
     },
@@ -1427,7 +1427,7 @@
       "start": "10:30",
       "end": "10:50",
       "title": "Individuální LTV",
-      "location": "FYZ7 · RS A · 2. etáž · tělocvična č. 224",
+      "location": "FYZ7 · RS A/2 · tělocv.224",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -1447,7 +1447,7 @@
       "start": "12:30",
       "end": "12:50",
       "title": "Elektrický chodník",
-      "location": "FYZ29 · RS C · 2. etáž · č. 8",
+      "location": "FYZ29 · RS C/2 · č.8",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -1477,7 +1477,7 @@
       "start": "08:00",
       "end": "08:20",
       "title": "Elektrický chodník",
-      "location": "FYZ29 · RS C · 2. etáž · č. 8",
+      "location": "FYZ29 · RS C/2 · č.8",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -1547,7 +1547,7 @@
       "start": "07:45",
       "end": "08:05",
       "title": "Čtyřkomorová lázeň",
-      "location": "FYZ25 · RS B · 2. etáž · Centrum elektroléčby I.",
+      "location": "FYZ25 · RS B/2 · Centrum elektro I.",
       "kind": "procedure",
       "procedureType": "Čtyřkomorová lázeň"
     },
@@ -1557,7 +1557,7 @@
       "start": "08:30",
       "end": "08:50",
       "title": "Individuální LTV",
-      "location": "FYZ7 · RS A · 2. etáž · tělocvična č. 224",
+      "location": "FYZ7 · RS A/2 · tělocv.224",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -1567,7 +1567,7 @@
       "start": "09:30",
       "end": "09:50",
       "title": "Elektrický chodník",
-      "location": "FYZ29 · RS C · 2. etáž · č. 8",
+      "location": "FYZ29 · RS C/2 · č.8",
       "kind": "procedure",
       "procedureType": "Individuální LTV"
     },
@@ -1587,7 +1587,7 @@
       "start": "12:15",
       "end": "12:35",
       "title": "Motomed",
-      "location": "FYZ48 · RS C · 2. etáž · č. 7",
+      "location": "FYZ48 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "Motomed"
     },
@@ -1617,7 +1617,7 @@
       "start": "07:30",
       "end": "07:50",
       "title": "ILTV Imoove",
-      "location": "FYZ54 · RS C · 2. etáž · č. 7",
+      "location": "FYZ54 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "ILTV Imoove"
     },
@@ -1627,7 +1627,7 @@
       "start": "08:45",
       "end": "09:05",
       "title": "Celotělová vířivá koupel",
-      "location": "LAZ7 · RS D · 2. etáž · Svět vitality",
+      "location": "LAZ7 · RS D/2 · Svět vitality",
       "kind": "procedure",
       "procedureType": "Celotělová vířivá koupel"
     },
@@ -1637,7 +1637,7 @@
       "start": "10:15",
       "end": "10:35",
       "title": "Motomed",
-      "location": "FYZ48 · RS C · 2. etáž · č. 7",
+      "location": "FYZ48 · RS C/2 · č.7",
       "kind": "procedure",
       "procedureType": "Motomed"
     },
@@ -1657,7 +1657,7 @@
       "start": "12:00",
       "end": "12:20",
       "title": "Parafango-obklad",
-      "location": "LAZ4 · RS C · 2. etáž · č. 11",
+      "location": "LAZ4 · RS C/2 · č.11",
       "kind": "procedure",
       "procedureType": "Parafango-obklad"
     },
