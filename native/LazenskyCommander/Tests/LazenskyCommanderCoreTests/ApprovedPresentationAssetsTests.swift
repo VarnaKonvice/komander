@@ -3,15 +3,15 @@ import Testing
 @testable import LazenskyCommanderCore
 
 @Test(arguments: [
-  ("Magnetoterapie", "electro_therapy", "#D6B4FE"),
-  ("Individuální rehabilitace", "individual_rehab", "#2EE6C4"),
-  ("Jodobromová koupel", "iodobrom", "#FFC857"),
-  ("Čtyřkomorová lázeň", "electro_therapy", "#D6B4FE"),
+  ("Magnetoterapie", "electro_therapy", "#6D5BD0"),
+  ("Individuální rehabilitace", "individual_rehab", "#22A06B"),
+  ("Jodobromová koupel", "iodobrom", "#B27A2C"),
+  ("Čtyřkomorová lázeň", "electro_therapy", "#6D5BD0"),
   ("Snídaně", "meal_breakfast", "#50B863"),
   ("Oběd", "meal_lunch", "#50B863"),
   ("Večeře", "meal_dinner", "#50B863"),
-  ("Hydrojet", "hydrojet", "#FF7A59"),
-  ("iMoove", "imoove", "#2EE6C4")
+  ("Hydrojet", "hydrojet", "#0EA5E9"),
+  ("iMoove", "imoove", "#149B91")
 ])
 func approvedPresentationUsesApprovedCategoryColor(
   title: String,

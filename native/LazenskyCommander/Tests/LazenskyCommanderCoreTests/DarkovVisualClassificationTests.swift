@@ -3,20 +3,20 @@ import Testing
 @testable import LazenskyCommanderCore
 
 @Test(arguments: [
-  ("Elektrický chodník", "individual_rehab", "#2EE6C4"),
-  ("Motomed", "individual_rehab", "#2EE6C4"),
-  ("Individuální LTV", "individual_rehab", "#2EE6C4"),
-  ("ILTV ergoterapie", "individual_rehab", "#2EE6C4"),
-  ("ILTV Imoove", "imoove", "#2EE6C4"),
-  ("Perličková koupel+zábal", "whirlpool", "#2ED4FF"),
-  ("Vodní CO2 koupel+zábal", "whirlpool", "#2ED4FF"),
-  ("CO2 koupel+zábal", "whirlpool", "#2ED4FF"),
-  ("Vířivá koupel HKK", "whirlpool", "#2ED4FF"),
-  ("Celotělová vířivá koupel", "whirlpool", "#2ED4FF"),
-  ("Čtyřkomorová lázeň", "electro_therapy", "#D6B4FE"),
-  ("Parafango-obklad", "peat_wrap", "#FFC857"),
-  ("Klasická masáž", "massage", "#FF7A59"),
-  ("Zábal", "peat_wrap", "#FFC857")
+  ("Elektrický chodník", "individual_rehab", "#22A06B"),
+  ("Motomed", "individual_rehab", "#22A06B"),
+  ("Individuální LTV", "individual_rehab", "#22A06B"),
+  ("ILTV ergoterapie", "individual_rehab", "#22A06B"),
+  ("ILTV Imoove", "imoove", "#149B91"),
+  ("Perličková koupel+zábal", "whirlpool", "#38BDF8"),
+  ("Vodní CO2 koupel+zábal", "whirlpool", "#38BDF8"),
+  ("CO2 koupel+zábal", "whirlpool", "#38BDF8"),
+  ("Vířivá koupel HKK", "whirlpool", "#38BDF8"),
+  ("Celotělová vířivá koupel", "whirlpool", "#38BDF8"),
+  ("Čtyřkomorová lázeň", "electro_therapy", "#6D5BD0"),
+  ("Parafango-obklad", "peat_wrap", "#5B3A29"),
+  ("Klasická masáž", "massage", "#65A30D"),
+  ("Zábal", "peat_wrap", "#5B3A29")
 ])
 func darkovVisualClassificationPreservesProcedureMeaning(
   title: String, expectedKey: String, expectedAccent: String

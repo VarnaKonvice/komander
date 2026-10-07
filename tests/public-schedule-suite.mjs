@@ -46,7 +46,8 @@ export async function runPublicScheduleSuite(options) {
   const root = options.repoRoot;
   const calendarSource = await fs.readFile(path.join(root, 'calendar-contract.js'), 'utf8');
   const source = await fs.readFile(path.join(root, 'public-schedule-feed.js'), 'utf8');
-  const productionSchedule = JSON.parse(await fs.readFile(path.join(root, 'data/schedule.json'), 'utf8'));
+  const publishedSchedule = JSON.parse(await fs.readFile(path.join(root, 'data/schedule.json'), 'utf8'));
+  const productionSchedule = JSON.parse(await fs.readFile(path.join(root, 'tests/fixtures/canonical-schedule-v4.json'), 'utf8'));
   const nativeAlarmFixtures = JSON.parse(await fs.readFile(path.join(root, 'tests/fixtures/native-alarm-reconciliation-v1.json'), 'utf8'));
   const iconMap = JSON.parse(await fs.readFile(path.join(root, 'assets/icons/lazensky-v1/icon-map.json'), 'utf8'));
   const iconColors = JSON.parse(await fs.readFile(path.join(root, 'assets/icons/lazensky-v1/colors.json'), 'utf8'));
@@ -62,10 +63,10 @@ export async function runPublicScheduleSuite(options) {
   const runtime = createRuntime(calendarSource, source, shared);
 
   await test('public feed: production schedule validates', async function() {
-    runtime.api.validateSchedule(runtime.api.normalizeSchedule(productionSchedule));
-    assert(productionSchedule.scheduleVersion === 4, 'Unexpected production scheduleVersion');
-    assert(productionSchedule.events.some(function(event) { return event.kind === 'meal'; }), 'Meals are missing');
-    assert(productionSchedule.events.some(function(event) { return event.kind === 'procedure'; }), 'Procedures are missing');
+    runtime.api.validateSchedule(runtime.api.normalizeSchedule(publishedSchedule));
+    assert(Number.isInteger(publishedSchedule.scheduleVersion) && publishedSchedule.scheduleVersion > 0, 'Published scheduleVersion must be positive');
+    assert(publishedSchedule.events.some(function(event) { return event.kind === 'meal'; }), 'Meals are missing');
+    assert(publishedSchedule.events.some(function(event) { return event.kind === 'procedure'; }), 'Procedures are missing');
   });
   await test('visual contract: all approved categories and specialized precedence classify consistently', async function() {
     const mappings = [
@@ -88,6 +89,10 @@ export async function runPublicScheduleSuite(options) {
     iconMap.icons.forEach(function(icon) {
       const colorKey = icon.key.startsWith('meal_') ? 'meal' : icon.key;
       assert(icon.accent === iconColors.procedures[colorKey], icon.key+' accent differs from colors.json');
+    });
+    iconMap.icons.filter(function(icon) { return icon.key.startsWith('meal_'); }).forEach(function(icon) {
+      assert(icon.accent === '#50B863', icon.key+' is not Commander meal green');
+      assert(icon.googleCalendarColorId === '10', icon.key+' is not mapped to Google green');
     });
   });
   await test('visual contract: unknown procedures preserve a neutral no-category fallback', async function() {
