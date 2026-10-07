@@ -267,6 +267,9 @@ public struct AlarmSyncService: Sendable {
     // unchanged canonical event until it is stopped or the event has ended.
     do {
       let alerting = try await adapter.existingPlatformAlertingAlarmIDs()
+      // A crash after platform scheduling may leave no managed record. Foreground
+      // reconciliation must not silently stop such an already ringing owned alarm.
+      protectedAlertingIDs.formUnion(alerting.subtracting(Set(state.records.values.map(\.platformAlarmID))))
       let canonical = Dictionary(uniqueKeysWithValues: payload.alarms.map { ($0.stableId, $0) })
       for record in state.records.values where alerting.contains(record.platformAlarmID) {
         if canonical[record.stableId] == record.alarm,
@@ -571,7 +574,7 @@ public struct AlarmSyncService: Sendable {
     let timingIDs = expectedIDs.subtracting(protectedAlertingIDs)
     let timings = try await adapter.existingPlatformTimingObservations(for: timingIDs)
     let invalid = try invalidStableIDs(in: state, platformIDs: platformIDs, timingObservations: timings, timingIDs: timingIDs)
-    let orphanIDs = platformIDs.subtracting(expectedIDs)
+    let orphanIDs = platformIDs.subtracting(expectedIDs).subtracting(protectedAlertingIDs)
     return (platformIDs, invalid, orphanIDs)
   }
 

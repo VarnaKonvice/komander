@@ -6,10 +6,7 @@ struct WatchCommanderView: View {
 
   var body: some View {
     TimelineView(.periodic(from: .now, by: 1)) { context in
-      let liveState = CommanderLiveStateCalculator.compute(
-        schedule: WatchScheduleExpiryPolicy.activeSchedule(model.schedule, at: context.date),
-        now: context.date, overrides: model.leadTimeOverrides
-      )
+      let liveState = model.currentState(at: context.date)
       WatchCommanderStateView(liveState: liveState, model: model)
     }
   }

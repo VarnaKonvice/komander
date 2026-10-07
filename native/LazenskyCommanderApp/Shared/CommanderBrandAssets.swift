@@ -96,17 +96,9 @@ enum CommanderBrandAssets {
     static func procedureFamily(iconKey: String?, title: String, isMeal: Bool) -> ProcedureFamily {
         if isMeal || iconKey?.hasPrefix("meal_") == true { return .meal }
 
-        switch CommanderProcedureCategory.classify(title) {
-        case .rehabilitation: return .rehabilitation
-        case .electro: return .electro
-        case .water: return .water
-        case .massage: return .massage
-        case .heatWrap: return .heatWrap
-        case .other:
-            break
-        }
-
-        switch iconKey {
+        // The visual map ranks specific procedures above generic words such as
+        // "zábal". Keep this separate from categories used by departure settings.
+        switch iconMap?.classify(title: title)?.key ?? iconKey {
         case "iodobrom", "peat_wrap":
             return .heatWrap
         case "electro_therapy":
@@ -118,7 +110,16 @@ enum CommanderBrandAssets {
         case "individual_rehab", "imoove":
             return .rehabilitation
         default:
-            return .fallback
+            break
+        }
+
+        switch CommanderProcedureCategory.classify(title) {
+        case .rehabilitation: return .rehabilitation
+        case .electro: return .electro
+        case .water: return .water
+        case .massage: return .massage
+        case .heatWrap: return .heatWrap
+        case .other: return .fallback
         }
     }
 
@@ -272,13 +273,12 @@ struct CommanderSystemCountdown: View {
   let target: Date
 
   var body: some View {
-    // Use SwiftUI's widget-safe timer primitive. A zero-length interval is
-    // intentional once the target is in the past, so the system never has to
-    // archive an invalid/reversed timer range.
-    let lowerBound = min(Date.now, target)
+    // Keep both bounds absolute. The system-hosted renderer advances this timer
+    // without waking the app. Do not provide pauseTime: a future pause date
+    // physically froze the value captured when the Live Activity was archived.
+    let lowerBound = target.addingTimeInterval(-24 * 60 * 60)
     Text(
       timerInterval: lowerBound...target,
-      pauseTime: target,
       countsDown: true,
       showsHours: true
     )

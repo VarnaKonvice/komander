@@ -84,9 +84,8 @@ public enum CommanderLiveActivityTimeline {
 
     let primary = ordered[primaryIndex]
     let phase: CommanderLiveActivityTimelinePhase
-    if isStale {
-      phase = .ended
-    } else if date < primary.startAt {
+    // ActivityKit freshness is not evidence that the scheduled event ended.
+    if date < primary.startAt {
       phase = .upcoming
     } else if date < primary.endAt {
       phase = .active

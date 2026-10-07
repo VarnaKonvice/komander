@@ -132,7 +132,7 @@ private struct CommanderProcedureIslandCenter: View {
       .font(.system(size: 13, weight: .bold))
       .foregroundStyle(CommanderActivityTokens.procedureStateAccent(
         mode: display.presentationMode,
-        isStale: display.isStale,
+        isStale: display.isFinished || display.isScheduleFallback,
         eventAccent: eventAccent
       ))
       .lineLimit(1)
@@ -157,7 +157,7 @@ private struct CommanderProcedureIslandTiming: View {
     )
     let stateAccent = CommanderActivityTokens.procedureStateAccent(
       mode: display.presentationMode,
-      isStale: display.isStale,
+      isStale: display.isFinished || display.isScheduleFallback,
       eventAccent: eventAccent
     )
     CommanderProcedurePhaseTiming(
@@ -184,7 +184,7 @@ private struct CommanderProcedureIslandReference: View {
     )
     let accent = CommanderActivityTokens.procedureStateAccent(
       mode: display.presentationMode,
-      isStale: display.isStale,
+      isStale: display.isFinished || display.isScheduleFallback,
       eventAccent: eventAccent
     )
 
@@ -193,7 +193,7 @@ private struct CommanderProcedureIslandReference: View {
         .font(.system(size: 16, weight: .semibold))
         .foregroundStyle(accent)
 
-      if !display.isStale {
+      if !display.isFinished {
         Text(display.timeLabel)
           .font(.system(size: 8, weight: .semibold))
           .foregroundStyle(CommanderActivityTokens.textSecondary)
@@ -223,7 +223,7 @@ private struct CommanderProcedureIslandBottom: View {
     )
     let stateAccent = CommanderActivityTokens.procedureStateAccent(
       mode: display.presentationMode,
-      isStale: display.isStale,
+      isStale: display.isFinished || display.isScheduleFallback,
       eventAccent: eventAccent
     )
 
@@ -294,7 +294,7 @@ private struct CommanderProcedureWatchLiveActivityView: View {
       location: display.location,
       stateAccent: CommanderActivityTokens.procedureStateAccent(
         mode: display.presentationMode,
-        isStale: display.isStale,
+        isStale: display.isFinished || display.isScheduleFallback,
         eventAccent: eventAccent
       )
     ) {
@@ -333,11 +333,7 @@ private struct CommanderSmartStackCard<Clock: View>: View {
               .font(.system(size: roomy ? 18 : 12.5, weight: .semibold))
               .foregroundStyle(stateAccent)
 
-            Text(display.isStale ? "Skončilo" : (
-              display.presentationMode == .departureCountdown ? "Vyrazit za" :
-              display.presentationMode == .startCountdown ? "Vyrazit teď" :
-              display.countdownLabel
-            ))
+            Text(display.status)
               .font(.system(size: roomy ? 10 : 7.5, weight: .bold))
               .foregroundStyle(stateAccent)
               .lineLimit(1)
@@ -422,10 +418,12 @@ private struct CommanderPresentationClock: View {
   let display: CommanderProcedureDisplay
 
   @ViewBuilder var body: some View {
-    if display.isStale {
+    if display.isFinished {
       Text("Skončilo")
+    } else if let target = display.countdownTarget {
+      CommanderClampedCountdown(target: target)
     } else {
-      CommanderClampedCountdown(target: display.countdownTarget)
+      Text(display.timeValue)
     }
   }
 }
@@ -451,7 +449,7 @@ private struct CommanderProcedureLockScreenView: View {
     )
     let stateAccent = CommanderActivityTokens.procedureStateAccent(
       mode: display.presentationMode,
-      isStale: display.isStale,
+      isStale: display.isFinished || display.isScheduleFallback,
       eventAccent: eventAccent
     )
 
@@ -484,13 +482,13 @@ private struct CommanderProcedureDisplayHero: View {
           .lineLimit(1)
           .minimumScaleFactor(0.76)
 
-        if display.isStale {
+        if display.isFinished {
           Text("Skončilo")
             .font(.system(size: 38, weight: .heavy, design: .rounded))
             .foregroundStyle(CommanderActivityTokens.textPrimary)
             .lineLimit(1)
         } else {
-          CommanderClampedCountdown(target: display.countdownTarget)
+          CommanderPresentationClock(display: display)
             .font(.system(size: CommanderActivityTokens.heroTimeSize, weight: .heavy, design: .rounded).monospacedDigit())
             .foregroundStyle(accent)
             .lineLimit(1)
@@ -524,7 +522,7 @@ private struct CommanderProcedureDisplaySideStatus: View {
   let accent: Color
 
   var body: some View {
-    if display.isStale {
+    if display.isFinished {
       VStack(spacing: 2) {
         Image(systemName: "checkmark.circle.fill")
           .font(.system(size: 24, weight: .semibold))
@@ -535,7 +533,7 @@ private struct CommanderProcedureDisplaySideStatus: View {
       }
     } else {
       VStack(spacing: 2) {
-        Image(systemName: display.presentationMode == .eventContext ? "clock.badge" : "figure.walk")
+        Image(systemName: display.timing.symbol)
           .font(.system(size: 24, weight: .semibold))
           .foregroundStyle(accent)
         Text(display.timeLabel)
@@ -767,21 +765,17 @@ private extension CommanderActivityPresentation {
     let events = state.events.isEmpty
       ? [seed, attributes.nextEvent].compactMap { $0 }
       : state.events
-    let latestEndAt = events.compactMap {
-      try? NativeAlarmContract.date(fromLocalISO: $0.endAt)
-    }.max() ?? attributes.endAt
-
-    // ActivityKit isStale means that the content is out of date; it does not
-    // mean that the spa event has ended. Render "Skončilo" only after the
-    // final event end has actually passed as well.
-    let eventBlockEnded = isStale && Date.now >= latestEndAt
-
+    // PLATFORM LIMIT: a stale signal does not supply a second future boundary.
+    // Evaluate terminal safety now, but never archive "Právě probíhá" from an
+    // already-stale start snapshot: it could survive endAt without another update.
     return resolve(
       seed: seed,
       events: events,
       focusStableId: state.focusStableId ?? attributes.stableId,
       presentationMode: state.presentationMode,
-      isStale: eventBlockEnded
+      isStale: isStale,
+      at: Date(),
+      renderingPolicy: .suspendedActivity
     )
   }
 }
@@ -789,31 +783,8 @@ private extension CommanderActivityPresentation {
 private struct CommanderProcedureStatusText: View {
   let display: CommanderProcedureDisplay
 
-  @ViewBuilder
   var body: some View {
-    if display.isStale {
-      Text("Skončilo")
-    } else {
-      switch display.presentationMode {
-      case .departureCountdown:
-        Text("Vyrazit za")
-      case .startCountdown:
-        Text("Vyrazit teď")
-      case .eventContext:
-        HStack(spacing: 3) {
-          Text("Start")
-          Text(
-            .currentDate,
-            format: .reference(
-              to: display.startAt,
-              allowedFields: [.minute, .second],
-              maxFieldCount: 1,
-              thresholdField: .second
-            )
-          )
-        }
-      }
-    }
+    Text(display.status)
   }
 }
 
@@ -824,12 +795,16 @@ private struct CommanderProcedurePhaseTiming: View {
 
   var body: some View {
     Group {
-      if display.isStale {
+      if display.isFinished {
         Image(systemName: "checkmark.circle.fill")
           .font(size == .large ? .title2 : .headline)
           .foregroundStyle(accent)
+      } else if let target = display.countdownTarget {
+        countdown(to: target, label: display.countdownLabel)
       } else {
-        countdown(to: display.countdownTarget, label: display.countdownLabel)
+        Image(systemName: "clock")
+          .foregroundStyle(accent)
+          .accessibilityLabel("Časový plán " + display.timeValue)
       }
     }
     .frame(width: timingWidth, alignment: .trailing)
@@ -855,7 +830,7 @@ private struct CommanderProcedurePhaseTiming: View {
   }
 
   private var timingWidth: CGFloat? {
-    guard !display.isStale else { return nil }
+    guard display.countdownTarget != nil else { return nil }
     return size == .compact ? 54 : (size == .minimal ? 36 : nil)
   }
 

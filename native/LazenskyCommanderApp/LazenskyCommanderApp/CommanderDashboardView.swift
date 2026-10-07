@@ -52,7 +52,7 @@ struct CommanderDashboardView: View {
   @ObservedObject var model: CommanderViewModel
 
   var body: some View {
-    TimelineView(.periodic(from: .now, by: 1)) { context in
+    TimelineView(.periodic(from: .now, by: 5)) { context in
       CommanderDashboardContent(
         schedule: model.latestSchedule,
         overrides: model.leadTimeOverrides,
@@ -149,10 +149,6 @@ private struct CommanderNowDeck: View {
     }
   }
 
-  private func isSingleWordTitle(_ title: String) -> Bool {
-    !title.contains { $0.isWhitespace }
-  }
-
   private var deckTitle: String {
     if item == nil, presentation.nextProcedure != nil,
        presentation.mode == .dayDone || presentation.mode == .noSchedule {
@@ -187,172 +183,68 @@ private struct CommanderNowDeck: View {
 
   @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-  @ViewBuilder
   private func primaryTile(_ item: CommanderDashboardEvent) -> some View {
-    if dynamicTypeSize.isAccessibilitySize {
-      VStack(alignment: .leading, spacing: 12) {
-        primaryIdentity(item)
-        countdownRing(item)
-          .frame(width: 108, height: 108)
-          .frame(maxWidth: .infinity, alignment: .trailing)
-      }
-      .padding(10)
-      .frame(maxWidth: .infinity, minHeight: 132, alignment: .leading)
-      .commanderCard(accent: accent, surface: .depthInset)
-      .accessibilityValue("\(stateTitle). \(primaryTimeLine(item))")
-    } else {
-      ZStack(alignment: .trailing) {
-        countdownRing(item)
-          .frame(width: 132, height: 132)
-          .fixedSize()
-          .offset(x: 12)
-          .zIndex(0)
-
-        layeredPrimaryIdentity(item)
-          .zIndex(1)
-      }
-      .padding(.horizontal, 12)
-      .padding(.vertical, 12)
-      .frame(maxWidth: .infinity, minHeight: 174, alignment: .leading)
-      .commanderCard(accent: accent, surface: .depthInset)
-      .accessibilityValue("\(stateTitle). \(primaryTimeLine(item))")
+    featuredTile(
+      item, label: stateTitle,
+      time: "\(item.startAt.formatted(CommanderScheduleDateStyle.clock)) – \(item.endAt.formatted(CommanderScheduleDateStyle.clock))"
+    ) {
+      countdownRing(item)
     }
+    .accessibilityValue("\(stateTitle). \(primaryTimeLine(item))")
   }
 
-  private func layeredPrimaryIdentity(_ item: CommanderDashboardEvent) -> some View {
-    VStack(alignment: .leading, spacing: 9) {
-      HStack(alignment: .center, spacing: 11) {
-        CommanderSymbolBadge(
-          symbol: CommanderEventAppearance.symbol(for: item.event),
-          color: accent,
-          size: 68
-        )
+  private func featuredTile<Ring: View>(
+    _ item: CommanderDashboardEvent, label: String, time: String,
+    @ViewBuilder ring: () -> Ring
+  ) -> some View {
+    let eventAccent = CommanderEventAppearance.accent(for: item.event)
+    let headerLayout = dynamicTypeSize.isAccessibilitySize
+      ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+      : AnyLayout(HStackLayout(alignment: .center, spacing: 12))
 
-        VStack(alignment: .leading, spacing: 5) {
-          Text(stateTitle)
-            .font(.system(size: 15, weight: .bold))
+    return VStack(alignment: .leading, spacing: 12) {
+      headerLayout {
+        VStack(alignment: .leading, spacing: 8) {
+          HStack(spacing: 8) {
+            CommanderSymbolBadge(
+              symbol: CommanderEventAppearance.symbol(for: item.event),
+              color: eventAccent, size: 52
+            )
+            Text(label)
+              .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 20 : 15, weight: .bold))
+              .foregroundStyle(.white)
+              .fixedSize(horizontal: false, vertical: true)
+          }
+          Text(time)
+            .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 22 : 17, weight: .bold))
+            .monospacedDigit()
             .foregroundStyle(.white)
-            .lineLimit(1)
-            .minimumScaleFactor(0.82)
-
-          layeredPrimaryTime(
-            "\(item.startAt.formatted(CommanderScheduleDateStyle.clock)) – \(item.endAt.formatted(CommanderScheduleDateStyle.clock))"
-          )
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-      }
-      .padding(.trailing, 108)
-
-      layeredPrimaryTitle(item.event.title, color: accent)
-        .layoutPriority(3)
-        .zIndex(3)
-
-      if !item.event.location.isEmpty {
-        Label(item.event.location, systemImage: "mappin.circle.fill")
-          .font(.system(size: 18, weight: .semibold))
-          .foregroundStyle(CommanderDesignTokens.Colors.eventSupportingText)
-          .lineLimit(1)
-          .minimumScaleFactor(0.85)
-          .padding(.trailing, 104)
-      }
-    }
-    .frame(maxWidth: .infinity, alignment: .leading)
-  }
-
-  private func layeredPrimaryTitle(_ title: String, color: Color) -> some View {
-    ZStack(alignment: .leading) {
-      Text(title)
-        .font(.system(size: 31, weight: .heavy))
-        .foregroundStyle(color)
-        .allowsTightening(true)
-        .lineLimit(2)
-        .minimumScaleFactor(0.70)
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity, alignment: .leading)
-
-      Text(title)
-        .font(.system(size: 31, weight: .heavy))
-        .foregroundStyle(color)
-        .allowsTightening(true)
-        .lineLimit(2)
-        .minimumScaleFactor(0.70)
-        .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .shadow(color: Color.black.opacity(0.92), radius: 5.5, x: 2, y: 2)
-        .shadow(color: CommanderDesignTokens.Colors.backgroundDeep.opacity(0.84), radius: 2.5, x: 0, y: 1)
-        .mask(alignment: .trailing) {
-          LinearGradient(
-            colors: [.clear, .white.opacity(0.72), .white],
-            startPoint: .leading,
-            endPoint: .trailing
-          )
-          .frame(width: 128)
-        }
-    }
-    .padding(.trailing, 18)
-  }
-
-  private func layeredPrimaryTime(_ text: String) -> some View {
-    ZStack(alignment: .leading) {
-      Text(text)
-        .font(.system(size: 19, weight: .bold))
-        .monospacedDigit()
-        .foregroundStyle(.white)
-        .lineLimit(1)
-        .minimumScaleFactor(0.76)
-        .frame(maxWidth: .infinity, alignment: .leading)
-
-      Text(text)
-        .font(.system(size: 19, weight: .bold))
-        .monospacedDigit()
-        .foregroundStyle(.white)
-        .lineLimit(1)
-        .minimumScaleFactor(0.76)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .shadow(color: Color.black.opacity(0.78), radius: 3.5, x: 1.5, y: 1.5)
-        .mask(alignment: .trailing) {
-          LinearGradient(
-            colors: [.clear, .white.opacity(0.65), .white],
-            startPoint: .leading,
-            endPoint: .trailing
-          )
-          .frame(width: 76)
-        }
-    }
-  }
-
-  private func primaryIdentity(_ item: CommanderDashboardEvent) -> some View {
-    HStack(alignment: .center, spacing: 8) {
-      CommanderSymbolBadge(
-        symbol: CommanderEventAppearance.symbol(for: item.event), color: accent, size: CommanderDesignTokens.Size.featuredBadge
-      )
-      VStack(alignment: .leading, spacing: 3) {
-        Text(stateTitle)
-          .font(.system(size: 14, weight: .bold))
-          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-          .lineLimit(1)
-        Text("\(item.startAt.formatted(CommanderScheduleDateStyle.clock)) – \(item.endAt.formatted(CommanderScheduleDateStyle.clock))")
-          .font(.system(size: 17, weight: .semibold))
-          .monospacedDigit()
-          .foregroundStyle(.white)
-          .lineLimit(1)
-          .minimumScaleFactor(0.85)
-        Text(item.event.title)
-          .commanderFont(.liveTitle)
-          .foregroundStyle(accent)
-          .allowsTightening(true)
-          .lineLimit(isSingleWordTitle(item.event.title) ? 1 : 2)
-          .minimumScaleFactor(isSingleWordTitle(item.event.title) ? 0.78 : 1)
-          .fixedSize(horizontal: false, vertical: true)
-          .layoutPriority(1)
-        if !item.event.location.isEmpty {
-          Label(item.event.location, systemImage: "mappin.circle.fill")
-            .font(.system(size: 17, weight: .semibold))
-            .foregroundStyle(CommanderDesignTokens.Colors.eventSupportingText)
             .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+
+        ring()
+          .frame(width: 132, height: 132)
+          .fixedSize()
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
+
+      // Text owns its full-width row below the ring, so neither can overlap.
+      eventDetails(item, accent: eventAccent, titleSize: 31)
+    }
+    .padding(12)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .commanderCard(accent: eventAccent, surface: .depthInset)
+  }
+
+  private func eventDetails(
+    _ item: CommanderDashboardEvent, accent: Color, titleSize: CGFloat
+  ) -> some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Text(item.event.title)
+        .font(.system(size: titleSize, weight: .bold))
+        .foregroundStyle(accent)
+        .fixedSize(horizontal: false, vertical: true)
+      CommanderEventLocation(location: item.event.location)
     }
     .frame(maxWidth: .infinity, alignment: .leading)
   }
@@ -378,103 +270,18 @@ private struct CommanderNowDeck: View {
     let totalWindow: TimeInterval = 12 * 60 * 60
     let remaining = max(0, min(totalWindow, target.timeIntervalSince(presentation.now)))
 
-    if dynamicTypeSize.isAccessibilitySize {
-      VStack(alignment: .leading, spacing: 12) {
-        HStack(spacing: 10) {
-          CommanderSymbolBadge(
-            symbol: CommanderEventAppearance.symbol(for: item.event),
-            color: nextAccent,
-            size: CommanderDesignTokens.Size.featuredBadge
-          )
-          VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-              .font(.system(size: 15, weight: .bold))
-              .foregroundStyle(Color.white.opacity(0.95))
-            Text(item.event.title)
-              .font(.system(size: 24, weight: .bold))
-              .foregroundStyle(nextAccent)
-              .lineLimit(2)
-            Label(
-              "Začátek \(item.startAt.formatted(CommanderScheduleDateStyle.clock))",
-              systemImage: "clock.fill"
-            )
-            .font(.system(size: 16, weight: .bold))
-            .monospacedDigit()
-          }
-        }
-
-        CommanderCountdownRing(
-          topLabel: item.leaveAt > presentation.now ? "Odchod" : "Začátek za",
-          valueText: value,
-          bottomLabel: nil,
-          progress: remaining / totalWindow,
-          accent: nextAccent,
-          plainTopLabel: true
-        )
-        .frame(width: 108, height: 108)
-        .frame(maxWidth: .infinity, alignment: .trailing)
-      }
-      .padding(12)
-      .frame(maxWidth: .infinity, minHeight: 150, alignment: .leading)
-      .commanderCard(accent: nextAccent, surface: .depthInset)
-    } else {
-      ZStack(alignment: .trailing) {
-        CommanderCountdownRing(
-          topLabel: item.leaveAt > presentation.now ? "Odchod" : "Začátek za",
-          valueText: value,
-          bottomLabel: nil,
-          progress: remaining / totalWindow,
-          accent: nextAccent,
-          plainTopLabel: true
-        )
-        .frame(width: 126, height: 126)
-        .fixedSize()
-        .padding(.trailing, 4)
-        .zIndex(0)
-
-        VStack(alignment: .leading, spacing: 7) {
-          HStack(alignment: .center, spacing: 11) {
-            CommanderSymbolBadge(
-              symbol: CommanderEventAppearance.symbol(for: item.event),
-              color: nextAccent,
-              size: 68
-            )
-
-            VStack(alignment: .leading, spacing: 5) {
-              Text(label)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.82)
-
-              layeredPrimaryTime(
-                "Začátek \(item.startAt.formatted(CommanderScheduleDateStyle.clock))"
-              )
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-          }
-          .padding(.trailing, 108)
-
-          layeredPrimaryTitle(item.event.title, color: nextAccent)
-            .layoutPriority(3)
-            .zIndex(3)
-
-          if !item.event.location.isEmpty {
-            Label(item.event.location, systemImage: "mappin.circle.fill")
-              .font(.system(size: 18, weight: .semibold))
-              .foregroundStyle(CommanderDesignTokens.Colors.eventSupportingText)
-              .lineLimit(1)
-              .minimumScaleFactor(0.85)
-              .padding(.trailing, 112)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .zIndex(1)
-      }
-      .padding(.horizontal, 12)
-      .padding(.vertical, 12)
-      .frame(maxWidth: .infinity, minHeight: 168, alignment: .leading)
-      .commanderCard(accent: nextAccent, surface: .depthInset)
+    featuredTile(
+      item, label: label,
+      time: "Začátek \(item.startAt.formatted(CommanderScheduleDateStyle.clock))"
+    ) {
+      CommanderCountdownRing(
+        topLabel: item.leaveAt > presentation.now ? "Odchod" : "Začátek za",
+        valueText: value,
+        bottomLabel: nil,
+        progress: remaining / totalWindow,
+        accent: nextAccent,
+        plainTopLabel: true
+      )
     }
   }
 
@@ -483,52 +290,32 @@ private struct CommanderNowDeck: View {
     let layout = dynamicTypeSize.isAccessibilitySize
       ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
       : AnyLayout(HStackLayout(alignment: .center, spacing: 10))
-    return layout {
-      HStack(spacing: 12) {
-        CommanderSymbolBadge(
-          symbol: CommanderEventAppearance.symbol(for: item.event),
-          color: nextAccent,
-          size: dynamicTypeSize.isAccessibilitySize ? 59 : 66
-        )
-        VStack(alignment: .leading, spacing: 5) {
+    return VStack(alignment: .leading, spacing: 12) {
+      layout {
+        HStack(spacing: 12) {
+          CommanderSymbolBadge(
+            symbol: CommanderEventAppearance.symbol(for: item.event),
+            color: nextAccent,
+            size: dynamicTypeSize.isAccessibilitySize ? 59 : 66
+          )
           Text(label)
             .font(.system(size: 15, weight: .bold))
             .foregroundStyle(.white)
-            .lineLimit(1)
-          Text(item.event.title)
-            .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 23 : 26, weight: .bold))
-            .foregroundStyle(nextAccent)
-            .allowsTightening(true)
-            .lineLimit(2)
-            .minimumScaleFactor(0.76)
             .fixedSize(horizontal: false, vertical: true)
-            .layoutPriority(1)
-          if !item.event.location.isEmpty {
-            Label(item.event.location, systemImage: "mappin.circle.fill")
-              .font(.system(size: 18, weight: .semibold))
-              .foregroundStyle(CommanderDesignTokens.Colors.eventSupportingText)
-              .lineLimit(1)
-              .minimumScaleFactor(0.84)
-          }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-      }
-      .frame(maxWidth: .infinity, alignment: .leading)
 
-      VStack(alignment: .leading, spacing: 12) {
-        followingTimeRow(
-          title: "Začátek", date: item.startAt, symbol: "clock.fill"
-        )
-        followingTimeRow(
-          title: "Odchod", date: item.leaveAt, symbol: "figure.walk"
-        )
+        VStack(alignment: .leading, spacing: 12) {
+          followingTimeRow(title: "Začátek", date: item.startAt, symbol: "clock.fill")
+          followingTimeRow(title: "Odchod", date: item.leaveAt, symbol: "figure.walk")
+        }
+        .fixedSize(horizontal: true, vertical: true)
       }
-      .frame(width: 96, alignment: .leading)
-      .layoutPriority(2)
+      eventDetails(item, accent: nextAccent, titleSize: 26)
     }
     .padding(.horizontal, 12)
     .padding(.vertical, 14)
-    .frame(maxWidth: .infinity, minHeight: dynamicTypeSize.isAccessibilitySize ? 120 : 126)
+    .frame(maxWidth: .infinity, alignment: .leading)
     .commanderCard(accent: nextAccent, surface: .depthInset)
   }
 

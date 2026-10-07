@@ -26,18 +26,34 @@ public enum CommanderLiveActivityPresentationMode: String, Codable, Hashable, Se
 /// Reject delayed stop callbacks whose payload no longer describes the current event.
 public enum CommanderAlarmStopPolicy {
   public static func canApply(
-    stopped: CommanderAlarmEventSnapshot, current: CommanderAlarmEventSnapshot?, now: Date
+    stopped: CommanderAlarmEventSnapshot, current: CommanderAlarmEventSnapshot?,
+    focused: CommanderAlarmEventSnapshot? = nil,
+    stoppedIdentity: WatchScheduleProjectionIdentity? = nil,
+    currentIdentity: WatchScheduleProjectionIdentity? = nil, now: Date
   ) -> Bool {
+    if let currentIdentity, stoppedIdentity != currentIdentity { return false }
     guard let current,
           stopped.stableId == current.stableId,
           stopped.startAt == current.startAt,
           stopped.leaveAt == current.leaveAt,
           stopped.endAt == current.endAt,
+          let leave = try? NativeAlarmContract.date(fromLocalISO: current.leaveAt),
           let start = try? NativeAlarmContract.date(fromLocalISO: current.startAt),
           let end = try? NativeAlarmContract.date(fromLocalISO: current.endAt),
-          start < end, now < end else { return false }
+          leave <= now, start < end, now < end else { return false }
+    if let focused, focused.stableId != current.stableId,
+       let focusedStart = try? NativeAlarmContract.date(fromLocalISO: focused.startAt),
+       let focusedLeave = try? NativeAlarmContract.date(fromLocalISO: focused.leaveAt),
+       focusedStart > start, focusedLeave <= now { return false }
     return true
   }
+}
+
+public enum CommanderActivityRenderingPolicy: Sendable {
+  /// Exact state whenever the caller can evaluate a supplied clock instant.
+  case deterministic
+  /// ActivityKit archives a view until another system/content update occurs.
+  case suspendedActivity
 }
 
 public struct CommanderActivityPresentation: Equatable, Sendable {
@@ -52,6 +68,7 @@ public struct CommanderActivityPresentation: Equatable, Sendable {
   public let isStale: Bool
   public let nextEvent: CommanderAlarmEventSnapshot?
   public let nextEventLabel: String
+  public let timing: CommanderCountdownPresentation
 
   private struct ResolvedEvent {
     let snapshot: CommanderAlarmEventSnapshot
@@ -65,7 +82,9 @@ public struct CommanderActivityPresentation: Equatable, Sendable {
     events snapshots: [CommanderAlarmEventSnapshot],
     focusStableId: String?,
     presentationMode: CommanderLiveActivityPresentationMode,
-    isStale: Bool = false
+    isStale: Bool = false,
+    at now: Date,
+    renderingPolicy: CommanderActivityRenderingPolicy = .deterministic
   ) -> CommanderActivityPresentation {
     let events = resolvedEvents(snapshots.isEmpty ? [seed] : snapshots)
     let focusStableID = focusStableId ?? seed.stableId
@@ -74,7 +93,20 @@ public struct CommanderActivityPresentation: Equatable, Sendable {
     if !events.isEmpty {
       let primary = events[focusIndex]
       let following = events.dropFirst(focusIndex + 1).first
-      let followingIsConcurrent = following.map { $0.startAt < primary.endAt } ?? false
+      let boundary: Date
+      switch presentationMode {
+      case .departureCountdown: boundary = primary.leaveAt
+      case .startCountdown: boundary = primary.startAt
+      case .eventContext: boundary = primary.endAt
+      }
+      let expiredPhase = isStale || now >= boundary
+      let timing: CommanderCountdownPresentation
+      if renderingPolicy == .suspendedActivity && expiredPhase && now < primary.endAt {
+        timing = .suspendedScheduleFallback
+      } else {
+        timing = .init(presentationMode: presentationMode, leaveAt: primary.leaveAt,
+                       startAt: primary.startAt, endAt: primary.endAt, at: now)
+      }
       return CommanderActivityPresentation(
         title: primary.snapshot.title,
         location: primary.snapshot.location,
@@ -86,7 +118,8 @@ public struct CommanderActivityPresentation: Equatable, Sendable {
         presentationMode: presentationMode,
         isStale: isStale,
         nextEvent: following?.snapshot,
-        nextEventLabel: followingIsConcurrent ? "Současně:" : "Potom:"
+        nextEventLabel: "Potom:",
+        timing: timing
       )
     }
 
@@ -97,7 +130,8 @@ public struct CommanderActivityPresentation: Equatable, Sendable {
       leaveAt: (try? NativeAlarmContract.date(fromLocalISO: seed.leaveAt)) ?? .distantPast,
       startAt: (try? NativeAlarmContract.date(fromLocalISO: seed.startAt)) ?? .distantPast,
       endAt: (try? NativeAlarmContract.date(fromLocalISO: seed.endAt)) ?? .distantPast,
-      presentationMode: presentationMode, isStale: true, nextEvent: nil, nextEventLabel: "Potom:"
+      presentationMode: presentationMode, isStale: true, nextEvent: nil, nextEventLabel: "Potom:",
+      timing: .suspendedScheduleFallback
     )
   }
 
@@ -114,15 +148,17 @@ public struct CommanderActivityPresentation: Equatable, Sendable {
     }
   }
 
-  public var timing: CommanderCountdownPresentation {
-    .init(presentationMode: presentationMode, isStale: isStale,
-          leaveAt: leaveAt, startAt: startAt, endAt: endAt)
-  }
   public var status: String { timing.status }
-  public var countdownTarget: Date { timing.target ?? endAt }
+  public var countdownTarget: Date? { timing.target }
   public var countdownLabel: String { timing.countdownLabel }
+  public var isScheduleFallback: Bool { timing.isScheduleFallback }
+  public var isFinished: Bool { timing.target == nil && !isScheduleFallback }
   public var timeLabel: String { timing.referenceLabel ?? "" }
   public var timeValue: String {
-    (timing.referenceDate ?? endAt).formatted(date: .omitted, time: .shortened)
+    if isScheduleFallback {
+      return startAt.formatted(date: .omitted, time: .shortened) + "–" +
+        endAt.formatted(date: .omitted, time: .shortened)
+    }
+    return (timing.referenceDate ?? endAt).formatted(date: .omitted, time: .shortened)
   }
 }

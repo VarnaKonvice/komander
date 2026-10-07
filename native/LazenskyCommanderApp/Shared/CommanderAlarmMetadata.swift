@@ -79,7 +79,7 @@ enum CommanderPhysicalAcceptanceDiagnostics {
 }
 
 struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
-  static let currentRendererRevision = 11
+  static let currentRendererRevision = 14
 
   struct ContentState: Codable, Hashable {
     let scheduleVersion: Int
@@ -175,9 +175,34 @@ struct CommanderProcedureLiveActivityAttributes: ActivityAttributes {
 }
 
 enum CommanderProcedureLiveActivityPolicy {
+  // Reconcile and Stop both mutate Activity content; serialize them in this process.
+  static let operations = CommanderSerialOperationQueue()
   static let maximumQueuedEvents = 6
   // ActivityKit caps static + dynamic payload at 4 KB. Keep deliberate headroom.
   static let targetCombinedEncodedBytes = 3_600
+
+  static func nextStaleDate(
+    for state: CommanderProcedureLiveActivityAttributes.ContentState,
+    attributes: CommanderProcedureLiveActivityAttributes
+  ) -> Date? {
+    let focus = state.events.first { $0.stableId == state.focusStableId }
+    switch state.presentationMode {
+    case .departureCountdown:
+      return (state.events.first { $0.stableId == state.focusStableId }.flatMap {
+        try? NativeAlarmContract.date(fromLocalISO: $0.leaveAt)
+      }) ?? attributes.leaveAt
+    case .startCountdown:
+      if let focus, let date = try? NativeAlarmContract.date(fromLocalISO: focus.startAt) {
+        return date
+      }
+      return attributes.startAt
+    case .eventContext:
+      if let focus, let date = try? NativeAlarmContract.date(fromLocalISO: focus.endAt) {
+        return date
+      }
+      return attributes.endAt
+    }
+  }
 
   static func contentState(
     scheduleVersion: Int,
@@ -209,5 +234,16 @@ enum CommanderProcedureLiveActivityPolicy {
       }
       bounded.removeLast()
     }
+  }
+}
+
+/// Dataset is selected at the input/build boundary only; runtime algorithms are shared.
+enum CommanderRuntimeDataset {
+  static var current: CommanderScheduleDataset {
+    #if COMMANDER_ACCEPTANCE_FIXTURES
+    .acceptance
+    #else
+    .production
+    #endif
   }
 }

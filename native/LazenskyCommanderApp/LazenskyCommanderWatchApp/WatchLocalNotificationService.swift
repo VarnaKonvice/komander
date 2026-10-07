@@ -72,7 +72,7 @@ actor WatchLocalNotificationService {
   private func apply(schedule: Schedule?, enabled: Bool, overrides: LeadTimeOverrides?,
                      projectionRevision: Int, now: Date?) async throws -> WatchNotificationPlan {
     // A queued reconciliation must not re-enable notifications after the user disabled them.
-    let enabled = enabled && preferences.isEnabled
+    let enabled = enabled && preferences.isEnabled && CommanderMVPPolicy.createsStandaloneWatchAlerts
     let current = await managedPendingNotifications()
     let now = now ?? Date()
     if enabled, let schedule, let latestProjection,
@@ -124,7 +124,8 @@ actor WatchLocalNotificationService {
   private func managedPendingNotifications() async -> PendingNotifications {
     var pending = PendingNotifications()
     for request in await center.pendingNotificationRequests() {
-      guard let stableId = WatchLeaveNotificationContract.stableId(from: request.identifier) else { continue }
+      guard let stableId = WatchLeaveNotificationContract.stableId(from: request.identifier),
+            WatchCacheLocation.dataset.accepts(stableID: stableId) else { continue }
       let info = request.content.userInfo
       let item = WatchLocalNotification(
         stableId: stableId,

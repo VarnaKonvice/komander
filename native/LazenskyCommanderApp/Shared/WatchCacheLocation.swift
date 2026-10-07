@@ -2,7 +2,7 @@ import Foundation
 import LazenskyCommanderCore
 
 enum WatchCacheLocation {
-  private static var dataset: CommanderScheduleDataset {
+  static var dataset: CommanderScheduleDataset {
     #if COMMANDER_ACCEPTANCE_FIXTURES
     .acceptance
     #else
@@ -22,6 +22,11 @@ enum WatchCacheLocation {
     didStore: (@Sendable (WatchScheduleSnapshot) async -> Void)? = nil
   ) -> FileWatchScheduleCache {
     FileWatchScheduleCache(directoryURL: directoryURL(), dataset: dataset, didStore: didStore)
+  }
+
+  static func makeAcceptanceCache() -> FileWatchScheduleCache {
+    FileWatchScheduleCache(directoryURL: directoryURL().deletingLastPathComponent()
+      .appendingPathComponent("CommanderAcceptanceCache"), dataset: .acceptance)
   }
 
   static func directoryURL(fileManager: FileManager = .default) -> URL {

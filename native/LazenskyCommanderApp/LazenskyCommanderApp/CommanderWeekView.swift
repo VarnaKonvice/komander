@@ -5,22 +5,42 @@ struct CommanderWeekView: View {
   @ObservedObject var model: CommanderViewModel
   @State private var expandedDays: Set<Date> = []
   @State private var hasFocusedToday = false
-
-  private func days(at now: Date) -> [CommanderWeekDay]? {
-    guard let schedule = model.latestSchedule else { return nil }
-    return try? CommanderWeekPresentation.make(
-      schedule: schedule, now: now, overrides: model.leadTimeOverrides
-    )
-  }
+  @State private var renderedDays: [CommanderWeekDay]?
 
   var body: some View {
     TimelineView(.everyMinute) { context in
       weekContent(
-        days: days(at: context.date),
+        days: renderedDays,
         today: Self.calendar.startOfDay(for: context.date),
         now: context.date
       )
+      .task(id: refreshKey(at: context.date)) {
+        await refreshDays(at: context.date)
+      }
     }
+  }
+
+  private func refreshKey(at now: Date) -> String {
+    let minute = Int(now.timeIntervalSince1970 / 60)
+    return "\(model.latestSchedule?.scheduleVersion ?? -1)-\(model.leadTimeProjectionRevision)-\(minute)"
+  }
+
+  private func refreshDays(at now: Date) async {
+    guard let schedule = model.latestSchedule else {
+      renderedDays = nil
+      return
+    }
+    let overrides = model.leadTimeOverrides
+    let version = schedule.scheduleVersion
+    let revision = model.leadTimeProjectionRevision
+
+    let days = await Task.detached(priority: .userInitiated) {
+      try? CommanderWeekPresentation.make(schedule: schedule, now: now, overrides: overrides)
+    }.value
+
+    guard model.latestSchedule?.scheduleVersion == version,
+          model.leadTimeProjectionRevision == revision else { return }
+    renderedDays = days
   }
 
   private static var calendar: Calendar {
@@ -80,13 +100,19 @@ struct CommanderWeekView: View {
             }
 
           } else {
-            Text(model.latestSchedule == nil ? "Rozpis ještě není načten"
-                 : days == nil ? "Rozpis nelze zobrazit" : "Rozpis neobsahuje žádné události")
-              .commanderFont(.eventTitle)
-              .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-              .padding(CommanderDesignTokens.Spacing.page)
-              .frame(maxWidth: .infinity, alignment: .leading)
-              .commanderCard()
+            HStack(spacing: 10) {
+              if model.latestSchedule != nil, days == nil {
+                ProgressView()
+                  .tint(CommanderDesignTokens.Colors.procedureCyan)
+              }
+              Text(model.latestSchedule == nil ? "Rozpis ještě není načten"
+                   : days == nil ? "Načítám týden…" : "Rozpis neobsahuje žádné události")
+                .commanderFont(.eventTitle)
+                .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+            }
+            .padding(CommanderDesignTokens.Spacing.page)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .commanderCard()
           }
         }
           .padding(.horizontal, CommanderDesignTokens.Spacing.page)

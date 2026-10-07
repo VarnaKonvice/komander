@@ -7,15 +7,20 @@ import Testing
   let schedule = try decodeSchedule(named: "data/schedule.json")
   let payload = try NativeAlarmContract.payload(schedule: schedule)
   #expect(payload.contractVersion == 1)
-  #expect(payload.scheduleVersion == 4)
+  #expect(payload.scheduleVersion == schedule.scheduleVersion)
   #expect(payload.alarms.count == schedule.events.count)
-  #expect(payload.alarms.first(where: { $0.stableId == "synthetic-0815-bath" })?.leaveAt == "2026-08-15T09:30:00")
+  let firstAlarm = try #require(payload.alarms.first)
+  #expect(firstAlarm.stableId == schedule.events[0].stableId)
+  let start = try NativeAlarmContract.date(fromLocalISO: firstAlarm.startAt)
+  let leave = try NativeAlarmContract.date(fromLocalISO: firstAlarm.leaveAt)
+  #expect(Int(start.timeIntervalSince(leave) / 60) == firstAlarm.effectiveLeadTimeMinutes)
 }
 
 @Test func invalidScheduleAndDuplicateStableIDAreRejected() throws {
   let decoded = try decodeSchedule(named: "data/schedule.json")
+  let duplicatedID = decoded.events[0].stableId
   let schedule = Schedule(schemaVersion: decoded.schemaVersion, scheduleVersion: decoded.scheduleVersion, updatedAt: decoded.updatedAt, stay: decoded.stay, events: [decoded.events[0], decoded.events[0]], settings: decoded.settings)
-  #expect(throws: ScheduleValidationError.duplicateStableId("synthetic-0815-breakfast")) {
+  #expect(throws: ScheduleValidationError.duplicateStableId(duplicatedID)) {
     try NativeAlarmContract.validate(schedule)
   }
 }
@@ -182,18 +187,21 @@ import Testing
   #expect(await watchDelivery.receivedSnapshot()?.schedule == schedule)
 }
 
-@Test func productionVersionFourHasNoDesiredAlarmsOnAugustTwentySecond() async throws {
+@Test func productionScheduleHasNoDesiredAlarmsAfterFinalDeparture() async throws {
   let schedule = try decodeSchedule(named: "data/schedule.json")
   let canonicalPayload = try NativeAlarmContract.payload(schedule: schedule)
+  let latestDeparture = try #require(
+    canonicalPayload.alarms.compactMap { try? NativeAlarmContract.date(fromLocalISO: $0.leaveAt) }.max()
+  )
   let adapter = RecordingAlarmAdapter()
   let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: InMemoryAlarmStateStore(), adapter: adapter)
 
   let summary = try await service.synchronize(
-    now: NativeAlarmContract.date(fromLocalISO: "2026-08-22T12:00:00")
+    now: latestDeparture.addingTimeInterval(60)
   )
 
-  #expect(schedule.scheduleVersion == 4)
-  #expect(canonicalPayload.alarms.count == 13)
+  #expect(canonicalPayload.scheduleVersion == schedule.scheduleVersion)
+  #expect(canonicalPayload.alarms.count == schedule.events.count)
   #expect(summary.succeeded)
   #expect(summary.desiredAlarmCount == 0)
   #expect(summary.plan.create.isEmpty)
@@ -246,12 +254,16 @@ import Testing
 
 @Test func missingPastSystemAlarmIsPrunedWithoutCancelAttempt() async throws {
   let schedule = try decodeSchedule(named: "data/schedule.json")
+  let canonicalPayload = try NativeAlarmContract.payload(schedule: schedule)
+  let latestDeparture = try #require(
+    canonicalPayload.alarms.compactMap { try? NativeAlarmContract.date(fromLocalISO: $0.leaveAt) }.max()
+  )
   let stale = NativeAlarm(stableId: "stale", kind: .procedure, title: "Stale", location: "Room", startAt: "2026-08-20T10:00:00", endAt: "2026-08-20T10:30:00", effectiveLeadTimeMinutes: 0, leaveAt: "2026-08-20T10:00:00")
   let store = InMemoryAlarmStateStore(ManagedAlarmState(records: ["stale": ManagedAlarmRecord(stableId: "stale", platformAlarmID: UUID().uuidString, alarm: stale)]))
   let adapter = RecordingAlarmAdapter(existingIDs: [])
   let service = AlarmSyncService(scheduleService: StaticScheduleService(schedule: schedule), store: store, adapter: adapter)
   let summary = try await service.synchronize(
-    now: NativeAlarmContract.date(fromLocalISO: "2026-08-22T12:00:00")
+    now: latestDeparture.addingTimeInterval(60)
   )
   #expect(summary.desiredAlarmCount == 0)
   #expect(summary.plan.cancel.isEmpty)

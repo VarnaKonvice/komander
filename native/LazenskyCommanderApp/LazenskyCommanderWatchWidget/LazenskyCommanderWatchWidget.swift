@@ -1,3 +1,4 @@
+import Foundation
 import LazenskyCommanderCore
 import RelevanceKit
 import SwiftUI
@@ -21,6 +22,13 @@ struct LazenskyCommanderWatchWidget: Widget {
 struct CommanderWatchWidgetEntry: TimelineEntry {
   let date: Date
   let liveState: CommanderLiveStateResult
+
+  var relevance: TimelineEntryRelevance? {
+    guard liveState.state != .dayDone,
+          let end = liveState.endAt, end > date else { return nil }
+    return TimelineEntryRelevance(score: liveState.state == .upcoming ? 50 : 100,
+                                  duration: end.timeIntervalSince(date))
+  }
 }
 
 struct CommanderWatchTimelineProvider: TimelineProvider {
@@ -38,7 +46,7 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
     Task {
       let now = Date()
       guard let snapshot = await cachedSnapshot() else {
-        completion(Timeline(entries: [noScheduleEntry(at: now)], policy: .never))
+        completion(Timeline(entries: [noScheduleEntry(at: now)], policy: .after(now.addingTimeInterval(30))))
         return
       }
       let schedule = snapshot.schedule
@@ -60,9 +68,9 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
             )
           )
         }
-        completion(Timeline(entries: entries, policy: .never))
+        completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(5 * 60))))
       } catch {
-        completion(Timeline(entries: [noScheduleEntry(at: now)], policy: .never))
+        completion(Timeline(entries: [noScheduleEntry(at: now)], policy: .after(now.addingTimeInterval(30))))
       }
     }
   }
@@ -99,7 +107,32 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
   }
 
   private func cachedSnapshot() async -> WatchScheduleSnapshot? {
-    try? await WatchCacheLocation.makeCache().load()
+    let cache = WatchCacheLocation.makeCache()
+    if let cached = try? await cache.load(),
+       !WatchScheduleExpiryPolicy.isExpired(cached.schedule, at: Date()) {
+      return cached
+    }
+
+    // WidgetKit can occasionally wake before the Watch app has populated the
+    // shared App Group cache. Recover independently from the canonical
+    // production schedule instead of staying on "Čekám na rozpis".
+    do {
+      let schedule = try await URLSessionScheduleService(
+        configuration: AppConfiguration()
+      ).fetchSchedule()
+      let overrides = LeadTimeOverrides(
+        defaultLeadTimeMinutes: 20,
+        procedureTypeOverrides: ["Vizita": 5]
+      )
+      let snapshot = WatchScheduleSnapshot(
+        schedule: schedule,
+        leadTimeOverrides: overrides
+      )
+      _ = try? await cache.accept(snapshot)
+      return snapshot
+    } catch {
+      return nil
+    }
   }
 
   private func noScheduleEntry(at date: Date) -> CommanderWatchWidgetEntry {
@@ -113,8 +146,9 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
 private struct CommanderWatchWidgetView: View {
   let entry: CommanderWatchWidgetEntry
 
-  private var icon: CommanderIconMap.Icon? {
-    WatchVisualAssets.icon(for: entry.liveState.event)
+  private var displayEvent: ScheduleEvent? {
+    if let event = entry.liveState.event { return event }
+    return entry.liveState.nextEvent
   }
 
   private var commanderPurple: Color {
@@ -122,119 +156,153 @@ private struct CommanderWatchWidgetView: View {
   }
 
   private var accent: Color {
-    Color(hex: WatchVisualAssets.accent(for: icon))
+    guard let event = displayEvent else { return commanderPurple }
+    return Color(hex: WatchVisualAssets.accent(for: WatchVisualAssets.icon(for: event)))
   }
 
   var body: some View {
-    HStack(spacing: 7) {
-      if let icon {
-        Image(icon.key, bundle: .main)
-          .resizable()
-          .scaledToFit()
-          .frame(width: 38, height: 38)
-          .background(.white)
-          .clipShape(RoundedRectangle(cornerRadius: 6))
-          .overlay {
-            RoundedRectangle(cornerRadius: 6).stroke(accent, lineWidth: 1.5)
-          }
-          .accessibilityHidden(true)
-      }
+    VStack(alignment: .leading, spacing: 2) {
+      firstLine
 
-      VStack(alignment: .leading, spacing: 1) {
-        stateHeader
-        if let event = entry.liveState.event {
-          Text(event.title)
-            .font(.caption.bold())
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-          if !event.location.isEmpty {
-            Text(event.location)
-              .font(.caption2)
-              .foregroundStyle(.white.opacity(0.78))
-              .lineLimit(1)
-          }
-          timing
-        } else {
-          emptyState
-        }
+      if let event = displayEvent {
+        Text(event.title)
+          .font(.system(size: 14, weight: .bold))
+          .foregroundStyle(.white)
+          .lineLimit(1)
+          .minimumScaleFactor(0.72)
+
+        Text(event.location.isEmpty ? " " : event.location)
+          .font(.system(size: 12, weight: .semibold))
+          .foregroundStyle(.white.opacity(0.88))
+          .lineLimit(1)
+          .minimumScaleFactor(0.74)
+      } else {
+        noScheduleLines
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
     }
-    .foregroundStyle(.white)
-    .containerBackground(commanderPurple, for: .widget)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .privacySensitive(false)
+    .containerBackground(.clear, for: .widget)
+  }
+
+  private var brandMark: some View {
+    Image(CommanderBrandAssets.circularMarkName, bundle: .main)
+      .renderingMode(.original)
+      .resizable()
+      .scaledToFit()
+      .frame(width: 15, height: 15)
   }
 
   @ViewBuilder
-  private var stateHeader: some View {
+  private var firstLine: some View {
     switch entry.liveState.state {
     case .upcoming:
-      status("NADCHÁZÍ")
-    case .leaveNow:
-      status("VYRAZIT")
-    case .inProgress:
-      status("Právě probíhá")
-    case .dayDone:
-      status("PROGRAM DOKONČEN")
-    case .noSchedule:
-      status("LÁZEŇSKÝ COMMANDER")
-    }
-  }
-
-  private func status(_ text: String) -> some View {
-    Text(text)
-      .font(.system(size: 9, weight: .bold))
-      .foregroundStyle(entry.liveState.state == .leaveNow ? accent : .white.opacity(0.86))
+      HStack(spacing: 3) {
+        brandMark
+        Text("VYRAZIT ZA")
+        if let leaveAt = entry.liveState.leaveAt {
+          Text(leaveAt, style: .relative)
+            .monospacedDigit()
+        }
+      }
+      .font(.system(size: 12, weight: .bold, design: .rounded))
+      .foregroundStyle(accent)
       .lineLimit(1)
-  }
+      .minimumScaleFactor(0.72)
 
-  @ViewBuilder
-  private var timing: some View {
-    switch entry.liveState.state {
-    case .upcoming:
-      timer(label: "Odchod za", target: entry.liveState.leaveAt, clock: entry.liveState.startAt)
     case .leaveNow:
-      timer(label: "Začátek za", target: entry.liveState.startAt, clock: nil)
-    case .inProgress:
-      if let endAt = entry.liveState.endAt {
-        HStack(spacing: 2) {
-          Text("do")
-          Text(endAt, style: .time)
+      HStack(spacing: 3) {
+        brandMark
+        Text("VYRAZIT")
+        if let startAt = entry.liveState.startAt {
+          Text("·")
+          Text(startAt, style: .relative)
+            .monospacedDigit()
         }
-        .font(.caption2.bold())
       }
-    case .dayDone, .noSchedule:
-      EmptyView()
+      .font(.system(size: 12, weight: .bold, design: .rounded))
+      .foregroundStyle(accent)
+      .lineLimit(1)
+      .minimumScaleFactor(0.72)
+
+    case .inProgress:
+      HStack(spacing: 3) {
+        brandMark
+        Text("PROBÍHÁ")
+        if let endAt = entry.liveState.endAt {
+          Text("·")
+          Text(endAt, style: .relative)
+            .monospacedDigit()
+        }
+      }
+      .font(.system(size: 12, weight: .bold, design: .rounded))
+      .foregroundStyle(accent)
+      .lineLimit(1)
+      .minimumScaleFactor(0.72)
+
+    case .dayDone:
+      HStack(spacing: 3) {
+        brandMark
+        if entry.liveState.nextEvent != nil {
+          Text(nextEventDayLabel)
+          if let leaveAt = entry.liveState.leaveAt {
+            Text("· ODCHOD")
+            Text(leaveAt, style: .time)
+              .monospacedDigit()
+          }
+        } else {
+          Text("DNES HOTOVO")
+        }
+      }
+      .font(.system(size: 12, weight: .bold, design: .rounded))
+      .foregroundStyle(accent)
+      .lineLimit(1)
+      .minimumScaleFactor(0.70)
+
+    case .noSchedule:
+      HStack(spacing: 4) {
+        brandMark
+        Text("ČEKÁM NA ROZPIS")
+      }
+      .font(.system(size: 12, weight: .bold))
+      .foregroundStyle(.white)
+      .lineLimit(1)
     }
   }
 
-  private func timer(label: String, target: Date?, clock: Date?) -> some View {
-    HStack(spacing: 3) {
-      Text(label)
-      if let target {
-        Text(target, style: .timer)
-          .monospacedDigit()
-      }
-      if let clock {
-        Text(clock, style: .time)
-          .foregroundStyle(.white.opacity(0.7))
-      }
-    }
-    .font(.caption2.bold())
-    .lineLimit(1)
-    .minimumScaleFactor(0.65)
+  private var nextEventDayLabel: String {
+    guard let startAt = entry.liveState.startAt else { return "DALŠÍ" }
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+    if calendar.isDateInTomorrow(startAt) { return "ZÍTRA" }
+    return startAt.formatted(
+      .dateTime.day().month(.abbreviated).locale(Locale(identifier: "cs_CZ"))
+    ).uppercased(with: Locale(identifier: "cs_CZ"))
   }
 
   @ViewBuilder
-  private var emptyState: some View {
+  private var noScheduleLines: some View {
     switch entry.liveState.state {
-    case .dayDone:
-      Text("Dnešní program dokončen")
-        .font(.caption.bold())
-        .lineLimit(2)
     case .noSchedule:
-      Text("Žádný dostupný program")
-        .font(.caption.bold())
-        .lineLimit(2)
+      Text("Otevři Commander")
+        .font(.system(size: 13, weight: .bold))
+        .foregroundStyle(.white)
+        .lineLimit(1)
+      Text("Rozpis se obnoví automaticky")
+        .font(.system(size: 10, weight: .semibold))
+        .foregroundStyle(.white.opacity(0.82))
+        .lineLimit(1)
+    case .dayDone:
+      if entry.liveState.nextEvent == nil {
+        Text("Zbytek dne je volný")
+          .font(.system(size: 13, weight: .bold))
+          .foregroundStyle(.white)
+          .lineLimit(1)
+        Text("Další program není")
+          .font(.system(size: 11, weight: .semibold))
+          .foregroundStyle(.white.opacity(0.82))
+          .lineLimit(1)
+      }
     case .upcoming, .leaveNow, .inProgress:
       EmptyView()
     }

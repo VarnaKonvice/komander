@@ -188,8 +188,11 @@ public protocol AlarmStateStoring: Sendable {
 public actor UserDefaultsAlarmStateStore: AlarmStateStoring {
   private let defaults: UserDefaults
   private let key: String
+  private let dataset: CommanderScheduleDataset?
 
-  public init(defaults: UserDefaults = .standard, key: String = "lazensky.commander.managedAlarms.v1") {
+  public init(defaults: UserDefaults = .standard, key: String = "lazensky.commander.managedAlarms.v1",
+              dataset: CommanderScheduleDataset? = nil) {
+    self.dataset = dataset
     self.defaults = defaults
     self.key = key
   }
@@ -198,11 +201,19 @@ public actor UserDefaultsAlarmStateStore: AlarmStateStoring {
     guard let data = defaults.data(forKey: key) else { return ManagedAlarmState() }
     // Losing this mapping can turn a read failure into duplicate alarms. Preserve the
     // bytes and fail closed; ownership recovery must never infer an empty system.
-    return try JSONDecoder().decode(ManagedAlarmState.self, from: data)
+    var state = try JSONDecoder().decode(ManagedAlarmState.self, from: data)
+    if let dataset { state.records = state.records.filter { dataset.accepts(stableID: $0.key) } }
+    return state
   }
 
   public func save(_ state: ManagedAlarmState) throws {
-    defaults.set(try JSONEncoder().encode(state), forKey: key)
+    var merged = state
+    if let dataset, let data = defaults.data(forKey: key) {
+      let existing = try JSONDecoder().decode(ManagedAlarmState.self, from: data)
+      let otherRecords = existing.records.filter { !dataset.accepts(stableID: $0.key) }
+      merged.records = otherRecords.merging(state.records.filter { dataset.accepts(stableID: $0.key) }) { _, new in new }
+    }
+    defaults.set(try JSONEncoder().encode(merged), forKey: key)
   }
 }
 

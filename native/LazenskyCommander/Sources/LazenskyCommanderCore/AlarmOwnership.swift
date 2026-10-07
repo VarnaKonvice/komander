@@ -8,9 +8,12 @@ public actor FileAlarmOwnershipStore {
   private let fileURL: URL
   private let legacyStateKey: String
   private let legacyOwnershipKey: String?
+  private let dataset: CommanderScheduleDataset?
 
   public init(defaults: UserDefaults = .standard, directoryURL: URL, key: String,
-              legacyStateKey: String, legacyOwnershipKey: String? = nil) {
+              legacyStateKey: String, legacyOwnershipKey: String? = nil,
+              dataset: CommanderScheduleDataset? = nil) {
+    self.dataset = dataset
     self.defaults = defaults
     self.directoryURL = directoryURL
     self.fileURL = directoryURL.appendingPathComponent(key + ".json")
@@ -36,7 +39,15 @@ public actor FileAlarmOwnershipStore {
     return owned
   }
 
-  public func ids() throws -> Set<String> { Set(try load().values) }
+  public func ids() throws -> Set<String> {
+    Set(try load().filter { dataset?.accepts(stableID: $0.key) != false }.values)
+  }
+
+  public func stableIDs(for platformIDs: Set<String>) throws -> Set<String> {
+    Set(try load().filter {
+      dataset?.accepts(stableID: $0.key) != false && platformIDs.contains($0.value)
+    }.keys)
+  }
 
   public func reserve(stableID: String) throws -> String {
     var owned = try load()

@@ -1,7 +1,8 @@
 import Foundation
 
 /// Read-only projection of one validated schedule and one captured override revision.
-/// Every native surface consumes these exact times; no surface subtracts its own lead time.
+/// Alarm-aware surfaces consume these exact times. Home widgets without local
+/// preferences explicitly suppress departure and present only event start/end.
 public struct CommanderProjectedEvent: Equatable, Sendable {
   public let event: ScheduleEvent
   public let alarm: NativeAlarm
@@ -55,7 +56,10 @@ public struct CommanderScheduleProjection: Equatable, Sendable {
 
   public func liveState(at now: Date) -> CommanderLiveStateResult {
     guard now.timeIntervalSince1970.isFinite else { return .init(state: .noSchedule, now: now) }
-    let today = events(on: now)
+    // A tomorrow event may require leaving before midnight today.
+    let today = events.filter {
+      Self.calendar.isDate($0.startAt, inSameDayAs: now) || ($0.leaveAt <= now && now < $0.endAt)
+    }
     guard let resolution = CommanderLiveActivityTimeline.resolve(events: today.map(\.timelineEvent), at: now),
           resolution.phase != .ended,
           let primary = today.first(where: { $0.event.stableId == resolution.primaryStableId })

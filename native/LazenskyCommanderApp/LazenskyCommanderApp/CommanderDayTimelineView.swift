@@ -139,13 +139,7 @@ struct CommanderEventRow: View {
           .minimumScaleFactor(isSingleWordTitle ? 0.90 : 1)
           .fixedSize(horizontal: false, vertical: true)
 
-        if !item.event.location.isEmpty {
-          Label(item.event.location, systemImage: "mappin.circle.fill")
-            .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 20 : 17, weight: .semibold))
-            .foregroundStyle(CommanderDesignTokens.Colors.eventSupportingText)
-            .lineLimit(1)
-            .minimumScaleFactor(0.9)
-        }
+        CommanderEventLocation(location: item.event.location)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
       .layoutPriority(1)
@@ -197,5 +191,22 @@ struct CommanderEventRow: View {
     }
     .foregroundStyle(CommanderDesignTokens.Colors.eventSupportingText)
     .fixedSize(horizontal: true, vertical: true)
+  }
+}
+
+/// Preserve the source location on both Today and Week. Let large type and
+/// narrow rows grow beyond two lines rather than dropping a room or department.
+struct CommanderEventLocation: View {
+  let location: String
+  @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+  var body: some View {
+    if !location.isEmpty {
+      Label(location, systemImage: "mappin.circle.fill")
+        .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 20 : 17, weight: .semibold))
+        .foregroundStyle(CommanderDesignTokens.Colors.eventSupportingText)
+        .lineLimit(nil)
+        .fixedSize(horizontal: false, vertical: true)
+    }
   }
 }

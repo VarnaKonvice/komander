@@ -47,34 +47,29 @@ struct CommanderAppTabs: View {
 #endif
   }
 
+
+  @ViewBuilder
+  private var activeTabContent: some View {
+    switch selectedTab {
+    case 1:
+      NavigationStack { CommanderWeekView(model: model) }
+    case 2:
+      NavigationStack { CommanderStayView(model: model) }
+    case 3:
+      NavigationStack { CommanderInfoView(model: model) }
+    case 4:
+      NavigationStack { CommanderSettingsView(model: model) }
+    default:
+      NavigationStack { CommanderDashboardView(model: model) }
+    }
+  }
+
   private var appContent: some View {
     VStack(spacing: 0) {
       ZStack {
-        TabView(selection: $selectedTab) {
-          NavigationStack { CommanderDashboardView(model: model) }
-            .tabItem { Label("Dnes", systemImage: "sun.max") }
-            .toolbar(.hidden, for: .tabBar)
-            .tag(0)
-          NavigationStack { CommanderWeekView(model: model) }
-            .tabItem { Label("Týden", systemImage: "calendar") }
-            .toolbar(.hidden, for: .tabBar)
-            .tag(1)
-          NavigationStack { CommanderStayView(model: model) }
-            .tabItem { Label("Pobyt", systemImage: "bed.double") }
-            .toolbar(.hidden, for: .tabBar)
-            .tag(2)
-          NavigationStack { CommanderInfoView(model: model) }
-            .tabItem { Label("Info", systemImage: "info.circle") }
-            .toolbar(.hidden, for: .tabBar)
-            .tag(3)
-          NavigationStack { CommanderSettingsView(model: model) }
-            .tabItem { Label("Nastavení", systemImage: "gearshape") }
-            .toolbar(.hidden, for: .tabBar)
-            .tag(4)
-        }
-        .toolbar(.hidden, for: .tabBar)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .clipped()
+        activeTabContent
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .clipped()
 
         if isScheduleAuditPresented {
           NavigationStack {
@@ -117,6 +112,15 @@ struct CommanderAppTabs: View {
     .onChange(of: scenePhase) { _, phase in
       guard phase == .active else { return }
       Task { await renewal.refresh() }
+    }
+    .onChange(of: model.todayRouteRevision) { _, _ in
+      selectedTab = 0
+      isScheduleAuditPresented = false
+    }
+    .onOpenURL { url in
+      guard CommanderNavigation.opensToday(url) else { return }
+      selectedTab = 0
+      isScheduleAuditPresented = false
     }
   }
 

@@ -5,48 +5,32 @@ import UserNotifications
 import WidgetKit
 
 private enum CommanderDesignPreview {
-  private static let flagKey = "commander.visualReview.enabled"
-
   static let enabled: Bool = {
-    #if COMMANDER_VISUAL_REVIEW
+    #if COMMANDER_WIDGET_DEMO
+    return true
+    #elseif COMMANDER_VISUAL_REVIEW
     return true
     #elseif DEBUG
-    let arguments = ProcessInfo.processInfo.arguments
-    let defaults = UserDefaults(
-      suiteName: CommanderWatchWidgetContract.appGroupIdentifier
-    )
-
-    if arguments.contains("-CommanderDisableDesignPreview") {
-      defaults?.set(false, forKey: flagKey)
-      return false
-    }
-
-    if arguments.contains("-CommanderDesignPreview")
-      || arguments.contains("-CommanderApprovedVisualProof") {
-      defaults?.set(true, forKey: flagKey)
-      return true
-    }
-
-    return defaults?.bool(forKey: flagKey) ?? false
+    return CommanderPreviewPolicy.enabled(arguments: ProcessInfo.processInfo.arguments)
     #else
     return false
     #endif
   }()
 
   static var schedule: Schedule {
+    #if COMMANDER_WIDGET_DEMO
+    CommanderWidgetDemoSchedule.make()
+    #else
     CommanderVisualReviewSchedule.make(now: .now)
-  }
-
-  static func publishSharedFlag() {
-    guard let defaults = UserDefaults(
-      suiteName: CommanderWatchWidgetContract.appGroupIdentifier
-    ) else { return }
-    defaults.set(enabled, forKey: flagKey)
+    #endif
   }
 }
 
 @MainActor
 final class CommanderViewModel: ObservableObject {
+  @Published private(set) var todayRouteRevision = 0
+  private var notificationsVerified = false
+
   @Published private(set) var accessStatus = "Kontroluji přístup k alarmům..."
   @Published private(set) var summary: AlarmSyncSummary?
   @Published private(set) var errorMessage: String?
@@ -62,18 +46,28 @@ final class CommanderViewModel: ObservableObject {
   @Published private(set) var leadTimeProjectionRevision = 0
   @Published private(set) var scheduleAuditAcknowledgements: [CommanderScheduleAuditAcknowledgement] = []
 
+  @Published private(set) var phoneWidgetIssue: String?
+  private var phoneWidgetCache: FileWatchScheduleCache?
   private let adapter: AlarmKitAdapter
   private let procedureActivities: CommanderProcedureLiveActivityCoordinator
   private let service: AlarmSyncService
   private let scheduleSync: CommanderScheduleSyncCoordinator
   private let watchConnectivity: IPhoneWatchConnectivityCoordinator
-  private let fallbackNotifications = IPhoneFallbackNotificationService()
+  private let eventNotifications = IPhoneEventNotificationService()
+  private var acceptedSnapshot: WatchScheduleSnapshot?
   private let leadTimePreferences: LeadTimePreferencesStore
   private let scheduleAuditReviewStore: ScheduleAuditReviewStore
   private let channel: ScheduleChannel
   private var lastAutomaticAttempt: Date?
   private var delayedRecoveryTask: Task<Void, Never>?
+  private var leadTimeSyncTask: Task<Void, Never>?
+  private var launchMaintenanceTask: Task<Void, Never>?
+  private var suppressAutomaticForegroundUntil: Date?
   private var synchronizationRequests = CommanderSynchronizationRequestQueue()
+
+  private static let automaticForegroundRefreshInterval: TimeInterval = 5 * 60
+  private static let launchForegroundGraceInterval: TimeInterval = 8
+  private static let spaLeadTimePresetKey = "lazensky.commander.leadTimePreset.20-vizita5.v1"
 
   private let clock: @Sendable () -> Date
 
@@ -82,24 +76,39 @@ final class CommanderViewModel: ObservableObject {
     let configuration = AppConfiguration()
     let adapter = AlarmKitAdapter(channel: configuration.channel)
     let procedureActivities = CommanderProcedureLiveActivityCoordinator(
-      enabled: configuration.channel == .production && !CommanderDesignPreview.enabled
+      enabled: CommanderMVPPolicy.createsLiveActivities && configuration.channel == .production && !CommanderDesignPreview.enabled
     )
     let input = CommanderLaunchInput(configuration: configuration, now: clock())
     let scheduleService = input.scheduleService
     let namespace = input.namespace
     let service = AlarmSyncService(
       scheduleService: scheduleService,
-      store: UserDefaultsAlarmStateStore(key: "lazensky.commander.managedAlarms.\(configuration.channel.rawValue).v1"),
+      store: UserDefaultsAlarmStateStore(key: "lazensky.commander.managedAlarms.\(configuration.channel.rawValue).v1",
+        dataset: configuration.channel == .production ? CommanderRuntimeDataset.current : nil),
       adapter: adapter
     )
     let watchConnectivity = IPhoneWatchConnectivityCoordinator()
     let leadTimePreferences = LeadTimePreferencesStore(
-      key: "lazensky.commander.leadTimePreferences.\(namespace).v1"
+      key: "lazensky.commander.leadTimePreferences.\(namespace).v1",
+      isPersistent: !CommanderDesignPreview.enabled
     )
     let scheduleAuditReviewStore = ScheduleAuditReviewStore(
       key: "lazensky.commander.scheduleAuditReview.\(namespace).v1"
     )
     let savedPreferences = leadTimePreferences.load()
+    let scheduleSnapshotKey = "lazensky.commander.scheduleSnapshot.\(namespace).v1"
+    let initialSchedule: Schedule? = {
+      guard !CommanderDesignPreview.enabled,
+            let data = UserDefaults.standard.data(forKey: scheduleSnapshotKey),
+            let schedule = try? JSONDecoder().decode(Schedule.self, from: data)
+      else { return nil }
+      do {
+        try NativeAlarmContract.validateCanonical(schedule)
+        return schedule
+      } catch {
+        return nil
+      }
+    }()
 
     self.adapter = adapter
     self.procedureActivities = procedureActivities
@@ -108,20 +117,30 @@ final class CommanderViewModel: ObservableObject {
     self.leadTimePreferences = leadTimePreferences
     self.scheduleAuditReviewStore = scheduleAuditReviewStore
     self.channel = configuration.channel
+    self.suppressAutomaticForegroundUntil = clock().addingTimeInterval(Self.launchForegroundGraceInterval)
     self.leadTimeOverrides = CommanderDesignPreview.enabled ? LeadTimeOverrides() : savedPreferences.overrides
     self.leadTimeProjectionRevision = CommanderDesignPreview.enabled ? 0 : savedPreferences.revision
-    self.scheduleAuditAcknowledgements = scheduleAuditReviewStore.load()
+    self.scheduleAuditAcknowledgements = CommanderDesignPreview.enabled ? [] : scheduleAuditReviewStore.load()
+    #if COMMANDER_ACCEPTANCE_FIXTURES
+    let acceptanceWatchDeliveryEnabled = CommanderAcceptanceLaunchMode.current != .cleanup
+    #else
+    let acceptanceWatchDeliveryEnabled = true
+    #endif
     scheduleSync = CommanderScheduleSyncCoordinator(
       scheduleService: scheduleService,
       alarmSyncService: service,
-      scheduleStore: UserDefaultsScheduleSnapshotStore(key: "lazensky.commander.scheduleSnapshot.\(namespace).v1"),
-      watchDelivery: configuration.channel == .production ? watchConnectivity : nil,
+      scheduleStore: UserDefaultsScheduleSnapshotStore(key: scheduleSnapshotKey),
+      watchDelivery: configuration.channel == .production && acceptanceWatchDeliveryEnabled ? watchConnectivity : nil,
+      dataset: CommanderRuntimeDataset.current,
       clock: clock
     )
+    if let initialSchedule {
+      self.latestSchedule = initialSchedule
+    }
   }
 
   var watchScheduleSnapshot: WatchScheduleSnapshot? {
-    latestSchedule.map {
+    acceptedSnapshot ?? latestSchedule.map {
       WatchScheduleSnapshot(
         schedule: $0,
         leadTimeOverrides: leadTimeOverrides,
@@ -130,19 +149,29 @@ final class CommanderViewModel: ObservableObject {
     }
   }
 
-  #if COMMANDER_ACCEPTANCE_FIXTURES
   private func writeAcceptanceStatus(
     phase: String, expectedToken: String? = nil, observedToken: String? = nil,
-    message: String? = nil
+    message: String? = nil, verifiedAlarmCount: Int? = nil
   ) {
     guard let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
     else { return }
     var payload: [String: Any] = [
       "phase": phase, "timestamp": ISO8601DateFormatter().string(from: clock())
     ]
+    payload["requestID"] = CommanderAcceptanceLaunchMode.requestID
+    payload["dataset"] = CommanderRuntimeDataset.current.rawValue
+    payload["notificationsVerified"] = notificationsVerified
+    payload["alarmCount"] = verifiedAlarmCount ?? summary?.desiredAlarmCount
+    payload["alarmsVerified"] = verifiedAlarmCount != nil || (summary?.succeeded == true && summary?.readbackCoverage.isComplete == true)
     payload["expectedToken"] = expectedToken
     payload["observedToken"] = observedToken
     payload["message"] = message
+    if let summary {
+      let coverage = summary.readbackCoverage
+      payload["alarmSyncSucceeded"] = summary.succeeded
+      payload["evidencedAlarmCount"] = coverage.evidencedAlarmCount
+      payload["readbackComplete"] = coverage.isComplete
+    }
     if let data = try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted, .sortedKeys]) {
       try? data.write(to: documents.appendingPathComponent("commander-acceptance-status.json"), options: .atomic)
     }
@@ -151,12 +180,23 @@ final class CommanderViewModel: ObservableObject {
   // Observes the result of the same bootstrap used by a normal launch. It does
   // not request activities, schedule alarms or send an alternate Watch payload.
   func reportAcceptanceBootstrap() async {
-    guard summary?.readbackCoverage.isComplete == true, let snapshot = watchScheduleSnapshot else {
-      writeAcceptanceStatus(phase: "failed-alarm-sync", message: errorMessage ?? "AlarmKit read-back není úplný")
+    let coverage = summary?.readbackCoverage
+    guard summary?.succeeded == true, coverage?.isComplete == true, let snapshot = watchScheduleSnapshot else {
+      let detail: String
+      if let summary, let coverage {
+        detail = "AlarmKit read-back \(coverage.evidencedAlarmCount)/\(coverage.desiredAlarmCount); sync=\(summary.succeeded ? "ok" : "failed")"
+      } else {
+        detail = errorMessage ?? "AlarmKit synchronizace ještě nemá výsledek"
+      }
+      writeAcceptanceStatus(phase: "failed-alarm-sync", message: detail)
+      return
+    }
+    guard notificationsVerified else {
+      writeAcceptanceStatus(phase: "failed-notifications", message: errorMessage ?? "Oznámení nejsou ověřena")
       return
     }
     let mode = CommanderAcceptanceLaunchMode.current
-    if mode == .cleanup, await procedureActivities.hasOngoingActivities() {
+    if mode == .cleanup || !CommanderMVPPolicy.createsLiveActivities, await procedureActivities.hasOngoingActivities() {
       writeAcceptanceStatus(phase: "failed-live-activity", message: "ActivityKit stále obsahuje aktivní nebo čekající aktivitu")
       return
     }
@@ -164,33 +204,167 @@ final class CommanderViewModel: ObservableObject {
       schedule: snapshot.schedule, overrides: snapshot.leadTimeOverrides,
       projectionRevision: snapshot.projectionRevision
     )
-    if mode != .cleanup, !snapshot.schedule.events.isEmpty, prepared.isEmpty {
+    if CommanderMVPPolicy.createsLiveActivities, mode != .cleanup && mode != .none, !snapshot.schedule.events.isEmpty, prepared.isEmpty {
       writeAcceptanceStatus(phase: "failed-live-activity", message: liveActivityIssue ?? "Chybí plánovaná aktivita")
       return
     }
     let expected = snapshot.projectionIdentity
     let expectedToken = "\(expected.scheduleVersion)/\(expected.projectionRevision)"
+    if mode == .cleanup {
+      guard let remaining = try? await adapter.existingPlatformAlarmIDs(), remaining.isEmpty else {
+        writeAcceptanceStatus(phase: "failed-alarm-sync", message: "Acceptance alarmy ještě existují")
+        return
+      }
+      // Queue the empty dataset but never wait for an empty-snapshot ACK.
+      _ = try? await watchConnectivity.deliver(snapshot)
+      let state = await procedureActivities.activityState(schedule: snapshot.schedule, projectionRevision: snapshot.projectionRevision)
+      writeAcceptanceStatus(
+        phase: "cleaned",
+        expectedToken: expectedToken,
+        message: "iPhone cleanup potvrzen; state=\(state); alarms=\(summary?.desiredAlarmCount ?? 0); prepared=\(prepared.count); Watch cleanup se záměrně nečeká"
+      )
+      return
+    }
     for attempt in 0..<120 {
       if await watchConnectivity.verifiedProjectionIdentity() == expected {
-        let state = await procedureActivities.activityState(schedule: snapshot.schedule)
-        let phase = mode == .cleanup ? "cleaned"
-          : mode == .readback ? (state == "active" ? "activity-active" : "activity-not-active")
-          : "watch-acknowledged"
+        let state = await procedureActivities.activityState(schedule: snapshot.schedule, projectionRevision: snapshot.projectionRevision)
+        if mode == .none {
+          let defaults = UserDefaults.standard
+          for key in defaults.dictionaryRepresentation().keys where
+            key.hasPrefix("lazensky.commander.acceptance.") ||
+            key.hasPrefix("lazensky.commander.scheduleSnapshot.acceptance.") ||
+            key.hasPrefix("lazensky.commander.leadTimePreferences.acceptance.") ||
+            key.hasPrefix("lazensky.commander.scheduleAuditReview.acceptance.") {
+            defaults.removeObject(forKey: key)
+          }
+          try? await CommanderPhoneWidgetCache.make(dataset: .acceptance)?.remove()
+        }
+        let phase = mode == .none ? "production-verified" : "watch-acknowledged"
         writeAcceptanceStatus(phase: phase, expectedToken: expectedToken, observedToken: expectedToken,
           message: "state=\(state); alarms=\(summary?.desiredAlarmCount ?? 0); prepared=\(prepared.count)")
         return
       }
       if attempt < 119 { try? await Task.sleep(for: .milliseconds(250)) }
     }
-    writeAcceptanceStatus(phase: "failed-watch-ack", expectedToken: expectedToken,
-      message: "Watch nepotvrdily canonical snapshot z cache")
+    let observed = await watchConnectivity.verifiedProjectionIdentity()
+    let observedToken = observed.map { "\($0.scheduleVersion)/\($0.projectionRevision)" }
+    writeAcceptanceStatus(
+      phase: "failed-watch-ack",
+      expectedToken: expectedToken,
+      observedToken: observedToken,
+      message: "Watch nepotvrdily canonical snapshot z cache; observed=\(observedToken ?? "none")"
+    )
   }
-  #endif
 
-  private func reloadHomeWidgets() {
-    WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.iPhoneKind)
-    WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.iPhoneDayOverviewKind)
-    WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.iPhoneProcedureCountKind)
+  /// A diagnostic read must not repair/recreate the object it is testing.
+  func reportPassiveActivityReadback() async {
+    latestSchedule = try? await scheduleSync.loadLastSchedule()
+    guard let snapshot = watchScheduleSnapshot,
+          let payload = try? NativeAlarmContract.payload(schedule: snapshot.schedule, overrides: snapshot.leadTimeOverrides),
+          let actual = try? await adapter.existingPlatformFixedAlertDates() else {
+      writeAcceptanceStatus(phase: "failed-alarm-sync", message: "Chybí přesný AlarmKit read-back")
+      return
+    }
+    let expectedDates = payload.alarms.compactMap { try? NativeAlarmContract.date(fromLocalISO: $0.leaveAt) }
+      .filter { $0 > clock() }.sorted()
+    let actualDates = actual.values.sorted()
+    guard expectedDates == actualDates else {
+      writeAcceptanceStatus(phase: "failed-alarm-sync", message: "Počet/časy alarmů neodpovídají novému běhu")
+      return
+    }
+    let prepared = await procedureActivities.preparedStableIDs(schedule: snapshot.schedule,
+      overrides: snapshot.leadTimeOverrides, projectionRevision: snapshot.projectionRevision)
+    let state = await procedureActivities.activityState(schedule: snapshot.schedule,
+      projectionRevision: snapshot.projectionRevision)
+    let identity = snapshot.projectionIdentity
+    let token = "\(identity.scheduleVersion)/\(identity.projectionRevision)"
+    // The first bootstrap proved the ACK; this readback checks unchanged exact identity.
+    writeAcceptanceStatus(phase: state == "active" && !prepared.isEmpty ? "activity-active" : "activity-not-active",
+      expectedToken: token, observedToken: token,
+      message: "passive read-back; state=\(state); alarms=\(actualDates.count)", verifiedAlarmCount: actualDates.count)
+  }
+
+  private func recordAcceptanceProgress(_ phase: String, message: String? = nil) {
+    #if COMMANDER_ACCEPTANCE_FIXTURES
+    writeAcceptanceStatus(phase: phase, message: message)
+    #endif
+  }
+
+  private func reloadHomeWidgets() async {
+    guard !CommanderDesignPreview.enabled else { return }
+    var diagnostic: [String: Any] = [
+      "timestamp": ISO8601DateFormatter().string(from: clock()),
+      "dataset": CommanderRuntimeDataset.current.rawValue,
+      "appGroup": CommanderWatchWidgetContract.appGroupIdentifier,
+      "timelinesReloadRequested": false
+    ]
+    do {
+      // Keep a single serial writer, but retry container resolution after failure.
+      let cache: FileWatchScheduleCache
+      if let existing = phoneWidgetCache {
+        cache = existing
+      } else {
+        cache = try CommanderPhoneWidgetCache.require(dataset: CommanderRuntimeDataset.current)
+        phoneWidgetCache = cache
+      }
+      diagnostic["absoluteSnapshotPath"] = await cache.fileURL.path
+      guard let snapshot = watchScheduleSnapshot else {
+        diagnostic["status"] = "waiting-for-validated-schedule"
+        recordPhoneWidgetPublication(diagnostic)
+        return
+      }
+      diagnostic["scheduleVersion"] = snapshot.schedule.scheduleVersion
+      diagnostic["projectionRevision"] = snapshot.projectionRevision
+      let receipt = try await cache.acceptAndLoad(snapshot)
+      diagnostic["decision"] = String(describing: receipt.decision)
+      diagnostic["readbackScheduleVersion"] = receipt.snapshot?.schedule.scheduleVersion
+      try receipt.verifyPublished(snapshot)
+      #if DEBUG
+      // CoreDevice only exports Library/Documents/tmp in App Group containers.
+      // Export disk bytes for diagnostics; widgets NEVER consume this copy.
+      do {
+        let source = await cache.fileURL
+        let bytes = try Data(contentsOf: source)
+        guard try JSONDecoder().decode(WatchScheduleSnapshot.self, from: bytes) == snapshot else {
+          throw CommanderPhoneWidgetPublishError.readbackMismatch
+        }
+        let exportDirectory = source.deletingLastPathComponent().deletingLastPathComponent()
+          .appendingPathComponent("Library/Caches/CommanderPhoneWidgetVerification-" + CommanderRuntimeDataset.current.rawValue)
+        try FileManager.default.createDirectory(at: exportDirectory, withIntermediateDirectories: true)
+        let exportURL = exportDirectory.appendingPathComponent(FileWatchScheduleCache.defaultFileName)
+        try bytes.write(to: exportURL, options: .atomic)
+        diagnostic["verificationExportPath"] = exportURL.path
+      } catch {
+        diagnostic["verificationExportError"] = error.localizedDescription
+      }
+      #endif
+      WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.iPhoneKind)
+      WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.iPhoneDayOverviewKind)
+      WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.iPhoneProcedureCountKind)
+      phoneWidgetIssue = nil
+      diagnostic["status"] = "verified"
+      diagnostic["timelinesReloadRequested"] = true
+      diagnostic["snapshotPath"] = CommanderPhoneWidgetCache.directoryName(dataset: CommanderRuntimeDataset.current)
+        + "/" + FileWatchScheduleCache.defaultFileName
+    } catch {
+      phoneWidgetIssue = "Widget cache: \(error.localizedDescription)"
+      diagnostic["status"] = "failed"
+      diagnostic["error"] = String(describing: error)
+      diagnostic["message"] = error.localizedDescription
+    }
+    recordPhoneWidgetPublication(diagnostic)
+  }
+
+  private func recordPhoneWidgetPublication(_ diagnostic: [String: Any]) {
+    do {
+      let data = try JSONSerialization.data(withJSONObject: diagnostic, options: [.prettyPrinted, .sortedKeys])
+      NSLog("CommanderPhoneWidget publish: %@", String(decoding: data, as: UTF8.self))
+      let documents = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
+        appropriateFor: nil, create: true)
+      try data.write(to: documents.appendingPathComponent("commander-phone-widget-publication.json"), options: .atomic)
+    } catch {
+      NSLog("CommanderPhoneWidget diagnostic write failed: %@", error.localizedDescription)
+    }
   }
 
   var defaultLeadTimeMinutes: Int {
@@ -209,10 +383,10 @@ final class CommanderViewModel: ObservableObject {
   }
 
   func bootstrap() async {
-    CommanderDesignPreview.publishSharedFlag()
+    recordAcceptanceProgress("bootstrap-start")
     if CommanderDesignPreview.enabled {
       latestSchedule = CommanderDesignPreview.schedule
-      reloadHomeWidgets()
+      await reloadHomeWidgets()
       accessStatus = "Designový náhled – alarmy jsou vypnuté"
       watchTransferStatus = "Designový náhled"
       recoveryStatus = "Náhledový týden načten"
@@ -223,8 +397,36 @@ final class CommanderViewModel: ObservableObject {
       return
     }
 
-    latestSchedule = try? await scheduleSync.loadLastSchedule()
-    reloadHomeWidgets()
+    applySpaLeadTimePresetIfNeeded()
+    let cachedSchedule = try? await scheduleSync.loadLastSchedule()
+    if cachedSchedule != latestSchedule {
+      latestSchedule = cachedSchedule
+    }
+    recordAcceptanceProgress(
+      "bootstrap-cache-loaded",
+      message: latestSchedule == nil ? "cache=empty" : "cache=present"
+    )
+
+    // Acceptance/read-back launches must prove the result of the real maintenance
+    // pass, not race the delayed normal-launch task and inspect an empty summary.
+    if CommanderAcceptanceLaunchMode.current != .none || CommanderAcceptanceLaunchMode.productionReadback {
+      await performLaunchMaintenance()
+      return
+    }
+
+    // The cached schedule is already preloaded before the first frame. Keep the
+    // expensive AlarmKit/Watch/widget maintenance away from the ordinary launch gesture.
+    launchMaintenanceTask?.cancel()
+    launchMaintenanceTask = Task { @MainActor [weak self] in
+      try? await Task.sleep(nanoseconds: 2_000_000_000)
+      guard !Task.isCancelled, let self else { return }
+      await self.performLaunchMaintenance()
+    }
+  }
+
+  private func performLaunchMaintenance() async {
+    await procedureActivities.retireActivitiesForMVP()
+    await reloadHomeWidgets()
     if channel == .production, let watchScheduleSnapshot {
       do {
         watchTransferStatus = try await watchConnectivity.deliver(watchScheduleSnapshot).diagnosticText
@@ -234,21 +436,32 @@ final class CommanderViewModel: ObservableObject {
     } else if channel == .e2e {
       watchTransferStatus = "Testovací kanál je od Watch oddělený"
     }
+
+    recordAcceptanceProgress("bootstrap-before-access")
     await refreshAccess()
-    if latestSchedule != nil {
-      await synchronizeWithRecovery(maxAttempts: 3, automatic: true, source: .cached)
-    }
-    await synchronizeWithRecovery(maxAttempts: 3, automatic: true)
+    recordAcceptanceProgress("bootstrap-access-ready", message: accessStatus)
+
+    // One canonical remote reconciliation is enough for a normal launch. The
+    // previously scheduled alarms remain owned by AlarmKit while this runs.
+    recordAcceptanceProgress("bootstrap-before-remote-sync")
+    await synchronizeWithRecovery(maxAttempts: 2, automatic: true)
+    recordAcceptanceProgress(
+      "bootstrap-complete",
+      message: "alarms=\(summary?.desiredAlarmCount ?? -1); succeeded=\(summary?.succeeded ?? false)"
+    )
   }
 
   func handleForeground() async {
     if CommanderDesignPreview.enabled { return }
+    if let until = suppressAutomaticForegroundUntil, clock() < until { return }
+    suppressAutomaticForegroundUntil = nil
+    await procedureActivities.retireActivitiesForMVP()
     await reconcileProcedureActivitiesFromLatestSchedule()
-    if let lastAutomaticAttempt, clock().timeIntervalSince(lastAutomaticAttempt) < 10 { return }
-    if latestSchedule != nil {
-      await synchronizeWithRecovery(maxAttempts: 3, automatic: true, source: .cached)
+    if let lastAutomaticAttempt,
+       clock().timeIntervalSince(lastAutomaticAttempt) < Self.automaticForegroundRefreshInterval {
+      return
     }
-    await synchronizeWithRecovery(maxAttempts: 3, automatic: true)
+    await synchronizeWithRecovery(maxAttempts: 1, automatic: true)
   }
 
   private func reconcileProcedureActivitiesFromLatestSchedule() async {
@@ -261,6 +474,13 @@ final class CommanderViewModel: ObservableObject {
       now: clock()
     )
     liveActivityIssue = await procedureActivities.issue
+  }
+
+  func openNotification(action: String, category: String, payload: [String: String]) {
+    guard CommanderNotificationContract.routesToCurrent(actionIdentifier: action,
+      defaultActionIdentifier: UNNotificationDefaultActionIdentifier, category: category,
+      payload: payload, dataset: CommanderRuntimeDataset.current) else { return }
+    todayRouteRevision += 1
   }
 
   func refreshAccess() async {
@@ -366,6 +586,30 @@ final class CommanderViewModel: ObservableObject {
     applyLeadTimeOverrides(LeadTimeOverrides())
   }
 
+  func applySpaLeadTimePreset() {
+    UserDefaults.standard.set(true, forKey: Self.spaLeadTimePresetKey)
+    applyLeadTimeOverrides(Self.spaLeadTimePreset())
+  }
+
+  private func applySpaLeadTimePresetIfNeeded() {
+    guard channel == .production,
+          !UserDefaults.standard.bool(forKey: Self.spaLeadTimePresetKey) else { return }
+    let normalized = LeadTimePreferencesStore.normalized(Self.spaLeadTimePreset())
+    leadTimeOverrides = normalized
+    leadTimeProjectionRevision += 1
+    leadTimePreferences.save(
+      LeadTimePreferences(overrides: normalized, revision: leadTimeProjectionRevision)
+    )
+    UserDefaults.standard.set(true, forKey: Self.spaLeadTimePresetKey)
+  }
+
+  private static func spaLeadTimePreset() -> LeadTimeOverrides {
+    var preset = LeadTimeOverrides()
+    preset.defaultLeadTimeMinutes = 20
+    preset.procedureTypeOverrides["Vizita"] = 5
+    return preset
+  }
+
   func acknowledgeScheduleAuditIssue(_ issue: CommanderScheduleAuditIssue, note: String? = nil) {
     guard issue.severity == .warning, let schedule = latestSchedule else { return }
     let acknowledgement = CommanderScheduleAuditAcknowledgement(
@@ -381,7 +625,7 @@ final class CommanderViewModel: ObservableObject {
     scheduleAuditAcknowledgements = current.sorted {
       ($0.scheduleVersion, $0.confirmedAt, $0.reviewKey) < ($1.scheduleVersion, $1.confirmedAt, $1.reviewKey)
     }
-    scheduleAuditReviewStore.save(scheduleAuditAcknowledgements)
+    if !CommanderDesignPreview.enabled { scheduleAuditReviewStore.save(scheduleAuditAcknowledgements) }
   }
 
   func revokeScheduleAuditAcknowledgement(for issue: CommanderScheduleAuditIssue) {
@@ -391,7 +635,7 @@ final class CommanderViewModel: ObservableObject {
     }
     guard filtered != scheduleAuditAcknowledgements else { return }
     scheduleAuditAcknowledgements = filtered
-    scheduleAuditReviewStore.save(filtered)
+    if !CommanderDesignPreview.enabled { scheduleAuditReviewStore.save(filtered) }
   }
 
   func scheduleAuditReviewState() -> CommanderScheduleAuditReviewState? {
@@ -417,12 +661,20 @@ final class CommanderViewModel: ObservableObject {
     if CommanderDesignPreview.enabled {
       latestSchedule = CommanderDesignPreview.schedule
       recoveryStatus = "Náhledový týden načten"
-      Task { reloadHomeWidgets() }
+      Task { await reloadHomeWidgets() }
       return
     }
+
+    // +/- controls can generate many changes in a few hundred milliseconds.
+    // Persist immediately, but coalesce expensive AlarmKit/widget reconciliation.
     recoveryStatus = "Přepočítávám čas odchodu"
-    reloadHomeWidgets()
-    Task { await synchronizeWithRecovery(maxAttempts: 3, automatic: false, source: .cached) }
+    leadTimeSyncTask?.cancel()
+    leadTimeSyncTask = Task { @MainActor [weak self] in
+      try? await Task.sleep(nanoseconds: 450_000_000)
+      guard !Task.isCancelled, let self else { return }
+      await self.reloadHomeWidgets()
+      await self.synchronizeWithRecovery(maxAttempts: 3, automatic: false, source: .cached)
+    }
   }
 
   private static func clampedLeadTime(_ value: Int) -> Int {
@@ -477,9 +729,10 @@ final class CommanderViewModel: ObservableObject {
           overrides: projectionOverrides,
           projectionRevision: projectionRevision
         )
+        acceptedSnapshot = result.watchSnapshot
         latestSchedule = result.schedule
         summary = result.alarmSummary
-        reloadHomeWidgets()
+        await reloadHomeWidgets()
         await procedureActivities.reconcile(
           schedule: result.schedule,
           overrides: projectionOverrides,
@@ -490,16 +743,37 @@ final class CommanderViewModel: ObservableObject {
         watchTransferStatus = result.watchDeliveryStatus.diagnosticText
         recovery.recordAlarmVerification(succeeded: result.alarmSummary.succeeded)
 
+        var notificationIssue: String?
+        notificationsVerified = false
+        do {
+          // A partial AlarmKit failure can leave valid alarms armed. Never add a
+          // departure fallback for an existing alarm, or when absence is unproven.
+          let existingAlarmEvents = result.alarmSummary.succeeded ? Set<String>() :
+            (try? await adapter.existingEventStableIDs())
+          try await eventNotifications.reconcile(snapshot: result.watchSnapshot,
+            dataset: CommanderRuntimeDataset.current, channel: channel.rawValue,
+            includeDeparture: !result.alarmSummary.succeeded && existingAlarmEvents != nil, now: clock(),
+            departureExclusions: existingAlarmEvents ?? Set(result.schedule.events.map(\.stableId)))
+          notificationsVerified = true
+          fallbackStatus = result.alarmSummary.succeeded ? "Začátky událostí ověřeny" :
+            existingAlarmEvents == nil ? "Začátky ověřeny; odchod nelze ověřit" : "Záloha odchodu a začátky ověřeny"
+        } catch {
+          notificationIssue = error.localizedDescription
+          fallbackStatus = "Oznámení nejsou ověřena"
+          requiresUserAction = true
+          userActionMessage = "Zkontroluj povolení oznámení pro Lázeňský Commander."
+        }
+
         if result.alarmSummary.succeeded {
-          guard await fallbackNotifications.clear() else {
-            fallbackStatus = "Automaticky uklízím zálohu"
-            recoveryStatus = "AlarmKit ověřen, dokončuji úklid zálohy"
+          if let notificationIssue {
+            requiresUserAction = true
+            userActionMessage = "Zkontroluj povolení oznámení pro Lázeňský Commander."
+            errorMessage = notificationIssue
+            recoveryStatus = "AlarmKit ověřen; oznámení začátku vyžadují kontrolu"
             recovery.requestRetry()
-            errorMessage = "Záložní upozornění se zatím nepodařilo ověřeně odstranit."
             break
           }
 
-          fallbackStatus = "Nevyužito"
           requiresUserAction = false
           userActionMessage = nil
           errorMessage = nil
@@ -531,29 +805,6 @@ final class CommanderViewModel: ObservableObject {
       }
     }
 
-    if recovery.needsFallback, let latestSchedule {
-      do {
-        if try await fallbackNotifications.arm(
-          schedule: latestSchedule,
-          overrides: leadTimeOverrides,
-          now: clock()
-        ) {
-          fallbackStatus = "Aktivní a ověřená bezpečnostní pojistka"
-          requiresUserAction = false
-          userActionMessage = nil
-        } else {
-          fallbackStatus = "Není povolena"
-          requiresUserAction = true
-          userActionMessage = "Commander nemůže zajistit záložní upozornění. Povol oznámení pro Lázeňský Commander."
-        }
-      } catch {
-        fallbackStatus = "Nelze ověřit"
-        requiresUserAction = true
-        userActionMessage = "Commander nemůže zajistit záložní upozornění. Povol oznámení pro Lázeňský Commander."
-        errorMessage = error.localizedDescription
-      }
-    }
-
     if recovery.shouldRetry {
       scheduleDelayedRecovery(source: source)
     }
@@ -568,59 +819,6 @@ final class CommanderViewModel: ObservableObject {
       self.delayedRecoveryTask = nil
       await self.synchronizeWithRecovery(maxAttempts: 2, automatic: true, source: source)
     }
-  }
-}
-
-private struct LeadTimePreferences: Codable {
-  let overrides: LeadTimeOverrides
-  let revision: Int
-}
-
-@MainActor
-private final class LeadTimePreferencesStore {
-  private let defaults: UserDefaults
-  private let key: String
-
-  init(defaults: UserDefaults = .standard, key: String) {
-    self.defaults = defaults
-    self.key = key
-  }
-
-  func load() -> LeadTimePreferences {
-    guard
-      let data = defaults.data(forKey: key),
-      let saved = try? JSONDecoder().decode(LeadTimePreferences.self, from: data)
-    else {
-      return LeadTimePreferences(overrides: LeadTimeOverrides(), revision: 0)
-    }
-    return LeadTimePreferences(
-      overrides: Self.normalized(saved.overrides),
-      revision: max(0, saved.revision)
-    )
-  }
-
-  func save(_ preferences: LeadTimePreferences) {
-    guard let data = try? JSONEncoder().encode(preferences) else { return }
-    defaults.set(data, forKey: key)
-  }
-
-  static func normalized(_ overrides: LeadTimeOverrides) -> LeadTimeOverrides {
-    LeadTimeOverrides(
-      defaultLeadTimeMinutes: valid(overrides.defaultLeadTimeMinutes),
-      procedureTypeOverrides: valid(overrides.procedureTypeOverrides),
-      procedureCategoryOverrides: valid(overrides.procedureCategoryOverrides),
-      mealOverrides: valid(overrides.mealOverrides),
-      eventOverrides: valid(overrides.eventOverrides)
-    )
-  }
-
-  private static func valid(_ value: Int?) -> Int? {
-    guard let value, (0...180).contains(value) else { return nil }
-    return value
-  }
-
-  private static func valid(_ values: [String: Int]) -> [String: Int] {
-    values.filter { !$0.key.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && (0...180).contains($0.value) }
   }
 }
 
@@ -649,124 +847,137 @@ private final class ScheduleAuditReviewStore {
 }
 
 @MainActor
-private final class IPhoneFallbackNotificationService {
-  private static let identifierPrefix = "lazensky.commander.iphone.fallback."
-  private static let prague = TimeZone(identifier: "Europe/Prague")!
+private final class IPhoneEventNotificationService {
   private let center = UNUserNotificationCenter.current()
 
-  func clear() async -> Bool {
-    for _ in 0..<2 {
-      let pending = await center.pendingNotificationRequests()
-      let identifiers = pending.map(\.identifier).filter { $0.hasPrefix(Self.identifierPrefix) }
-      if identifiers.isEmpty { return true }
-      center.removePendingNotificationRequests(withIdentifiers: identifiers)
-      await Task.yield()
-      let remaining = await center.pendingNotificationRequests()
-      if !remaining.contains(where: { $0.identifier.hasPrefix(Self.identifierPrefix) }) {
-        return true
-      }
-    }
-    return false
-  }
-
-  func arm(
-    schedule: Schedule,
-    overrides: LeadTimeOverrides? = nil,
-    now: Date = Date()
-  ) async throws -> Bool {
-    guard try await ensureAuthorization() else { return false }
-    let payload = try NativeAlarmContract.payload(schedule: schedule, overrides: overrides)
-    let desired = try payload.alarms
-      .filter { try NativeAlarmContract.date(fromLocalISO: $0.leaveAt) > now }
-      .sorted { $0.leaveAt < $1.leaveAt }
-      .prefix(60)
-
-    var desiredDates: [String: Date] = [:]
-    for alarm in desired {
-      desiredDates[Self.identifierPrefix + alarm.stableId] = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
-    }
-
-    var lastError: Error?
-    for _ in 0..<2 {
-      _ = await clear()
-      do {
-        for alarm in desired {
-          let content = UNMutableNotificationContent()
-          content.title = "Čas vyrazit"
-          content.body = alarm.location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? alarm.title
-            : "\(alarm.title) · \(alarm.location)"
-          content.sound = .default
-          content.interruptionLevel = .active
-          content.userInfo = ["stableId": alarm.stableId, "scheduleVersion": schedule.scheduleVersion]
-
-          let leaveAt = try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
-          var calendar = Calendar(identifier: .gregorian)
-          calendar.timeZone = Self.prague
-          var components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: leaveAt)
-          components.timeZone = Self.prague
-          let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-          let request = UNNotificationRequest(
-            identifier: Self.identifierPrefix + alarm.stableId,
-            content: content,
-            trigger: trigger
-          )
-          try await center.add(request)
-        }
-      } catch {
-        lastError = error
-        continue
-      }
-
-      if await verify(desiredDates: desiredDates) {
-        return true
-      }
-    }
-
-    if let lastError { throw lastError }
-    return false
-  }
-
-  private func verify(desiredDates: [String: Date]) async -> Bool {
+  func reconcile(snapshot: WatchScheduleSnapshot, dataset: CommanderScheduleDataset,
+                 channel: String, includeDeparture: Bool, now: Date,
+                 departureExclusions: Set<String> = []) async throws {
+    // Validate before removing anything, even when permission has been revoked.
+    _ = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
+      channel: channel, includeDeparture: includeDeparture, now: now, departureExclusions: departureExclusions)
+    let prefix = CommanderNotificationContract.prefix(dataset: dataset, channel: channel)
     let pending = await center.pendingNotificationRequests()
-    let fallback = pending.filter { $0.identifier.hasPrefix(Self.identifierPrefix) }
-    guard Set(fallback.map(\.identifier)) == Set(desiredDates.keys) else { return false }
-
-    for request in fallback {
-      guard let expected = desiredDates[request.identifier],
-            let trigger = request.trigger as? UNCalendarNotificationTrigger,
-            let actual = trigger.nextTriggerDate(),
-            abs(actual.timeIntervalSince(expected)) <= 1
-      else { return false }
+    // Migrate only legacy fallback IDs belonging to this dataset. Other namespaces,
+    // including provisioning reminders and production during acceptance, are untouched.
+    let legacyPrefix = "lazensky.commander.iphone.fallback."
+    let legacy = pending.filter {
+      channel == "production" && $0.identifier.hasPrefix(legacyPrefix) &&
+        dataset.accepts(stableID: String($0.identifier.dropFirst(legacyPrefix.count)))
+    }.map(\.identifier)
+    let otherCount = pending.filter { !$0.identifier.hasPrefix(prefix) && !legacy.contains($0.identifier) }.count
+    let desired = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
+      channel: channel, includeDeparture: includeDeparture, now: now, limit: max(0, 60 - otherCount), departureExclusions: departureExclusions)
+    let current = pending.map { request in
+      CommanderScheduledNotification(identifier: request.identifier, title: request.content.title,
+        body: request.content.body, fireAt: (request.trigger as? UNCalendarNotificationTrigger)?.nextTriggerDate() ?? .distantPast,
+        payload: request.content.userInfo as? [String: String] ?? [:])
     }
-    return true
+    let changes = CommanderNotificationContract.reconcile(current: current, desired: desired,
+      dataset: dataset, channel: channel)
+    let obsolete = changes.remove
+    let upserts = Set(changes.upsert.map(\.identifier))
+    center.removePendingNotificationRequests(withIdentifiers: obsolete + legacy)
+    let allEvents = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
+      channel: channel, includeDeparture: includeDeparture, now: .distantPast,
+      limit: Int.max, departureExclusions: departureExclusions)
+    let delivered = await center.deliveredNotifications()
+    center.removeDeliveredNotifications(withIdentifiers: delivered.filter { notification in
+      let request = notification.request
+      if request.identifier.hasPrefix(prefix) {
+        // Preserve valid delivered alerts so opening/syncing the app doesn't erase
+        // Notification Center history or the user's opportunity to tap on Watch.
+        return !allEvents.contains { item in
+          item.identifier == request.identifier && item.payload == request.content.userInfo as? [String: String] &&
+            item.title == request.content.title && item.body == request.content.body
+        }
+      }
+      return channel == "production" && request.identifier.hasPrefix(legacyPrefix) &&
+        dataset.accepts(stableID: String(request.identifier.dropFirst(legacyPrefix.count)))
+    }.map { $0.request.identifier })
+    var categories = await center.notificationCategories()
+    categories.insert(UNNotificationCategory(identifier: CommanderNotificationContract.category,
+      actions: [], intentIdentifiers: [], options: []))
+    center.setNotificationCategories(categories)
+    if desired.isEmpty {
+      let remaining = await center.pendingNotificationRequests()
+      guard !remaining.contains(where: { obsolete.contains($0.identifier) || legacy.contains($0.identifier) }) else {
+        throw NSError(domain: "CommanderNotifications", code: 2,
+          userInfo: [NSLocalizedDescriptionKey: "Úklid oznámení se nepodařilo ověřit."])
+      }
+      let future = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
+        channel: channel, includeDeparture: includeDeparture, now: now, departureExclusions: departureExclusions)
+      guard future.isEmpty else {
+        throw NSError(domain: "CommanderNotifications", code: 3,
+          userInfo: [NSLocalizedDescriptionKey: "Pro oznámení začátků nezbývá místo v systémové frontě."])
+      }
+      return
+    }
+    let settings = await center.notificationSettings()
+    let permitted: Bool
+    switch settings.authorizationStatus {
+    case .authorized, .provisional, .ephemeral: permitted = true
+    case .notDetermined: permitted = try await center.requestAuthorization(options: [.alert, .sound])
+    default: permitted = false
+    }
+    guard permitted else {
+      throw NSError(domain: "CommanderNotifications", code: 1,
+        userInfo: [NSLocalizedDescriptionKey: "Oznámení začátku událostí nejsou povolena."])
+    }
+    for item in desired where upserts.contains(item.identifier) || !pending.contains(where: { matches($0, item) }) {
+      let content = UNMutableNotificationContent()
+      content.title = item.title
+      content.body = item.body
+      content.sound = .default
+      content.interruptionLevel = .active
+      content.categoryIdentifier = CommanderNotificationContract.category
+      content.userInfo = item.payload
+      var calendar = Calendar(identifier: .gregorian)
+      calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+      var components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: item.fireAt)
+      components.timeZone = calendar.timeZone
+      try await center.add(UNNotificationRequest(identifier: item.identifier, content: content,
+        trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)))
+    }
+    let observed = await center.pendingNotificationRequests()
+    let verificationTime = Date()
+    guard desired.filter({ $0.fireAt > verificationTime }).allSatisfy({ item in observed.contains { matches($0, item) } }),
+          !observed.contains(where: { obsolete.contains($0.identifier) || legacy.contains($0.identifier) }) else {
+      throw NSError(domain: "CommanderNotifications", code: 2,
+        userInfo: [NSLocalizedDescriptionKey: "Naplánovaná oznámení neodpovídají rozpisu; kontrola se zopakuje."])
+    }
   }
 
-  private func ensureAuthorization() async throws -> Bool {
-    let settings = await center.notificationSettings()
-    switch settings.authorizationStatus {
-    case .authorized, .provisional, .ephemeral:
-      return true
-    case .notDetermined:
-      return try await center.requestAuthorization(options: [.alert, .sound])
-    case .denied:
-      return false
-    @unknown default:
-      return false
-    }
+  private func matches(_ request: UNNotificationRequest, _ item: CommanderScheduledNotification) -> Bool {
+    guard let trigger = request.trigger as? UNCalendarNotificationTrigger,
+          !trigger.repeats, let date = trigger.nextTriggerDate() else { return false }
+    return request.identifier == item.identifier && request.content.title == item.title &&
+      request.content.body == item.body && request.content.categoryIdentifier == CommanderNotificationContract.category &&
+      request.content.userInfo as? [String: String] == item.payload && request.content.sound != nil &&
+      request.content.interruptionLevel == .active && abs(date.timeIntervalSince(item.fireAt)) < 1
   }
 }
 
 // Only input selection differs in an acceptance build. All lifecycle and UI
 // code below is shared; reopening without arguments reuses the persisted times.
 private enum CommanderAcceptanceLaunchMode {
-  case none, visual, cleanup, readback
+  case none, visual, single, cleanup, readback
+
+  static var requestID: String? {
+    let args = ProcessInfo.processInfo.arguments
+    guard let i = args.firstIndex(of: "--commander-request-id"), args.indices.contains(i + 1) else { return nil }
+    return args[i + 1]
+  }
+  static var productionReadback: Bool {
+    ProcessInfo.processInfo.arguments.contains("--production-readback")
+  }
 
   static var current: Self {
     #if COMMANDER_ACCEPTANCE_FIXTURES
     let arguments = ProcessInfo.processInfo.arguments
     if arguments.contains("--acceptance-cleanup") { return .cleanup }
     if arguments.contains("--acceptance-readback") { return .readback }
+    if arguments.contains("--acceptance-single") { return .single }
     if arguments.contains("--acceptance-visual") || arguments.contains("--acceptance-iphone-visual") { return .visual }
     #endif
     return .none
@@ -785,14 +996,25 @@ private struct CommanderLaunchInput {
     }
     let mode = CommanderAcceptanceLaunchMode.current
     let result = Result<Schedule, Error> {
-      if mode != .visual && mode != .cleanup {
+      if mode != .visual && mode != .single && mode != .cleanup {
         guard let saved else { throw CommanderScheduleSyncError.noValidatedSnapshot }
         return saved
       }
-      let fixture = try CommanderAcceptanceSchedule(
-        now: now, previousVersion: saved?.scheduleVersion ?? 0,
-        cleanup: mode != .visual
-      ).schedule
+
+      let fixture: Schedule
+      if mode == .cleanup {
+        fixture = try CommanderAcceptanceSchedule(
+          now: now, previousVersion: saved?.scheduleVersion ?? 0,
+          cleanup: true
+        ).schedule
+      } else {
+        let scenario: PhysicalAcceptanceScenario = mode == .single ? .singleRenderer : .fullSpaDay
+        fixture = try CommanderAcceptanceSchedule(
+          now: now,
+          previousVersion: saved?.scheduleVersion ?? 0,
+          scenario: scenario
+        ).schedule
+      }
       UserDefaults.standard.set(try JSONEncoder().encode(fixture), forKey: key)
       return fixture
     }
@@ -815,23 +1037,52 @@ private struct InjectedScheduleService: ScheduleServing {
 @main
 struct LazenskyCommanderApp: App {
   @Environment(\.scenePhase) private var scenePhase
-  @StateObject private var model = CommanderViewModel()
+  @StateObject private var model: CommanderViewModel
+  private let notificationDelegate: CommanderPhoneNotificationDelegate
+
+  init() {
+    let model = CommanderViewModel()
+    _model = StateObject(wrappedValue: model)
+    notificationDelegate = CommanderPhoneNotificationDelegate(model: model)
+    UNUserNotificationCenter.current().delegate = notificationDelegate
+  }
 
   var body: some Scene {
     WindowGroup {
       CommanderAppTabs(model: model)
         .preferredColorScheme(.dark)
         .task {
-          await model.bootstrap()
-          #if COMMANDER_ACCEPTANCE_FIXTURES
-          await model.reportAcceptanceBootstrap()
-          #endif
+          if CommanderAcceptanceLaunchMode.current == .readback {
+            await model.reportPassiveActivityReadback()
+          } else {
+            await model.bootstrap()
+            if CommanderAcceptanceLaunchMode.current != .none || CommanderAcceptanceLaunchMode.productionReadback {
+              await model.reportAcceptanceBootstrap()
+            }
+          }
         }
         .onChange(of: scenePhase) { _, phase in
-          guard phase == .active else { return }
+          guard phase == .active, CommanderAcceptanceLaunchMode.current != .readback else { return }
           Task { await model.handleForeground() }
         }
     }
+  }
+}
+
+private final class CommanderPhoneNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
+  private let model: CommanderViewModel
+  init(model: CommanderViewModel) { self.model = model }
+
+  func userNotificationCenter(_ center: UNUserNotificationCenter,
+                              willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+    [.banner, .sound]
+  }
+
+  func userNotificationCenter(_ center: UNUserNotificationCenter,
+                              didReceive response: UNNotificationResponse) async {
+    let content = response.notification.request.content
+    await model.openNotification(action: response.actionIdentifier, category: content.categoryIdentifier,
+                                 payload: content.userInfo as? [String: String] ?? [:])
   }
 }
 

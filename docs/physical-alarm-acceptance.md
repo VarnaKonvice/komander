@@ -40,13 +40,13 @@ První okno tedy obsahuje Snídani → Magnetoterapii → Rehabilitaci. Večeře
 
 1. **Před snídaní:** Commander se objeví před prvním odchodem a ukazuje Snídani, `Vyrazit za`, odchod a následující Magnetoterapii.
 2. **T+4:** zazvoní AlarmKit pro Snídani.
-3. Po **Stop** se stejná Commander Live Activity aktualizuje na fokus Snídaně a ukazuje `Konec za`, absolutní začátek a další Magnetoterapii.
-4. **T+6 během snídaně:** zazvoní AlarmKit pro Magnetoterapii. Po Stop se fokus stejné Commander aktivity přepne na Magnetoterapii a jako další zůstane Rehabilitace.
-5. **T+12:** zazvoní AlarmKit pro Rehabilitaci. Po Stop se fokus přepne na Rehabilitaci.
+3. Po **Stop** se stejná Commander Live Activity aktualizuje na fokus Snídaně a před začátkem ukazuje `startCountdown` do začátku a další Magnetoterapii.
+4. **T+6 během snídaně:** zazvoní AlarmKit pro Magnetoterapii. Po Stop se fokus stejné Commander aktivity přepne na Magnetoterapii v `startCountdown` a jako další zůstane Rehabilitace.
+5. **T+12:** zazvoní AlarmKit pro Rehabilitaci. Po Stop se fokus přepne na Rehabilitaci v `startCountdown`.
 6. **Po T+16:** první Commander blok může zestárnout; přesné automatické strukturální ukončení bez push není acceptance požadavek.
 7. **T+18:** má vzniknout samostatný pending/active blok pro Večeři (3 min před jejím začátkem, 1 min před leaveAt).
-8. **T+19:** zazvoní AlarmKit pro Večeři. Po Stop se fokus večeřního bloku přepne na `eventContext`.
-9. **T+21 až T+24:** systémový timer v režimu `eventContext` odpočítává do konce Večeře; přesná textová změna v `startAt/endAt` bez ActivityKit update se nevyžaduje.
+8. **T+19:** zazvoní AlarmKit pro Večeři. Po Stop před začátkem se fokus večeřního bloku přepne na `startCountdown`; Stop/reconcile od začátku volí `eventContext`.
+9. **T+21 až T+24:** pokud proběhne aktualizace do `eventContext`, systémový timer odpočítává do konce Večeře. Přesná změna režimu/textu v `startAt/endAt` bez ActivityKit update není garantována; ve fyzickém protokolu zaznamenej, co se skutečně změnilo.
 
 Současně se průběžně ověřují Lock Screen, Dynamic Island a Apple Watch Smart Stack/detail.
 
@@ -76,7 +76,7 @@ READY je důkaz přípravy, nikoli fyzický PASS.
 
 ## PASS / FAIL
 
-**PASS:** všechny čtyři alarmy zazvoní v canonical `leaveAt`; po každém Stop se stejná Commander Live Activity bez `Activity.request` přepne na správný stable ID v režimu `eventContext`; eventContext zůstává pravdivý před i po `startAt` a Watch obdrží stejný ActivityKit update; po delší mezeře vznikne samostatný blok Večeře; barvy, ikony, další událost a Dynamic Island odpovídají stejnému příběhu.
+**PASS:** všechny čtyři alarmy zazvoní v canonical `leaveAt`; po každém Stop se stejná Commander Live Activity bez `Activity.request` přepne na správný stable ID v režimu `startCountdown` před začátkem nebo `eventContext` od začátku; žádný režim předčasně netvrdí průběh a Watch obdrží stejný ActivityKit update; po delší mezeře vznikne samostatný blok Večeře; barvy, ikony, další událost a Dynamic Island odpovídají stejnému příběhu.
 
 **FAIL:** některý alarm má jiný fire time, Stop neaktualizuje existující Commander fokus/režim, vzniknou překrývající se vlastní Commander karty, následný blok se neaktivuje, Watch nedostanou Live Activity, nebo se objeví background `Activity.request` cesta ze Stop intentu.
 

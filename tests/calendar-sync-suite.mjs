@@ -88,8 +88,32 @@ export async function runCalendarSyncSuite({ repoRoot }) {
   const productionSchedule = JSON.parse(await fs.readFile(path.join(repoRoot, 'data/schedule.json'), 'utf8'));
   const iconMap = JSON.parse(await fs.readFile(path.join(repoRoot, 'assets/icons/lazensky-v1/icon-map.json'), 'utf8'));
   const productionProjection = await projectCanonicalSchedule({ repoRoot, schedule: productionSchedule });
-  const procedureSource = productionSchedule.events.find(event => event.kind === 'procedure');
-  const mealSource = productionSchedule.events.find(event => event.kind === 'meal');
+  const procedureSource = productionSchedule.events.find(event => event.kind === 'procedure') || {
+    stableId: 'calendar-sync-fixture-procedure',
+    date: productionSchedule.stay.dateFrom,
+    start: '10:00',
+    end: '10:20',
+    title: 'Individuální LTV',
+    location: 'Testovací místnost',
+    kind: 'procedure',
+    procedureType: 'Individuální LTV'
+  };
+  // Calendar contract tests must not depend on the current live stay containing meals.
+  // Some real schedules legitimately contain procedures only.
+  const mealSource = productionSchedule.events.find(event => event.kind === 'meal') || {
+    stableId: 'calendar-sync-fixture-meal',
+    date: productionSchedule.stay.dateFrom,
+    start: '12:00',
+    end: '12:30',
+    title: 'Oběd',
+    location: 'Jídelna',
+    kind: 'meal',
+    mealType: 'Oběd'
+  };
+  const mealProjection = await projectCanonicalSchedule({
+    repoRoot,
+    schedule: oneEventSchedule(productionSchedule, mealSource)
+  });
   const cases = [];
 
   async function test(name, run) {
@@ -184,7 +208,7 @@ export async function runCalendarSyncSuite({ repoRoot }) {
   });
 
   await test('J: changing meal to procedure moves the event between calendars', async () => {
-    const original = clone(productionProjection.events.find(event => event.kind === 'meal'));
+    const original = clone(mealProjection.events[0]);
     const moved = { ...original, kind: 'procedure', mealType: null, procedureType: 'Rehabilitace', targetCalendar: 'Procedury' };
     const adapter = new FakeCalendarAdapter({ 'Jídlo': [storedEvent(original)] });
     const result = await synchronizeCalendarProjection({ desiredEvents: [moved], adapter, dryRun: false });
@@ -218,7 +242,7 @@ export async function runCalendarSyncSuite({ repoRoot }) {
   });
 
   await test('M2: a meal uses the same canonical popup reminder contract', async () => {
-    const event = productionProjection.events.find(item => item.kind === 'meal');
+    const event = mealProjection.events[0];
     const resource = googleEventResource(event);
     const derivedLead = wallClockMinutes(event.start) - wallClockMinutes(event.leaveAt);
     assert(event.leadTimeMinutes === derivedLead, 'Meal lead time differs from start minus leaveAt.');
@@ -362,7 +386,7 @@ export async function runCalendarSyncSuite({ repoRoot }) {
     const authClient = { async request(options) { requests.push(options); return { data: { items: [] } }; } };
     const adapter = new GoogleCalendarAdapter(authClient, configuration.calendarIds);
     await adapter.listEvents('Procedury');
-    await adapter.createEvent('Jídlo', googleEventResource(productionProjection.events.find(event => event.kind === 'meal')));
+    await adapter.createEvent('Jídlo', googleEventResource(mealProjection.events[0]));
     assert(requests[0].url.includes('privateExtendedProperty=managedBy%3Dlazensky-commander'), 'Managed-event list filter is missing.');
     assert(requests[1].url.includes('sendUpdates=none'), 'Google write may send attendee updates.');
   });

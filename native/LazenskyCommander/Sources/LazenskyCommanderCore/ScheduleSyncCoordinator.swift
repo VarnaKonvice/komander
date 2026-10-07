@@ -28,6 +28,7 @@ public struct CommanderScheduleSyncResult: Equatable, Sendable {
 
 public struct CommanderScheduleSyncCoordinator: Sendable {
   private let operations = CommanderSerialOperationQueue()
+  private let dataset: CommanderScheduleDataset?
   private let clock: @Sendable () -> Date
   private let scheduleService: any ScheduleServing
   private let alarmSyncService: AlarmSyncService
@@ -39,8 +40,10 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     alarmSyncService: AlarmSyncService,
     scheduleStore: any ScheduleSnapshotStoring,
     watchDelivery: (any WatchScheduleSnapshotDelivering)? = nil,
+    dataset: CommanderScheduleDataset? = nil,
     clock: @escaping @Sendable () -> Date = { Date() }
   ) {
+    self.dataset = dataset
     self.clock = clock
     self.scheduleService = scheduleService
     self.alarmSyncService = alarmSyncService
@@ -49,7 +52,9 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
   }
 
   public func loadLastSchedule() async throws -> Schedule? {
-    try await scheduleStore.load()
+    guard let schedule = try await scheduleStore.load() else { return nil }
+    guard dataset?.accepts(schedule) != false else { throw CocoaError(.coderReadCorrupt) }
+    return schedule
   }
 
   public func synchronize(
@@ -75,18 +80,20 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
       guard let cached = try await scheduleStore.load() else {
         throw CommanderScheduleSyncError.noValidatedSnapshot
       }
+      guard dataset?.accepts(cached) != false else { throw CocoaError(.coderReadCorrupt) }
       try NativeAlarmContract.validateCanonical(cached)
       schedule = cached
       decision = .unchanged
     case .remote:
       let fetchedSchedule = try await scheduleService.fetchSchedule()
+      guard dataset?.accepts(fetchedSchedule) != false else { throw CocoaError(.coderReadCorrupt) }
       // Accept canonical data before projecting it. Local preferences never write this store.
       decision = try await scheduleStore.accept(fetchedSchedule)
       switch decision {
       case .stored, .unchanged:
         schedule = fetchedSchedule
       case .rejectedVersion:
-        guard let existing = try await scheduleStore.load() else {
+        guard let existing = try await loadLastSchedule() else {
           throw ScheduleValidationError.invalidScheduleVersion
         }
         schedule = existing
@@ -94,13 +101,24 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     }
 
     let effectiveOverrides = overrides ?? LeadTimeOverrides()
-    let summary = try await alarmSyncService.synchronizeValidated(
-      schedule: schedule,
-      overrides: effectiveOverrides,
-      projectionRevision: projectionRevision,
-      // The network may cross a departure deadline; project at acceptance time.
-      now: now ?? clock()
-    )
+    let projection = try CommanderScheduleProjection(schedule: schedule, overrides: effectiveOverrides)
+    let acceptedAt = now ?? clock()
+    let summary: AlarmSyncSummary
+    do {
+      summary = try await alarmSyncService.synchronizeValidated(
+        schedule: schedule, overrides: effectiveOverrides, projectionRevision: projectionRevision,
+        // The network may cross a departure deadline; project at acceptance time.
+        now: acceptedAt
+      )
+    } catch {
+      // A platform/persistence failure is not a failed schedule acceptance. Keep
+      // widgets, Watch and start notifications on the accepted canonical snapshot,
+      // while reporting AlarmKit as unverified and retaining its ownership ledger.
+      summary = AlarmSyncSummary(scheduleVersion: schedule.scheduleVersion,
+        desiredAlarmCount: projection.events.filter { $0.leaveAt > acceptedAt }.count,
+        plan: AlarmReconciliationPlan(), appliedCreate: 0, appliedUpdate: 0, appliedCancel: 0,
+        errorMessage: error.localizedDescription, completedAt: acceptedAt, verified: false, repairAttempts: 0)
+    }
     let watchSnapshot = WatchScheduleSnapshot(
       schedule: schedule,
       leadTimeOverrides: effectiveOverrides,

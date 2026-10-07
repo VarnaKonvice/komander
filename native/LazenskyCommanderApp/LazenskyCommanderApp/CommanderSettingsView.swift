@@ -566,6 +566,7 @@ private struct CommanderSettingsActionRow: View {
 
 private struct CommanderLeadTimeSettingsView: View {
   @ObservedObject var model: CommanderViewModel
+  @State private var showIndividualEvents = false
 
   private enum LeadTimeCategory: Int, CaseIterable, Identifiable {
     case rehabilitation
@@ -681,6 +682,29 @@ private struct CommanderLeadTimeSettingsView: View {
         sectionTitle("Výchozí čas")
         defaultLeadTimeCard
 
+        Button {
+          model.applySpaLeadTimePreset()
+        } label: {
+          HStack(spacing: 10) {
+            Image(systemName: "checkmark.seal.fill")
+              .font(.system(size: 20, weight: .bold))
+              .foregroundStyle(CommanderDesignTokens.Colors.mealGreen)
+            VStack(alignment: .leading, spacing: 2) {
+              Text("Nastavit lázeňský předstih")
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+              Text("20 min všude · Vizita 5 min")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+            }
+            Spacer(minLength: 8)
+          }
+          .padding(11)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .commanderCard(accent: CommanderDesignTokens.Colors.mealGreen, surface: .depthInset)
+        }
+        .buttonStyle(.plain)
+
         if !procedureCategories.isEmpty {
           sectionTitle("Podle kategorie")
           ForEach(procedureCategories) { category in
@@ -715,12 +739,45 @@ private struct CommanderLeadTimeSettingsView: View {
           }
         }
 
-        if !events.isEmpty {
+        if model.latestSchedule?.events.isEmpty == false {
           sectionTitle("Jednotlivé události")
 
-          VStack(spacing: 8) {
-            ForEach(events, id: \.stableId) { event in
-              eventLeadTimeCard(event, category: category(for: event))
+          Button {
+            withAnimation(.easeOut(duration: 0.18)) {
+              showIndividualEvents.toggle()
+            }
+          } label: {
+            HStack(spacing: 10) {
+              Image(systemName: "slider.horizontal.3")
+                .font(.system(size: 18, weight: .bold))
+                .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
+              VStack(alignment: .leading, spacing: 2) {
+                Text("Výjimky pro konkrétní události")
+                  .font(.system(size: 16, weight: .bold))
+                  .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+                Text(showIndividualEvents
+                     ? "Skrýt dlouhý seznam"
+                     : "Zobrazit jen když potřebuješ změnit jednu konkrétní událost")
+                  .font(.system(size: 12, weight: .semibold))
+                  .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+                  .fixedSize(horizontal: false, vertical: true)
+              }
+              Spacer(minLength: 6)
+              Image(systemName: showIndividualEvents ? "chevron.up" : "chevron.down")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+            }
+            .padding(11)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthInset)
+          }
+          .buttonStyle(.plain)
+
+          if showIndividualEvents {
+            LazyVStack(spacing: 8) {
+              ForEach(events, id: \.stableId) { event in
+                eventLeadTimeCard(event, category: category(for: event))
+              }
             }
           }
         }

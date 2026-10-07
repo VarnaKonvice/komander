@@ -42,6 +42,9 @@ public enum NativeAlarmContract {
     guard formatter.date(from: schedule.updatedAt) != nil || fallback.date(from: schedule.updatedAt) != nil else {
       throw ScheduleValidationError.invalidUpdatedAt(schedule.updatedAt)
     }
+    // Canonical defaults must also produce representable departure times before
+    // replacing a valid offline snapshot (not only when AlarmKit later prepares it).
+    _ = try payloadValidated(schedule: schedule)
   }
 
   public static func payload(schedule: Schedule, overrides: LeadTimeOverrides? = nil) throws -> NativeAlarmPayload {
@@ -61,6 +64,7 @@ public enum NativeAlarmContract {
     let endAt = try dateTime(date: event.date, time: event.end)
     let leadTime = try effectiveLeadTime(event: event, schedule: schedule, overrides: overrides)
     let leaveAt = startAt.addingTimeInterval(TimeInterval(-leadTime * 60))
+    _ = try Self.date(fromLocalISO: format(leaveAt))
     return NativeAlarm(stableId: event.stableId, kind: event.kind, title: event.title, location: event.location, startAt: format(startAt), endAt: format(endAt), effectiveLeadTimeMinutes: leadTime, leaveAt: format(leaveAt))
   }
 
@@ -131,6 +135,12 @@ public enum NativeAlarmContract {
   }
 
   public static func dateTime(date: String, time: String) throws -> Date {
+    guard date.range(of: #"^\d{4}-\d{2}-\d{2}$"#, options: .regularExpression) != nil else {
+      throw ScheduleValidationError.invalidDate(date)
+    }
+    guard time.range(of: #"^\d{2}:\d{2}$"#, options: .regularExpression) != nil else {
+      throw ScheduleValidationError.invalidTime(time)
+    }
     let dateParts = date.split(separator: "-").compactMap { Int($0) }
     guard dateParts.count == 3 else { throw ScheduleValidationError.invalidDate(date) }
     let timeParts = time.split(separator: ":").compactMap { Int($0) }
@@ -141,6 +151,15 @@ public enum NativeAlarmContract {
     guard let result = calendar.date(from: components) else { throw ScheduleValidationError.invalidDate(date) }
     let verified = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: result)
     guard verified.year == dateParts[0], verified.month == dateParts[1], verified.day == dateParts[2], verified.hour == timeParts[0], verified.minute == timeParts[1] else { throw ScheduleValidationError.invalidDate(date) }
+    // The local contract has no UTC offset/fold field. Reject the repeated Prague
+    // hour rather than choosing an occurrence that could fire an alarm an hour early.
+    let later = result.addingTimeInterval(60 * 60)
+    let earlier = result.addingTimeInterval(-60 * 60)
+    for other in [earlier, later] {
+      if calendar.dateComponents([.year, .month, .day, .hour, .minute], from: other) == verified {
+        throw ScheduleValidationError.invalidTime(time)
+      }
+    }
     return result
   }
 
@@ -148,7 +167,10 @@ public enum NativeAlarmContract {
   public static func date(fromLocalISO value: String) throws -> Date {
     let parts = value.split(separator: "T", maxSplits: 1).map(String.init)
     guard parts.count == 2 else { throw ScheduleValidationError.invalidDate(value) }
-    let time = parts[1].hasSuffix(":00") ? String(parts[1].dropLast(3)) : parts[1]
+    guard parts[1].count == 5 || (parts[1].count == 8 && parts[1].hasSuffix(":00")) else {
+      throw ScheduleValidationError.invalidTime(parts[1])
+    }
+    let time = String(parts[1].prefix(5))
     return try dateTime(date: parts[0], time: time)
   }
 

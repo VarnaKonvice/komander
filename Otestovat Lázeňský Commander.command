@@ -12,13 +12,14 @@ WATCH_UDID="${LC_ACCEPTANCE_WATCH_UDID:-00008310-001C09693CE0E01E}"
 SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
 REPO_ROOT="$SCRIPT_DIR"
 PROJECT="$REPO_ROOT/native/LazenskyCommanderApp/LazenskyCommanderApp.xcodeproj"
-DERIVED="/private/tmp/lc-commander-acceptance"
+DERIVED=""
+CREATED_DERIVED=""
 RESULTS_ROOT="$HOME/Desktop/LazenskyCommander-Acceptance"
 RESULTS="$RESULTS_ROOT/$(/bin/date '+%Y%m%d-%H%M%S')-$$"
 LOG="$RESULTS/acceptance.log"
 MODE="${1:---run}"
 if [[ "$MODE" == "--help" ]]; then
-  printf '%s\n' 'Commander: --run | --cleanup | --doctor | --service | --capture-watch | --build-normal | --install-normal'
+  printf '%s\n' 'Commander: --run | --single | --cleanup | --doctor | --service | --capture-watch | --build-normal | --build-acceptance | --install-normal'
   printf '%s\n' 'Vždy aktuální worktree; bez fetch/checkout/reset. --run je plný test produkční cesty; plánuje a spouští testovací alarmy.'
   exit 0
 fi
@@ -41,7 +42,7 @@ free_gb() {
 acquire_lock() {
   if /bin/mkdir "$LOCK_DIR" 2>/dev/null; then
     printf '%s\n' "$$" > "$LOCK_DIR/pid"
-    trap 'release_lock' EXIT
+    trap 'cleanup_on_exit' EXIT
     trap 'exit 130' INT
     trap 'exit 143' TERM
     return 0
@@ -64,7 +65,7 @@ acquire_lock() {
 
   printf '%s\n' "$$" > "$LOCK_DIR/pid"
   /bin/rmdir "$LOCK_DIR/recovery" 2>/dev/null || true
-  trap 'release_lock' EXIT
+  trap 'cleanup_on_exit' EXIT
   trap 'exit 130' INT
   trap 'exit 143' TERM
 }
@@ -77,9 +78,25 @@ release_lock() {
 }
 
 cleanup_test_artifacts() {
-  # Delete only this launcher's named build directory; never other work or evidence.
-  [[ "$DERIVED" == "/private/tmp/lc-commander-acceptance" ]] || return 1
-  /bin/rm -rf -- "$DERIVED"
+  [[ -n "${DERIVED:-}" ]] || return 0
+  # Only mktemp output created by this process is owned; preserve all other paths.
+  [[ "$DERIVED" == "${CREATED_DERIVED:-}" && "$DERIVED" == /private/tmp/lc-commander-acceptance.* ]] || return 1
+  [[ ! -L "$DERIVED" && "$(cat "$DERIVED/.commander-owner" 2>/dev/null)" == "$$" ]] || return 1
+  /bin/rm -rf -- "$DERIVED" || return 1
+  DERIVED=""
+  CREATED_DERIVED=""
+}
+
+prepare_test_artifacts() {
+  cleanup_test_artifacts || return 1
+  DERIVED="$(/usr/bin/mktemp -d /private/tmp/lc-commander-acceptance.XXXXXX)" || return 1
+  CREATED_DERIVED="$DERIVED"
+  printf '%s\n' "$$" > "$DERIVED/.commander-owner"
+}
+
+cleanup_on_exit() {
+  cleanup_test_artifacts || true
+  release_lock
 }
 
 wait_for_watch_connected() {
@@ -201,7 +218,8 @@ terminate_watch_app() {
 
 launch_iphone_mode() {
   local flag="$1"
-  /usr/bin/xcrun devicectl device process launch     --device "$IPHONE_UDID"     --terminate-existing     "$APP_BUNDLE_ID" -- "$flag" >> "$LOG" 2>&1
+  REQUEST_ID="$(/usr/bin/uuidgen)"
+  /usr/bin/xcrun devicectl device process launch     --device "$IPHONE_UDID"     --terminate-existing     "$APP_BUNDLE_ID" -- "$flag" --commander-request-id "$REQUEST_ID" >> "$LOG" 2>&1
 }
 
 capture_optional() {
@@ -247,91 +265,73 @@ except Exception:
 PY
 }
 
-wait_for_acceptance_success() {
-  local launched_epoch="$1"
-  local status_file="$RESULTS/acceptance-status.json"
-  local attempt phase observed expected stamp message
+# Every diagnostic invocation has a nonce. A timestamp alone can accept an old run.
+acceptance_status_matches() {
+  /usr/bin/python3 "$REPO_ROOT/native/acceptance-status.py" "$1" "$REQUEST_ID" "$2" \
+    "$3" "${EXPECTED_TEST_TOKEN:-}" "${4:-}" "$5"
+}
 
+wait_for_status() {
+  local launched_epoch="$1" phase="$2" dataset="$3" count="${4:-}"
+  local status_file="$RESULTS/$phase-status.json" attempt observed_phase
   for attempt in $(/usr/bin/seq 1 90); do
     if pull_acceptance_status "$status_file"; then
-      phase="$(acceptance_status_field "$status_file" phase)"
-      stamp="$(acceptance_status_epoch "$status_file")"
-      if [[ "$stamp" =~ ^[0-9]+$ && "$stamp" -ge "$launched_epoch" ]]; then
-        case "$phase" in
-          watch-acknowledged)
-            expected="$(acceptance_status_field "$status_file" expectedToken)"
-            observed="$(acceptance_status_field "$status_file" observedToken)"
-            if [[ -n "$expected" && "$expected" == "$observed" ]]; then
-              status "Watch potvrdily přesně stejný acceptance stav: $observed"
-              return 0
-            fi
-            ;;
-          failed-alarm-sync|failed-live-activity|failed-watch-ack)
-            message="$(acceptance_status_field "$status_file" message)"
-            status "Acceptance aplikace nahlásila $phase: ${message:-bez detailu}"
-            return 1
-            ;;
-        esac
+      if acceptance_status_matches "$status_file" "$phase" "$dataset" "$count" "$launched_epoch"; then
+        if [[ "$phase" == "watch-acknowledged" ]]; then
+          EXPECTED_TEST_TOKEN="$(acceptance_status_field "$status_file" expectedToken)"
+        fi
+        status "Ověřeno: $phase; request=$REQUEST_ID"
+        return 0
+      fi
+      observed_phase="$(acceptance_status_field "$status_file" phase)"
+      if [[ "$(acceptance_status_field "$status_file" requestID)" == "$REQUEST_ID" && "$observed_phase" == failed-* ]]; then
+        status "Aplikace nahlásila $observed_phase: $(acceptance_status_field "$status_file" message)"
+        return 1
       fi
     fi
     /bin/sleep 0.5
   done
-  status "Acceptance status se včas nepotvrdil."
   return 1
 }
 
-wait_for_activity_active() {
-  local launched_epoch="$1"
-  local status_file="$RESULTS/activity-status.json"
-  local attempt phase stamp message
+wait_for_acceptance_success() {
+  local count=4
+  [[ "$MODE" == "--single" ]] && count=1
+  wait_for_status "$1" watch-acknowledged acceptance "$count"
+}
 
-  for attempt in $(/usr/bin/seq 1 150); do
-    if pull_acceptance_status "$status_file"; then
-      phase="$(acceptance_status_field "$status_file" phase)"
-      stamp="$(acceptance_status_epoch "$status_file")"
-      if [[ "$stamp" =~ ^[0-9]+$ && "$stamp" -ge "$launched_epoch" ]]; then
-        case "$phase" in
-          activity-active)
-            status "iPhone ActivityKit read-back potvrzuje aktivní Commander Live Activity."
-            return 0
-            ;;
-          failed-alarm-sync|failed-live-activity|failed-watch-ack|activity-not-active)
-            message="$(acceptance_status_field "$status_file" message)"
-            status "iPhone ActivityKit read-back není active: ${message:-bez detailu}"
-            return 1
-            ;;
-        esac
-      fi
-    fi
-    /bin/sleep 0.25
-  done
-  status "iPhone ActivityKit read-back se včas nepotvrdil."
-  return 1
+wait_for_activity_active() {
+  wait_for_status "$1" activity-active acceptance
 }
 
 wait_until_epoch() {
   local target="$1"
   local now
-  while :; do
+  local deadline=$((SECONDS + 120))
+  [[ "$target" =~ ^[0-9]+$ ]] || return 1
+  while (( SECONDS < deadline )); do
     now="$(/bin/date '+%s')"
     [[ "$now" -ge "$target" ]] && return 0
     /bin/sleep 0.5
   done
+  return 1
 }
 
 build_normal_pair() {
-  cleanup_test_artifacts || return 1
+  prepare_test_artifacts || return 1
   local build_number build_branch build_commit
+  local flavor="${1:-production}" flags='OTHER_SWIFT_FLAGS=$(inherited)'
+  [[ "$flavor" == "acceptance" ]] && flags='OTHER_SWIFT_FLAGS=$(inherited) -DCOMMANDER_ACCEPTANCE_FIXTURES'
   build_number="$(/bin/date '+%y%m%d%H%M')"
   build_branch="$(/usr/bin/git -C "$REPO_ROOT" branch --show-current 2>/dev/null || true)"
   build_commit="$(/usr/bin/git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || true)"
   [[ -n "$build_branch" && "$build_commit" =~ ^[0-9a-f]{40}$ ]] || return 1
-  status "Sestavuji normální Commander z $build_branch @ ${build_commit:0:8}…"
+  status "Sestavuji Commander ($flavor) z $build_branch @ ${build_commit:0:8}…"
   /usr/bin/xcodebuild -quiet -project "$PROJECT" -scheme LazenskyCommanderApp \
     -configuration Debug -destination "generic/platform=iOS" -derivedDataPath "$DERIVED" \
     -allowProvisioningUpdates CURRENT_PROJECT_VERSION="$build_number" \
     LC_BUILD_BRANCH="$build_branch" LC_BUILD_COMMIT="$build_commit" \
-    COMPILER_INDEX_STORE_ENABLE=NO 'OTHER_SWIFT_FLAGS=$(inherited)' build >> "$LOG" 2>&1 || return 1
+    COMPILER_INDEX_STORE_ENABLE=NO "$flags" build >> "$LOG" 2>&1 || return 1
   local iphone_app="$DERIVED/Build/Products/Debug-iphoneos/LazenskyCommanderApp.app"
   local watch_app="$DERIVED/Build/Products/Debug-watchos/LazenskyCommanderWatchApp.app"
   [[ -d "$iphone_app" && -d "$watch_app" ]] || return 1
@@ -348,28 +348,17 @@ restore_normal_build() {
   /usr/bin/xcrun devicectl device install app --device "$IPHONE_UDID" --timeout 60 "$iphone_app" >> "$LOG" 2>&1 || return 1
   watch_install_with_retry "$watch_app" || return 1
   launch_watch_companion || return 1
-  /usr/bin/xcrun devicectl device process launch --device "$IPHONE_UDID" \
-    --terminate-existing "$APP_BUNDLE_ID" >> "$LOG" 2>&1 || return 1
-  status "Normální iPhone + Watch build nainstalován; spuštěn produkční bootstrap pro obnovení rozpisu a alarmů."
+  EXPECTED_TEST_TOKEN=""
+  local launched_epoch="$(/bin/date '+%s')"
+  launch_iphone_mode "--production-readback" || return 1
+  wait_for_status "$launched_epoch" production-verified production || return 1
+  status "Normální iPhone + Watch build a produkční bootstrap ověřeny včetně přesného Watch ACK."
   status "Prodloužení provisioning platnosti tímto není potvrzeno; termín určuje profil v aplikaci."
 }
 
 wait_for_cleanup_success() {
-  local launched_epoch="$1"
-  local status_file="$RESULTS/cleanup-status.json"
-  local attempt phase stamp
-  for attempt in $(/usr/bin/seq 1 90); do
-    if pull_acceptance_status "$status_file"; then
-      phase="$(acceptance_status_field "$status_file" phase)"
-      stamp="$(acceptance_status_epoch "$status_file")"
-      if [[ "$stamp" =~ ^[0-9]+$ && "$stamp" -ge "$launched_epoch" ]]; then
-        [[ "$phase" == "cleaned" ]] && return 0
-        [[ "$phase" == failed-* || "$phase" == "cleanup-watch-failed" ]] && return 1
-      fi
-    fi
-    /bin/sleep 0.5
-  done
-  return 1
+  EXPECTED_TEST_TOKEN=""
+  wait_for_status "$1" cleaned acceptance 0
 }
 
 abort_acceptance_run() {
@@ -382,7 +371,7 @@ abort_acceptance_run() {
   fi
   terminate_iphone_app
   terminate_watch_app
-  /bin/rm -rf "$DERIVED"
+  cleanup_test_artifacts
   if restore_normal_build; then
     cleanup_test_artifacts
     fail "$reason Normální Commander byl automaticky obnoven."
@@ -429,6 +418,13 @@ case "$MODE" in
 
   --cleanup)
     status "Uklízím integrovaný acceptance test…"
+    # Works even after an aborted test already restored the normal binary.
+    build_normal_pair acceptance || fail "Cleanup build selhal."
+    wait_for_iphone_unlock || fail "iPhone není dostupný pro cleanup."
+    /usr/bin/xcrun devicectl device install app --device "$IPHONE_UDID" --timeout 60 \
+      "$DERIVED/Build/Products/Debug-iphoneos/LazenskyCommanderApp.app" >> "$LOG" 2>&1 || fail "Cleanup instalace selhala."
+    watch_install_with_retry "$DERIVED/Build/Products/Debug-watchos/LazenskyCommanderWatchApp.app" ||
+      abort_acceptance_run "Cleanup Watch instalace selhala."
     wait_for_iphone_unlock ||
       fail "iPhone zůstal zamčený. Odemkni ho; cleanup pak lze spustit znovu."
     launch_watch_companion || true
@@ -436,7 +432,7 @@ case "$MODE" in
     CLEANUP_STARTED="$(/bin/date '+%s')"
     if launch_iphone_mode "--acceptance-cleanup" && wait_for_cleanup_success "$CLEANUP_STARTED"; then
       terminate_iphone_app
-      status "Testovací alarmy, Live Activity a Watch snapshot byly uklizeny."
+      status "iPhone acceptance alarmy/aktivity uklizeny; Watch cache ověří obnova produkce."
     else
       fail "Commander se nepodařilo spustit v cleanup režimu."
     fi
@@ -452,11 +448,15 @@ case "$MODE" in
     build_normal_pair || fail "Normální podepsaný build selhal."
     exit 0
     ;;
+  --build-acceptance)
+    build_normal_pair acceptance || fail "Acceptance podepsaný build selhal."
+    exit 0
+    ;;
   --install-normal)
     restore_normal_build || fail "Normální iPhone + Watch sestava nebyla kompletně nainstalována."
     exit 0
     ;;
-  --run) ;;
+  --run|--single) ;;
   *) fail "Neznámý režim; použij --help." ;;
 esac
 status "=== Integrovaný Commander acceptance test ==="
@@ -464,7 +464,7 @@ status "Branch: $(/usr/bin/git -C "$REPO_ROOT" branch --show-current 2>/dev/null
 status "HEAD: $(/usr/bin/git -C "$REPO_ROOT" rev-parse --short HEAD 2>/dev/null || true)"
 /usr/bin/git -C "$REPO_ROOT" status --short >> "$LOG" 2>&1 || true
 
-cleanup_test_artifacts
+prepare_test_artifacts || fail "Nelze vytvořit izolovaný build adresář."
 # Keep this run's log and all prior evidence.
 
 FREE="$(free_gb)"
@@ -502,12 +502,12 @@ status "Instaluji iPhone Commander…"
   fail "Instalace iPhone aplikace selhala."
 
 watch_install_with_retry "$WATCH_APP" ||
-  fail "Watch app se nepodařilo nainstalovat ani po čtyřech handshacích."
+  abort_acceptance_run "Watch app se nepodařilo nainstalovat po třech pokusech."
 
 wait_for_iphone_unlock ||
-  fail "iPhone zůstal zamčený po buildu. Odemkni ho a spusť test znovu."
+  abort_acceptance_run "iPhone zůstal zamčený po instalaci."
 status "Aktivuji skutečnou Watch app kvůli potvrzení WatchConnectivity…"
-launch_watch_companion || fail "Watch app se nepodařilo spustit pro acceptance handshake."
+launch_watch_companion || abort_acceptance_run "Watch app se nepodařilo spustit pro acceptance handshake."
 /bin/sleep 2
 
 status "Nejdřív uklízím případný starý acceptance stav…"
@@ -516,10 +516,23 @@ launch_iphone_mode "--acceptance-cleanup" || abort_acceptance_run "Cleanup před
 wait_for_cleanup_success "$CLEANUP_STARTED" || abort_acceptance_run "Watch cleanup nebyl potvrzen."
 
 wait_for_iphone_unlock ||
-  fail "iPhone se před ostrým acceptance během znovu zamkl."
-status "Spouštím společný Live Activity + Watch acceptance stav…"
+  abort_acceptance_run "iPhone se před acceptance během znovu zamkl."
+if [[ "$MODE" == "--single" ]]; then
+  status "Spouštím krátký single-renderer acceptance stav…"
+  ACCEPTANCE_FLAG="--acceptance-single"
+else
+  status "Spouštím společný Live Activity + Watch acceptance stav…"
+  ACCEPTANCE_FLAG="--acceptance-visual"
+fi
 ACCEPTANCE_LAUNCHED_EPOCH="$(/bin/date '+%s')"
-launch_iphone_mode "--acceptance-visual" || abort_acceptance_run "Acceptance režim se nespustil."
+launch_iphone_mode "$ACCEPTANCE_FLAG" || abort_acceptance_run "Acceptance režim se nespustil."
+
+# updateApplicationContext is durable, but not an immediate push. Reactivate the
+# real Watch app after the iPhone published the new acceptance snapshot so it
+# consumes the pending context and ACKs the exact projection under test.
+if ! launch_watch_companion; then
+  abort_acceptance_run "Watch app se po publikaci testovacího rozpisu nepodařilo znovu aktivovat."
+fi
 
 if ! wait_for_acceptance_success "$ACCEPTANCE_LAUNCHED_EPOCH"; then
   abort_acceptance_run "Watch nepotvrdily stejný acceptance stav jako iPhone."
@@ -532,7 +545,7 @@ terminate_iphone_app
 
 # Krátký odstup před read-backem produkčního activity plánu.
 # Jeho skutečný stav se ověří v aplikaci, nikoli odhadem z času.
-wait_until_epoch "$((ACCEPTANCE_LAUNCHED_EPOCH + 23))"
+wait_until_epoch "$((ACCEPTANCE_LAUNCHED_EPOCH + 23))" || abort_acceptance_run "Čekání na časovou hranici vypršelo."
 
 ACTIVITY_READBACK_EPOCH="$(/bin/date '+%s')"
 launch_iphone_mode "--acceptance-readback" || abort_acceptance_run "ActivityKit read-back se nespustil."
@@ -544,6 +557,9 @@ capture_optional "$IPHONE_UDID" "$RESULTS/iphone-expanded.png"
 /bin/sleep 4
 capture_optional "$IPHONE_UDID" "$RESULTS/iphone-compact.png"
 capture_optional "$WATCH_UDID" "$RESULTS/watch-summary.png"
+for artifact in watch-handshake.png iphone-expanded.png iphone-compact.png watch-summary.png; do
+  [[ -s "$RESULTS/$artifact" ]] || abort_acceptance_run "Chybí screenshot aktuálního běhu: $artifact"
+done
 
 {
   printf 'branch=%s\n' "$(/usr/bin/git -C "$REPO_ROOT" branch --show-current 2>/dev/null || true)"
@@ -553,11 +569,15 @@ capture_optional "$WATCH_UDID" "$RESULTS/watch-summary.png"
   printf 'watch=%s\n' "$WATCH_UDID"
 } > "$RESULTS/manifest.txt"
 
-/bin/rm -rf "$DERIVED"
+cleanup_test_artifacts
 status "Build artefakty po instalaci odstraněny."
 status "Volné místo: $(free_gb) GB"
-status "TEST BĚŽÍ."
+status "TECHNICKÁ PŘÍPRAVA OVĚŘENA; fyzický UX PASS vyžaduje celé pozorování startAt/endAt."
 status "Výstupy: $RESULTS"
-status "Teď ověř Lock Screen, Dynamic Island, alarmy a Watch app/widget během celého 24minutového rozpisu."
+if [[ "$MODE" == "--single" ]]; then
+  status "Teď ověř jedinou událost: živý odpočet, alarm, Stop, start a konec během 10 minut."
+else
+  status "Teď ověř Lock Screen, Dynamic Island, alarmy a Watch app/widget během celého 24minutového rozpisu."
+fi
 status "Po klepnutí na Watch kartu použij --capture-watch."
 status "Po skončení použij --cleanup; ten vrátí normální iPhone + Watch build a smaže testovací buildy."

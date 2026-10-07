@@ -21,8 +21,6 @@ actor CommanderProcedureLiveActivityCoordinator {
   private let planningMaximumScheduledActivities: Int
   private let planningMaximumActiveLifetime: TimeInterval
   private(set) var issue: String?
-  private var reconciliationTail: Task<Void, Never>?
-  private var reconciliationGeneration = 0
   private var latestProjection: WatchScheduleProjectionIdentity?
 
   private struct RawCandidate {
@@ -34,7 +32,7 @@ actor CommanderProcedureLiveActivityCoordinator {
   }
 
   init(
-    enabled: Bool = true,
+    enabled: Bool = CommanderMVPPolicy.createsLiveActivities,
     contextLeadTime: TimeInterval = CommanderProcedureLiveActivityCoordinator.contextLeadTime,
     maximumIdleGap: TimeInterval = CommanderProcedureLiveActivityCoordinator.maximumIdleGap,
     maximumScheduledActivities: Int = CommanderProcedureLiveActivityCoordinator.maximumScheduledActivities,
@@ -47,10 +45,13 @@ actor CommanderProcedureLiveActivityCoordinator {
     planningMaximumActiveLifetime = maximumActiveLifetime
   }
 
-  func activityState(schedule: Schedule) -> String {
+  func activityState(schedule: Schedule, projectionRevision: Int) -> String {
     let ids = Set(schedule.events.map(\.stableId))
-    let matches = Activity<CommanderProcedureLiveActivityAttributes>.activities.filter {
-      ids.contains($0.attributes.stableId)
+    let matches = Self.managedActivities.filter {
+      ids.contains($0.attributes.stableId) &&
+      $0.attributes.rendererRevision == CommanderProcedureLiveActivityAttributes.currentRendererRevision &&
+      $0.content.state.scheduleVersion == schedule.scheduleVersion &&
+      $0.content.state.projectionRevision == projectionRevision
     }
     if matches.contains(where: { $0.activityState == .active }) { return "active" }
     if matches.contains(where: { $0.activityState == .pending }) { return "pending" }
@@ -58,8 +59,18 @@ actor CommanderProcedureLiveActivityCoordinator {
   }
 
   func hasOngoingActivities() -> Bool {
-    Activity<CommanderProcedureLiveActivityAttributes>.activities.contains {
+    Self.managedActivities.contains {
       Self.isOngoing($0.activityState)
+    }
+  }
+
+  /// Retire earlier Commander activities even when no schedule/network is available.
+  func retireActivitiesForMVP() async {
+    guard !CommanderMVPPolicy.createsLiveActivities else { return }
+    _ = try? await CommanderProcedureLiveActivityPolicy.operations.run {
+      for activity in Self.managedActivities where Self.isOngoing(activity.activityState) {
+        await activity.end(nil, dismissalPolicy: .immediate)
+      }
     }
   }
 
@@ -69,23 +80,9 @@ actor CommanderProcedureLiveActivityCoordinator {
     projectionRevision: Int,
     now: Date = Date()
   ) async {
-    reconciliationGeneration += 1
-    let generation = reconciliationGeneration
-    let previous = reconciliationTail
-    let task = Task { [weak self] in
-      if let previous { await previous.value }
-      guard let self else { return }
-      await self.performReconcile(
-        schedule: schedule,
-        overrides: overrides,
-        projectionRevision: projectionRevision,
-        now: now
-      )
-    }
-    reconciliationTail = task
-    await task.value
-    if generation == reconciliationGeneration {
-      reconciliationTail = nil
+    _ = try? await CommanderProcedureLiveActivityPolicy.operations.run {
+      await self.performReconcile(schedule: schedule, overrides: overrides,
+        projectionRevision: projectionRevision, now: now)
     }
   }
 
@@ -96,8 +93,8 @@ actor CommanderProcedureLiveActivityCoordinator {
     now: Date
   ) async {
     issue = nil
-    guard enabled else {
-      for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
+    guard enabled && CommanderMVPPolicy.createsLiveActivities else {
+      for activity in Self.managedActivities
         where Self.isOngoing(activity.activityState) {
         await activity.end(nil, dismissalPolicy: .immediate)
       }
@@ -115,6 +112,12 @@ actor CommanderProcedureLiveActivityCoordinator {
     let incoming = WatchScheduleProjectionIdentity(scheduleVersion: schedule.scheduleVersion,
       projectionRevision: projectionRevision)
     if let latestProjection, incoming.isOlder(than: latestProjection) { return }
+    // In-memory ordering is lost on relaunch; ActivityKit content survives it.
+    guard !Self.managedActivities.contains(where: {
+      Self.isOngoing($0.activityState) && incoming.isOlder(than: .init(
+        scheduleVersion: $0.content.state.scheduleVersion,
+        projectionRevision: $0.content.state.projectionRevision))
+    }) else { return }
     latestProjection = incoming
 
     let raw = Self.rawCandidates(schedule: schedule, payload: payload)
@@ -130,11 +133,11 @@ actor CommanderProcedureLiveActivityCoordinator {
       maximumWindows: planningMaximumScheduledActivities
     )
 
-    for activity in Activity<CommanderProcedureLiveActivityAttributes>.activities
+    for activity in Self.managedActivities
       where activity.activityState == .ended {
       await activity.end(nil, dismissalPolicy: .immediate)
     }
-    let existing = Activity<CommanderProcedureLiveActivityAttributes>.activities
+    let existing = Self.managedActivities
       .filter { Self.isOngoing($0.activityState) }
       .sorted { Self.retentionRank($0.activityState) < Self.retentionRank($1.activityState) }
 
@@ -227,9 +230,13 @@ actor CommanderProcedureLiveActivityCoordinator {
           continue
         }
 
+        let nextBoundary = CommanderProcedureLiveActivityPolicy.nextStaleDate(
+          for: expectedState,
+          attributes: keeper.attributes
+        ) ?? plan.windowEnd
         await keeper.update(ActivityContent(
           state: expectedState,
-          staleDate: plan.windowEnd,
+          staleDate: min(nextBoundary, plan.windowEnd),
           relevanceScore: 1_000
         ))
         continue
@@ -278,9 +285,13 @@ actor CommanderProcedureLiveActivityCoordinator {
       focusStableId: presentation.0,
       presentationMode: presentation.1
     )
+    let nextBoundary = CommanderProcedureLiveActivityPolicy.nextStaleDate(
+      for: state,
+      attributes: attributes
+    ) ?? plan.windowEnd
     let content = ActivityContent(
       state: state,
-      staleDate: plan.windowEnd,
+      staleDate: min(nextBoundary, plan.windowEnd),
       relevanceScore: 1_000
     )
 
@@ -338,7 +349,7 @@ actor CommanderProcedureLiveActivityCoordinator {
       maximumEvents: CommanderProcedureLiveActivityPolicy.maximumQueuedEvents,
       maximumWindows: planningMaximumScheduledActivities
     )
-    let activities = Activity<CommanderProcedureLiveActivityAttributes>.activities
+    let activities = Self.managedActivities
       .filter { Self.isOngoing($0.activityState) }
 
     var prepared: Set<String> = []
@@ -454,6 +465,12 @@ actor CommanderProcedureLiveActivityCoordinator {
       endAt: candidate.alarm.endAt,
       leaveAt: candidate.alarm.leaveAt
     )
+  }
+
+  private static var managedActivities: [Activity<CommanderProcedureLiveActivityAttributes>] {
+    Activity<CommanderProcedureLiveActivityAttributes>.activities.filter {
+      CommanderRuntimeDataset.current.accepts(stableID: $0.attributes.stableId)
+    }
   }
 
   private static func isOngoing(_ state: ActivityState) -> Bool {

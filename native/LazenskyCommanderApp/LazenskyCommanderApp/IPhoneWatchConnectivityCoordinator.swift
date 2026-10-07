@@ -20,6 +20,8 @@ enum IPhoneWatchConnectivityError: LocalizedError {
 final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotDelivering, WCSessionDelegate {
   private let session: WCSession?
   private var pendingApplicationContext: [String: Any]?
+  private var expectedProjectionIdentity: WatchScheduleProjectionIdentity?
+  private var latestSnapshot: WatchScheduleSnapshot?
   private var acknowledgedProjectionIdentity: WatchScheduleProjectionIdentity?
 
   private(set) var diagnostic = "Aktivuji WatchConnectivity…"
@@ -39,6 +41,13 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
 
   func deliver(_ snapshot: WatchScheduleSnapshot) async throws -> WatchScheduleDeliveryDisposition {
     guard let session else { throw IPhoneWatchConnectivityError.unsupported }
+    if let latestSnapshot, snapshot.projectionIdentity.isOlder(than: latestSnapshot.projectionIdentity) {
+      return .queued
+    }
+    latestSnapshot = snapshot
+    expectedProjectionIdentity = snapshot.projectionIdentity
+    if acknowledgedProjectionIdentity != expectedProjectionIdentity { acknowledgedProjectionIdentity = nil }
+    recordAcknowledgement(Self.acknowledgement(from: session.receivedApplicationContext))
     // Production replaces the transport envelope; a persisted probe is never replayed.
     var applicationContext: [String: Any] = [:]
     applicationContext[WatchScheduleTransportCodec.applicationContextKey] =
@@ -72,9 +81,7 @@ final class IPhoneWatchConnectivityCoordinator: NSObject, WatchScheduleSnapshotD
   }
 
   private func recordAcknowledgement(_ acknowledgement: WatchScheduleAcknowledgement?) {
-    guard let acknowledgement else { return }
-    if let current = acknowledgedProjectionIdentity,
-       acknowledgement.projectionIdentity.isOlder(than: current) { return }
+    guard let acknowledgement, acknowledgement.projectionIdentity == expectedProjectionIdentity else { return }
     acknowledgedProjectionIdentity = acknowledgement.projectionIdentity
     diagnostic = "Apple Watch ověřily rozpis v\(acknowledgement.scheduleVersion)/r\(acknowledgement.projectionRevision)"
   }

@@ -1,33 +1,839 @@
 {
   "schemaVersion": 1,
-  "scheduleVersion": 4,
-  "updatedAt": "2026-08-16T12:00:00.000Z",
+  "scheduleVersion": 10,
+  "updatedAt": "2026-09-30T09:55:30Z",
   "stay": {
-    "spa": "Testovací lázně",
-    "dateFrom": "2026-08-15",
-    "dateTo": "2026-08-17",
-    "room": "208",
-    "doctor": "MUDr. Test",
-    "mealShift": "II. směna"
+    "spa": "Rehabilitační sanatorium – Lázně Darkov",
+    "dateFrom": "2026-09-30",
+    "dateTo": "2026-10-28",
+    "room": "RS - 0818",
+    "doctor": "MUDr. Ann Suzan Varghese"
   },
   "events": [
-    {"stableId":"synthetic-0815-breakfast","date":"2026-08-15","start":"07:30","end":"08:00","title":"Snídaně","location":"Jídelna","kind":"meal","mealType":"Snídaně"},
-    {"stableId":"synthetic-0815-magnet","date":"2026-08-15","start":"08:20","end":"08:40","title":"Magnetoterapie","location":"LDB - Elektroléčba","kind":"procedure","procedureType":"Magnetoterapie"},
-    {"stableId":"synthetic-0815-bath","date":"2026-08-15","start":"10:00","end":"10:30","title":"Jodobromová koupel","location":"Balneo","kind":"procedure","procedureType":"Jodobromová koupel"},
-    {"stableId":"synthetic-0815-lunch","date":"2026-08-15","start":"12:00","end":"12:45","title":"Oběd","location":"Jídelna","kind":"meal","mealType":"Oběd"},
-    {"stableId":"synthetic-0815-massage","date":"2026-08-15","start":"14:00","end":"14:20","title":"Masáž","location":"Rehabilitace","kind":"procedure","procedureType":"Masáž"},
-    {"stableId":"synthetic-0815-dinner","date":"2026-08-15","start":"17:30","end":"18:00","title":"Večeře","location":"Jídelna","kind":"meal","mealType":"Večeře"},
-    {"stableId":"synthetic-0816-breakfast","date":"2026-08-16","start":"07:30","end":"08:00","title":"Snídaně","location":"Jídelna","kind":"meal","mealType":"Snídaně"},
-    {"stableId":"synthetic-0816-lunch","date":"2026-08-16","start":"12:00","end":"12:45","title":"Oběd","location":"Jídelna","kind":"meal","mealType":"Oběd"},
-    {"stableId":"synthetic-0816-dinner","date":"2026-08-16","start":"17:30","end":"18:00","title":"Večeře","location":"Jídelna","kind":"meal","mealType":"Večeře"},
-    {"stableId":"synthetic-0817-breakfast","date":"2026-08-17","start":"07:30","end":"08:00","title":"Snídaně","location":"Jídelna","kind":"meal","mealType":"Snídaně"},
-    {"stableId":"synthetic-0817-exercise","date":"2026-08-17","start":"09:00","end":"09:30","title":"Skupinové cvičení","location":"Tělocvična","kind":"procedure","procedureType":"Cvičení"},
-    {"stableId":"synthetic-0817-lunch","date":"2026-08-17","start":"12:00","end":"12:45","title":"Oběd","location":"Jídelna","kind":"meal","mealType":"Oběd"},
-    {"stableId":"synthetic-0817-dinner","date":"2026-08-17","start":"17:30","end":"18:00","title":"Večeře","location":"Jídelna","kind":"meal","mealType":"Večeře"}
+    {
+      "stableId": "darkov-2026-10-01-elektricky-chodnik-0800",
+      "date": "2026-10-01",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "Elektrický chodník",
+      "location": "RS C 2. etáž, č. 8 FYZ29",
+      "kind": "procedure",
+      "procedureType": "Elektrický chodník"
+    },
+    {
+      "stableId": "darkov-2026-10-01-iltv-ergoterapie-0900",
+      "date": "2026-10-01",
+      "start": "09:00",
+      "end": "09:20",
+      "title": "ILTV ergoterapie",
+      "location": "RS A 2. etáž, č. 232 FYZ30",
+      "kind": "procedure",
+      "procedureType": "ILTV ergoterapie"
+    },
+    {
+      "stableId": "darkov-2026-10-01-individualni-ltv-1200",
+      "date": "2026-10-01",
+      "start": "12:00",
+      "end": "12:20",
+      "title": "Individuální LTV",
+      "location": "RS A 2. etáž, tělocvična č. 224 FYZ7",
+      "kind": "procedure",
+      "procedureType": "Individuální LTV"
+    },
+    {
+      "stableId": "darkov-2026-10-01-ctyrkomorova-lazen-1245",
+      "date": "2026-10-01",
+      "start": "12:45",
+      "end": "13:05",
+      "title": "Čtyřkomorová lázeň",
+      "location": "RS B 2. etáž, Centrum elektroléčby I. FYZ25",
+      "kind": "procedure",
+      "procedureType": "Čtyřkomorová lázeň"
+    },
+    {
+      "stableId": "darkov-2026-10-01-perlickova-koupel-zabal-1400",
+      "date": "2026-10-01",
+      "start": "14:00",
+      "end": "14:20",
+      "title": "Perličková koupel+zábal",
+      "location": "RS A 4. etáž LAZ11",
+      "kind": "procedure",
+      "procedureType": "Perličková koupel+zábal"
+    },
+    {
+      "stableId": "darkov-2026-10-02-vodni-co2-koupel-zabal-0745",
+      "date": "2026-10-02",
+      "start": "07:45",
+      "end": "08:05",
+      "title": "Vodní CO2 koupel+zábal",
+      "location": "RS A 4. etáž LAZ11",
+      "kind": "procedure",
+      "procedureType": "Vodní CO2 koupel+zábal"
+    },
+    {
+      "stableId": "darkov-2026-10-02-viriva-koupel-hkk-0910",
+      "date": "2026-10-02",
+      "start": "09:10",
+      "end": "09:30",
+      "title": "Vířivá koupel HKK",
+      "location": "RS C 1. etáž, vodoléčebný sál LAZ1",
+      "kind": "procedure",
+      "procedureType": "Vířivá koupel HKK"
+    },
+    {
+      "stableId": "darkov-2026-10-02-motomed-0945",
+      "date": "2026-10-02",
+      "start": "09:45",
+      "end": "10:05",
+      "title": "Motomed",
+      "location": "RS C 2. etáž, č. 7 FYZ48",
+      "kind": "procedure",
+      "procedureType": "Motomed"
+    },
+    {
+      "stableId": "darkov-2026-10-02-iltv-imoove-1200",
+      "date": "2026-10-02",
+      "start": "12:00",
+      "end": "12:20",
+      "title": "ILTV Imoove",
+      "location": "RS C 2. etáž, č. 7 FYZ54",
+      "kind": "procedure",
+      "procedureType": "ILTV Imoove"
+    },
+    {
+      "stableId": "darkov-2026-10-02-parafango-obklad-1330",
+      "date": "2026-10-02",
+      "start": "13:30",
+      "end": "13:50",
+      "title": "Parafango-obklad",
+      "location": "RS C 2. etáž, č. 11 LAZ4",
+      "kind": "procedure",
+      "procedureType": "Parafango-obklad"
+    },
+    {
+      "stableId": "darkov-2026-10-03-elektricky-chodnik-0800",
+      "date": "2026-10-03",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "Elektrický chodník",
+      "location": "RS C 2. etáž, č. 8 FYZ29",
+      "kind": "procedure",
+      "procedureType": "Elektrický chodník"
+    },
+    {
+      "stableId": "darkov-2026-10-03-celotelova-viriva-koupel-0945",
+      "date": "2026-10-03",
+      "start": "09:45",
+      "end": "10:05",
+      "title": "Celotělová vířivá koupel",
+      "location": "RS D 2. etáž, Svět vitality LAZ7",
+      "kind": "procedure",
+      "procedureType": "Celotělová vířivá koupel"
+    },
+    {
+      "stableId": "darkov-2026-10-05-perlickova-koupel-zabal-0730",
+      "date": "2026-10-05",
+      "start": "07:30",
+      "end": "07:50",
+      "title": "Perličková koupel+zábal",
+      "location": "RS A 4. etáž LAZ11",
+      "kind": "procedure",
+      "procedureType": "Perličková koupel+zábal"
+    },
+    {
+      "stableId": "darkov-2026-10-05-motomed-0845",
+      "date": "2026-10-05",
+      "start": "08:45",
+      "end": "09:05",
+      "title": "Motomed",
+      "location": "RS C 2. etáž, č. 7 FYZ48",
+      "kind": "procedure",
+      "procedureType": "Motomed"
+    },
+    {
+      "stableId": "darkov-2026-10-05-iltv-imoove-1200",
+      "date": "2026-10-05",
+      "start": "12:00",
+      "end": "12:20",
+      "title": "ILTV Imoove",
+      "location": "RS C 2. etáž, č. 7 FYZ54",
+      "kind": "procedure",
+      "procedureType": "ILTV Imoove"
+    },
+    {
+      "stableId": "darkov-2026-10-06-elektricky-chodnik-0800",
+      "date": "2026-10-06",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "Elektrický chodník",
+      "location": "RS C 2. etáž, č. 8 FYZ29",
+      "kind": "procedure",
+      "procedureType": "Elektrický chodník"
+    },
+    {
+      "stableId": "darkov-2026-10-06-iltv-ergoterapie-0930",
+      "date": "2026-10-06",
+      "start": "09:30",
+      "end": "09:50",
+      "title": "ILTV ergoterapie",
+      "location": "RS A 2. etáž, č. 232 FYZ30",
+      "kind": "procedure",
+      "procedureType": "ILTV ergoterapie"
+    },
+    {
+      "stableId": "darkov-2026-10-06-individualni-ltv-1230",
+      "date": "2026-10-06",
+      "start": "12:30",
+      "end": "12:50",
+      "title": "Individuální LTV",
+      "location": "RS A 2. etáž, tělocvična č. 224 FYZ7",
+      "kind": "procedure",
+      "procedureType": "Individuální LTV"
+    },
+    {
+      "stableId": "darkov-2026-10-06-ctyrkomorova-lazen-1315",
+      "date": "2026-10-06",
+      "start": "13:15",
+      "end": "13:35",
+      "title": "Čtyřkomorová lázeň",
+      "location": "RS B 2. etáž, Centrum elektroléčby I. FYZ25",
+      "kind": "procedure",
+      "procedureType": "Čtyřkomorová lázeň"
+    },
+    {
+      "stableId": "darkov-2026-10-07-motomed-0815",
+      "date": "2026-10-07",
+      "start": "08:15",
+      "end": "08:35",
+      "title": "Motomed",
+      "location": "RS C 2. etáž, č. 7 FYZ48",
+      "kind": "procedure",
+      "procedureType": "Motomed"
+    },
+    {
+      "stableId": "darkov-2026-10-07-parafango-obklad-0930",
+      "date": "2026-10-07",
+      "start": "09:30",
+      "end": "09:50",
+      "title": "Parafango-obklad",
+      "location": "RS C 2. etáž, č. 11 LAZ4",
+      "kind": "procedure",
+      "procedureType": "Parafango-obklad"
+    },
+    {
+      "stableId": "darkov-2026-10-07-celotelova-viriva-koupel-1015",
+      "date": "2026-10-07",
+      "start": "10:15",
+      "end": "10:35",
+      "title": "Celotělová vířivá koupel",
+      "location": "RS D 2. etáž, Svět vitality LAZ7",
+      "kind": "procedure",
+      "procedureType": "Celotělová vířivá koupel"
+    },
+    {
+      "stableId": "darkov-2026-10-07-iltv-imoove-1200",
+      "date": "2026-10-07",
+      "start": "12:00",
+      "end": "12:20",
+      "title": "ILTV Imoove",
+      "location": "RS C 2. etáž, č. 7 FYZ54",
+      "kind": "procedure",
+      "procedureType": "ILTV Imoove"
+    },
+    {
+      "stableId": "darkov-2026-10-08-individualni-ltv-0800",
+      "date": "2026-10-08",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "Individuální LTV",
+      "location": "RS A 2. etáž, tělocvična č. 224 FYZ7",
+      "kind": "procedure",
+      "procedureType": "Individuální LTV"
+    },
+    {
+      "stableId": "darkov-2026-10-08-elektricky-chodnik-1030",
+      "date": "2026-10-08",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "Elektrický chodník",
+      "location": "RS C 2. etáž, č. 8 FYZ29",
+      "kind": "procedure",
+      "procedureType": "Elektrický chodník"
+    },
+    {
+      "stableId": "darkov-2026-10-08-vodni-co2-koupel-zabal-1245",
+      "date": "2026-10-08",
+      "start": "12:45",
+      "end": "13:05",
+      "title": "Vodní CO2 koupel+zábal",
+      "location": "RS A 4. etáž LAZ11",
+      "kind": "procedure",
+      "procedureType": "Vodní CO2 koupel+zábal"
+    },
+    {
+      "stableId": "darkov-2026-10-09-parafango-obklad-0800",
+      "date": "2026-10-09",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "Parafango-obklad",
+      "location": "RS C 2. etáž, č. 11 LAZ4",
+      "kind": "procedure",
+      "procedureType": "Parafango-obklad"
+    },
+    {
+      "stableId": "darkov-2026-10-09-viriva-koupel-hkk-0850",
+      "date": "2026-10-09",
+      "start": "08:50",
+      "end": "09:10",
+      "title": "Vířivá koupel HKK",
+      "location": "RS C 1. etáž, vodoléčebný sál LAZ1",
+      "kind": "procedure",
+      "procedureType": "Vířivá koupel HKK"
+    },
+    {
+      "stableId": "darkov-2026-10-09-motomed-1015",
+      "date": "2026-10-09",
+      "start": "10:15",
+      "end": "10:35",
+      "title": "Motomed",
+      "location": "RS C 2. etáž, č. 7 FYZ48",
+      "kind": "procedure",
+      "procedureType": "Motomed"
+    },
+    {
+      "stableId": "darkov-2026-10-09-ctyrkomorova-lazen-1215",
+      "date": "2026-10-09",
+      "start": "12:15",
+      "end": "12:35",
+      "title": "Čtyřkomorová lázeň",
+      "location": "RS B 2. etáž, Centrum elektroléčby I. FYZ25",
+      "kind": "procedure",
+      "procedureType": "Čtyřkomorová lázeň"
+    },
+    {
+      "stableId": "darkov-2026-10-10-elektricky-chodnik-0830",
+      "date": "2026-10-10",
+      "start": "08:30",
+      "end": "08:50",
+      "title": "Elektrický chodník",
+      "location": "RS C 2. etáž, č. 8 FYZ29",
+      "kind": "procedure",
+      "procedureType": "Elektrický chodník"
+    },
+    {
+      "stableId": "darkov-2026-10-10-celotelova-viriva-koupel-0915",
+      "date": "2026-10-10",
+      "start": "09:15",
+      "end": "09:35",
+      "title": "Celotělová vířivá koupel",
+      "location": "RS D 2. etáž, Svět vitality LAZ7",
+      "kind": "procedure",
+      "procedureType": "Celotělová vířivá koupel"
+    },
+    {
+      "stableId": "darkov-2026-10-12-perlickova-koupel-zabal-0800",
+      "date": "2026-10-12",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "Perličková koupel+zábal",
+      "location": "RS A 4. etáž LAZ11",
+      "kind": "procedure",
+      "procedureType": "Perličková koupel+zábal"
+    },
+    {
+      "stableId": "darkov-2026-10-12-iltv-ergoterapie-0900",
+      "date": "2026-10-12",
+      "start": "09:00",
+      "end": "09:20",
+      "title": "ILTV ergoterapie",
+      "location": "RS A 2. etáž, č. 232 FYZ30",
+      "kind": "procedure",
+      "procedureType": "ILTV ergoterapie"
+    },
+    {
+      "stableId": "darkov-2026-10-12-elektricky-chodnik-1030",
+      "date": "2026-10-12",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "Elektrický chodník",
+      "location": "RS C 2. etáž, č. 8 FYZ29",
+      "kind": "procedure",
+      "procedureType": "Elektrický chodník"
+    },
+    {
+      "stableId": "darkov-2026-10-12-individualni-ltv-1200",
+      "date": "2026-10-12",
+      "start": "12:00",
+      "end": "12:20",
+      "title": "Individuální LTV",
+      "location": "RS A 2. etáž, tělocvična č. 224 FYZ7",
+      "kind": "procedure",
+      "procedureType": "Individuální LTV"
+    },
+    {
+      "stableId": "darkov-2026-10-12-klasicka-masaz-1300",
+      "date": "2026-10-12",
+      "start": "13:00",
+      "end": "13:20",
+      "title": "Klasická masáž",
+      "location": "RS A 4. etáž, masérna č. 1 MAS21",
+      "kind": "procedure",
+      "procedureType": "Klasická masáž"
+    },
+    {
+      "stableId": "darkov-2026-10-13-iltv-imoove-0800",
+      "date": "2026-10-13",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "ILTV Imoove",
+      "location": "RS C 2. etáž, č. 7 FYZ54",
+      "kind": "procedure",
+      "procedureType": "ILTV Imoove"
+    },
+    {
+      "stableId": "darkov-2026-10-13-motomed-0915",
+      "date": "2026-10-13",
+      "start": "09:15",
+      "end": "09:35",
+      "title": "Motomed",
+      "location": "RS C 2. etáž, č. 7 FYZ48",
+      "kind": "procedure",
+      "procedureType": "Motomed"
+    },
+    {
+      "stableId": "darkov-2026-10-13-ctyrkomorova-lazen-1015",
+      "date": "2026-10-13",
+      "start": "10:15",
+      "end": "10:35",
+      "title": "Čtyřkomorová lázeň",
+      "location": "RS B 2. etáž, Centrum elektroléčby I. FYZ25",
+      "kind": "procedure",
+      "procedureType": "Čtyřkomorová lázeň"
+    },
+    {
+      "stableId": "darkov-2026-10-13-vodni-co2-koupel-zabal-1245",
+      "date": "2026-10-13",
+      "start": "12:45",
+      "end": "13:05",
+      "title": "Vodní CO2 koupel+zábal",
+      "location": "RS A 4. etáž LAZ11",
+      "kind": "procedure",
+      "procedureType": "Vodní CO2 koupel+zábal"
+    },
+    {
+      "stableId": "darkov-2026-10-14-parafango-obklad-0730",
+      "date": "2026-10-14",
+      "start": "07:30",
+      "end": "07:50",
+      "title": "Parafango-obklad",
+      "location": "RS C 2. etáž, č. 11 LAZ4",
+      "kind": "procedure",
+      "procedureType": "Parafango-obklad"
+    },
+    {
+      "stableId": "darkov-2026-10-14-motomed-0815",
+      "date": "2026-10-14",
+      "start": "08:15",
+      "end": "08:35",
+      "title": "Motomed",
+      "location": "RS C 2. etáž, č. 7 FYZ48",
+      "kind": "procedure",
+      "procedureType": "Motomed"
+    },
+    {
+      "stableId": "darkov-2026-10-14-individualni-ltv-1000",
+      "date": "2026-10-14",
+      "start": "10:00",
+      "end": "10:20",
+      "title": "Individuální LTV",
+      "location": "RS A 2. etáž, tělocvična č. 224 FYZ7",
+      "kind": "procedure",
+      "procedureType": "Individuální LTV"
+    },
+    {
+      "stableId": "darkov-2026-10-14-celotelova-viriva-koupel-1230",
+      "date": "2026-10-14",
+      "start": "12:30",
+      "end": "12:50",
+      "title": "Celotělová vířivá koupel",
+      "location": "RS D 2. etáž, Svět vitality LAZ7",
+      "kind": "procedure",
+      "procedureType": "Celotělová vířivá koupel"
+    },
+    {
+      "stableId": "darkov-2026-10-15-elektricky-chodnik-0800",
+      "date": "2026-10-15",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "Elektrický chodník",
+      "location": "RS C 2. etáž, č. 8 FYZ29",
+      "kind": "procedure",
+      "procedureType": "Elektrický chodník"
+    },
+    {
+      "stableId": "darkov-2026-10-15-parafango-obklad-0900",
+      "date": "2026-10-15",
+      "start": "09:00",
+      "end": "09:20",
+      "title": "Parafango-obklad",
+      "location": "RS C 2. etáž, č. 11 LAZ4",
+      "kind": "procedure",
+      "procedureType": "Parafango-obklad"
+    },
+    {
+      "stableId": "darkov-2026-10-15-viriva-koupel-hkk-0950",
+      "date": "2026-10-15",
+      "start": "09:50",
+      "end": "10:10",
+      "title": "Vířivá koupel HKK",
+      "location": "RS C 1. etáž, vodoléčebný sál LAZ1",
+      "kind": "procedure",
+      "procedureType": "Vířivá koupel HKK"
+    },
+    {
+      "stableId": "darkov-2026-10-16-ctyrkomorova-lazen-0815",
+      "date": "2026-10-16",
+      "start": "08:15",
+      "end": "08:35",
+      "title": "Čtyřkomorová lázeň",
+      "location": "RS B 2. etáž, Centrum elektroléčby I. FYZ25",
+      "kind": "procedure",
+      "procedureType": "Čtyřkomorová lázeň"
+    },
+    {
+      "stableId": "darkov-2026-10-16-iltv-imoove-1000",
+      "date": "2026-10-16",
+      "start": "10:00",
+      "end": "10:20",
+      "title": "ILTV Imoove",
+      "location": "RS C 2. etáž, č. 7 FYZ54",
+      "kind": "procedure",
+      "procedureType": "ILTV Imoove"
+    },
+    {
+      "stableId": "darkov-2026-10-16-motomed-1245",
+      "date": "2026-10-16",
+      "start": "12:45",
+      "end": "13:05",
+      "title": "Motomed",
+      "location": "RS C 2. etáž, č. 7 FYZ48",
+      "kind": "procedure",
+      "procedureType": "Motomed"
+    },
+    {
+      "stableId": "darkov-2026-10-17-elektricky-chodnik-0800",
+      "date": "2026-10-17",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "Elektrický chodník",
+      "location": "RS C 2. etáž, č. 8 FYZ29",
+      "kind": "procedure",
+      "procedureType": "Elektrický chodník"
+    },
+    {
+      "stableId": "darkov-2026-10-17-celotelova-viriva-koupel-0845",
+      "date": "2026-10-17",
+      "start": "08:45",
+      "end": "09:05",
+      "title": "Celotělová vířivá koupel",
+      "location": "RS D 2. etáž, Svět vitality LAZ7",
+      "kind": "procedure",
+      "procedureType": "Celotělová vířivá koupel"
+    },
+    {
+      "stableId": "darkov-2026-10-19-parafango-obklad-0730",
+      "date": "2026-10-19",
+      "start": "07:30",
+      "end": "07:50",
+      "title": "Parafango-obklad",
+      "location": "RS C 2. etáž, č. 11 LAZ4",
+      "kind": "procedure",
+      "procedureType": "Parafango-obklad"
+    },
+    {
+      "stableId": "darkov-2026-10-19-perlickova-koupel-zabal-0830",
+      "date": "2026-10-19",
+      "start": "08:30",
+      "end": "08:50",
+      "title": "Perličková koupel+zábal",
+      "location": "RS A 4. etáž LAZ11",
+      "kind": "procedure",
+      "procedureType": "Perličková koupel+zábal"
+    },
+    {
+      "stableId": "darkov-2026-10-19-motomed-1015",
+      "date": "2026-10-19",
+      "start": "10:15",
+      "end": "10:35",
+      "title": "Motomed",
+      "location": "RS C 2. etáž, č. 7 FYZ48",
+      "kind": "procedure",
+      "procedureType": "Motomed"
+    },
+    {
+      "stableId": "darkov-2026-10-19-iltv-imoove-1230",
+      "date": "2026-10-19",
+      "start": "12:30",
+      "end": "12:50",
+      "title": "ILTV Imoove",
+      "location": "RS C 2. etáž, č. 7 FYZ54",
+      "kind": "procedure",
+      "procedureType": "ILTV Imoove"
+    },
+    {
+      "stableId": "darkov-2026-10-20-individualni-ltv-0800",
+      "date": "2026-10-20",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "Individuální LTV",
+      "location": "RS A 2. etáž, tělocvična č. 224 FYZ7",
+      "kind": "procedure",
+      "procedureType": "Individuální LTV"
+    },
+    {
+      "stableId": "darkov-2026-10-20-iltv-ergoterapie-0930",
+      "date": "2026-10-20",
+      "start": "09:30",
+      "end": "09:50",
+      "title": "ILTV ergoterapie",
+      "location": "RS A 2. etáž, č. 232 FYZ30",
+      "kind": "procedure",
+      "procedureType": "ILTV ergoterapie"
+    },
+    {
+      "stableId": "darkov-2026-10-20-ctyrkomorova-lazen-1015",
+      "date": "2026-10-20",
+      "start": "10:15",
+      "end": "10:35",
+      "title": "Čtyřkomorová lázeň",
+      "location": "RS B 2. etáž, Centrum elektroléčby I. FYZ25",
+      "kind": "procedure",
+      "procedureType": "Čtyřkomorová lázeň"
+    },
+    {
+      "stableId": "darkov-2026-10-20-elektricky-chodnik-1230",
+      "date": "2026-10-20",
+      "start": "12:30",
+      "end": "12:50",
+      "title": "Elektrický chodník",
+      "location": "RS C 2. etáž, č. 8 FYZ29",
+      "kind": "procedure",
+      "procedureType": "Elektrický chodník"
+    },
+    {
+      "stableId": "darkov-2026-10-21-motomed-0815",
+      "date": "2026-10-21",
+      "start": "08:15",
+      "end": "08:35",
+      "title": "Motomed",
+      "location": "RS C 2. etáž, č. 7 FYZ48",
+      "kind": "procedure",
+      "procedureType": "Motomed"
+    },
+    {
+      "stableId": "darkov-2026-10-21-celotelova-viriva-koupel-0915",
+      "date": "2026-10-21",
+      "start": "09:15",
+      "end": "09:35",
+      "title": "Celotělová vířivá koupel",
+      "location": "RS D 2. etáž, Svět vitality LAZ7",
+      "kind": "procedure",
+      "procedureType": "Celotělová vířivá koupel"
+    },
+    {
+      "stableId": "darkov-2026-10-21-parafango-obklad-1030",
+      "date": "2026-10-21",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "Parafango-obklad",
+      "location": "RS C 2. etáž, č. 11 LAZ4",
+      "kind": "procedure",
+      "procedureType": "Parafango-obklad"
+    },
+    {
+      "stableId": "darkov-2026-10-21-viriva-koupel-hkk-1200",
+      "date": "2026-10-21",
+      "start": "12:00",
+      "end": "12:20",
+      "title": "Vířivá koupel HKK",
+      "location": "RS C 1. etáž, vodoléčebný sál LAZ1",
+      "kind": "procedure",
+      "procedureType": "Vířivá koupel HKK"
+    },
+    {
+      "stableId": "darkov-2026-10-22-iltv-imoove-0800",
+      "date": "2026-10-22",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "ILTV Imoove",
+      "location": "RS C 2. etáž, č. 7 FYZ54",
+      "kind": "procedure",
+      "procedureType": "ILTV Imoove"
+    },
+    {
+      "stableId": "darkov-2026-10-22-vodni-co2-koupel-zabal-0915",
+      "date": "2026-10-22",
+      "start": "09:15",
+      "end": "09:35",
+      "title": "Vodní CO2 koupel+zábal",
+      "location": "RS A 4. etáž LAZ11",
+      "kind": "procedure",
+      "procedureType": "Vodní CO2 koupel+zábal"
+    },
+    {
+      "stableId": "darkov-2026-10-22-motomed-1015",
+      "date": "2026-10-22",
+      "start": "10:15",
+      "end": "10:35",
+      "title": "Motomed",
+      "location": "RS C 2. etáž, č. 7 FYZ48",
+      "kind": "procedure",
+      "procedureType": "Motomed"
+    },
+    {
+      "stableId": "darkov-2026-10-22-klasicka-masaz-1230",
+      "date": "2026-10-22",
+      "start": "12:30",
+      "end": "12:50",
+      "title": "Klasická masáž",
+      "location": "RS A 4. etáž, masérna č. 1 MAS21",
+      "kind": "procedure",
+      "procedureType": "Klasická masáž"
+    },
+    {
+      "stableId": "darkov-2026-10-23-celotelova-viriva-koupel-0815",
+      "date": "2026-10-23",
+      "start": "08:15",
+      "end": "08:35",
+      "title": "Celotělová vířivá koupel",
+      "location": "RS D 2. etáž, Svět vitality LAZ7",
+      "kind": "procedure",
+      "procedureType": "Celotělová vířivá koupel"
+    },
+    {
+      "stableId": "darkov-2026-10-23-ctyrkomorova-lazen-0915",
+      "date": "2026-10-23",
+      "start": "09:15",
+      "end": "09:35",
+      "title": "Čtyřkomorová lázeň",
+      "location": "RS B 2. etáž, Centrum elektroléčby I. FYZ25",
+      "kind": "procedure",
+      "procedureType": "Čtyřkomorová lázeň"
+    },
+    {
+      "stableId": "darkov-2026-10-23-individualni-ltv-1030",
+      "date": "2026-10-23",
+      "start": "10:30",
+      "end": "10:50",
+      "title": "Individuální LTV",
+      "location": "RS A 2. etáž, tělocvična č. 224 FYZ7",
+      "kind": "procedure",
+      "procedureType": "Individuální LTV"
+    },
+    {
+      "stableId": "darkov-2026-10-23-elektricky-chodnik-1230",
+      "date": "2026-10-23",
+      "start": "12:30",
+      "end": "12:50",
+      "title": "Elektrický chodník",
+      "location": "RS C 2. etáž, č. 8 FYZ29",
+      "kind": "procedure",
+      "procedureType": "Elektrický chodník"
+    },
+    {
+      "stableId": "darkov-2026-10-24-elektricky-chodnik-0800",
+      "date": "2026-10-24",
+      "start": "08:00",
+      "end": "08:20",
+      "title": "Elektrický chodník",
+      "location": "RS C 2. etáž, č. 8 FYZ29",
+      "kind": "procedure",
+      "procedureType": "Elektrický chodník"
+    },
+    {
+      "stableId": "darkov-2026-10-26-ctyrkomorova-lazen-0745",
+      "date": "2026-10-26",
+      "start": "07:45",
+      "end": "08:05",
+      "title": "Čtyřkomorová lázeň",
+      "location": "RS B 2. etáž, Centrum elektroléčby I. FYZ25",
+      "kind": "procedure",
+      "procedureType": "Čtyřkomorová lázeň"
+    },
+    {
+      "stableId": "darkov-2026-10-26-individualni-ltv-0830",
+      "date": "2026-10-26",
+      "start": "08:30",
+      "end": "08:50",
+      "title": "Individuální LTV",
+      "location": "RS A 2. etáž, tělocvična č. 224 FYZ7",
+      "kind": "procedure",
+      "procedureType": "Individuální LTV"
+    },
+    {
+      "stableId": "darkov-2026-10-26-elektricky-chodnik-0930",
+      "date": "2026-10-26",
+      "start": "09:30",
+      "end": "09:50",
+      "title": "Elektrický chodník",
+      "location": "RS C 2. etáž, č. 8 FYZ29",
+      "kind": "procedure",
+      "procedureType": "Elektrický chodník"
+    },
+    {
+      "stableId": "darkov-2026-10-26-motomed-1215",
+      "date": "2026-10-26",
+      "start": "12:15",
+      "end": "12:35",
+      "title": "Motomed",
+      "location": "RS C 2. etáž, č. 7 FYZ48",
+      "kind": "procedure",
+      "procedureType": "Motomed"
+    },
+    {
+      "stableId": "darkov-2026-10-27-iltv-imoove-0730",
+      "date": "2026-10-27",
+      "start": "07:30",
+      "end": "07:50",
+      "title": "ILTV Imoove",
+      "location": "RS C 2. etáž, č. 7 FYZ54",
+      "kind": "procedure",
+      "procedureType": "ILTV Imoove"
+    },
+    {
+      "stableId": "darkov-2026-10-27-celotelova-viriva-koupel-0845",
+      "date": "2026-10-27",
+      "start": "08:45",
+      "end": "09:05",
+      "title": "Celotělová vířivá koupel",
+      "location": "RS D 2. etáž, Svět vitality LAZ7",
+      "kind": "procedure",
+      "procedureType": "Celotělová vířivá koupel"
+    },
+    {
+      "stableId": "darkov-2026-10-27-motomed-1015",
+      "date": "2026-10-27",
+      "start": "10:15",
+      "end": "10:35",
+      "title": "Motomed",
+      "location": "RS C 2. etáž, č. 7 FYZ48",
+      "kind": "procedure",
+      "procedureType": "Motomed"
+    },
+    {
+      "stableId": "darkov-2026-10-27-parafango-obklad-1200",
+      "date": "2026-10-27",
+      "start": "12:00",
+      "end": "12:20",
+      "title": "Parafango-obklad",
+      "location": "RS C 2. etáž, č. 11 LAZ4",
+      "kind": "procedure",
+      "procedureType": "Parafango-obklad"
+    }
   ],
   "settings": {
     "defaultLeadTimeMinutes": 20,
-    "procedureTypeOverrides": {"Jodobromová koupel": 30},
-    "mealOverrides": {"Snídaně": 15, "Oběd": 15, "Večeře": 15}
+    "procedureTypeOverrides": {},
+    "mealOverrides": {}
   }
 }

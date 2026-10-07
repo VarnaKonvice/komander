@@ -168,7 +168,7 @@ private actor ReliabilityAlarmAdapter: AlarmAdapting {
   let adapter = try source("LazenskyCommanderApp/AlarmKitAdapter.swift")
   #expect(adapter.contains("return allIDs.intersection(try await ownership.ids())"))
   #expect(adapter.contains("ownership.reserve(stableID: alarm.stableId)"))
-  #expect(adapter.contains("guard currentState != updatedState else { continue }"))
+  #expect(adapter.contains("guard currentState != updatedState || activity.content.staleDate != nextStaleDate else { continue }"))
   #expect(adapter.contains("CommanderAlarmStopPolicy.canApply("))
   let activities = try source("LazenskyCommanderApp/CommanderProcedureLiveActivityCoordinator.swift")
   let request = try #require(activities.range(of: "private func requestPlannedActivity("))
@@ -180,7 +180,9 @@ private actor ReliabilityAlarmAdapter: AlarmAdapting {
   #expect(watch.contains("WatchScheduleCachePolicy.decision(incoming: incoming, existing: snapshot)"))
   #expect(!watch.contains("snapshot = nil"))
   let widget = try source("LazenskyCommanderLiveActivity/LazenskyCommanderHomeWidget.swift")
-  #expect(widget.contains("return await Self.snapshotLoader.load()"))
+  #expect(widget.contains("CommanderPhoneWidgetCache.make(dataset: .production)?.load()"))
+  #expect(!widget.contains("snapshotLoader.load()"))
+  #expect(!widget.contains("URLSessionScheduleService"))
   #expect(widget.contains("CommanderRectangularLockWidget(state: state)\n          .containerBackground(.clear, for: .widget)"))
 }
 

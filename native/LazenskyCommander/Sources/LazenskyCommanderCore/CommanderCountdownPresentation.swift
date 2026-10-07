@@ -1,7 +1,6 @@
 import Foundation
 
 /// Shared semantic model. Layout, font and timer mechanism belong to the surface.
-/// Live Activity's event-context mode is deliberately stable while its process sleeps.
 public struct CommanderCountdownPresentation: Equatable, Sendable {
   public let status: String
   public let countdownLabel: String
@@ -9,6 +8,7 @@ public struct CommanderCountdownPresentation: Equatable, Sendable {
   public let referenceLabel: String?
   public let referenceDate: Date?
   public let symbol: String
+  public let isScheduleFallback: Bool
 
   public init(liveState: CommanderLiveStateResult) {
     switch liveState.state {
@@ -31,47 +31,52 @@ public struct CommanderCountdownPresentation: Equatable, Sendable {
     }
   }
 
-  /// A suspended widget must not invent an active phase from a one-off Date().
-  /// Stop/foreground owns the explicit mode; the system owns the live timer.
+  /// Required story at a supplied instant. Freshness never changes event phase.
+  /// This calculation does not promise that ActivityKit will execute it later.
   public init(
     presentationMode: CommanderLiveActivityPresentationMode,
-    isStale: Bool,
     leaveAt: Date,
     startAt: Date,
-    endAt: Date
+    endAt: Date,
+    at now: Date
   ) {
-    if isStale {
+    if now >= endAt {
       self.init(status: "Skončilo", countdownLabel: "", target: nil,
-                referenceLabel: "Konec", referenceDate: endAt,
-                symbol: "checkmark.circle.fill")
-      return
-    }
-
-    switch presentationMode {
-    case .departureCountdown:
+                referenceLabel: nil, referenceDate: nil, symbol: "checkmark.circle.fill")
+    } else if now >= startAt {
+      self.init(status: "Právě probíhá", countdownLabel: "Do konce",
+                target: endAt, referenceLabel: "Konec",
+                referenceDate: endAt, symbol: "clock.badge")
+    } else if presentationMode == .departureCountdown && now < leaveAt {
       self.init(status: "Vyrazit za", countdownLabel: "Do odchodu",
                 target: leaveAt, referenceLabel: "Odchod",
                 referenceDate: leaveAt, symbol: "figure.walk")
-    case .startCountdown:
-      self.init(status: "Vyrazit teď", countdownLabel: "Začíná za",
+    } else {
+      self.init(status: "Začátek za", countdownLabel: "Do začátku",
                 target: startAt, referenceLabel: "Začátek",
                 referenceDate: startAt, symbol: "clock.badge")
-    case .eventContext:
-      self.init(status: "Začátek " + startAt.formatted(date: .omitted, time: .shortened),
-                countdownLabel: "Do konce", target: endAt,
-                referenceLabel: "Konec", referenceDate: endAt,
-                symbol: "clock.badge")
     }
   }
 
+  /// PLATFORM LIMIT: one staleDate cannot schedule both start and end changes.
+  /// No live countdown or phase assertion may survive in this archived fallback.
+  /// This is deliberately separate from the required deterministic story above.
+  public static var suspendedScheduleFallback: Self {
+    .init(status: "Časový plán", countdownLabel: "", target: nil,
+          referenceLabel: "Rozpis", referenceDate: nil, symbol: "clock",
+          isScheduleFallback: true)
+  }
+
   private init(status: String, countdownLabel: String, target: Date?,
-               referenceLabel: String?, referenceDate: Date?, symbol: String) {
+               referenceLabel: String?, referenceDate: Date?, symbol: String,
+               isScheduleFallback: Bool = false) {
     self.status = status
     self.countdownLabel = countdownLabel
     self.target = target
     self.referenceLabel = referenceLabel
     self.referenceDate = referenceDate
     self.symbol = symbol
+    self.isScheduleFallback = isScheduleFallback
   }
 
   public func countdownText(at now: Date) -> String? {

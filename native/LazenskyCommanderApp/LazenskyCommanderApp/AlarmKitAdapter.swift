@@ -47,11 +47,9 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
     return String(localISO[start..<end])
   }
 
-  private static let operations = CommanderSerialOperationQueue()
-
   func perform() async throws -> some IntentResult {
     let payload = activityPayload
-    let updatedStableIDs = try await Self.operations.run {
+    let updatedStableIDs = try await CommanderProcedureLiveActivityPolicy.operations.run {
       await Self.updateActivities(activityPayload: payload)
     }
     let result = updatedStableIDs.isEmpty
@@ -79,6 +77,11 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
         guard CommanderAlarmStopPolicy.canApply(
           stopped: stopped,
           current: currentState.events.first(where: { $0.stableId == metadata.stableId }),
+          focused: currentState.events.first(where: { $0.stableId == currentState.focusStableId }),
+          stoppedIdentity: .init(scheduleVersion: metadata.scheduleVersion,
+            projectionRevision: metadata.projectionRevision ?? 0),
+          currentIdentity: .init(scheduleVersion: currentState.scheduleVersion,
+            projectionRevision: currentState.projectionRevision),
           now: Date.now
         ) else { continue }
 
@@ -97,8 +100,13 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
           focusStableId: metadata.stableId,
           presentationMode: presentationMode
         )
-        // Repeated callbacks for an already applied phase must not resend the alert.
-        guard currentState != updatedState else { continue }
+        let nextStaleDate = CommanderProcedureLiveActivityPolicy.nextStaleDate(
+          for: updatedState,
+          attributes: activity.attributes
+        )
+        // Repeated callbacks for an already applied phase must not resend the alert,
+        // unless the semantic phase boundary itself still needs repair.
+        guard currentState != updatedState || activity.content.staleDate != nextStaleDate else { continue }
         let watchAlert = ActivityKit.AlertConfiguration(
           title: LocalizedStringResource(stringLiteral: "Lázeňský Commander"),
           body: LocalizedStringResource(
@@ -109,7 +117,7 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
         await activity.update(
           ActivityContent(
             state: updatedState,
-            staleDate: activity.content.staleDate,
+            staleDate: nextStaleDate,
             relevanceScore: 1_000
           ),
           alertConfiguration: watchAlert
@@ -294,6 +302,10 @@ actor AlarmKitAdapter: AlarmAdapting {
     return allIDs.intersection(try await ownership.ids())
   }
 
+  func existingEventStableIDs() async throws -> Set<String> {
+    try await ownership.stableIDs(for: existingPlatformAlarmIDs() ?? [])
+  }
+
   func existingPlatformAlertingAlarmIDs() async throws -> Set<String> {
     let owned = try await existingPlatformAlarmIDs() ?? []
     return Set(try AlarmManager.shared.alarms.filter { $0.state == .alerting }
@@ -368,7 +380,8 @@ actor AlarmKitAdapter: AlarmAdapting {
       directoryURL: URL.applicationSupportDirectory.appendingPathComponent("CommanderAlarmOwnership"),
       key: "lazensky.commander.alarmOwnership.\(channel.rawValue).v1",
       legacyStateKey: "lazensky.commander.managedAlarms.\(channel.rawValue).v1",
-      legacyOwnershipKey: channel == .e2e ? e2eOwnershipKey : nil
+      legacyOwnershipKey: channel == .e2e ? e2eOwnershipKey : nil,
+      dataset: channel == .production ? CommanderRuntimeDataset.current : nil
     )
   }
 

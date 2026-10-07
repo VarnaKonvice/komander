@@ -6,16 +6,18 @@ import WidgetKit
 struct CommanderHomeWidgetEntry: TimelineEntry {
   let date: Date
   let snapshot: WatchScheduleSnapshot?
+  let presentation: CommanderPhoneWidgetPresentation
+
+  init(date: Date, snapshot: WatchScheduleSnapshot?, presentation: CommanderPhoneWidgetPresentation? = nil) {
+    self.date = date
+    self.snapshot = snapshot
+    self.presentation = presentation ?? CommanderPhoneWidgetPresentation(
+      projection: snapshot.flatMap { try? CommanderScheduleProjection(schedule: $0.schedule, overrides: $0.leadTimeOverrides) },
+      at: date)
+  }
 }
 
 struct CommanderHomeWidgetProvider: TimelineProvider {
-  private static let snapshotLoader = CommanderWidgetSnapshotLoader(
-    service: URLSessionScheduleService(configuration: AppConfiguration()),
-    cache: FileWatchScheduleCache(
-      directoryURL: URL.applicationSupportDirectory.appendingPathComponent("CommanderWidgetCache"),
-      dataset: .production
-    )
-  )
   func placeholder(in context: Context) -> CommanderHomeWidgetEntry {
     CommanderHomeWidgetEntry(date: Date(), snapshot: nil)
   }
@@ -36,7 +38,7 @@ struct CommanderHomeWidgetProvider: TimelineProvider {
     Task {
       let now = Date()
       guard let snapshot = await cachedSnapshot(),
-            let activeSchedule = WatchScheduleExpiryPolicy.activeSchedule(snapshot.schedule, at: now)
+            !WatchScheduleExpiryPolicy.isExpired(snapshot.schedule, at: now)
       else {
         completion(Timeline(
           entries: [CommanderHomeWidgetEntry(date: now, snapshot: nil)],
@@ -46,32 +48,11 @@ struct CommanderHomeWidgetProvider: TimelineProvider {
       }
 
       do {
-        let points = try WatchTimelinePlanner.points(
-          schedule: activeSchedule,
-          now: now,
-          overrides: snapshot.leadTimeOverrides
-        )
-        let horizon = now.addingTimeInterval(6 * 60 * 60)
-        var dates = Set(points.map(\.date).filter { $0 <= horizon })
-        dates.insert(now)
-
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
-        if var tick = calendar.nextDate(
-          after: now,
-          matching: DateComponents(second: 0),
-          matchingPolicy: .nextTime
-        ) {
-          while tick <= horizon {
-            dates.insert(tick)
-            tick = tick.addingTimeInterval(60)
-          }
+        let points = try CommanderPhoneWidgetTimeline.points(snapshot: snapshot, now: now)
+        let entries = points.map {
+          CommanderHomeWidgetEntry(date: $0.date, snapshot: snapshot, presentation: $0.presentation)
         }
-
-        let entries = dates.sorted().map {
-          CommanderHomeWidgetEntry(date: $0, snapshot: snapshot)
-        }
-        completion(Timeline(entries: entries, policy: .after(horizon)))
+        completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(CommanderPhoneWidgetTimeline.refreshInterval))))
       } catch {
         completion(Timeline(
           entries: [CommanderHomeWidgetEntry(date: now, snapshot: snapshot)],
@@ -82,17 +63,19 @@ struct CommanderHomeWidgetProvider: TimelineProvider {
   }
 
   private func cachedSnapshot() async -> WatchScheduleSnapshot? {
-#if COMMANDER_VISUAL_REVIEW
+#if COMMANDER_WIDGET_DEMO
+    return WatchScheduleSnapshot(schedule: CommanderWidgetDemoSchedule.make())
+#elseif COMMANDER_VISUAL_REVIEW
     return WatchScheduleSnapshot(schedule: CommanderVisualReviewSchedule.make(now: Date()))
 #else
-#if DEBUG
-    if UserDefaults(
-      suiteName: CommanderWatchWidgetContract.appGroupIdentifier
-    )?.bool(forKey: "commander.visualReview.enabled") == true {
-      return WatchScheduleSnapshot(schedule: CommanderVisualReviewSchedule.make(now: Date()))
+    #if COMMANDER_ACCEPTANCE_FIXTURES
+    return try? await CommanderPhoneWidgetCache.make(dataset: .acceptance)?.load()
+    #else
+    if let shared = try? await CommanderPhoneWidgetCache.make(dataset: .production)?.load() {
+      return shared
     }
-#endif
-    return await Self.snapshotLoader.load()
+    return nil // Only the iPhone may accept a new canonical schedule.
+    #endif
 #endif
   }
 
@@ -151,7 +134,7 @@ struct LazenskyCommanderHomeWidget: Widget {
       CommanderHomeWidgetView(entry: entry)
     }
     .configurationDisplayName("Commander – teď")
-    .description("Aktuální nebo následující událost, odchod a odpočet.")
+    .description("Aktuální nebo následující událost a odpočet do začátku či konce.")
     .supportedFamilies([
       .systemSmall,
       .systemMedium,
@@ -187,7 +170,7 @@ struct LazenskyCommanderProcedureCountWidget: Widget {
       CommanderProcedureCountWidgetView(entry: entry)
     }
     .configurationDisplayName("Commander – odpočet")
-    .description("Kruhový odpočet do odchodu, začátku nebo konce aktuální události.")
+    .description("Kruhový odpočet do začátku nebo konce aktuální události.")
     .supportedFamilies([.accessoryCircular])
   }
 }
@@ -195,30 +178,13 @@ struct LazenskyCommanderProcedureCountWidget: Widget {
 private struct CommanderWidgetState {
   let entry: CommanderHomeWidgetEntry
 
-  var schedule: Schedule? {
-    guard let snapshot = entry.snapshot else { return nil }
-    return WatchScheduleExpiryPolicy.activeSchedule(snapshot.schedule, at: entry.date)
-  }
+  var schedule: Schedule? { entry.presentation.hasSchedule ? entry.snapshot?.schedule : nil }
 
-  var live: CommanderLiveStateResult {
-    CommanderLiveStateCalculator.compute(
-      schedule: schedule,
-      now: entry.date,
-      overrides: entry.snapshot?.leadTimeOverrides
-    )
-  }
+  var live: CommanderLiveStateResult { entry.presentation.live }
 
   var event: ScheduleEvent? { live.event }
 
-  var nextAfterCurrent: ScheduleEvent? {
-    let events = todayEvents.sorted(by: Self.eventOrder)
-    if let event, let index = events.firstIndex(where: { $0.stableId == event.stableId }) {
-      return events.dropFirst(index + 1).first
-    }
-    return events.first(where: {
-      ((try? NativeAlarmContract.dateTime(date: $0.date, time: $0.start)) ?? .distantPast) > entry.date
-    })
-  }
+  var nextAfterCurrent: ScheduleEvent? { live.nextEvent }
 
   var nextRelevantTodayEvent: ScheduleEvent? {
     switch live.state {
@@ -231,44 +197,10 @@ private struct CommanderWidgetState {
     }
   }
 
-  var nextRelevantTodayStart: Date? {
-    guard let event = nextRelevantTodayEvent else { return nil }
-    return try? NativeAlarmContract.dateTime(date: event.date, time: event.start)
-  }
-
-  var remainingProcedureCount: Int {
-    guard schedule != nil else { return 0 }
-    return todayEvents.filter { event in
-      guard event.kind == .procedure,
-            let end = try? NativeAlarmContract.dateTime(date: event.date, time: event.end)
-      else { return false }
-      return end > entry.date
-    }.count
-  }
-
-  var finalProcedureEnd: Date? {
-    todayEvents
-      .filter { $0.kind == .procedure }
-      .compactMap { try? NativeAlarmContract.dateTime(date: $0.date, time: $0.end) }
-      .max()
-  }
-
-  var dinnerStart: Date? {
-    todayEvents
-      .filter { $0.kind == .meal && Self.normalized($0.title).contains("vecer") }
-      .compactMap { try? NativeAlarmContract.dateTime(date: $0.date, time: $0.start) }
-      .min()
-  }
-
-  private var todayEvents: [ScheduleEvent] {
-    guard let schedule else { return [] }
-    var calendar = Calendar(identifier: .gregorian)
-    calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
-    return schedule.events.filter { event in
-      guard let start = try? NativeAlarmContract.dateTime(date: event.date, time: event.start) else { return false }
-      return calendar.isDate(start, inSameDayAs: entry.date)
-    }
-  }
+  var nextRelevantTodayStart: Date? { entry.presentation.nextRelevantTodayStart }
+  var remainingProcedureCount: Int { entry.presentation.remainingProcedureCount }
+  var finalProcedureEnd: Date? { entry.presentation.finalProcedureEnd }
+  var dinnerStart: Date? { entry.presentation.dinnerStart }
 
   static func eventOrder(_ lhs: ScheduleEvent, _ rhs: ScheduleEvent) -> Bool {
     [lhs.date, lhs.start, lhs.end, lhs.stableId].joined(separator: "|")
@@ -305,6 +237,7 @@ private struct CommanderHomeWidgetView: View {
         CommanderSmallHomeWidget(state: state)
       }
     }
+    .widgetURL(CommanderNavigation.todayURL)
   }
 }
 
@@ -380,7 +313,7 @@ private struct CommanderMediumHomeWidget: View {
   let state: CommanderWidgetState
 
   var body: some View {
-    VStack(spacing: 6) {
+    VStack(spacing: 4) {
       HStack(alignment: .center, spacing: 8) {
         CommanderWidgetBrandRow(title: "Lázeňský Commander", iconSize: 30, fontSize: 17)
         Spacer(minLength: 8)
@@ -407,7 +340,9 @@ private struct CommanderMediumHomeWidget: View {
               Label(event.location, systemImage: "mappin.circle.fill")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(CommanderWidgetTokens.textPrimary)
-                .lineLimit(1)
+                .lineLimit(2)
+                .minimumScaleFactor(0.78)
+                .fixedSize(horizontal: false, vertical: true)
             }
 
             if let start = state.live.startAt, let end = state.live.endAt {
@@ -462,9 +397,10 @@ private struct CommanderMediumHomeWidget: View {
       }
     }
     .padding(.horizontal, 10)
-    .padding(.top, 6)
-    .padding(.bottom, 8)
+    .padding(.top, 3)
+    .padding(.bottom, 6)
     .containerBackground(CommanderWidgetTokens.backgroundGradient, for: .widget)
+    .widgetURL(CommanderNavigation.todayURL)
   }
 
   @ViewBuilder
@@ -509,15 +445,15 @@ private struct CommanderWidgetCountdown: View {
   var body: some View {
     switch state.live.state {
     case .upcoming:
-      countdown(label: "Odchod za", target: state.live.leaveAt, accent: CommanderBrandAssets.Presentation.countdown, symbol: "figure.walk")
+      countdown(label: "Začátek za", target: state.live.startAt, accent: CommanderBrandAssets.Presentation.countdown, symbol: "clock")
     case .leaveNow:
-      countdown(label: "Čas vyrazit", target: state.live.startAt, accent: CommanderBrandAssets.Presentation.alert, symbol: "figure.walk")
+      countdown(label: "Začátek za", target: state.live.startAt, accent: CommanderBrandAssets.Presentation.alert, symbol: "clock")
     case .inProgress:
       countdown(label: "Do konce", target: state.live.endAt, accent: CommanderBrandAssets.Presentation.active, symbol: nil)
     case .dayDone:
       status("Dnes hotovo", color: CommanderWidgetTokens.textPrimary)
     case .noSchedule:
-      status("Bez programu", color: CommanderWidgetTokens.textSecondary)
+      status("Načti rozpis", color: CommanderWidgetTokens.textSecondary)
     }
   }
 
@@ -539,8 +475,8 @@ private struct CommanderWidgetCountdown: View {
       .foregroundStyle(accent)
       .lineLimit(1)
 
-      if target != nil {
-        Text(CommanderWidgetCountdownText.value(now: state.entry.date, target: target))
+      if let target {
+        Text(target, style: .relative)
           .font(.system(size: compact ? 22 : 29, weight: .heavy, design: .rounded))
           .foregroundStyle(accent)
           .lineLimit(1)
@@ -580,7 +516,7 @@ private struct CommanderWidgetEmptyState: View {
     if state.live.state == .dayDone {
       return compact ? "Dnes hotovo" : "Dnešní program dokončen"
     }
-    return compact ? "Bez programu" : "Dnes bez programu"
+    return "Načti rozpis v aplikaci"
   }
 }
 
@@ -590,39 +526,31 @@ private struct CommanderInlineLockWidget: View {
   var body: some View {
     Group {
       if let event = state.event {
-        HStack(spacing: 3) {
-          Text(inlinePrefix)
-          inlineTimer
-          Text("· \(event.title)")
-        }
-        .lineLimit(1)
+        Text(inlineText(event))
+          .lineLimit(1)
       } else {
-        Label(state.live.state == .dayDone ? "Commander · dnes hotovo" : "Commander · bez programu", systemImage: "calendar")
+        Text(state.live.state == .dayDone ? "Dnes hotovo" : "Načti rozpis")
+          .lineLimit(1)
       }
     }
     .containerBackground(.clear, for: .widget)
   }
 
-  private var inlinePrefix: String {
+  private func inlineText(_ event: ScheduleEvent) -> String {
     switch state.live.state {
-    case .upcoming: return "Odchod za"
-    case .leaveNow: return "Začátek za"
-    case .inProgress: return "Do konce"
-    case .dayDone, .noSchedule: return ""
+    case .upcoming, .leaveNow:
+      return "\(event.title) · \(time(state.live.startAt))"
+    case .inProgress:
+      return "\(event.title) · do \(time(state.live.endAt))"
+    case .dayDone:
+      return "Dnes hotovo"
+    case .noSchedule:
+      return "Načti rozpis"
     }
   }
 
-  @ViewBuilder
-  private var inlineTimer: some View {
-    let target: Date? = switch state.live.state {
-    case .upcoming: state.live.leaveAt
-    case .leaveNow: state.live.startAt
-    case .inProgress: state.live.endAt
-    case .dayDone, .noSchedule: nil
-    }
-    if let target {
-      Text(CommanderWidgetCountdownText.value(now: state.entry.date, target: target))
-    }
+  private func time(_ date: Date?) -> String {
+    date?.formatted(date: .omitted, time: .shortened) ?? "–"
   }
 }
 
@@ -678,7 +606,7 @@ private struct CommanderCircularLockWidget: View {
 
   private var targetDate: Date? {
     switch state.live.state {
-    case .upcoming: return state.live.leaveAt
+    case .upcoming: return state.live.startAt
     case .leaveNow: return state.live.startAt
     case .inProgress: return state.live.endAt
     case .dayDone, .noSchedule: return nil
@@ -688,9 +616,9 @@ private struct CommanderCircularLockWidget: View {
   private var phaseStartDate: Date? {
     switch state.live.state {
     case .upcoming:
-      return state.live.leaveAt?.addingTimeInterval(-30 * 60)
+      return state.live.startAt?.addingTimeInterval(-30 * 60)
     case .leaveNow:
-      return state.live.leaveAt
+      return state.live.startAt
     case .inProgress:
       return state.live.startAt
     case .dayDone, .noSchedule:
@@ -707,7 +635,7 @@ private struct CommanderCircularLockWidget: View {
 
   private var phaseSymbol: String {
     switch state.live.state {
-    case .upcoming, .leaveNow: return "figure.walk"
+    case .upcoming, .leaveNow: return "clock"
     case .inProgress: return "clock.fill"
     case .dayDone: return "checkmark"
     case .noSchedule: return "calendar"
@@ -726,7 +654,7 @@ private struct CommanderCircularLockWidget: View {
 
   private var circularLabel: String {
     switch state.live.state {
-    case .upcoming: return "Do odchodu"
+    case .upcoming: return "Do začátku"
     case .leaveNow: return "Do začátku"
     case .inProgress: return "Do konce"
     case .dayDone: return "Dnes hotovo"
@@ -740,51 +668,18 @@ private struct CommanderRectangularLockWidget: View {
 
   var body: some View {
     if let event = state.event {
-      HStack(alignment: .center, spacing: 6) {
-        VStack(alignment: .leading, spacing: 0) {
-          Text(rectangularStatus)
-            .font(.system(size: 10, weight: .bold))
-          Text(event.title)
-            .font(.system(size: 14, weight: .bold))
-            .lineLimit(1)
-            .minimumScaleFactor(0.78)
-          if !event.location.isEmpty {
-            Text(event.location)
-              .font(.system(size: 10, weight: .semibold))
-              .lineLimit(1)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-
-        if let target = rectangularTarget {
-          Text(CommanderWidgetCountdownText.value(now: state.entry.date, target: target))
-            .font(.system(size: 17, weight: .heavy, design: .rounded))
-            .lineLimit(1)
-            .minimumScaleFactor(0.62)
-        }
+      VStack(alignment: .leading, spacing: 1) {
+        Text(event.location.isEmpty ? "Místo neuvedeno" : event.location)
+          .font(.system(size: 16, weight: .bold))
+          .lineLimit(2)
+          .minimumScaleFactor(0.72)
+          .fixedSize(horizontal: false, vertical: true)
       }
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     } else {
-      Label(state.live.state == .dayDone ? "Dnes hotovo" : "Bez programu", systemImage: "calendar")
-        .font(.system(size: 13, weight: .bold))
-    }
-  }
-
-  private var rectangularStatus: String {
-    switch state.live.state {
-    case .upcoming: return "Odchod za"
-    case .leaveNow: return "Čas vyrazit"
-    case .inProgress: return "Právě probíhá"
-    case .dayDone: return "Dnes hotovo"
-    case .noSchedule: return "Commander"
-    }
-  }
-
-  private var rectangularTarget: Date? {
-    switch state.live.state {
-    case .upcoming: return state.live.leaveAt
-    case .leaveNow: return state.live.startAt
-    case .inProgress: return state.live.endAt
-    case .dayDone, .noSchedule: return nil
+      Text(state.live.state == .dayDone ? "Dnes hotovo" : "Načti rozpis")
+        .font(.system(size: 15, weight: .bold))
+        .lineLimit(2)
     }
   }
 }
@@ -804,7 +699,10 @@ private struct CommanderDayOverviewWidgetView: View {
         .fill(CommanderWidgetTokens.primaryPurple.opacity(0.35))
         .frame(height: 0.6)
 
-      if state.remainingProcedureCount == 0 {
+      if state.schedule == nil {
+        CommanderWidgetEmptyState(state: state, compact: true)
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+      } else if state.remainingProcedureCount == 0 {
         summaryRow(
           symbol: "checkmark.circle.fill",
           label: "Procedury",
@@ -821,10 +719,10 @@ private struct CommanderDayOverviewWidgetView: View {
             color: CommanderWidgetTokens.accent(for: next)
           )
 
-          summaryRow(
+          summaryRelativeRow(
             symbol: "hourglass",
             label: next.kind == .meal ? "Volno do \(next.title.lowercased())" : "Do začátku",
-            value: CommanderWidgetCountdownText.value(now: state.entry.date, target: start),
+            target: start,
             color: Color(commanderPresentationHex: CommanderBrandAssets.Colors.procedureCyan)
           )
         } else {
@@ -860,6 +758,7 @@ private struct CommanderDayOverviewWidgetView: View {
     .padding(.top, 5)
     .padding(.bottom, 10)
     .containerBackground(CommanderWidgetTokens.backgroundGradient, for: .widget)
+    .widgetURL(CommanderNavigation.todayURL)
   }
 
   private func summaryRow(symbol: String, label: String, value: String, color: Color) -> some View {
@@ -875,6 +774,29 @@ private struct CommanderDayOverviewWidgetView: View {
           .lineLimit(1)
           .minimumScaleFactor(0.72)
         Text(value)
+          .font(.system(size: 16, weight: .heavy, design: .rounded))
+          .foregroundStyle(CommanderWidgetTokens.textPrimary)
+          .lineLimit(1)
+          .minimumScaleFactor(0.62)
+      }
+      Spacer(minLength: 0)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+
+  private func summaryRelativeRow(symbol: String, label: String, target: Date, color: Color) -> some View {
+    HStack(spacing: 7) {
+      Image(systemName: symbol)
+        .font(.system(size: 17, weight: .bold))
+        .foregroundStyle(color)
+        .frame(width: 20)
+      VStack(alignment: .leading, spacing: -1) {
+        Text(label)
+          .font(.system(size: 9, weight: .semibold))
+          .foregroundStyle(CommanderWidgetTokens.textSecondary)
+          .lineLimit(1)
+          .minimumScaleFactor(0.72)
+        Text(target, style: .relative)
           .font(.system(size: 16, weight: .heavy, design: .rounded))
           .foregroundStyle(CommanderWidgetTokens.textPrimary)
           .lineLimit(1)

@@ -38,6 +38,41 @@ public enum CommanderLiveStateCalculator {
     guard let schedule,
           let projection = try? CommanderScheduleProjection(schedule: schedule, overrides: overrides)
     else { return .init(state: .noSchedule, now: now) }
-    return projection.liveState(at: now)
+
+    let result = projection.liveState(at: now)
+    guard result.state == .dayDone,
+          result.event == nil,
+          let nextEvent = result.nextEvent,
+          let alarm = try? NativeAlarmContract.alarm(event: nextEvent, schedule: schedule, overrides: overrides),
+          let startAt = try? NativeAlarmContract.date(fromLocalISO: alarm.startAt),
+          let endAt = try? NativeAlarmContract.date(fromLocalISO: alarm.endAt),
+          let leaveAt = try? NativeAlarmContract.date(fromLocalISO: alarm.leaveAt)
+    else { return result }
+
+    // DAY_DONE remains semantically "today is finished", but carry the next
+    // canonical event timing so Watch complications can show tomorrow instead
+    // of going visually empty overnight.
+    return .init(
+      state: .dayDone,
+      nextEvent: nextEvent,
+      startAt: startAt,
+      endAt: endAt,
+      leaveAt: leaveAt,
+      now: now,
+      leadTimeMinutes: alarm.effectiveLeadTimeMinutes
+    )
+  }
+}
+
+/// Shared snapshots select the same canonical event as iPhone/Watch. Widget text
+/// intentionally shows start/end only. A caller without preferences cannot infer departure.
+public enum CommanderHomeWidgetPresentation {
+  public static func compute(schedule: Schedule?, now: Date, overrides: LeadTimeOverrides? = nil) -> CommanderLiveStateResult {
+    guard let schedule else { return .init(state: .noSchedule, now: now) }
+    let selectionOverrides = overrides ?? LeadTimeOverrides(eventOverrides: Dictionary(
+      schedule.events.map { ($0.stableId, 0) }, uniquingKeysWith: { first, _ in first }))
+    let result = CommanderLiveStateCalculator.compute(schedule: schedule, now: now, overrides: selectionOverrides)
+    return .init(state: result.state == .leaveNow ? .upcoming : result.state, event: result.event, nextEvent: result.nextEvent,
+      startAt: result.startAt, endAt: result.endAt, now: now)
   }
 }

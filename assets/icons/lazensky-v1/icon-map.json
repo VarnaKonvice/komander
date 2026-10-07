@@ -88,6 +88,15 @@
         "viriva vana",
         "vířivá lázeň",
         "viriva lazen",
+        "perličková koupel",
+        "perlickova koupel",
+        "vodní co2 koupel",
+        "vodni co2 koupel",
+        "co2 koupel",
+        "vířivá koupel",
+        "viriva koupel",
+        "celotělová vířivá koupel",
+        "celotelova viriva koupel",
         "whirlpool"
       ]
     },
@@ -111,7 +120,8 @@
         "zábal",
         "zabal",
         "parafín",
-        "parafin"
+        "parafin",
+        "parafango"
       ]
     },
     {
@@ -196,7 +206,10 @@
         "chodicí pás",
         "chodici pas",
         "walking pás",
-        "walking pas"
+        "walking pas",
+        "motomed",
+        "elektrický chodník",
+        "elektricky chodnik"
       ]
     }
   ],

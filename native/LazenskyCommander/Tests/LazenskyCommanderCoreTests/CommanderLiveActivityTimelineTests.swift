@@ -93,7 +93,7 @@ import Testing
   #expect(resolution.nextRelation == .concurrent)
 }
 
-@Test func liveActivityTimelineStaleForcesEndedWithoutChangingPrimaryIdentity() throws {
+@Test func liveActivityTimelineStalePreservesActualPhaseAndPrimaryIdentity() throws {
   let events = try timelineFixture()
   let resolution = try #require(CommanderLiveActivityTimeline.resolve(
     events: events,
@@ -101,7 +101,7 @@ import Testing
     isStale: true
   ))
   #expect(resolution.primaryStableId == "magnet")
-  #expect(resolution.phase == .ended)
+  #expect(resolution.phase == .active)
   #expect(!resolution.departureDue)
   let magnetEnd = try timelineDate("07:10")
   #expect(resolution.countdownTarget == magnetEnd)

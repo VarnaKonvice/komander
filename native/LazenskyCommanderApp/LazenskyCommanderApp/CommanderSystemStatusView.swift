@@ -23,8 +23,12 @@ struct CommanderSystemStatusView: View {
 
   private var alarmState: String {
     guard let summary = model.summary else { return model.recoveryStatus }
-    if summary.succeeded {
+    if summary.succeeded, summary.readbackCoverage.isComplete {
       return "v\(summary.scheduleVersion ?? 0) · ověřeno"
+    }
+    if summary.succeeded {
+      let coverage = summary.readbackCoverage
+      return "v\(summary.scheduleVersion ?? 0) · read-back \(coverage.evidencedAlarmCount)/\(coverage.desiredAlarmCount)"
     }
     return "Automatická obnova"
   }
@@ -139,6 +143,12 @@ struct CommanderSystemStatusView: View {
             .padding(.vertical, 2)
           }
         }
+      }
+
+      if let issue = model.phoneWidgetIssue {
+        Text(issue)
+          .font(.footnote)
+          .foregroundStyle(.orange)
       }
 
       if let issue = model.liveActivityIssue {

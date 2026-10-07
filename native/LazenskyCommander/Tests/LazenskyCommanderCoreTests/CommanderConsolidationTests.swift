@@ -43,37 +43,57 @@ private func fixture() -> Schedule {
   #expect(projection.payload.alarms.first { $0.stableId == "magnet" }?.leaveAt == "2026-09-28T09:40:00")
 }
 
-@Test func suspendedPresentationPreservesStopContextWithoutInventingPhaseChanges() throws {
+// Required story: stale transport metadata must never redefine event phase.
+@Test(arguments: [false, true])
+func requiredStopStoryHasExactStartAndEndBoundaries(isStale: Bool) throws {
   let seed = CommanderAlarmEventSnapshot(stableId: "magnet", iconKey: "electro_therapy",
     title: "Magnetoterapie", location: "A", kind: .procedure,
     startAt: "2026-09-28T10:00:00", endAt: "2026-09-28T10:20:00", leaveAt: "2026-09-28T09:40:00")
-  let next = CommanderAlarmEventSnapshot(stableId: "next", iconKey: "hydrojet",
-    title: "Hydrojet", location: "B", kind: .procedure,
-    startAt: "2026-09-28T10:10:00", endAt: "2026-09-28T10:30:00", leaveAt: "2026-09-28T09:50:00")
-  let before = CommanderActivityPresentation.resolve(seed: seed, events: [next, seed], focusStableId: nil, presentationMode: .departureCountdown)
-  #expect(before.status == "Vyrazit za")
-  let expectedLeave = try date("09:40")
-  #expect(before.countdownTarget == expectedLeave)
-  #expect(before.timeLabel == "Odchod")
-  #expect(before.nextEvent?.stableId == "next")
-  #expect(before.nextEventLabel == "Současně:")
-  let afterDeparture = CommanderActivityPresentation.resolve(
-    seed: seed, events: [seed, next], focusStableId: "magnet", presentationMode: .startCountdown
-  )
-  let expectedStart = try date("10:00")
-  #expect(afterDeparture.status == "Vyrazit teď")
-  #expect(afterDeparture.countdownTarget == expectedStart)
-  #expect(afterDeparture.countdownLabel == "Začíná za")
-  #expect(afterDeparture.timeLabel == "Začátek")
+  let start = try date("10:00")
+  let end = try date("10:20")
+  // Keep the SAME post-Stop content throughout; do not feed the expected mode back in.
+  for now in [try date("09:40"), start.addingTimeInterval(-0.001), start,
+              start.addingTimeInterval(1), end.addingTimeInterval(-0.001), end,
+              end.addingTimeInterval(1), end.addingTimeInterval(86_400)] {
+    let display = CommanderActivityPresentation.resolve(seed: seed, events: [seed],
+      focusStableId: "magnet", presentationMode: .startCountdown,
+      isStale: isStale, at: now)
+    #expect(!display.isScheduleFallback)
+    if now < start {
+      #expect(display.status == "Začátek za")
+      #expect(display.countdownTarget == start)
+      #expect(display.countdownLabel == "Do začátku")
+    } else if now < end {
+      #expect(display.status == "Právě probíhá")
+      #expect(display.countdownTarget == end)
+      #expect(display.countdownLabel == "Do konce")
+    } else {
+      #expect(display.status == "Skončilo")
+      #expect(display.isFinished)
+      #expect(display.countdownTarget == nil)
+      #expect(display.timing.countdownText(at: now) == nil)
+      #expect(display.timing.symbol == "checkmark.circle.fill")
+    }
+  }
+}
 
-  let afterStart = CommanderActivityPresentation.resolve(
-    seed: seed, events: [seed, next], focusStableId: "magnet", presentationMode: .eventContext
-  )
-  let expectedEnd = try date("10:20")
-  #expect(afterStart.countdownTarget == expectedEnd)
-  #expect(afterStart.countdownLabel == "Do konce")
-  #expect(afterStart.timeLabel == "Konec")
-  #expect(afterStart.timing.countdownText(at: try date("10:21")) == "0:00")
+@Test(arguments: [CommanderLiveActivityPresentationMode.departureCountdown, .startCountdown, .eventContext])
+func requiredStoryNeverKeepsDepartureOrProgressAtOrAfterEnd(mode: CommanderLiveActivityPresentationMode) throws {
+  let seed = CommanderAlarmEventSnapshot(stableId: "meal", iconKey: "meal", title: "Oběd",
+    location: "A", kind: .meal, startAt: "2026-09-28T10:00:00",
+    endAt: "2026-09-28T10:20:00", leaveAt: "2026-09-28T09:40:00")
+  for stale in [false, true] {
+    for policy in [CommanderActivityRenderingPolicy.deterministic, .suspendedActivity] {
+      for now in [try date("10:20"), try date("11:00")] {
+        let display = CommanderActivityPresentation.resolve(seed: seed, events: [seed],
+          focusStableId: nil, presentationMode: mode, isStale: stale, at: now,
+          renderingPolicy: policy)
+        #expect(display.status == "Skončilo")
+        #expect(display.isFinished)
+        #expect(display.countdownTarget == nil)
+      }
+    }
+  }
 }
 
 @Test func acceptanceUsesFullProductionBootstrapAndTransport() throws {
@@ -91,18 +111,22 @@ private func fixture() -> Schedule {
   #expect(!app.contains("isAcceptanceBuild"))
   #expect(!app.contains("bootstrapAcceptancePassive"))
   let bootstrapStart = try #require(app.range(of: "  func bootstrap() async"))
-  let bootstrapEnd = try #require(app.range(of: "private struct LeadTimePreferences:"))
+  let bootstrapEnd = try #require(app.range(of: "@MainActor\nprivate final class ScheduleAuditReviewStore"))
   let operations = app[bootstrapStart.lowerBound..<bootstrapEnd.lowerBound]
   #expect(!operations.contains("#if COMMANDER_ACCEPTANCE"))
   #expect(operations.contains("scheduleSync.synchronize("))
   #expect(operations.contains("procedureActivities.reconcile("))
-  #expect(app.contains("enabled: configuration.channel == .production && !CommanderDesignPreview.enabled"))
+  #expect(app.contains("enabled: CommanderMVPPolicy.createsLiveActivities && configuration.channel == .production && !CommanderDesignPreview.enabled"))
   #expect(app.contains("CommanderAcceptanceSchedule("))
-  #expect(app.contains("watchDelivery: configuration.channel == .production ? watchConnectivity : nil"))
+  #expect(app.contains("--acceptance-single"))
+  #expect(app.contains("mode == .single ? .singleRenderer : .fullSpaDay"))
+  #expect(app.contains("CommanderAcceptanceLaunchMode.current != .cleanup"))
+  #expect(app.contains("configuration.channel == .production && acceptanceWatchDeliveryEnabled ? watchConnectivity : nil"))
   #expect(app.contains("summary?.readbackCoverage.isComplete == true"))
   #expect(app.contains("watchConnectivity.verifiedProjectionIdentity() == expected"))
   let coordinator = try source("LazenskyCommanderApp/CommanderProcedureLiveActivityCoordinator.swift")
   #expect(!coordinator.contains("#if COMMANDER_ACCEPTANCE"))
+  #expect(coordinator.contains("guard enabled && CommanderMVPPolicy.createsLiveActivities else"))
   #expect(!coordinator.contains("prepareAcceptanceProbe"))
   for path in ["LazenskyCommanderApp/IPhoneWatchConnectivityCoordinator.swift",
                "LazenskyCommanderWatchApp/WatchConnectivityReceiver.swift",
@@ -116,11 +140,13 @@ private func fixture() -> Schedule {
   #expect(receiver.contains("try await model.receive(snapshot)"))
   #expect(receiver.contains("if let identity = model.projectionIdentity"))
   let watch = try source("LazenskyCommanderWatchApp/WatchCommanderModel.swift")
-  #expect(watch.contains("try await cache.accept(incoming)"))
-  #expect(watch.contains("applyCachedSnapshot(try await cache.load())"))
+  #expect(watch.contains("try await cache.acceptAndLoad(incoming)"))
+  #expect(watch.contains("let cached = try await cache.load()"))
+  #expect(watch.contains("!WatchScheduleExpiryPolicy.isExpired(cached.schedule"))
   #expect(watch.contains("WidgetCenter.shared.reloadTimelines"))
   let widget = try source("LazenskyCommanderWatchWidget/LazenskyCommanderWatchWidget.swift")
-  #expect(widget.contains("WatchCacheLocation.makeCache().load()"))
+  #expect(widget.contains("let cache = WatchCacheLocation.makeCache()"))
+  #expect(widget.contains("try? await cache.load()"))
   let settings = try source("LazenskyCommanderApp/CommanderSettingsView.swift")
   #expect(settings.contains("title: \"Diagnostika\""))
   #expect(!settings.contains("#if DEBUG"))
