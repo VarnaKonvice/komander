@@ -40,8 +40,10 @@ final class WatchCommanderModel {
     self.standaloneAlarmsEnabled = preferences.isEnabled && CommanderMVPPolicy.createsStandaloneWatchAlerts
     self.usesSharedCache = cache == nil
     self.cache = cache ?? WatchCacheLocation.makeCache { _ in
-      WidgetCenter.shared.reloadAllTimelines()
-      WidgetCenter.shared.invalidateRelevance(ofKind: CommanderWatchWidgetContract.kind)
+      Task.detached(priority: .utility) {
+        WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.kind)
+        WidgetCenter.shared.invalidateRelevance(ofKind: CommanderWatchWidgetContract.kind)
+      }
     }
   }
 
@@ -50,12 +52,21 @@ final class WatchCommanderModel {
       if usesSharedCache {
         try await WatchCacheLocation.migrateLegacyCacheIfNeeded()
       }
-      let cached = try await cache.load()
+
+      let cached: WatchScheduleSnapshot?
+      if usesSharedCache {
+        // Keep cold-start reads independent from the writer cache's WidgetKit callback.
+        cached = try await WatchCacheLocation.makeCache().load()
+      } else {
+        cached = try await cache.load()
+      }
+
       if let cached, !WatchScheduleExpiryPolicy.isExpired(cached.schedule, at: Date()) {
         applyCachedSnapshot(cached)
       } else if let recovered = try await recoverProductionSnapshot() {
         applyCachedSnapshot(recovered)
       }
+
       cacheError = nil
       refreshComplication()
     } catch {
@@ -73,6 +84,7 @@ final class WatchCommanderModel {
         cacheError = error.localizedDescription
       }
     }
+
     // Cleanup of old standalone requests is independent of loading the root view.
     Task { @MainActor [weak self] in
       await self?.reconcileStandaloneAlarms(requestAuthorization: false)
@@ -136,10 +148,9 @@ final class WatchCommanderModel {
   }
 
   private func refreshComplication() {
-    // Never hold the MainActor/bootstrap on WidgetKit IPC. The Watch app must
-    // publish its loaded schedule to the UI immediately even if chronod is busy.
-    Task { @MainActor in
-      WidgetCenter.shared.reloadAllTimelines()
+    // Do not let WidgetKit IPC delay the visible Watch app.
+    Task.detached(priority: .utility) {
+      WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.kind)
       WidgetCenter.shared.invalidateRelevance(ofKind: CommanderWatchWidgetContract.kind)
     }
   }

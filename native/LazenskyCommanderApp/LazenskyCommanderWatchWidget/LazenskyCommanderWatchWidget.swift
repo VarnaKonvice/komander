@@ -73,7 +73,7 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
         }
         completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(5 * 60))))
       } catch {
-        completion(Timeline(entries: [noScheduleEntry(at: now)], policy: .after(now.addingTimeInterval(30))))
+        completion(Timeline(entries: [noScheduleEntry(at: now)], policy: .after(now.addingTimeInterval(60))))
       }
     }
   }
@@ -170,32 +170,58 @@ private struct CommanderWatchWidgetView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 2) {
-      if let event = displayEvent {
-        HStack(spacing: 5) {
-          CommanderProcedureArtwork(
-            iconKey: WatchVisualAssets.icon(for: event)?.key,
-            title: event.title,
-            size: 18,
-            kind: event.kind
-          )
-          .widgetAccentable()
+      switch entry.liveState.state {
+      case .dayDone:
+        dayDoneLines
 
-          Text(event.title)
-            .font(.system(size: 13.5, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
-            .lineLimit(1)
-            .minimumScaleFactor(0.68)
-        }
-
-        firstLine
-        referenceLine
-      } else {
+      case .noSchedule:
         noScheduleLines
+
+      case .upcoming, .leaveNow, .inProgress:
+        if let event = displayEvent {
+          eventHeader(event)
+          firstLine
+          referenceLine
+        } else {
+          noScheduleLines
+        }
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .privacySensitive(false)
     .containerBackground(.clear, for: .widget)
+  }
+
+  private func eventHeader(_ event: ScheduleEvent) -> some View {
+    HStack(spacing: 5) {
+      CommanderProcedureArtwork(
+        iconKey: WatchVisualAssets.icon(for: event)?.key,
+        title: event.title,
+        size: 18,
+        kind: event.kind
+      )
+      .widgetAccentable()
+
+      Text(compactTitle(for: event))
+        .font(.system(size: 13.5, weight: .bold, design: .rounded))
+        .foregroundStyle(.white)
+        .lineLimit(1)
+        .minimumScaleFactor(0.62)
+    }
+  }
+
+  private func compactTitle(for event: ScheduleEvent) -> String {
+    let normalized = event.title.folding(
+      options: [.diacriticInsensitive, .caseInsensitive],
+      locale: Locale(identifier: "cs_CZ")
+    )
+    if normalized.contains("ctyrkomor") { return "4komorová lázeň" }
+    if let procedureType = event.procedureType,
+       procedureType.count < event.title.count,
+       procedureType.count <= 20 {
+      return procedureType
+    }
+    return event.title
   }
 
   private var brandMark: some View {
@@ -325,41 +351,62 @@ private struct CommanderWatchWidgetView: View {
   }
 
   @ViewBuilder
-  private var noScheduleLines: some View {
-    switch entry.liveState.state {
-    case .noSchedule:
-      HStack(spacing: 5) {
-        brandMark
-        Text("Commander")
-          .font(.system(size: 13.5, weight: .bold, design: .rounded))
+  private var dayDoneLines: some View {
+    if let nextEvent = entry.liveState.nextEvent {
+      eventHeader(nextEvent)
+
+      HStack(spacing: 4) {
+        Image(systemName: "calendar")
+        Text(nextEventDayLabel)
+        if let startAt = entry.liveState.startAt {
+          Text(startAt, style: .time).monospacedDigit()
+        }
       }
+      .font(.system(size: 12.5, weight: .bold, design: .rounded))
+      .foregroundStyle(accent)
+      .widgetAccentable()
+      .lineLimit(1)
+
+      if let leaveAt = entry.liveState.leaveAt {
+        HStack(spacing: 4) {
+          Image(systemName: "figure.walk")
+          Text("Odchod")
+          Text(leaveAt, style: .time).monospacedDigit()
+        }
+        .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+        .foregroundStyle(.white.opacity(0.88))
+        .lineLimit(1)
+      }
+    } else {
+      HStack(spacing: 5) {
+        Image(systemName: "checkmark.circle.fill")
+        Text("Dnes hotovo")
+      }
+      .font(.system(size: 13.5, weight: .bold, design: .rounded))
       .foregroundStyle(.white)
       .lineLimit(1)
 
-      Text("Čekám na rozpis")
-        .font(.system(size: 12.5, weight: .semibold, design: .rounded))
-        .foregroundStyle(.white.opacity(0.86))
+      Text("Další program není")
+        .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+        .foregroundStyle(.white.opacity(0.82))
         .lineLimit(1)
-
-    case .dayDone:
-      if entry.liveState.nextEvent == nil {
-        HStack(spacing: 5) {
-          brandMark
-          Text("Dnes hotovo")
-            .font(.system(size: 13.5, weight: .bold, design: .rounded))
-        }
-        .foregroundStyle(.white)
-        .lineLimit(1)
-
-        Text("Další program není")
-          .font(.system(size: 11.5, weight: .semibold, design: .rounded))
-          .foregroundStyle(.white.opacity(0.82))
-          .lineLimit(1)
-      }
-
-    case .upcoming, .leaveNow, .inProgress:
-      EmptyView()
     }
+  }
+
+  @ViewBuilder
+  private var noScheduleLines: some View {
+    HStack(spacing: 5) {
+      brandMark
+      Text("Bez rozpisu")
+        .font(.system(size: 13.5, weight: .bold, design: .rounded))
+    }
+    .foregroundStyle(.white)
+    .lineLimit(1)
+
+    Text("Otevři Commander")
+      .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+      .foregroundStyle(.white.opacity(0.82))
+      .lineLimit(1)
   }
 }
 
