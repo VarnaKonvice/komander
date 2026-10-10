@@ -162,20 +162,25 @@ private struct CommanderWatchWidgetView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 2) {
-      firstLine
-
       if let event = displayEvent {
-        Text(event.title)
-          .font(.system(size: 14, weight: .bold))
-          .foregroundStyle(.white)
-          .lineLimit(1)
-          .minimumScaleFactor(0.72)
+        HStack(spacing: 5) {
+          CommanderProcedureArtwork(
+            iconKey: WatchVisualAssets.icon(for: event)?.key,
+            title: event.title,
+            size: 18,
+            kind: event.kind
+          )
+          .widgetAccentable()
 
-        Text(event.location.isEmpty ? " " : event.location)
-          .font(.system(size: 12, weight: .semibold))
-          .foregroundStyle(.white.opacity(0.88))
-          .lineLimit(1)
-          .minimumScaleFactor(0.74)
+          Text(event.title)
+            .font(.system(size: 13.5, weight: .bold, design: .rounded))
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .minimumScaleFactor(0.68)
+        }
+
+        firstLine
+        referenceLine
       } else {
         noScheduleLines
       }
@@ -197,77 +202,108 @@ private struct CommanderWatchWidgetView: View {
   private var firstLine: some View {
     switch entry.liveState.state {
     case .upcoming:
-      HStack(spacing: 3) {
-        brandMark
-        Text("VYRAZIT ZA")
+      HStack(spacing: 4) {
+        Image(systemName: "figure.walk")
+        Text("Vyrazit")
         if let leaveAt = entry.liveState.leaveAt {
           Text(leaveAt, style: .relative)
             .monospacedDigit()
         }
       }
-      .font(.system(size: 12, weight: .bold, design: .rounded))
+      .font(.system(size: 12.5, weight: .bold, design: .rounded))
       .foregroundStyle(accent)
+      .widgetAccentable()
       .lineLimit(1)
       .minimumScaleFactor(0.72)
 
     case .leaveNow:
-      HStack(spacing: 3) {
-        brandMark
-        Text("VYRAZIT")
+      HStack(spacing: 4) {
+        Image(systemName: "figure.walk")
+        Text("Začíná")
         if let startAt = entry.liveState.startAt {
-          Text("·")
           Text(startAt, style: .relative)
             .monospacedDigit()
         }
       }
-      .font(.system(size: 12, weight: .bold, design: .rounded))
+      .font(.system(size: 12.5, weight: .bold, design: .rounded))
       .foregroundStyle(accent)
+      .widgetAccentable()
       .lineLimit(1)
       .minimumScaleFactor(0.72)
 
     case .inProgress:
-      HStack(spacing: 3) {
-        brandMark
-        Text("PROBÍHÁ")
+      HStack(spacing: 4) {
+        Image(systemName: "clock.fill")
+        Text("Konec")
         if let endAt = entry.liveState.endAt {
-          Text("·")
           Text(endAt, style: .relative)
             .monospacedDigit()
         }
       }
-      .font(.system(size: 12, weight: .bold, design: .rounded))
+      .font(.system(size: 12.5, weight: .bold, design: .rounded))
       .foregroundStyle(accent)
+      .widgetAccentable()
       .lineLimit(1)
       .minimumScaleFactor(0.72)
 
     case .dayDone:
-      HStack(spacing: 3) {
-        brandMark
-        if entry.liveState.nextEvent != nil {
-          Text(nextEventDayLabel)
-          if let leaveAt = entry.liveState.leaveAt {
-            Text("· ODCHOD")
-            Text(leaveAt, style: .time)
-              .monospacedDigit()
-          }
-        } else {
-          Text("DNES HOTOVO")
-        }
+      HStack(spacing: 4) {
+        Image(systemName: entry.liveState.nextEvent == nil ? "checkmark.circle.fill" : "arrow.right.circle.fill")
+        Text(entry.liveState.nextEvent == nil ? "Dnes hotovo" : nextEventDayLabel)
       }
-      .font(.system(size: 12, weight: .bold, design: .rounded))
+      .font(.system(size: 12.5, weight: .bold, design: .rounded))
       .foregroundStyle(accent)
+      .widgetAccentable()
       .lineLimit(1)
-      .minimumScaleFactor(0.70)
 
     case .noSchedule:
-      HStack(spacing: 4) {
-        brandMark
-        Text("ČEKÁM NA ROZPIS")
-      }
-      .font(.system(size: 12, weight: .bold))
-      .foregroundStyle(.white)
-      .lineLimit(1)
+      EmptyView()
     }
+  }
+
+  private var referenceLine: some View {
+    Group {
+      switch entry.liveState.state {
+      case .upcoming:
+        if let leaveAt = entry.liveState.leaveAt {
+          HStack(spacing: 4) {
+            Image(systemName: "clock.fill")
+            Text("Odchod")
+            Text(leaveAt, style: .time).monospacedDigit()
+          }
+        }
+      case .leaveNow:
+        if let startAt = entry.liveState.startAt {
+          HStack(spacing: 4) {
+            Image(systemName: "clock.fill")
+            Text("Začátek")
+            Text(startAt, style: .time).monospacedDigit()
+          }
+        }
+      case .inProgress:
+        if let endAt = entry.liveState.endAt {
+          HStack(spacing: 4) {
+            Image(systemName: "clock.fill")
+            Text("Konec")
+            Text(endAt, style: .time).monospacedDigit()
+          }
+        }
+      case .dayDone:
+        if entry.liveState.nextEvent != nil, let leaveAt = entry.liveState.leaveAt {
+          HStack(spacing: 4) {
+            Image(systemName: "clock.fill")
+            Text("Odchod")
+            Text(leaveAt, style: .time).monospacedDigit()
+          }
+        }
+      case .noSchedule:
+        EmptyView()
+      }
+    }
+    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
+    .foregroundStyle(.white.opacity(0.88))
+    .lineLimit(1)
+    .minimumScaleFactor(0.78)
   }
 
   private var nextEventDayLabel: String {
@@ -284,25 +320,35 @@ private struct CommanderWatchWidgetView: View {
   private var noScheduleLines: some View {
     switch entry.liveState.state {
     case .noSchedule:
-      Text("Otevři Commander")
-        .font(.system(size: 13, weight: .bold))
-        .foregroundStyle(.white)
+      HStack(spacing: 5) {
+        brandMark
+        Text("Commander")
+          .font(.system(size: 13.5, weight: .bold, design: .rounded))
+      }
+      .foregroundStyle(.white)
+      .lineLimit(1)
+
+      Text("Čekám na rozpis")
+        .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+        .foregroundStyle(.white.opacity(0.86))
         .lineLimit(1)
-      Text("Rozpis se obnoví automaticky")
-        .font(.system(size: 10, weight: .semibold))
-        .foregroundStyle(.white.opacity(0.82))
-        .lineLimit(1)
+
     case .dayDone:
       if entry.liveState.nextEvent == nil {
-        Text("Zbytek dne je volný")
-          .font(.system(size: 13, weight: .bold))
-          .foregroundStyle(.white)
-          .lineLimit(1)
+        HStack(spacing: 5) {
+          brandMark
+          Text("Dnes hotovo")
+            .font(.system(size: 13.5, weight: .bold, design: .rounded))
+        }
+        .foregroundStyle(.white)
+        .lineLimit(1)
+
         Text("Další program není")
-          .font(.system(size: 11, weight: .semibold))
+          .font(.system(size: 11.5, weight: .semibold, design: .rounded))
           .foregroundStyle(.white.opacity(0.82))
           .lineLimit(1)
       }
+
     case .upcoming, .leaveNow, .inProgress:
       EmptyView()
     }

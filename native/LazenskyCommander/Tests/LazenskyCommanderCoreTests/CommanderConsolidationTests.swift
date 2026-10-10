@@ -17,6 +17,21 @@ private func fixture() -> Schedule {
   return try! JSONDecoder().decode(Schedule.self, from: Data(data.utf8))
 }
 
+@Test func watchCountdownUsesReadableHoursAndMinutes() throws {
+  let now = try date("08:00")
+  let leaveAt = now.addingTimeInterval(190 * 60 + 16)
+  let presentation = CommanderCountdownPresentation(
+    presentationMode: .departureCountdown,
+    leaveAt: leaveAt,
+    startAt: leaveAt.addingTimeInterval(20 * 60),
+    endAt: leaveAt.addingTimeInterval(40 * 60),
+    at: now
+  )
+  #expect(presentation.countdownText(at: now) == "3 h 10 m")
+  #expect(presentation.countdownText(at: leaveAt.addingTimeInterval(-45)) == "< 1 m")
+  #expect(presentation.countdownText(at: leaveAt) == "0 m")
+}
+
 @Test func allNativeSurfacesAgreeOnCanonicalTimesAndOverlapFocus() throws {
   let schedule = fixture()
   let overrides = LeadTimeOverrides(eventOverrides: ["magnet": 20])

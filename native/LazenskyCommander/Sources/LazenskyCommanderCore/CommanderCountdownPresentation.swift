@@ -83,7 +83,17 @@ public struct CommanderCountdownPresentation: Equatable, Sendable {
     guard let target else { return nil }
     let delta = target.timeIntervalSince(now)
     guard delta.isFinite else { return nil }
-    let remaining = Int(max(0, delta).rounded(.up))
-    return "\(remaining / 60):" + String(format: "%02d", remaining % 60)
+
+    // Watch UI needs a human duration, not an unbounded minute counter such as 190:16.
+    // Drop seconds for the large display: 190:16 becomes the readable "3 h 10 m".
+    let positiveDelta = max(0, delta)
+    let totalMinutes = Int(positiveDelta / 60)
+    if positiveDelta > 0, totalMinutes == 0 { return "< 1 m" }
+    if totalMinutes >= 60 {
+      let hours = totalMinutes / 60
+      let minutes = totalMinutes % 60
+      return minutes == 0 ? "\(hours) h" : "\(hours) h \(minutes) m"
+    }
+    return "\(totalMinutes) m"
   }
 }
