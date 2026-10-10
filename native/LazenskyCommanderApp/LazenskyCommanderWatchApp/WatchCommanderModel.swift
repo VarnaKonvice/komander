@@ -7,6 +7,7 @@ import WidgetKit
 @Observable
 final class WatchCommanderModel {
   private let cache: FileWatchScheduleCache
+  private let usesSharedCache: Bool
   private let alarmPreferences: WatchStandaloneAlarmPreferences
   private let notificationService: WatchLocalNotificationService
 
@@ -37,6 +38,7 @@ final class WatchCommanderModel {
     self.alarmPreferences = preferences
     self.notificationService = service
     self.standaloneAlarmsEnabled = preferences.isEnabled && CommanderMVPPolicy.createsStandaloneWatchAlerts
+    self.usesSharedCache = cache == nil
     self.cache = cache ?? WatchCacheLocation.makeCache { _ in
       WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.kind)
       WidgetCenter.shared.invalidateRelevance(ofKind: CommanderWatchWidgetContract.kind)
@@ -45,6 +47,9 @@ final class WatchCommanderModel {
 
   func bootstrap() async {
     do {
+      if usesSharedCache {
+        try await WatchCacheLocation.migrateLegacyCacheIfNeeded()
+      }
       let cached = try await cache.load()
       if let cached, !WatchScheduleExpiryPolicy.isExpired(cached.schedule, at: Date()) {
         applyCachedSnapshot(cached)
@@ -131,8 +136,12 @@ final class WatchCommanderModel {
   }
 
   private func refreshComplication() {
-    WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.kind)
-    WidgetCenter.shared.invalidateRelevance(ofKind: CommanderWatchWidgetContract.kind)
+    // Never hold the MainActor/bootstrap on WidgetKit IPC. The Watch app must
+    // publish its loaded schedule to the UI immediately even if chronod is busy.
+    Task { @MainActor in
+      WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.kind)
+      WidgetCenter.shared.invalidateRelevance(ofKind: CommanderWatchWidgetContract.kind)
+    }
   }
 
   func recordTransportError(_ message: String?) {

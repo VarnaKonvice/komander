@@ -35,9 +35,30 @@ enum WatchCacheLocation {
     ) else {
       preconditionFailure("Watch schedule App Group container is unavailable.")
     }
-    return base.appendingPathComponent(
-      cacheDirectoryName,
-      isDirectory: true
+    return base
+      .appendingPathComponent("Library", isDirectory: true)
+      .appendingPathComponent("Application Support", isDirectory: true)
+      .appendingPathComponent(cacheDirectoryName, isDirectory: true)
+  }
+
+  private static func legacyDirectoryURL(fileManager: FileManager = .default) -> URL {
+    guard let base = fileManager.containerURL(
+      forSecurityApplicationGroupIdentifier: CommanderWatchWidgetContract.appGroupIdentifier
+    ) else {
+      preconditionFailure("Watch schedule App Group container is unavailable.")
+    }
+    return base.appendingPathComponent(cacheDirectoryName, isDirectory: true)
+  }
+
+  static func migrateLegacyCacheIfNeeded() async throws {
+    let destination = makeCache()
+    if try await destination.load() != nil { return }
+
+    let legacy = FileWatchScheduleCache(
+      directoryURL: legacyDirectoryURL(),
+      dataset: dataset
     )
+    guard let snapshot = try await legacy.load() else { return }
+    _ = try await destination.accept(snapshot)
   }
 }

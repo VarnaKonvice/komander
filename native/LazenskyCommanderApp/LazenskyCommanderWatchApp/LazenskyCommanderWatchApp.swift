@@ -1,5 +1,6 @@
 import SwiftUI
 import UserNotifications
+import WidgetKit
 import LazenskyCommanderCore
 
 @main
@@ -16,6 +17,13 @@ struct LazenskyCommanderWatchApp: App {
     UNUserNotificationCenter.current().delegate = notificationDelegate
     _model = State(initialValue: model)
     _connectivity = State(initialValue: WatchConnectivityReceiver(model: model))
+
+    // Wake the on-face complication immediately from the already-shared cache.
+    // A second refresh follows after bootstrap if new schedule bytes arrive.
+    Task { @MainActor in
+      WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.kind)
+      WidgetCenter.shared.invalidateRelevance(ofKind: CommanderWatchWidgetContract.kind)
+    }
   }
 
   var body: some Scene {

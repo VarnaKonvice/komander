@@ -107,7 +107,9 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
   }
 
   private func cachedSnapshot() async -> WatchScheduleSnapshot? {
+    try? await WatchCacheLocation.migrateLegacyCacheIfNeeded()
     let cache = WatchCacheLocation.makeCache()
+
     if let cached = try? await cache.load(),
        !WatchScheduleExpiryPolicy.isExpired(cached.schedule, at: Date()) {
       return cached
