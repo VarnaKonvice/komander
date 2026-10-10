@@ -28,8 +28,9 @@ private func fixture() -> Schedule {
     at: now
   )
   #expect(presentation.countdownText(at: now) == "3 h 10 m")
-  #expect(presentation.countdownText(at: leaveAt.addingTimeInterval(-45)) == "< 1 m")
-  #expect(presentation.countdownText(at: leaveAt) == "0 m")
+  #expect(presentation.countdownText(at: leaveAt.addingTimeInterval(-59 * 60 - 15)) == "59:15")
+  #expect(presentation.countdownText(at: leaveAt.addingTimeInterval(-45)) == "0:45")
+  #expect(presentation.countdownText(at: leaveAt) == "0:00")
 }
 
 @Test func allNativeSurfacesAgreeOnCanonicalTimesAndOverlapFocus() throws {
@@ -158,10 +159,11 @@ func requiredStoryNeverKeepsDepartureOrProgressAtOrAfterEnd(mode: CommanderLiveA
   #expect(watch.contains("try await cache.acceptAndLoad(incoming)"))
   #expect(watch.contains("let cached = try await cache.load()"))
   #expect(watch.contains("!WatchScheduleExpiryPolicy.isExpired(cached.schedule"))
-  #expect(watch.contains("WidgetCenter.shared.reloadTimelines"))
+  #expect(watch.contains("WidgetCenter.shared.reloadAllTimelines"))
   let widget = try source("LazenskyCommanderWatchWidget/LazenskyCommanderWatchWidget.swift")
   #expect(widget.contains("let cache = WatchCacheLocation.makeCache()"))
   #expect(widget.contains("try? await cache.load()"))
+  #expect(widget.contains("CommanderWatchWidgetContract.timelineHorizon"))
   let settings = try source("LazenskyCommanderApp/CommanderSettingsView.swift")
   #expect(settings.contains("title: \"Diagnostika\""))
   #expect(!settings.contains("#if DEBUG"))

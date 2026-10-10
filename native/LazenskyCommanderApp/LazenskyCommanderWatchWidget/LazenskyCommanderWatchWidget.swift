@@ -53,11 +53,14 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
       let overrides = snapshot.leadTimeOverrides
 
       do {
+        let horizon = now.addingTimeInterval(CommanderWatchWidgetContract.timelineHorizon)
         let entries = try WatchTimelinePlanner.points(
           schedule: schedule,
           now: now,
           overrides: overrides
-        ).map { point in
+        )
+        .filter { $0.date <= horizon }
+        .map { point in
           let activeSchedule = point.transition == .expired ? nil : schedule
           return CommanderWatchWidgetEntry(
             date: point.date,
@@ -85,11 +88,14 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
     ) else {
       return WidgetRelevance([])
     }
-    let attributes = windows.map {
-      WidgetRelevanceAttribute<Void>(
-        context: .date(interval: $0.interval, kind: .scheduled)
-      )
-    }
+    let horizon = now.addingTimeInterval(CommanderWatchWidgetContract.timelineHorizon)
+    let attributes = windows
+      .filter { $0.interval.start <= horizon }
+      .map {
+        WidgetRelevanceAttribute<Void>(
+          context: .date(interval: $0.interval, kind: .scheduled)
+        )
+      }
     return WidgetRelevance(attributes)
   }
 

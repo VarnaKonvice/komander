@@ -40,7 +40,7 @@ final class WatchCommanderModel {
     self.standaloneAlarmsEnabled = preferences.isEnabled && CommanderMVPPolicy.createsStandaloneWatchAlerts
     self.usesSharedCache = cache == nil
     self.cache = cache ?? WatchCacheLocation.makeCache { _ in
-      WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.kind)
+      WidgetCenter.shared.reloadAllTimelines()
       WidgetCenter.shared.invalidateRelevance(ofKind: CommanderWatchWidgetContract.kind)
     }
   }
@@ -139,7 +139,7 @@ final class WatchCommanderModel {
     // Never hold the MainActor/bootstrap on WidgetKit IPC. The Watch app must
     // publish its loaded schedule to the UI immediately even if chronod is busy.
     Task { @MainActor in
-      WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.kind)
+      WidgetCenter.shared.reloadAllTimelines()
       WidgetCenter.shared.invalidateRelevance(ofKind: CommanderWatchWidgetContract.kind)
     }
   }

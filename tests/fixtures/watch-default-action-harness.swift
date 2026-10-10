@@ -37,6 +37,7 @@ enum WatchCacheLocation {
   static func makeAcceptanceCache() -> FileWatchScheduleCache {
     FileWatchScheduleCache(directoryURL: directory.appendingPathComponent("acceptance"), dataset: .acceptance)
   }
+  static func migrateLegacyCacheIfNeeded() async throws {}
 }
 
 @main struct WatchDefaultActionHarness {

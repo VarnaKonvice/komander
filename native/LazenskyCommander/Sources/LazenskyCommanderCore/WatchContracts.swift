@@ -65,6 +65,7 @@ public enum CommanderWatchWidgetContract {
   public static let appGroupIdentifier = "group.com.varnakonvice.lazenskycommander.watch"
   public static let cacheDirectoryName = "LazenskyCommanderWatchCache"
   public static let expiryGracePeriod: TimeInterval = 24 * 60 * 60
+  public static let timelineHorizon: TimeInterval = 24 * 60 * 60
 }
 
 public enum WatchScheduleCachePolicy {

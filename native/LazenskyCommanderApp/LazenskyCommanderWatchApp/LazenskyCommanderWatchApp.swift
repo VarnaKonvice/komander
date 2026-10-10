@@ -21,7 +21,7 @@ struct LazenskyCommanderWatchApp: App {
     // Wake the on-face complication immediately from the already-shared cache.
     // A second refresh follows after bootstrap if new schedule bytes arrive.
     Task { @MainActor in
-      WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.kind)
+      WidgetCenter.shared.reloadAllTimelines()
       WidgetCenter.shared.invalidateRelevance(ofKind: CommanderWatchWidgetContract.kind)
     }
   }
