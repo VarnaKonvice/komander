@@ -417,6 +417,39 @@ import Testing
   #expect(points.contains { $0.state == .leaveNow } && points.contains { $0.state == .inProgress })
 }
 
+@Test func preparedWatchPlannerMatchesCanonicalStateWithoutFullRevalidation() throws {
+  let schedule = try liveSchedule(lead: 20)
+  for iso in [
+    "2026-08-20T08:00:00",
+    "2026-08-20T08:40:00",
+    "2026-08-20T09:10:00",
+    "2026-08-20T09:45:00",
+    "2026-08-20T10:31:00"
+  ] {
+    let now = try NativeAlarmContract.date(fromLocalISO: iso)
+    let canonical = CommanderLiveStateCalculator.compute(schedule: schedule, now: now)
+    let prepared = try WatchPreparedTimelinePlanner.currentState(schedule: schedule, now: now)
+    #expect(prepared.state == canonical.state)
+    #expect(prepared.event?.stableId == canonical.event?.stableId)
+    #expect(prepared.nextEvent?.stableId == canonical.nextEvent?.stableId)
+    #expect(prepared.startAt == canonical.startAt)
+    #expect(prepared.endAt == canonical.endAt)
+    #expect(prepared.leaveAt == canonical.leaveAt)
+  }
+
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:30:00")
+  let horizon = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T11:00:00")
+  let entries = try WatchPreparedTimelinePlanner.entries(
+    schedule: schedule,
+    now: now,
+    horizon: horizon
+  )
+  #expect(entries.first?.liveState.state == .upcoming)
+  #expect(entries.contains { $0.liveState.state == .leaveNow })
+  #expect(entries.contains { $0.liveState.state == .inProgress })
+  #expect(try #require(entries.last).date <= horizon)
+}
+
 @Test func watchCacheStartsEmptyAndReloadsTheSameValidSnapshot() async throws {
   let directory = temporaryWatchCacheDirectory()
   defer { try? FileManager.default.removeItem(at: directory) }
@@ -430,6 +463,32 @@ import Testing
 
   let reloaded = FileWatchScheduleCache(directoryURL: directory)
   #expect(try await reloaded.load() == snapshot)
+}
+
+@Test func watchPreparedCacheReadKeepsContractAndDatasetBoundaries() async throws {
+  let directory = temporaryWatchCacheDirectory()
+  defer { try? FileManager.default.removeItem(at: directory) }
+
+  let production = FileWatchScheduleCache(directoryURL: directory, dataset: .production)
+  let snapshot = WatchScheduleSnapshot(schedule: try liveSchedule(lead: 20))
+  #expect(try await production.accept(snapshot) == .stored)
+  #expect(try await production.loadPrepared() == snapshot)
+
+  let wrongContract = WatchScheduleSnapshot(contractVersion: 99, schedule: snapshot.schedule)
+  try JSONEncoder().encode(wrongContract).write(
+    to: directory.appendingPathComponent(FileWatchScheduleCache.defaultFileName),
+    options: .atomic
+  )
+  #expect(try await production.loadPrepared() == nil)
+
+  let acceptance = try CommanderAcceptanceSchedule(
+    now: try NativeAlarmContract.date(fromLocalISO: "2026-08-20T09:00:00")
+  ).schedule
+  try JSONEncoder().encode(WatchScheduleSnapshot(schedule: acceptance)).write(
+    to: directory.appendingPathComponent(FileWatchScheduleCache.defaultFileName),
+    options: .atomic
+  )
+  #expect(try await production.loadPrepared() == nil)
 }
 
 @Test func watchCacheRejectsInvalidSnapshotWithoutReplacingValidData() async throws {

@@ -50,15 +50,16 @@ enum WatchCacheLocation {
     return base.appendingPathComponent(cacheDirectoryName, isDirectory: true)
   }
 
-  static func migrateLegacyCacheIfNeeded() async throws {
-    let destination = makeCache()
-    if try await destination.load() != nil { return }
+  static func migrateLegacyCacheIfNeeded(fileManager: FileManager = .default) async throws {
+    let destinationDirectory = directoryURL(fileManager: fileManager)
+    let destinationFile = destinationDirectory.appendingPathComponent("watch-schedule-snapshot-v1.json")
+    if fileManager.fileExists(atPath: destinationFile.path) { return }
 
     let legacy = FileWatchScheduleCache(
-      directoryURL: legacyDirectoryURL(),
+      directoryURL: legacyDirectoryURL(fileManager: fileManager),
       dataset: dataset
     )
     guard let snapshot = try await legacy.load() else { return }
-    _ = try await destination.accept(snapshot)
+    _ = try await makeCache().accept(snapshot)
   }
 }

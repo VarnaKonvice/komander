@@ -56,12 +56,16 @@ final class WatchCommanderModel {
       let cached: WatchScheduleSnapshot?
       if usesSharedCache {
         // Keep cold-start reads independent from the writer cache's WidgetKit callback.
-        cached = try await WatchCacheLocation.makeCache().load()
+        cached = try await WatchCacheLocation.makeCache().loadPrepared()
       } else {
         cached = try await cache.load()
       }
 
-      if let cached, !WatchScheduleExpiryPolicy.isExpired(cached.schedule, at: Date()) {
+      if let cached, !WatchPreparedTimelinePlanner.isExpired(
+        cached.schedule,
+        at: Date(),
+        overrides: cached.leadTimeOverrides
+      ) {
         applyCachedSnapshot(cached)
       } else if let recovered = try await recoverProductionSnapshot() {
         applyCachedSnapshot(recovered)

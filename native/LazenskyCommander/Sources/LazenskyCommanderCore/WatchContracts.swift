@@ -137,6 +137,166 @@ public struct WatchWidgetRelevanceWindow: Equatable, Sendable {
   }
 }
 
+public struct WatchPreparedTimelineEntry: Equatable, Sendable {
+  public let date: Date
+  public let liveState: CommanderLiveStateResult
+
+  public init(date: Date, liveState: CommanderLiveStateResult) {
+    self.date = date
+    self.liveState = liveState
+  }
+}
+
+/// Fast read-only planner for snapshots that already passed the strict cache
+/// write/read-back boundary. It intentionally avoids revalidating the complete
+/// alarm transport projection inside the WidgetKit extension.
+public enum WatchPreparedTimelinePlanner {
+  public static func currentState(
+    schedule: Schedule,
+    now: Date = Date(),
+    overrides: LeadTimeOverrides? = nil
+  ) throws -> CommanderLiveStateResult {
+    state(projectedEvents: try projectedEvents(schedule: schedule, overrides: overrides), at: now)
+  }
+
+  public static func entries(
+    schedule: Schedule,
+    now: Date = Date(),
+    horizon: Date,
+    overrides: LeadTimeOverrides? = nil
+  ) throws -> [WatchPreparedTimelineEntry] {
+    guard horizon >= now else { return [] }
+    let projected = try projectedEvents(schedule: schedule, overrides: overrides)
+    guard !projected.isEmpty else {
+      return [.init(date: now, liveState: .init(state: .noSchedule, now: now))]
+    }
+
+    var dates = Set<Date>([now])
+    for event in projected where event.endAt >= now {
+      for boundary in [event.leaveAt, event.startAt, event.endAt]
+        where boundary >= now && boundary <= horizon {
+        dates.insert(boundary)
+      }
+    }
+
+    var dayStart = calendar.startOfDay(for: now)
+    while let next = calendar.date(byAdding: .day, value: 1, to: dayStart),
+          next <= horizon {
+      dates.insert(next)
+      dayStart = next
+    }
+
+    if let finalEnd = projected.map(\.endAt).max() {
+      let expiration = finalEnd.addingTimeInterval(CommanderWatchWidgetContract.expiryGracePeriod)
+      if expiration >= now && expiration <= horizon { dates.insert(expiration) }
+    }
+
+    return dates.sorted().map {
+      WatchPreparedTimelineEntry(date: $0, liveState: state(projectedEvents: projected, at: $0))
+    }
+  }
+
+  public static func relevanceWindows(
+    schedule: Schedule,
+    now: Date = Date(),
+    horizon: Date,
+    overrides: LeadTimeOverrides? = nil
+  ) throws -> [WatchWidgetRelevanceWindow] {
+    try projectedEvents(schedule: schedule, overrides: overrides).compactMap { projected in
+      guard projected.endAt > now, projected.leaveAt <= horizon else { return nil }
+      let countdownDuration = try AlarmCountdown.countdownWindow(for: projected.alarm, in: schedule)
+      let countdownStart = projected.leaveAt.addingTimeInterval(-countdownDuration)
+      return WatchWidgetRelevanceWindow(
+        stableId: projected.event.stableId,
+        interval: DateInterval(start: countdownStart, end: projected.endAt)
+      )
+    }
+  }
+
+  public static func isExpired(
+    _ schedule: Schedule,
+    at date: Date = Date(),
+    overrides: LeadTimeOverrides? = nil
+  ) -> Bool {
+    guard let projected = try? projectedEvents(schedule: schedule, overrides: overrides),
+          let finalEnd = projected.map(\.endAt).max() else { return true }
+    return date >= finalEnd.addingTimeInterval(CommanderWatchWidgetContract.expiryGracePeriod)
+  }
+
+  private static func projectedEvents(
+    schedule: Schedule,
+    overrides: LeadTimeOverrides?
+  ) throws -> [CommanderProjectedEvent] {
+    try schedule.events.map { event in
+      let alarm = try NativeAlarmContract.alarm(event: event, schedule: schedule, overrides: overrides)
+      return CommanderProjectedEvent(
+        event: event,
+        alarm: alarm,
+        leaveAt: try NativeAlarmContract.date(fromLocalISO: alarm.leaveAt),
+        startAt: try NativeAlarmContract.date(fromLocalISO: alarm.startAt),
+        endAt: try NativeAlarmContract.date(fromLocalISO: alarm.endAt)
+      )
+    }.sorted {
+      if $0.startAt != $1.startAt { return $0.startAt < $1.startAt }
+      return $0.event.stableId < $1.event.stableId
+    }
+  }
+
+  private static func state(
+    projectedEvents: [CommanderProjectedEvent],
+    at now: Date
+  ) -> CommanderLiveStateResult {
+    guard now.timeIntervalSince1970.isFinite,
+          let finalEnd = projectedEvents.map(\.endAt).max(),
+          now < finalEnd.addingTimeInterval(CommanderWatchWidgetContract.expiryGracePeriod)
+    else { return .init(state: .noSchedule, now: now) }
+
+    let today = projectedEvents.filter {
+      calendar.isDate($0.startAt, inSameDayAs: now) || ($0.leaveAt <= now && now < $0.endAt)
+    }
+
+    guard let resolution = CommanderLiveActivityTimeline.resolve(
+      events: today.map(\.timelineEvent),
+      at: now
+    ),
+    resolution.phase != .ended,
+    let primary = today.first(where: { $0.event.stableId == resolution.primaryStableId })
+    else {
+      guard let next = projectedEvents.first(where: { $0.startAt > now }) else {
+        return .init(state: .dayDone, now: now)
+      }
+      return .init(
+        state: .dayDone,
+        nextEvent: next.event,
+        startAt: next.startAt,
+        endAt: next.endAt,
+        leaveAt: next.leaveAt,
+        now: now,
+        leadTimeMinutes: next.alarm.effectiveLeadTimeMinutes
+      )
+    }
+
+    let state: CommanderLiveState = resolution.phase == .active
+      ? .inProgress : resolution.departureDue ? .leaveNow : .upcoming
+    return .init(
+      state: state,
+      event: primary.event,
+      nextEvent: projectedEvents.first(where: { $0.event.stableId == resolution.nextStableId })?.event,
+      startAt: primary.startAt,
+      endAt: primary.endAt,
+      leaveAt: primary.leaveAt,
+      now: now,
+      leadTimeMinutes: primary.alarm.effectiveLeadTimeMinutes
+    )
+  }
+
+  private static var calendar: Calendar {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "Europe/Prague")!
+    return calendar
+  }
+}
+
 public enum WatchScheduleExpiryPolicy {
   public static func expirationDate(for schedule: Schedule) throws -> Date? {
     try NativeAlarmContract.validateCanonical(schedule)

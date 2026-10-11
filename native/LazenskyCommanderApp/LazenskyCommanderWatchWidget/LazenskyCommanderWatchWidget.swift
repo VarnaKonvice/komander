@@ -54,22 +54,13 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
 
       do {
         let horizon = now.addingTimeInterval(CommanderWatchWidgetContract.timelineHorizon)
-        let entries = try WatchTimelinePlanner.points(
+        let entries = try WatchPreparedTimelinePlanner.entries(
           schedule: schedule,
           now: now,
+          horizon: horizon,
           overrides: overrides
-        )
-        .filter { $0.date <= horizon }
-        .map { point in
-          let activeSchedule = point.transition == .expired ? nil : schedule
-          return CommanderWatchWidgetEntry(
-            date: point.date,
-            liveState: CommanderLiveStateCalculator.compute(
-              schedule: activeSchedule,
-              now: point.date,
-              overrides: overrides
-            )
-          )
+        ).map {
+          CommanderWatchWidgetEntry(date: $0.date, liveState: $0.liveState)
         }
         completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(5 * 60))))
       } catch {
@@ -81,17 +72,16 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
   func relevance() async -> WidgetRelevance<Void> {
     guard let snapshot = await cachedSnapshot() else { return WidgetRelevance([]) }
     let now = Date()
-    guard let windows = try? WatchTimelinePlanner.relevanceWindows(
+    let horizon = now.addingTimeInterval(CommanderWatchWidgetContract.timelineHorizon)
+    guard let windows = try? WatchPreparedTimelinePlanner.relevanceWindows(
       schedule: snapshot.schedule,
       now: now,
+      horizon: horizon,
       overrides: snapshot.leadTimeOverrides
     ) else {
       return WidgetRelevance([])
     }
-    let horizon = now.addingTimeInterval(CommanderWatchWidgetContract.timelineHorizon)
-    let attributes = windows
-      .filter { $0.interval.start <= horizon }
-      .map {
+    let attributes = windows.map {
         WidgetRelevanceAttribute<Void>(
           context: .date(interval: $0.interval, kind: .scheduled)
         )
@@ -100,47 +90,31 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
   }
 
   private func currentEntry(at date: Date) async -> CommanderWatchWidgetEntry {
-    guard let snapshot = await cachedSnapshot() else { return noScheduleEntry(at: date) }
-    let activeSchedule = WatchScheduleExpiryPolicy.activeSchedule(snapshot.schedule, at: date)
-    return CommanderWatchWidgetEntry(
-      date: date,
-      liveState: CommanderLiveStateCalculator.compute(
-        schedule: activeSchedule,
-        now: date,
-        overrides: snapshot.leadTimeOverrides
-      )
-    )
+    guard let snapshot = await cachedSnapshot(),
+          let liveState = try? WatchPreparedTimelinePlanner.currentState(
+            schedule: snapshot.schedule,
+            now: date,
+            overrides: snapshot.leadTimeOverrides
+          ) else {
+      return noScheduleEntry(at: date)
+    }
+    return CommanderWatchWidgetEntry(date: date, liveState: liveState)
   }
 
   private func cachedSnapshot() async -> WatchScheduleSnapshot? {
-    try? await WatchCacheLocation.migrateLegacyCacheIfNeeded()
+    // The complication has a tight execution budget. Migration and network
+    // recovery belong to the foreground Watch app; the widget only consumes
+    // the already-prepared canonical App Group cache.
     let cache = WatchCacheLocation.makeCache()
-
-    if let cached = try? await cache.load(),
-       !WatchScheduleExpiryPolicy.isExpired(cached.schedule, at: Date()) {
-      return cached
-    }
-
-    // WidgetKit can occasionally wake before the Watch app has populated the
-    // shared App Group cache. Recover independently from the canonical
-    // production schedule instead of staying on "Čekám na rozpis".
-    do {
-      let schedule = try await URLSessionScheduleService(
-        configuration: AppConfiguration()
-      ).fetchSchedule()
-      let overrides = LeadTimeOverrides(
-        defaultLeadTimeMinutes: 20,
-        procedureTypeOverrides: ["Vizita": 5]
-      )
-      let snapshot = WatchScheduleSnapshot(
-        schedule: schedule,
-        leadTimeOverrides: overrides
-      )
-      _ = try? await cache.accept(snapshot)
-      return snapshot
-    } catch {
+    guard let cached = try? await cache.loadPrepared(),
+          !WatchPreparedTimelinePlanner.isExpired(
+            cached.schedule,
+            at: Date(),
+            overrides: cached.leadTimeOverrides
+          ) else {
       return nil
     }
+    return cached
   }
 
   private func noScheduleEntry(at date: Date) -> CommanderWatchWidgetEntry {
@@ -157,15 +131,6 @@ private struct CommanderWatchWidgetView: View {
   private var displayEvent: ScheduleEvent? {
     if let event = entry.liveState.event { return event }
     return entry.liveState.nextEvent
-  }
-
-  private var commanderPurple: Color {
-    Color(hex: WatchVisualAssets.colors?.brand.commanderPurple ?? "#6E56CF")
-  }
-
-  private var accent: Color {
-    guard let event = displayEvent else { return commanderPurple }
-    return Color(hex: WatchVisualAssets.accent(for: WatchVisualAssets.icon(for: event)))
   }
 
   var body: some View {
@@ -200,14 +165,16 @@ private struct CommanderWatchWidgetView: View {
         size: 18,
         kind: event.kind
       )
-      .widgetAccentable()
+      .contrast(1.25)
 
-      Text(compactTitle(for: event))
-        .font(.system(size: 13.5, weight: .bold, design: .rounded))
-        .foregroundStyle(.white)
-        .lineLimit(1)
-        .minimumScaleFactor(0.62)
+      ViewThatFits(in: .horizontal) {
+        Text(event.title)
+        Text(compactTitle(for: event))
+      }
+      .font(.headline.weight(.semibold))
+      .lineLimit(1)
     }
+    .foregroundStyle(.primary)
   }
 
   private func compactTitle(for event: ScheduleEvent) -> String {
@@ -236,74 +203,54 @@ private struct CommanderWatchWidgetView: View {
   private var firstLine: some View {
     switch entry.liveState.state {
     case .upcoming:
-      HStack(spacing: 4) {
-        Image(systemName: "figure.walk")
-        Text("Vyrazit")
-        if let leaveAt = entry.liveState.leaveAt {
-          Text(leaveAt, style: .relative)
-            .monospacedDigit()
-        }
+      if let leaveAt = entry.liveState.leaveAt {
+        countdownLine(label: "Vyrazit za", symbol: "figure.walk", target: leaveAt)
       }
-      .font(.system(size: 12.5, weight: .bold, design: .rounded))
-      .foregroundStyle(accent)
-      .widgetAccentable()
-      .lineLimit(1)
-      .minimumScaleFactor(0.72)
 
     case .leaveNow:
-      HStack(spacing: 4) {
-        Image(systemName: "figure.walk")
-        Text("Začíná")
-        if let startAt = entry.liveState.startAt {
-          Text(startAt, style: .relative)
-            .monospacedDigit()
-        }
+      if let startAt = entry.liveState.startAt {
+        countdownLine(label: "Začíná za", symbol: "figure.walk.motion", target: startAt)
       }
-      .font(.system(size: 12.5, weight: .bold, design: .rounded))
-      .foregroundStyle(accent)
-      .widgetAccentable()
-      .lineLimit(1)
-      .minimumScaleFactor(0.72)
 
     case .inProgress:
-      HStack(spacing: 4) {
-        Image(systemName: "clock.fill")
-        Text("Konec")
-        if let endAt = entry.liveState.endAt {
-          Text(endAt, style: .relative)
-            .monospacedDigit()
-        }
+      if let endAt = entry.liveState.endAt {
+        countdownLine(label: "Končí za", symbol: "timer", target: endAt)
       }
-      .font(.system(size: 12.5, weight: .bold, design: .rounded))
-      .foregroundStyle(accent)
-      .widgetAccentable()
-      .lineLimit(1)
-      .minimumScaleFactor(0.72)
 
-    case .dayDone:
-      HStack(spacing: 4) {
-        Image(systemName: entry.liveState.nextEvent == nil ? "checkmark.circle.fill" : "arrow.right.circle.fill")
-        Text(entry.liveState.nextEvent == nil ? "Dnes hotovo" : nextEventDayLabel)
-      }
-      .font(.system(size: 12.5, weight: .bold, design: .rounded))
-      .foregroundStyle(accent)
-      .widgetAccentable()
-      .lineLimit(1)
-
-    case .noSchedule:
+    case .dayDone, .noSchedule:
       EmptyView()
     }
+  }
+
+  private func countdownLine(label: String, symbol: String, target: Date) -> some View {
+    HStack(spacing: 5) {
+      Image(systemName: symbol)
+        .frame(width: 14, alignment: .leading)
+
+      Text(
+        timerInterval: entry.date...target,
+        countsDown: true,
+        showsHours: true
+      )
+      .monospacedDigit()
+      .frame(width: 128, alignment: .leading)
+      .multilineTextAlignment(.leading)
+    }
+    .font(.headline.weight(.bold))
+    .widgetAccentable()
+    .lineLimit(1)
+    .accessibilityLabel(label)
   }
 
   private var referenceLine: some View {
     Group {
       switch entry.liveState.state {
       case .upcoming:
-        if let leaveAt = entry.liveState.leaveAt {
+        if let startAt = entry.liveState.startAt {
           HStack(spacing: 4) {
             Image(systemName: "clock.fill")
-            Text("Odchod")
-            Text(leaveAt, style: .time).monospacedDigit()
+            Text("Začátek")
+            Text(startAt, style: .time).monospacedDigit()
           }
         }
       case .leaveNow:
@@ -334,10 +281,9 @@ private struct CommanderWatchWidgetView: View {
         EmptyView()
       }
     }
-    .font(.system(size: 11.5, weight: .semibold, design: .rounded))
-    .foregroundStyle(.white.opacity(0.88))
+    .font(.caption2.weight(.semibold))
+    .foregroundStyle(.secondary)
     .lineLimit(1)
-    .minimumScaleFactor(0.78)
   }
 
   private var nextEventDayLabel: String {
@@ -362,8 +308,7 @@ private struct CommanderWatchWidgetView: View {
           Text(startAt, style: .time).monospacedDigit()
         }
       }
-      .font(.system(size: 12.5, weight: .bold, design: .rounded))
-      .foregroundStyle(accent)
+      .font(.body.weight(.bold))
       .widgetAccentable()
       .lineLimit(1)
 
@@ -373,8 +318,8 @@ private struct CommanderWatchWidgetView: View {
           Text("Odchod")
           Text(leaveAt, style: .time).monospacedDigit()
         }
-        .font(.system(size: 11.5, weight: .semibold, design: .rounded))
-        .foregroundStyle(.white.opacity(0.88))
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(.secondary)
         .lineLimit(1)
       }
     } else {
@@ -382,13 +327,13 @@ private struct CommanderWatchWidgetView: View {
         Image(systemName: "checkmark.circle.fill")
         Text("Dnes hotovo")
       }
-      .font(.system(size: 13.5, weight: .bold, design: .rounded))
-      .foregroundStyle(.white)
+      .font(.headline.weight(.semibold))
+      .foregroundStyle(.primary)
       .lineLimit(1)
 
       Text("Další program není")
-        .font(.system(size: 11.5, weight: .semibold, design: .rounded))
-        .foregroundStyle(.white.opacity(0.82))
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(.secondary)
         .lineLimit(1)
     }
   }
@@ -398,27 +343,14 @@ private struct CommanderWatchWidgetView: View {
     HStack(spacing: 5) {
       brandMark
       Text("Bez rozpisu")
-        .font(.system(size: 13.5, weight: .bold, design: .rounded))
+        .font(.headline.weight(.semibold))
     }
-    .foregroundStyle(.white)
+    .foregroundStyle(.primary)
     .lineLimit(1)
 
     Text("Otevři Commander")
-      .font(.system(size: 11.5, weight: .semibold, design: .rounded))
-      .foregroundStyle(.white.opacity(0.82))
+      .font(.caption2.weight(.semibold))
+      .foregroundStyle(.secondary)
       .lineLimit(1)
-  }
-}
-
-private extension Color {
-  init(hex: String) {
-    let value = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-    var rgb: UInt64 = 0
-    Scanner(string: value).scanHexInt64(&rgb)
-    self.init(
-      red: Double((rgb >> 16) & 0xff) / 255,
-      green: Double((rgb >> 8) & 0xff) / 255,
-      blue: Double(rgb & 0xff) / 255
-    )
   }
 }

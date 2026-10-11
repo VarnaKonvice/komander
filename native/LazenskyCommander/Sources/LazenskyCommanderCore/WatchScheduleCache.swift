@@ -28,13 +28,28 @@ public actor FileWatchScheduleCache {
   }
 
   public func load() throws -> WatchScheduleSnapshot? {
+    guard let snapshot = try loadDecoded() else { return nil }
+    guard (try? WatchScheduleTransportCodec.encode(snapshot)) != nil else { return nil }
+    return snapshot
+  }
+
+  /// Fast read path for UI/widget consumers of bytes that were already
+  /// strictly validated before this cache wrote them.
+  ///
+  /// WidgetKit extensions have a tight execution budget. Re-running the full
+  /// alarm transport projection for every complication refresh is unnecessary
+  /// and can make a valid shared snapshot miss that budget on Apple Watch.
+  public func loadPrepared() throws -> WatchScheduleSnapshot? {
+    try loadDecoded()
+  }
+
+  private func loadDecoded() throws -> WatchScheduleSnapshot? {
     guard FileManager.default.fileExists(atPath: fileURL.path) else { return nil }
-    let data = try Data(contentsOf: fileURL)
+    let data = try Data(contentsOf: fileURL, options: .mappedIfSafe)
     guard
       let snapshot = try? JSONDecoder().decode(WatchScheduleSnapshot.self, from: data),
       dataset?.accepts(snapshot.schedule) != false,
-      snapshot.contractVersion == WatchScheduleSnapshot.currentContractVersion,
-      (try? WatchScheduleTransportCodec.encode(snapshot)) != nil
+      snapshot.contractVersion == WatchScheduleSnapshot.currentContractVersion
     else { return nil }
     return snapshot
   }
