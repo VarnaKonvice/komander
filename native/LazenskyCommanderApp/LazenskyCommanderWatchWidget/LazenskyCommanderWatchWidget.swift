@@ -126,6 +126,8 @@ struct CommanderWatchTimelineProvider: TimelineProvider {
 }
 
 private struct CommanderWatchWidgetView: View {
+  @Environment(\.isLuminanceReduced) private var isLuminanceReduced
+
   let entry: CommanderWatchWidgetEntry
 
   private var displayEvent: ScheduleEvent? {
@@ -158,14 +160,8 @@ private struct CommanderWatchWidgetView: View {
   }
 
   private func eventHeader(_ event: ScheduleEvent) -> some View {
-    HStack(spacing: 5) {
-      CommanderProcedureArtwork(
-        iconKey: WatchVisualAssets.icon(for: event)?.key,
-        title: event.title,
-        size: 18,
-        kind: event.kind
-      )
-      .contrast(1.25)
+    HStack(spacing: 6) {
+      eventSymbol(event)
 
       ViewThatFits(in: .horizontal) {
         Text(event.title)
@@ -175,6 +171,32 @@ private struct CommanderWatchWidgetView: View {
       .lineLimit(1)
     }
     .foregroundStyle(.primary)
+  }
+
+  @ViewBuilder
+  private func eventSymbol(_ event: ScheduleEvent) -> some View {
+    let iconKey = WatchVisualAssets.icon(for: event)?.key
+    let symbol = CommanderBrandAssets.procedureSymbol(
+      iconKey: iconKey,
+      title: event.title,
+      isMeal: event.kind == .meal
+    )
+
+    if symbol == "commander.heat.waves" {
+      CommanderProcedureArtwork(
+        iconKey: iconKey,
+        title: event.title,
+        size: 18,
+        kind: event.kind
+      )
+      .contrast(1.35)
+    } else {
+      Image(systemName: symbol)
+        .symbolRenderingMode(.monochrome)
+        .font(.system(size: 16, weight: .bold))
+        .frame(width: 18, height: 18)
+        .widgetAccentable()
+    }
   }
 
   private func compactTitle(for event: ScheduleEvent) -> String {
@@ -204,17 +226,32 @@ private struct CommanderWatchWidgetView: View {
     switch entry.liveState.state {
     case .upcoming:
       if let leaveAt = entry.liveState.leaveAt {
-        countdownLine(label: "Vyrazit za", symbol: "figure.walk", target: leaveAt)
+        countdownLine(
+          label: "Vyrazit za",
+          reducedLabel: "Odchod",
+          symbol: "figure.walk",
+          target: leaveAt
+        )
       }
 
     case .leaveNow:
       if let startAt = entry.liveState.startAt {
-        countdownLine(label: "Začíná za", symbol: "figure.walk.motion", target: startAt)
+        countdownLine(
+          label: "Začíná za",
+          reducedLabel: "Začátek",
+          symbol: "figure.walk.motion",
+          target: startAt
+        )
       }
 
     case .inProgress:
       if let endAt = entry.liveState.endAt {
-        countdownLine(label: "Končí za", symbol: "timer", target: endAt)
+        countdownLine(
+          label: "Končí za",
+          reducedLabel: "Konec",
+          symbol: "timer",
+          target: endAt
+        )
       }
 
     case .dayDone, .noSchedule:
@@ -222,19 +259,24 @@ private struct CommanderWatchWidgetView: View {
     }
   }
 
-  private func countdownLine(label: String, symbol: String, target: Date) -> some View {
+  private func countdownLine(
+    label: String,
+    reducedLabel: String,
+    symbol: String,
+    target: Date
+  ) -> some View {
     HStack(spacing: 5) {
       Image(systemName: symbol)
         .frame(width: 14, alignment: .leading)
 
-      Text(
-        timerInterval: entry.date...target,
-        countsDown: true,
-        showsHours: true
-      )
-      .monospacedDigit()
-      .frame(width: 128, alignment: .leading)
-      .multilineTextAlignment(.leading)
+      if isLuminanceReduced {
+        Text(reducedLabel)
+        Text(target, style: .time)
+          .monospacedDigit()
+      } else {
+        Text(target, style: .timer)
+          .monospacedDigit()
+      }
     }
     .font(.headline.weight(.bold))
     .widgetAccentable()
