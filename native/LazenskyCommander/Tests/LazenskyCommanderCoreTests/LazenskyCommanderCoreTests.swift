@@ -448,6 +448,13 @@ import Testing
   #expect(entries.contains { $0.liveState.state == .leaveNow })
   #expect(entries.contains { $0.liveState.state == .inProgress })
   #expect(try #require(entries.last).date <= horizon)
+
+  let minuteStart = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:30:00")
+  let minuteEnd = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:40:00")
+  let minuteEntries = entries.filter {
+    $0.date >= minuteStart && $0.date <= minuteEnd
+  }
+  #expect(minuteEntries.count >= 10)
 }
 
 @Test func watchCacheStartsEmptyAndReloadsTheSameValidSnapshot() async throws {

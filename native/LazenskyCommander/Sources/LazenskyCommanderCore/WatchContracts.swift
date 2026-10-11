@@ -179,6 +179,32 @@ public enum WatchPreparedTimelinePlanner {
       }
     }
 
+    // Always On reduces the fidelity of SwiftUI timer text. Add minute
+    // checkpoints around the current countdown so the reduced-luminance
+    // complication can keep showing a real countdown without relying on
+    // seconds that watchOS intentionally suppresses.
+    let current = state(projectedEvents: projected, at: now)
+    let countdownTarget: Date? = switch current.state {
+    case .upcoming: current.leaveAt
+    case .leaveNow: current.startAt
+    case .inProgress: current.endAt
+    case .dayDone, .noSchedule: nil
+    }
+    if let countdownTarget, countdownTarget > now {
+      let minuteWindowEnd = min(
+        countdownTarget,
+        horizon,
+        now.addingTimeInterval(3 * 60 * 60)
+      )
+      var tick = Date(
+        timeIntervalSince1970: ceil(now.timeIntervalSince1970 / 60) * 60
+      )
+      while tick <= minuteWindowEnd {
+        dates.insert(tick)
+        tick = tick.addingTimeInterval(60)
+      }
+    }
+
     var dayStart = calendar.startOfDay(for: now)
     while let next = calendar.date(byAdding: .day, value: 1, to: dayStart),
           next <= horizon {

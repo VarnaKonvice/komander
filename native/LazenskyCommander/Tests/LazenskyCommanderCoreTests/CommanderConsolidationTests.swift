@@ -170,7 +170,7 @@ func requiredStoryNeverKeepsDepartureOrProgressAtOrAfterEnd(mode: CommanderLiveA
   #expect(widget.contains("WatchPreparedTimelinePlanner.entries("))
   #expect(widget.contains("@Environment(\\.isLuminanceReduced)"))
   #expect(widget.contains("Text(target, style: .timer)"))
-  #expect(widget.contains("Text(reducedLabel)"))
+  #expect(widget.contains("Text(reducedCountdownText(to: target))"))
   #expect(widget.contains("Text(\"Začátek\")"))
   #expect(widget.contains("ViewThatFits(in: .horizontal)"))
   let settings = try source("LazenskyCommanderApp/CommanderSettingsView.swift")

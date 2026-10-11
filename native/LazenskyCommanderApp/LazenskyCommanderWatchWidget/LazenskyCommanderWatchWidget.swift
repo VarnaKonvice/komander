@@ -228,7 +228,6 @@ private struct CommanderWatchWidgetView: View {
       if let leaveAt = entry.liveState.leaveAt {
         countdownLine(
           label: "Vyrazit za",
-          reducedLabel: "Odchod",
           symbol: "figure.walk",
           target: leaveAt
         )
@@ -238,7 +237,6 @@ private struct CommanderWatchWidgetView: View {
       if let startAt = entry.liveState.startAt {
         countdownLine(
           label: "Začíná za",
-          reducedLabel: "Začátek",
           symbol: "figure.walk.motion",
           target: startAt
         )
@@ -248,7 +246,6 @@ private struct CommanderWatchWidgetView: View {
       if let endAt = entry.liveState.endAt {
         countdownLine(
           label: "Končí za",
-          reducedLabel: "Konec",
           symbol: "timer",
           target: endAt
         )
@@ -261,7 +258,6 @@ private struct CommanderWatchWidgetView: View {
 
   private func countdownLine(
     label: String,
-    reducedLabel: String,
     symbol: String,
     target: Date
   ) -> some View {
@@ -270,8 +266,7 @@ private struct CommanderWatchWidgetView: View {
         .frame(width: 14, alignment: .leading)
 
       if isLuminanceReduced {
-        Text(reducedLabel)
-        Text(target, style: .time)
+        Text(reducedCountdownText(to: target))
           .monospacedDigit()
       } else {
         Text(target, style: .timer)
@@ -282,6 +277,12 @@ private struct CommanderWatchWidgetView: View {
     .widgetAccentable()
     .lineLimit(1)
     .accessibilityLabel(label)
+  }
+
+  private func reducedCountdownText(to target: Date) -> String {
+    let remainingSeconds = max(0, target.timeIntervalSince(entry.date))
+    let totalMinutes = Int(ceil(remainingSeconds / 60))
+    return String(format: "%d:%02d", totalMinutes / 60, totalMinutes % 60)
   }
 
   private var referenceLine: some View {
