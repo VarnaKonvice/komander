@@ -160,7 +160,7 @@ func requiredStoryNeverKeepsDepartureOrProgressAtOrAfterEnd(mode: CommanderLiveA
   #expect(watch.contains("cached = try await WatchCacheLocation.makeCache().loadPrepared()"))
   #expect(watch.contains("cached = try await cache.load()"))
   #expect(watch.contains("!WatchPreparedTimelinePlanner.isExpired("))
-  #expect(watch.contains("WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.kind)"))
+  #expect(watch.contains("WidgetCenter.shared.reloadAllTimelines()"))
   let widget = try source("LazenskyCommanderWatchWidget/LazenskyCommanderWatchWidget.swift")
   #expect(widget.contains("let cache = WatchCacheLocation.makeCache()"))
   #expect(widget.contains("try? await cache.loadPrepared()"))

@@ -152,9 +152,11 @@ final class WatchCommanderModel {
   }
 
   private func refreshComplication() {
-    // Do not let WidgetKit IPC delay the visible Watch app.
+    // Do not let WidgetKit IPC delay the visible Watch app. The complication
+    // now uses a lightweight prepared-cache path, so a full timeline reload is
+    // safe and also clears stale chronod-rendered entries after an app update.
     Task.detached(priority: .utility) {
-      WidgetCenter.shared.reloadTimelines(ofKind: CommanderWatchWidgetContract.kind)
+      WidgetCenter.shared.reloadAllTimelines()
       WidgetCenter.shared.invalidateRelevance(ofKind: CommanderWatchWidgetContract.kind)
     }
   }
