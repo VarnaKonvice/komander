@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "reference": "Orientační časy jídel pro II. směnu v Rehabilitačním sanatoriu Lázně Darkov",
+  "recordedOn": "2026-10-19",
+  "source": "Ústně nadiktoval uživatel; časy nebyly ověřeny na oficiálním jídelním řádu.",
+  "mealShift": "II. směna",
+  "meals": [
+    {
+      "name": "Snídaně",
+      "start": "08:00",
+      "end": "08:45"
+    },
+    {
+      "name": "Oběd",
+      "start": "12:15",
+      "end": "13:00"
+    },
+    {
+      "name": "Večeře",
+      "start": "17:30",
+      "end": "18:00"
+    }
+  ],
+  "note": "Jen informativní reference pro dotazy asistenta; nemění aktivní směnu uživatele ani soubor data/schedule.json. Při běžných dotazech na vlastní jídla vycházej z data/schedule.json (I. směna). II. směnu uváděj, když se na ni uživatel zeptá."
+}
