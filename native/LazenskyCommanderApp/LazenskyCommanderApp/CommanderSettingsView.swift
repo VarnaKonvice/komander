@@ -1,5 +1,8 @@
 import LazenskyCommanderCore
+import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
+import UIKit
 
 enum CommanderScheduleAuditVisualStatus: Equatable {
   case unavailable
@@ -110,6 +113,8 @@ struct CommanderSettingsView: View {
       }
 
       CommanderProvisioningSection()
+
+      CommanderScheduleImportSettingsCard()
 
       CommanderScheduleSettingsCard(model: model)
 
@@ -1099,5 +1104,426 @@ private struct CommanderLeadTimeSettingsView: View {
       schedule: schedule,
       overrides: model.leadTimeOverrides
     )) ?? model.defaultLeadTimeMinutes
+  }
+}
+
+
+private struct CommanderScheduleImportSettingsCard: View {
+  var body: some View {
+    CommanderSectionCard(
+      title: "Vlastní rozpis",
+      symbol: "doc.viewfinder.fill",
+      accent: CommanderDesignTokens.Colors.locationBlue
+    ) {
+      NavigationLink {
+        CommanderScheduleImportView()
+      } label: {
+        CommanderNavigationRow(
+          title: "Přidat rozpis",
+          subtitle: "Fotografie nebo naskenovaný dokument",
+          symbol: "photo.on.rectangle.angled",
+          accent: CommanderDesignTokens.Colors.locationBlue,
+          value: "JPG · PDF"
+        )
+      }
+      .buttonStyle(.plain)
+    }
+  }
+}
+
+@MainActor
+private final class CommanderScheduleImportDraft: ObservableObject {
+  struct Attachment: Identifiable, Equatable {
+    let storedName: String
+    let displayName: String
+    let byteCount: Int
+
+    var id: String { storedName }
+
+    var formattedSize: String {
+      ByteCountFormatter.string(fromByteCount: Int64(byteCount), countStyle: .file)
+    }
+
+    var symbol: String {
+      storedName.lowercased().hasSuffix(".pdf") ? "doc.fill" : "photo.fill"
+    }
+  }
+
+  enum DraftError: LocalizedError {
+    case unsupportedFile
+    case unreadableImage
+    case fileTooLarge
+    case tooManyFiles
+
+    var errorDescription: String? {
+      switch self {
+      case .unsupportedFile:
+        "Soubor není v podporovaném formátu."
+      case .unreadableImage:
+        "Fotografii se nepodařilo načíst."
+      case .fileTooLarge:
+        "Jeden soubor může mít nejvýše 25 MB."
+      case .tooManyFiles:
+        "Do jednoho rozpisu lze přidat nejvýše 20 souborů."
+      }
+    }
+  }
+
+  @Published private(set) var attachments: [Attachment] = []
+
+  private let fileManager = FileManager.default
+  private let maximumFileBytes = 25 * 1024 * 1024
+  private let maximumAttachmentCount = 20
+
+  init() {
+    reload()
+  }
+
+  var totalSizeText: String {
+    let total = attachments.reduce(0) { $0 + $1.byteCount }
+    return ByteCountFormatter.string(fromByteCount: Int64(total), countStyle: .file)
+  }
+
+  func addPhotoData(_ sourceData: Data) throws {
+    guard attachments.count < maximumAttachmentCount else { throw DraftError.tooManyFiles }
+    guard let image = UIImage(data: sourceData),
+          let jpeg = image.jpegData(compressionQuality: 0.92)
+    else {
+      throw DraftError.unreadableImage
+    }
+    guard jpeg.count <= maximumFileBytes else { throw DraftError.fileTooLarge }
+
+    try ensureDirectory()
+    let sequence = attachments.count + 1
+    let displayName = String(format: "Fotografie %02d.jpg", sequence)
+    let storedName = "\(UUID().uuidString).jpg"
+    try jpeg.write(to: directoryURL.appendingPathComponent(storedName), options: .atomic)
+    reload(displayNames: [storedName: displayName])
+  }
+
+  func addFile(_ sourceURL: URL) throws {
+    guard attachments.count < maximumAttachmentCount else { throw DraftError.tooManyFiles }
+
+    let scoped = sourceURL.startAccessingSecurityScopedResource()
+    defer {
+      if scoped { sourceURL.stopAccessingSecurityScopedResource() }
+    }
+
+    let ext = sourceURL.pathExtension.lowercased()
+    let supported = ["jpg", "jpeg", "png", "heic", "heif", "pdf"]
+    guard supported.contains(ext) else { throw DraftError.unsupportedFile }
+
+    let values = try sourceURL.resourceValues(forKeys: [.fileSizeKey])
+    let size = values.fileSize ?? 0
+    guard size <= maximumFileBytes else { throw DraftError.fileTooLarge }
+
+    try ensureDirectory()
+    let storedName = "\(UUID().uuidString).\(ext)"
+    let destination = directoryURL.appendingPathComponent(storedName)
+    let data = try Data(contentsOf: sourceURL)
+    guard data.count <= maximumFileBytes else { throw DraftError.fileTooLarge }
+    try data.write(to: destination, options: .atomic)
+    reload(displayNames: [storedName: sourceURL.lastPathComponent])
+  }
+
+  func remove(_ attachment: Attachment) {
+    try? fileManager.removeItem(at: directoryURL.appendingPathComponent(attachment.storedName))
+    reload()
+  }
+
+  func clear() {
+    try? fileManager.removeItem(at: directoryURL)
+    attachments = []
+  }
+
+  private var directoryURL: URL {
+    let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+    return base
+      .appendingPathComponent("LazenskyCommander", isDirectory: true)
+      .appendingPathComponent("ScheduleImportDraft", isDirectory: true)
+  }
+
+  private var namesURL: URL {
+    directoryURL.appendingPathComponent("display-names.json")
+  }
+
+  private func ensureDirectory() throws {
+    try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+  }
+
+  private func reload(displayNames additions: [String: String] = [:]) {
+    var names = (try? Data(contentsOf: namesURL))
+      .flatMap { try? JSONDecoder().decode([String: String].self, from: $0) } ?? [:]
+    additions.forEach { names[$0.key] = $0.value }
+
+    let urls = (try? fileManager.contentsOfDirectory(
+      at: directoryURL,
+      includingPropertiesForKeys: [.fileSizeKey],
+      options: [.skipsHiddenFiles]
+    )) ?? []
+
+    let files = urls
+      .filter { $0.lastPathComponent != namesURL.lastPathComponent }
+      .sorted { $0.lastPathComponent < $1.lastPathComponent }
+
+    attachments = files.compactMap { url in
+      let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+      return Attachment(
+        storedName: url.lastPathComponent,
+        displayName: names[url.lastPathComponent] ?? url.lastPathComponent,
+        byteCount: size
+      )
+    }
+
+    let activeNames = Dictionary(uniqueKeysWithValues: attachments.map {
+      ($0.storedName, names[$0.storedName] ?? $0.displayName)
+    })
+    if !attachments.isEmpty {
+      try? ensureDirectory()
+      if let encoded = try? JSONEncoder().encode(activeNames) {
+        try? encoded.write(to: namesURL, options: .atomic)
+      }
+    }
+  }
+}
+
+private struct CommanderScheduleImportView: View {
+  @StateObject private var draft = CommanderScheduleImportDraft()
+  @State private var selectedPhotos: [PhotosPickerItem] = []
+  @State private var showsFileImporter = false
+  @State private var errorMessage: String?
+
+  private let accent = CommanderDesignTokens.Colors.locationBlue
+
+  var body: some View {
+    ScrollView {
+      LazyVStack(alignment: .leading, spacing: 12) {
+        CommanderGlassHeader(tab: "", showsTabPill: false)
+        CommanderScreenHeading(
+          title: "Přidat vlastní rozpis",
+          subtitle: "Vyfoťte rozpis nebo přidejte naskenovaný dokument."
+        )
+
+        instructionsCard
+        pickerCard
+
+        if !draft.attachments.isEmpty {
+          attachmentsCard
+          preparedCard
+        }
+      }
+      .padding(.horizontal, CommanderDesignTokens.Spacing.page)
+      .padding(.top, CommanderDesignTokens.Spacing.scrollTop)
+      .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
+    }
+    .scrollIndicators(.hidden)
+    .background(CommanderDepthBackground().ignoresSafeArea())
+    .navigationTitle("Vlastní rozpis")
+    .navigationBarTitleDisplayMode(.inline)
+    .fileImporter(
+      isPresented: $showsFileImporter,
+      allowedContentTypes: [.jpeg, .png, .heic, .pdf],
+      allowsMultipleSelection: true,
+      onCompletion: importFiles
+    )
+    .onChange(of: selectedPhotos) { _, items in
+      guard !items.isEmpty else { return }
+      Task { await importPhotos(items) }
+    }
+    .alert(
+      "Soubor se nepodařilo přidat",
+      isPresented: Binding(
+        get: { errorMessage != nil },
+        set: { if !$0 { errorMessage = nil } }
+      )
+    ) {
+      Button("OK", role: .cancel) {}
+    } message: {
+      Text(errorMessage ?? "")
+    }
+  }
+
+  private var instructionsCard: some View {
+    CommanderSectionCard(
+      title: "Co můžete přidat",
+      symbol: "doc.badge.plus",
+      accent: accent
+    ) {
+      VStack(alignment: .leading, spacing: 10) {
+        Text("Fotografie papírového rozpisu nebo soubor vytvořený skenerem.")
+          .commanderFont(.subtitle)
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .fixedSize(horizontal: false, vertical: true)
+
+        VStack(alignment: .leading, spacing: 7) {
+          HStack(spacing: 8) {
+            formatBadge("JPG")
+            formatBadge("JPEG")
+            formatBadge("PNG")
+          }
+          HStack(spacing: 8) {
+            formatBadge("HEIC")
+            formatBadge("PDF")
+          }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Podporované formáty JPG, JPEG, PNG, HEIC a PDF")
+
+        Text("Přidejte všechny stránky jednoho pobytu. Fotografie z iPhonu Commander uloží jako JPG.")
+          .commanderFont(.label)
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+    }
+  }
+
+  private var pickerCard: some View {
+    CommanderSectionCard(
+      title: "Vybrat podklady",
+      symbol: "square.and.arrow.down.fill",
+      accent: CommanderDesignTokens.Colors.mealGreen
+    ) {
+      PhotosPicker(
+        selection: $selectedPhotos,
+        maxSelectionCount: 20,
+        matching: .images
+      ) {
+        CommanderSettingsActionRow(
+          title: "Vybrat fotografie",
+          subtitle: "Z aplikace Fotky",
+          symbol: "photo.stack.fill",
+          accent: CommanderDesignTokens.Colors.mealGreen,
+          isWorking: false
+        )
+      }
+      .buttonStyle(.plain)
+
+      Button {
+        showsFileImporter = true
+      } label: {
+        CommanderSettingsActionRow(
+          title: "Vybrat soubor",
+          subtitle: "PDF nebo obrázek ze Souborů",
+          symbol: "doc.fill.badge.plus",
+          accent: accent,
+          isWorking: false
+        )
+      }
+      .buttonStyle(.plain)
+    }
+  }
+
+  private var attachmentsCard: some View {
+    CommanderSectionCard(
+      title: "Připravené soubory",
+      symbol: "tray.full.fill",
+      accent: accent
+    ) {
+      ForEach(draft.attachments) { attachment in
+        HStack(spacing: CommanderDesignTokens.Spacing.small) {
+          CommanderSymbolBadge(
+            symbol: attachment.symbol,
+            color: accent,
+            size: CommanderDesignTokens.Size.rowMetricBadge
+          )
+          VStack(alignment: .leading, spacing: 2) {
+            Text(attachment.displayName)
+              .commanderFont(.metric)
+              .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+              .lineLimit(2)
+            Text(attachment.formattedSize)
+              .commanderFont(.label)
+              .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          }
+          Spacer(minLength: 8)
+          Button(role: .destructive) {
+            draft.remove(attachment)
+          } label: {
+            Image(systemName: "trash")
+              .font(.system(size: 18, weight: .semibold))
+              .foregroundStyle(CommanderDesignTokens.Colors.criticalRed)
+              .frame(width: 42, height: 42)
+          }
+          .accessibilityLabel("Odebrat \(attachment.displayName)")
+        }
+        .padding(CommanderDesignTokens.Spacing.small)
+        .commanderCard(accent: accent, surface: .depthInset)
+      }
+
+      Button(role: .destructive) {
+        draft.clear()
+      } label: {
+        Text("Odebrat všechny soubory")
+          .commanderFont(.label)
+          .foregroundStyle(CommanderDesignTokens.Colors.criticalRed)
+          .frame(maxWidth: .infinity, minHeight: 44)
+      }
+      .buttonStyle(.plain)
+    }
+  }
+
+  private var preparedCard: some View {
+    HStack(spacing: CommanderDesignTokens.Spacing.small) {
+      CommanderSymbolBadge(
+        symbol: "checkmark.circle.fill",
+        color: CommanderDesignTokens.Colors.mealGreen,
+        size: CommanderDesignTokens.Size.sectionBadge
+      )
+      VStack(alignment: .leading, spacing: 3) {
+        Text(preparedTitle)
+          .commanderFont(.eventTitle)
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        Text("\(draft.totalSizeText) · připraveno k budoucímu odeslání")
+          .commanderFont(.subtitle)
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+      }
+      Spacer(minLength: 0)
+    }
+    .padding(CommanderDesignTokens.Spacing.medium)
+    .commanderCard(accent: CommanderDesignTokens.Colors.mealGreen, surface: .depthCard)
+  }
+
+  private var preparedTitle: String {
+    switch draft.attachments.count {
+    case 1: "1 soubor připraven"
+    case 2...4: "\(draft.attachments.count) soubory připraveny"
+    default: "\(draft.attachments.count) souborů připraveno"
+    }
+  }
+
+  private func formatBadge(_ label: String) -> some View {
+    Text(label)
+      .font(.system(size: 12, weight: .bold, design: .rounded))
+      .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+      .padding(.horizontal, 8)
+      .padding(.vertical, 6)
+      .background(accent.opacity(0.18))
+      .clipShape(Capsule())
+  }
+
+  private func importFiles(_ result: Result<[URL], Error>) {
+    do {
+      for url in try result.get() {
+        try draft.addFile(url)
+      }
+    } catch {
+      errorMessage = error.localizedDescription
+    }
+  }
+
+  private func importPhotos(_ items: [PhotosPickerItem]) async {
+    defer { selectedPhotos = [] }
+
+    for item in items {
+      do {
+        guard let data = try await item.loadTransferable(type: Data.self) else {
+          throw CommanderScheduleImportDraft.DraftError.unreadableImage
+        }
+        try draft.addPhotoData(data)
+      } catch {
+        errorMessage = error.localizedDescription
+        break
+      }
+    }
   }
 }
