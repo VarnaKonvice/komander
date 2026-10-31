@@ -112,8 +112,6 @@ struct CommanderSettingsView: View {
         .buttonStyle(.plain)
       }
 
-      CommanderProvisioningSection()
-
       CommanderScheduleImportSettingsCard()
 
       CommanderScheduleSettingsCard(model: model)
@@ -135,6 +133,8 @@ struct CommanderSettingsView: View {
         }
         .buttonStyle(.plain)
       }
+
+      CommanderProvisioningSection()
     }
   }
 }
@@ -1169,7 +1169,20 @@ private final class CommanderScheduleImportDraft: ObservableObject {
     }
   }
 
+  struct QueuedRequest: Codable, Equatable {
+    struct FileEntry: Codable, Equatable {
+      let storedName: String
+      let displayName: String
+      let byteCount: Int
+    }
+
+    let requestID: String
+    let createdAt: String
+    let files: [FileEntry]
+  }
+
   @Published private(set) var attachments: [Attachment] = []
+  @Published private(set) var lastQueuedRequest: QueuedRequest?
 
   private let fileManager = FileManager.default
   private let maximumFileBytes = 25 * 1024 * 1024
@@ -1236,6 +1249,49 @@ private final class CommanderScheduleImportDraft: ObservableObject {
     attachments = []
   }
 
+  func queueForSubmission() throws -> QueuedRequest {
+    guard !attachments.isEmpty else {
+      throw DraftError.unsupportedFile
+    }
+
+    let requestID = UUID().uuidString.lowercased()
+    let requestDirectory = outboxURL.appendingPathComponent(requestID, isDirectory: true)
+    try fileManager.createDirectory(at: requestDirectory, withIntermediateDirectories: true)
+
+    let files = attachments.map {
+      QueuedRequest.FileEntry(
+        storedName: $0.storedName,
+        displayName: $0.displayName,
+        byteCount: $0.byteCount
+      )
+    }
+    let request = QueuedRequest(
+      requestID: requestID,
+      createdAt: ISO8601DateFormatter().string(from: Date()),
+      files: files
+    )
+
+    do {
+      for attachment in attachments {
+        let source = directoryURL.appendingPathComponent(attachment.storedName)
+        let destination = requestDirectory.appendingPathComponent(attachment.storedName)
+        try fileManager.copyItem(at: source, to: destination)
+      }
+      let metadata = try JSONEncoder().encode(request)
+      try metadata.write(
+        to: requestDirectory.appendingPathComponent("request.json"),
+        options: .atomic
+      )
+    } catch {
+      try? fileManager.removeItem(at: requestDirectory)
+      throw error
+    }
+
+    lastQueuedRequest = request
+    clear()
+    return request
+  }
+
   private var directoryURL: URL {
     let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
     return base
@@ -1245,6 +1301,13 @@ private final class CommanderScheduleImportDraft: ObservableObject {
 
   private var namesURL: URL {
     directoryURL.appendingPathComponent("display-names.json")
+  }
+
+  private var outboxURL: URL {
+    let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+    return base
+      .appendingPathComponent("LazenskyCommander", isDirectory: true)
+      .appendingPathComponent("ScheduleImportOutbox", isDirectory: true)
   }
 
   private func ensureDirectory() throws {
@@ -1292,6 +1355,7 @@ private struct CommanderScheduleImportView: View {
   @State private var selectedPhotos: [PhotosPickerItem] = []
   @State private var showsFileImporter = false
   @State private var errorMessage: String?
+  @State private var queuedMessage: String?
 
   private let accent = CommanderDesignTokens.Colors.locationBlue
 
@@ -1309,7 +1373,11 @@ private struct CommanderScheduleImportView: View {
 
         if !draft.attachments.isEmpty {
           attachmentsCard
-          preparedCard
+          submitCard
+        }
+
+        if let queuedMessage {
+          queuedCard(queuedMessage)
         }
       }
       .padding(.horizontal, CommanderDesignTokens.Spacing.page)
@@ -1462,25 +1530,72 @@ private struct CommanderScheduleImportView: View {
     }
   }
 
-  private var preparedCard: some View {
-    HStack(spacing: CommanderDesignTokens.Spacing.small) {
+  private var submitCard: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack(spacing: CommanderDesignTokens.Spacing.small) {
+        CommanderSymbolBadge(
+          symbol: "checkmark.circle.fill",
+          color: CommanderDesignTokens.Colors.mealGreen,
+          size: CommanderDesignTokens.Size.sectionBadge
+        )
+        VStack(alignment: .leading, spacing: 3) {
+          Text(preparedTitle)
+            .commanderFont(.eventTitle)
+            .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          Text("\(draft.totalSizeText) · připraveno k odeslání")
+            .commanderFont(.subtitle)
+            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        }
+        Spacer(minLength: 0)
+      }
+
+      Button {
+        queueSubmission()
+      } label: {
+        HStack(spacing: 10) {
+          Image(systemName: "paperplane.fill")
+            .font(.system(size: 19, weight: .bold))
+          Text("Odeslat ke zpracování")
+            .commanderFont(.eventTitle)
+          Spacer(minLength: 0)
+          Image(systemName: "chevron.right")
+            .font(.system(size: 15, weight: .bold))
+        }
+        .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        .padding(.horizontal, CommanderDesignTokens.Spacing.medium)
+        .frame(maxWidth: .infinity, minHeight: 58)
+        .commanderCard(
+          accent: CommanderDesignTokens.Colors.mealGreen,
+          surface: .depthInset
+        )
+      }
+      .buttonStyle(.plain)
+      .accessibilityHint("Zařadí vybrané soubory do fronty ke zpracování.")
+    }
+    .padding(CommanderDesignTokens.Spacing.medium)
+    .commanderCard(accent: CommanderDesignTokens.Colors.mealGreen, surface: .depthCard)
+  }
+
+  private func queuedCard(_ message: String) -> some View {
+    HStack(alignment: .top, spacing: CommanderDesignTokens.Spacing.small) {
       CommanderSymbolBadge(
-        symbol: "checkmark.circle.fill",
-        color: CommanderDesignTokens.Colors.mealGreen,
+        symbol: "tray.and.arrow.up.fill",
+        color: CommanderDesignTokens.Colors.amber,
         size: CommanderDesignTokens.Size.sectionBadge
       )
-      VStack(alignment: .leading, spacing: 3) {
-        Text(preparedTitle)
+      VStack(alignment: .leading, spacing: 4) {
+        Text("Čeká na odeslání")
           .commanderFont(.eventTitle)
           .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-        Text("\(draft.totalSizeText) · připraveno k budoucímu odeslání")
+        Text(message)
           .commanderFont(.subtitle)
           .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          .fixedSize(horizontal: false, vertical: true)
       }
       Spacer(minLength: 0)
     }
     .padding(CommanderDesignTokens.Spacing.medium)
-    .commanderCard(accent: CommanderDesignTokens.Colors.mealGreen, surface: .depthCard)
+    .commanderCard(accent: CommanderDesignTokens.Colors.amber, surface: .depthCard)
   }
 
   private var preparedTitle: String {
@@ -1499,6 +1614,15 @@ private struct CommanderScheduleImportView: View {
       .padding(.vertical, 6)
       .background(accent.opacity(0.18))
       .clipShape(Capsule())
+  }
+
+  private func queueSubmission() {
+    do {
+      let request = try draft.queueForSubmission()
+      queuedMessage = "Podklady jsou bezpečně uložené v Commanderu. Serverové odeslání ještě není připojeno. Požadavek: \(request.requestID.prefix(8))."
+    } catch {
+      errorMessage = error.localizedDescription
+    }
   }
 
   private func importFiles(_ result: Result<[URL], Error>) {
