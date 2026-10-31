@@ -147,14 +147,16 @@ public struct AlarmSyncService: Sendable {
   public func synchronize(
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
-    now: Date? = nil
+    now: Date? = nil,
+    suppressAlertsUntil: Date? = nil
   ) async throws -> AlarmSyncSummary {
     let schedule = try await scheduleService.fetchSchedule()
     let result = try await synchronizeValidated(
       schedule: schedule,
       overrides: overrides,
       projectionRevision: projectionRevision,
-      now: now ?? Date()
+      now: now ?? Date(),
+      suppressAlertsUntil: suppressAlertsUntil
     )
     // Preserve the standalone service API's historical permission signal. The Commander
     // coordinator intentionally uses synchronizeValidated so a denied AlarmKit projection
@@ -169,7 +171,8 @@ public struct AlarmSyncService: Sendable {
     schedule: Schedule,
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
-    now: Date = Date()
+    now: Date = Date(),
+    suppressAlertsUntil: Date? = nil
   ) async throws -> AlarmSyncSummary {
     let payload = try NativeAlarmContract.payload(schedule: schedule, overrides: overrides)
     return try await synchronize(
@@ -177,7 +180,8 @@ public struct AlarmSyncService: Sendable {
       payload: payload,
       overrides: overrides,
       projectionRevision: projectionRevision,
-      now: now
+      now: now,
+      suppressAlertsUntil: suppressAlertsUntil
     )
   }
 
@@ -185,7 +189,8 @@ public struct AlarmSyncService: Sendable {
     schedule: Schedule,
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
-    now: Date = Date()
+    now: Date = Date(),
+    suppressAlertsUntil: Date? = nil
   ) async throws -> AlarmSyncSummary {
     let payload = try NativeAlarmContract.payloadValidated(schedule: schedule, overrides: overrides)
     return try await synchronize(
@@ -193,7 +198,8 @@ public struct AlarmSyncService: Sendable {
       payload: payload,
       overrides: overrides,
       projectionRevision: projectionRevision,
-      now: now
+      now: now,
+      suppressAlertsUntil: suppressAlertsUntil
     )
   }
 
@@ -202,19 +208,21 @@ public struct AlarmSyncService: Sendable {
     payload: NativeAlarmPayload,
     overrides: LeadTimeOverrides?,
     projectionRevision: Int,
-    now: Date
+    now: Date,
+    suppressAlertsUntil: Date?
   ) async throws -> AlarmSyncSummary {
     try await operations.run {
       try await self.performSynchronization(schedule: schedule, payload: payload,
-        overrides: overrides, projectionRevision: projectionRevision, now: now)
+        overrides: overrides, projectionRevision: projectionRevision, now: now,
+        suppressAlertsUntil: suppressAlertsUntil)
     }
   }
 
   private func performSynchronization(
     schedule: Schedule, payload: NativeAlarmPayload, overrides: LeadTimeOverrides?,
-    projectionRevision: Int, now: Date
+    projectionRevision: Int, now: Date, suppressAlertsUntil: Date?
   ) async throws -> AlarmSyncSummary {
-    let desiredPayload = try desiredPayload(from: payload, now: now)
+    let desiredPayload = try desiredPayload(from: payload, now: now, suppressAlertsUntil: suppressAlertsUntil)
     await adapter.prepare(
       schedule: schedule,
       projectionRevision: max(0, projectionRevision),
@@ -265,17 +273,21 @@ public struct AlarmSyncService: Sendable {
 
     // A foreground refresh is not a user stop action. Keep an already ringing,
     // unchanged canonical event until it is stopped or the event has ended.
+    // An explicit user pause is different: it must silence even an alarm that is
+    // currently alerting, so no alerting ID is protected while suppression is active.
     do {
-      let alerting = try await adapter.existingPlatformAlertingAlarmIDs()
-      // A crash after platform scheduling may leave no managed record. Foreground
-      // reconciliation must not silently stop such an already ringing owned alarm.
-      protectedAlertingIDs.formUnion(alerting.subtracting(Set(state.records.values.map(\.platformAlarmID))))
-      let canonical = Dictionary(uniqueKeysWithValues: payload.alarms.map { ($0.stableId, $0) })
-      for record in state.records.values where alerting.contains(record.platformAlarmID) {
-        if canonical[record.stableId] == record.alarm,
-           try NativeAlarmContract.date(fromLocalISO: record.alarm.leaveAt) <= now,
-           try NativeAlarmContract.date(fromLocalISO: record.alarm.endAt) > now {
-          protectedAlertingIDs.insert(record.platformAlarmID)
+      if suppressAlertsUntil.map({ $0 > now }) != true {
+        let alerting = try await adapter.existingPlatformAlertingAlarmIDs()
+        // A crash after platform scheduling may leave no managed record. Foreground
+        // reconciliation must not silently stop such an already ringing owned alarm.
+        protectedAlertingIDs.formUnion(alerting.subtracting(Set(state.records.values.map(\.platformAlarmID))))
+        let canonical = Dictionary(uniqueKeysWithValues: payload.alarms.map { ($0.stableId, $0) })
+        for record in state.records.values where alerting.contains(record.platformAlarmID) {
+          if canonical[record.stableId] == record.alarm,
+             try NativeAlarmContract.date(fromLocalISO: record.alarm.leaveAt) <= now,
+             try NativeAlarmContract.date(fromLocalISO: record.alarm.endAt) > now {
+            protectedAlertingIDs.insert(record.platformAlarmID)
+          }
         }
       }
     } catch {
@@ -446,9 +458,17 @@ public struct AlarmSyncService: Sendable {
     }
   }
 
-  private func desiredPayload(from payload: NativeAlarmPayload, now: Date) throws -> NativeAlarmPayload {
+  private func desiredPayload(
+    from payload: NativeAlarmPayload,
+    now: Date,
+    suppressAlertsUntil: Date?
+  ) throws -> NativeAlarmPayload {
     let futureAlarms = try payload.alarms.filter {
-      try NativeAlarmContract.date(fromLocalISO: $0.leaveAt) > now
+      let leaveAt = try NativeAlarmContract.date(fromLocalISO: $0.leaveAt)
+      if let suppressAlertsUntil, suppressAlertsUntil > now {
+        return leaveAt >= suppressAlertsUntil
+      }
+      return leaveAt > now
     }
     return NativeAlarmPayload(
       contractVersion: payload.contractVersion,

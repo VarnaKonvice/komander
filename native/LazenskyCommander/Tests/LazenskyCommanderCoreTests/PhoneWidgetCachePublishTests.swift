@@ -137,6 +137,51 @@ private func widgetProduction(version: Int = 13) -> WatchScheduleSnapshot {
   }
 }
 
+@Test func circularWidgetCountdownUsesCompactHoursAndMinutes() throws {
+  let target = try NativeAlarmContract.date(fromLocalISO: "2026-10-01T10:03")
+  #expect(CommanderCircularWidgetCountdown.text(
+    now: try NativeAlarmContract.date(fromLocalISO: "2026-10-01T07:54"), target: target) == "3h")
+  #expect(CommanderCircularWidgetCountdown.text(
+    now: try NativeAlarmContract.date(fromLocalISO: "2026-10-01T08:03"), target: target) == "2h")
+  #expect(CommanderCircularWidgetCountdown.text(
+    now: try NativeAlarmContract.date(fromLocalISO: "2026-10-01T09:38"), target: target) == "25m")
+  #expect(CommanderCircularWidgetCountdown.text(now: target, target: target) == "teď")
+}
+
+@Test func circularWidgetTimelineAdvancesEachMinuteDuringFinalHour() throws {
+  let snapshot = widgetProduction()
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-10-01T09:42")
+  let points = try CommanderPhoneWidgetTimeline.circularPoints(snapshot: snapshot, now: now)
+  let dates = Set(points.map(\.date))
+
+  for time in ["09:43:00", "09:44:00", "09:59:00", "10:00:00", "10:01:00", "10:20:00"] {
+    let date = try NativeAlarmContract.date(fromLocalISO: "2026-10-01T" + time)
+    #expect(dates.contains(date))
+  }
+  #expect(points.count <= 40)
+  #expect(points.first?.date == now)
+  let expectedEnd = try NativeAlarmContract.date(fromLocalISO: "2026-10-01T10:20:00")
+  #expect(points.last?.date == expectedEnd)
+}
+
+@Test func circularWidgetTimelineUsesHourlyBoundariesBeforeFinalHour() throws {
+  let event = ScheduleEvent(stableId: "late", date: "2026-10-01", start: "16:45", end: "17:00",
+    title: "Večeře", location: "Jídelna", kind: .meal, procedureType: nil, mealType: "Večeře", leadTimeMinutes: 20)
+  let schedule = Schedule(schemaVersion: 1, scheduleVersion: 13, updatedAt: "2026-09-30T08:00:00Z",
+    stay: [:], events: [event], settings: widgetProduction().schedule.settings)
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-10-01T13:35:00")
+  let points = try CommanderPhoneWidgetTimeline.circularPoints(snapshot: .init(schedule: schedule), now: now)
+  let dates = Set(points.map(\.date))
+
+  #expect(dates.contains(try NativeAlarmContract.date(fromLocalISO: "2026-10-01T13:45:00")))
+  #expect(dates.contains(try NativeAlarmContract.date(fromLocalISO: "2026-10-01T14:45:00")))
+  #expect(dates.contains(try NativeAlarmContract.date(fromLocalISO: "2026-10-01T15:45:00")))
+  #expect(dates.contains(try NativeAlarmContract.date(fromLocalISO: "2026-10-01T15:46:00")))
+  #expect(dates.contains(try NativeAlarmContract.date(fromLocalISO: "2026-10-01T16:44:00")))
+  #expect(dates.contains(try NativeAlarmContract.date(fromLocalISO: "2026-10-01T16:45:00")))
+  #expect(points.count < 90)
+}
+
 @Test func phoneWidgetTimelineStaysSparseWhileCoveringNextDay() throws {
   let events = (1...28).flatMap { day in
     (7...13).map { hour in

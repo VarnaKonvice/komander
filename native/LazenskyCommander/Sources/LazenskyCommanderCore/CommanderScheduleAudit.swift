@@ -29,8 +29,9 @@ public struct CommanderScheduleAuditIssue: Codable, Equatable, Sendable {
 
 
 public extension CommanderScheduleAuditIssue {
-  /// Stable only within one canonical schedule version. Acknowledgements always
-  /// carry that version as a second guard, so a revised schedule must be reviewed again.
+  /// Stable identity of the exact review condition. The schedule version is still
+  /// stored on acknowledgements for traceability, but an unchanged reviewKey stays
+  /// acknowledged across unrelated canonical schedule revisions.
   var reviewKey: String {
     [code, date ?? "-", stableId ?? "-", message]
       .joined(separator: "|")
@@ -60,20 +61,41 @@ public struct CommanderScheduleAuditReviewState: Equatable, Sendable {
 }
 
 public enum CommanderScheduleAuditReview {
+  private static let operationalReviewCodes: Set<String> = [
+    "low-procedure-count-review",
+    "sunday-procedure-review",
+    "sunday-meals-review"
+  ]
+
   public static func resolve(
     report: CommanderScheduleAuditReport,
-    acknowledgements: [CommanderScheduleAuditAcknowledgement]
+    acknowledgements: [CommanderScheduleAuditAcknowledgement],
+    operationalWarningsOnOrAfter: String? = nil
   ) -> CommanderScheduleAuditReviewState {
-    let acceptedKeys = Set(acknowledgements
-      .filter { $0.scheduleVersion == report.scheduleVersion }
-      .map(\.reviewKey))
-
     let errors = report.issues.filter { $0.severity == .error }
-    let warnings = report.issues.filter { $0.severity == .warning }
+    let warnings = report.issues.filter { issue in
+      guard issue.severity == .warning else { return false }
+      guard let cutoff = operationalWarningsOnOrAfter,
+            operationalReviewCodes.contains(issue.code),
+            let date = issue.date else { return true }
+      return date >= cutoff
+    }
+
+    func isAcknowledged(_ issue: CommanderScheduleAuditIssue) -> Bool {
+      if acknowledgements.contains(where: { $0.reviewKey == issue.reviewKey }) {
+        return true
+      }
+
+      guard operationalReviewCodes.contains(issue.code) else { return false }
+      let identityPrefix = [issue.code, issue.date ?? "-", issue.stableId ?? "-"]
+        .joined(separator: "|") + "|"
+      return acknowledgements.contains { $0.reviewKey.hasPrefix(identityPrefix) }
+    }
+
     return CommanderScheduleAuditReviewState(
       errors: errors,
-      openWarnings: warnings.filter { !acceptedKeys.contains($0.reviewKey) },
-      acknowledgedWarnings: warnings.filter { acceptedKeys.contains($0.reviewKey) }
+      openWarnings: warnings.filter { !isAcknowledged($0) },
+      acknowledgedWarnings: warnings.filter { isAcknowledged($0) }
     )
   }
 }
@@ -109,6 +131,7 @@ public struct CommanderScheduleAuditReport: Codable, Equatable, Sendable {
   public let stayDayCount: Int?
   public let eventCount: Int
   public let procedureCount: Int
+  public let visitCount: Int
   public let mealCount: Int
   public let issues: [CommanderScheduleAuditIssue]
 
@@ -224,7 +247,8 @@ public enum CommanderScheduleAudit {
       stayTo: stayTo,
       stayDayCount: stayRange.map { inclusiveDayCount(from: $0.from, to: $0.to) },
       eventCount: schedule.events.count,
-      procedureCount: schedule.events.filter { $0.kind == .procedure }.count,
+      procedureCount: schedule.events.filter { $0.kind == .procedure && !isVisit($0) }.count,
+      visitCount: schedule.events.filter { $0.kind == .procedure && isVisit($0) }.count,
       mealCount: schedule.events.filter { $0.kind == .meal }.count,
       issues: issues.sorted {
         ($0.date ?? "", $0.severity.rawValue, $0.code, $0.stableId ?? "") <
@@ -291,7 +315,7 @@ public enum CommanderScheduleAudit {
     while day <= range.to {
       let date = formatDate(day)
       let dayEvents = eventsByDate[date] ?? []
-      let procedureCount = dayEvents.filter { $0.kind == .procedure }.count
+      let procedureCount = dayEvents.filter { $0.kind == .procedure && !isVisit($0) }.count
       let weekday = calendar.component(.weekday, from: day)
 
       if weekday == 1 {
@@ -332,6 +356,10 @@ public enum CommanderScheduleAudit {
       guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
       day = next
     }
+  }
+
+  private static func isVisit(_ event: ScheduleEvent) -> Bool {
+    normalized(event.procedureType ?? "") == "vizita" || normalized(event.title) == "vizita"
   }
 
   private static func normalized(_ value: String) -> String {

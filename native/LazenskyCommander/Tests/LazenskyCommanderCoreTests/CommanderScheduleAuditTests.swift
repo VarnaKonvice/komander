@@ -46,6 +46,25 @@ struct CommanderScheduleAuditTests {
     #expect(!report.issues.contains { $0.code == "sunday-meals-review" })
   }
 
+  @Test func visitsAreReportedSeparatelyAndDoNotCountAsProcedures() {
+    let events = [
+      meal(id: "sun.breakfast", date: "2026-09-06", start: "07:30", end: "08:00", title: "Snídaně"),
+      meal(id: "sun.lunch", date: "2026-09-06", start: "12:00", end: "12:40", title: "Oběd"),
+      meal(id: "sun.dinner", date: "2026-09-06", start: "17:30", end: "18:00", title: "Večeře"),
+      makeEvent(id: "sun.visit", date: "2026-09-06", start: "06:35", end: "06:40", title: "Vizita")
+    ]
+    let report = CommanderScheduleAudit.run(
+      schedule(from: "2026-09-06", to: "2026-09-06", events: events),
+      policy: .petrSpaOperational
+    )
+
+    #expect(report.eventCount == 4)
+    #expect(report.procedureCount == 0)
+    #expect(report.visitCount == 1)
+    #expect(report.mealCount == 3)
+    #expect(!report.issues.contains { $0.code == "sunday-procedure-review" })
+  }
+
   @Test func saturdayBelowThreeProceduresIsReviewWarningNotBlockingError() {
     let events = [
       makeEvent(id: "sat.a", date: "2026-09-05", start: "09:00", end: "09:20", title: "Masáž"),
@@ -95,7 +114,7 @@ struct CommanderScheduleAuditTests {
     #expect(report.issues.filter { $0.code == "procedure-overlap-review" }.count == 2)
   }
 
-  @Test func acknowledgedWarningStopsBlockingAcceptanceOnlyForSameScheduleVersion() {
+  @Test func acknowledgedWarningRemainsAcceptedAcrossUnrelatedScheduleVersions() {
     let events = [
       makeEvent(id: "a", date: "2026-09-07", start: "09:00", end: "09:30", title: "Masáž"),
       makeEvent(id: "b", date: "2026-09-07", start: "09:20", end: "09:40", title: "Ergoterapie")
@@ -103,7 +122,7 @@ struct CommanderScheduleAuditTests {
     let report = CommanderScheduleAudit.run(schedule(from: "2026-09-07", to: "2026-09-07", events: events))
     let warning = report.issues.first { $0.code == "procedure-overlap-review" }!
     let acknowledgement = CommanderScheduleAuditAcknowledgement(
-      scheduleVersion: report.scheduleVersion,
+      scheduleVersion: report.scheduleVersion - 1,
       reviewKey: warning.reviewKey,
       confirmedAt: "2026-09-07T08:00:00Z",
       note: "Záměrný souběh fyzioterapie"
@@ -113,14 +132,99 @@ struct CommanderScheduleAuditTests {
     #expect(resolved.acknowledgedWarnings.count == 1)
     #expect(resolved.canBeAccepted)
 
-    let staleAck = CommanderScheduleAuditAcknowledgement(
-      scheduleVersion: report.scheduleVersion + 1,
-      reviewKey: warning.reviewKey,
-      confirmedAt: "2026-09-07T08:00:00Z"
+    let changedWarning = CommanderScheduleAuditIssue(
+      severity: .warning,
+      code: warning.code,
+      message: warning.message + " Změněný kontext.",
+      stableId: warning.stableId,
+      date: warning.date
     )
-    let unresolved = CommanderScheduleAuditReview.resolve(report: report, acknowledgements: [staleAck])
+    let changedReport = CommanderScheduleAuditReport(
+      scheduleVersion: report.scheduleVersion + 1,
+      stayFrom: report.stayFrom,
+      stayTo: report.stayTo,
+      stayDayCount: report.stayDayCount,
+      eventCount: report.eventCount,
+      procedureCount: report.procedureCount,
+      visitCount: report.visitCount,
+      mealCount: report.mealCount,
+      issues: [changedWarning]
+    )
+    let unresolved = CommanderScheduleAuditReview.resolve(report: changedReport, acknowledgements: [acknowledgement])
     #expect(unresolved.openWarnings.count == 1)
     #expect(!unresolved.canBeAccepted)
+  }
+
+  @Test func operationalAcknowledgementSurvivesCountWordingChangeOnSameDay() {
+    let original = CommanderScheduleAuditIssue(
+      severity: .warning,
+      code: "low-procedure-count-review",
+      message: "Den má jen 2 procedur, provozní očekávání je alespoň 3; ověřit proti papíru nebo lékařské změně.",
+      date: "2026-10-24"
+    )
+    let changed = CommanderScheduleAuditIssue(
+      severity: .warning,
+      code: "low-procedure-count-review",
+      message: "Den má jen 1 procedur, provozní očekávání je alespoň 3; ověřit proti papíru nebo lékařské změně.",
+      date: "2026-10-24"
+    )
+    let report = CommanderScheduleAuditReport(
+      scheduleVersion: 14,
+      stayFrom: "2026-09-30",
+      stayTo: "2026-10-28",
+      stayDayCount: 29,
+      eventCount: 194,
+      procedureCount: 82,
+      visitCount: 28,
+      mealCount: 84,
+      issues: [changed]
+    )
+    let acknowledgement = CommanderScheduleAuditAcknowledgement(
+      scheduleVersion: 13,
+      reviewKey: original.reviewKey,
+      confirmedAt: "2026-10-20T10:00:00Z"
+    )
+
+    let resolved = CommanderScheduleAuditReview.resolve(
+      report: report,
+      acknowledgements: [acknowledgement],
+      operationalWarningsOnOrAfter: "2026-10-21"
+    )
+    #expect(resolved.openWarnings.isEmpty)
+    #expect(resolved.acknowledgedWarnings == [changed])
+  }
+
+  @Test func elapsedOperationalWarningsStopRequestingConfirmation() {
+    let past = CommanderScheduleAuditIssue(
+      severity: .warning,
+      code: "low-procedure-count-review",
+      message: "Den má jen 2 procedur, provozní očekávání je alespoň 3; ověřit proti papíru nebo lékařské změně.",
+      date: "2026-10-17"
+    )
+    let future = CommanderScheduleAuditIssue(
+      severity: .warning,
+      code: "low-procedure-count-review",
+      message: "Den má jen 1 procedur, provozní očekávání je alespoň 3; ověřit proti papíru nebo lékařské změně.",
+      date: "2026-10-24"
+    )
+    let report = CommanderScheduleAuditReport(
+      scheduleVersion: 14,
+      stayFrom: "2026-09-30",
+      stayTo: "2026-10-28",
+      stayDayCount: 29,
+      eventCount: 194,
+      procedureCount: 82,
+      visitCount: 28,
+      mealCount: 84,
+      issues: [past, future]
+    )
+
+    let resolved = CommanderScheduleAuditReview.resolve(
+      report: report,
+      acknowledgements: [],
+      operationalWarningsOnOrAfter: "2026-10-21"
+    )
+    #expect(resolved.openWarnings == [future])
   }
 
   @Test func acknowledgementCanNeverHideBlockingError() {

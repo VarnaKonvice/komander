@@ -45,6 +45,8 @@ final class CommanderViewModel: ObservableObject {
   @Published private(set) var leadTimeOverrides = LeadTimeOverrides()
   @Published private(set) var leadTimeProjectionRevision = 0
   @Published private(set) var scheduleAuditAcknowledgements: [CommanderScheduleAuditAcknowledgement] = []
+  @Published private(set) var alertPauseUntil: Date?
+  @Published private(set) var alertPauseIndefinitely = false
 
   @Published private(set) var phoneWidgetIssue: String?
   private var phoneWidgetCache: FileWatchScheduleCache?
@@ -62,12 +64,15 @@ final class CommanderViewModel: ObservableObject {
   private var delayedRecoveryTask: Task<Void, Never>?
   private var leadTimeSyncTask: Task<Void, Never>?
   private var launchMaintenanceTask: Task<Void, Never>?
+  private var alertPauseExpirationTask: Task<Void, Never>?
   private var suppressAutomaticForegroundUntil: Date?
   private var synchronizationRequests = CommanderSynchronizationRequestQueue()
 
   private static let automaticForegroundRefreshInterval: TimeInterval = 5 * 60
   private static let launchForegroundGraceInterval: TimeInterval = 8
   private static let spaLeadTimePresetKey = "lazensky.commander.leadTimePreset.20-vizita5.v1"
+  private static let alertPauseUntilKey = "lazensky.commander.alertPause.until.v1"
+  private static let alertPauseIndefiniteKey = "lazensky.commander.alertPause.indefinite.v1"
 
   private let clock: @Sendable () -> Date
 
@@ -96,6 +101,10 @@ final class CommanderViewModel: ObservableObject {
       key: "lazensky.commander.scheduleAuditReview.\(namespace).v1"
     )
     let savedPreferences = leadTimePreferences.load()
+    if !CommanderDesignPreview.enabled {
+      alertPauseUntil = UserDefaults.standard.object(forKey: Self.alertPauseUntilKey) as? Date
+      alertPauseIndefinitely = UserDefaults.standard.bool(forKey: Self.alertPauseIndefiniteKey)
+    }
     let scheduleSnapshotKey = "lazensky.commander.scheduleSnapshot.\(namespace).v1"
     let initialSchedule: Schedule? = {
       guard !CommanderDesignPreview.enabled,
@@ -382,6 +391,82 @@ final class CommanderViewModel: ObservableObject {
     )) ?? schedule.settings.defaultLeadTimeMinutes
   }
 
+  var isAlertPauseActive: Bool {
+    activeAlertSuppressionUntil(at: clock()) != nil
+  }
+
+  private func activeAlertSuppressionUntil(at now: Date) -> Date? {
+    if alertPauseIndefinitely { return .distantFuture }
+    guard let alertPauseUntil, alertPauseUntil > now else { return nil }
+    return alertPauseUntil
+  }
+
+  private func persistAlertPause() {
+    let defaults = UserDefaults.standard
+    defaults.set(alertPauseIndefinitely, forKey: Self.alertPauseIndefiniteKey)
+    if let alertPauseUntil {
+      defaults.set(alertPauseUntil, forKey: Self.alertPauseUntilKey)
+    } else {
+      defaults.removeObject(forKey: Self.alertPauseUntilKey)
+    }
+  }
+
+  @discardableResult
+  private func normalizeAlertPauseIfExpired() -> Bool {
+    guard !alertPauseIndefinitely, let alertPauseUntil, alertPauseUntil <= clock() else {
+      return false
+    }
+    self.alertPauseUntil = nil
+    persistAlertPause()
+    return true
+  }
+
+  private func scheduleAlertPauseExpiration() {
+    alertPauseExpirationTask?.cancel()
+    alertPauseExpirationTask = nil
+    guard !alertPauseIndefinitely, let alertPauseUntil else { return }
+    let delay = alertPauseUntil.timeIntervalSince(clock())
+    guard delay > 0 else { return }
+    alertPauseExpirationTask = Task { @MainActor [weak self] in
+      let nanoseconds = UInt64(min(delay, 7 * 24 * 60 * 60) * 1_000_000_000)
+      try? await Task.sleep(nanoseconds: nanoseconds)
+      guard !Task.isCancelled, let self else { return }
+      // Very long pauses are rescheduled in bounded chunks so the UInt64 delay stays safe.
+      if let until = self.alertPauseUntil, until > self.clock() {
+        self.scheduleAlertPauseExpiration()
+        return
+      }
+      self.alertPauseUntil = nil
+      self.alertPauseIndefinitely = false
+      self.persistAlertPause()
+      await self.synchronizeWithRecovery(maxAttempts: 2, automatic: false, source: .cached)
+      await self.synchronizeWithRecovery(maxAttempts: 2, automatic: true, source: .remote)
+    }
+  }
+
+  func pauseAlerts(until: Date?) {
+    guard !CommanderDesignPreview.enabled else { return }
+    if let until, until <= clock() { return }
+    alertPauseUntil = until
+    alertPauseIndefinitely = until == nil
+    persistAlertPause()
+    scheduleAlertPauseExpiration()
+    Task { await synchronizeWithRecovery(maxAttempts: 2, automatic: false, source: .cached) }
+  }
+
+  func resumeAlerts() {
+    guard !CommanderDesignPreview.enabled else { return }
+    alertPauseExpirationTask?.cancel()
+    alertPauseExpirationTask = nil
+    alertPauseUntil = nil
+    alertPauseIndefinitely = false
+    persistAlertPause()
+    Task {
+      await synchronizeWithRecovery(maxAttempts: 2, automatic: false, source: .cached)
+      await synchronizeWithRecovery(maxAttempts: 2, automatic: true, source: .remote)
+    }
+  }
+
   func bootstrap() async {
     recordAcceptanceProgress("bootstrap-start")
     if CommanderDesignPreview.enabled {
@@ -397,6 +482,8 @@ final class CommanderViewModel: ObservableObject {
       return
     }
 
+    normalizeAlertPauseIfExpired()
+    scheduleAlertPauseExpiration()
     applySpaLeadTimePresetIfNeeded()
     let cachedSchedule = try? await scheduleSync.loadLastSchedule()
     if cachedSchedule != latestSchedule {
@@ -453,6 +540,8 @@ final class CommanderViewModel: ObservableObject {
 
   func handleForeground() async {
     if CommanderDesignPreview.enabled { return }
+    normalizeAlertPauseIfExpired()
+    scheduleAlertPauseExpiration()
     if let until = suppressAutomaticForegroundUntil, clock() < until { return }
     suppressAutomaticForegroundUntil = nil
     await procedureActivities.retireActivitiesForMVP()
@@ -466,6 +555,11 @@ final class CommanderViewModel: ObservableObject {
 
   private func reconcileProcedureActivitiesFromLatestSchedule() async {
     if CommanderDesignPreview.enabled { return }
+    if activeAlertSuppressionUntil(at: clock()) != nil {
+      await procedureActivities.suspendAll()
+      liveActivityIssue = nil
+      return
+    }
     guard let latestSchedule else { return }
     await procedureActivities.reconcile(
       schedule: latestSchedule,
@@ -619,7 +713,7 @@ final class CommanderViewModel: ObservableObject {
       note: note
     )
     var current = scheduleAuditAcknowledgements.filter {
-      !($0.scheduleVersion == acknowledgement.scheduleVersion && $0.reviewKey == acknowledgement.reviewKey)
+      $0.reviewKey != acknowledgement.reviewKey
     }
     current.append(acknowledgement)
     scheduleAuditAcknowledgements = current.sorted {
@@ -629,9 +723,8 @@ final class CommanderViewModel: ObservableObject {
   }
 
   func revokeScheduleAuditAcknowledgement(for issue: CommanderScheduleAuditIssue) {
-    guard let schedule = latestSchedule else { return }
     let filtered = scheduleAuditAcknowledgements.filter {
-      !($0.scheduleVersion == schedule.scheduleVersion && $0.reviewKey == issue.reviewKey)
+      $0.reviewKey != issue.reviewKey
     }
     guard filtered != scheduleAuditAcknowledgements else { return }
     scheduleAuditAcknowledgements = filtered
@@ -724,22 +817,29 @@ final class CommanderViewModel: ObservableObject {
       do {
         let projectionOverrides = leadTimeOverrides
         let projectionRevision = leadTimeProjectionRevision
+        let suppressionUntil = activeAlertSuppressionUntil(at: clock())
         let result = try await scheduleSync.synchronize(
           source: source,
           overrides: projectionOverrides,
-          projectionRevision: projectionRevision
+          projectionRevision: projectionRevision,
+          suppressAlertsUntil: suppressionUntil
         )
         acceptedSnapshot = result.watchSnapshot
         latestSchedule = result.schedule
         summary = result.alarmSummary
         await reloadHomeWidgets()
-        await procedureActivities.reconcile(
-          schedule: result.schedule,
-          overrides: projectionOverrides,
-          projectionRevision: projectionRevision,
-          now: clock()
-        )
-        liveActivityIssue = await procedureActivities.issue
+        if suppressionUntil != nil {
+          await procedureActivities.suspendAll()
+          liveActivityIssue = nil
+        } else {
+          await procedureActivities.reconcile(
+            schedule: result.schedule,
+            overrides: projectionOverrides,
+            projectionRevision: projectionRevision,
+            now: clock()
+          )
+          liveActivityIssue = await procedureActivities.issue
+        }
         watchTransferStatus = result.watchDeliveryStatus.diagnosticText
         recovery.recordAlarmVerification(succeeded: result.alarmSummary.succeeded)
 
@@ -753,7 +853,8 @@ final class CommanderViewModel: ObservableObject {
           try await eventNotifications.reconcile(snapshot: result.watchSnapshot,
             dataset: CommanderRuntimeDataset.current, channel: channel.rawValue,
             includeDeparture: !result.alarmSummary.succeeded && existingAlarmEvents != nil, now: clock(),
-            departureExclusions: existingAlarmEvents ?? Set(result.schedule.events.map(\.stableId)))
+            departureExclusions: existingAlarmEvents ?? Set(result.schedule.events.map(\.stableId)),
+            suppressUntil: suppressionUntil)
           notificationsVerified = true
           fallbackStatus = result.alarmSummary.succeeded ? "Začátky událostí ověřeny" :
             existingAlarmEvents == nil ? "Začátky ověřeny; odchod nelze ověřit" : "Záloha odchodu a začátky ověřeny"
@@ -778,7 +879,8 @@ final class CommanderViewModel: ObservableObject {
           userActionMessage = nil
           errorMessage = nil
 
-          recoveryStatus = result.alarmSummary.repairAttempts > 0 ? "Opraveno a ověřeno"
+          recoveryStatus = suppressionUntil != nil ? "Upozornění jsou pozastavena"
+            : result.alarmSummary.repairAttempts > 0 ? "Opraveno a ověřeno"
             : source == .cached ? "Ověřeno z uloženého rozpisu" : "Ověřeno"
           await refreshAccess()
           return
@@ -852,7 +954,7 @@ private final class IPhoneEventNotificationService {
 
   func reconcile(snapshot: WatchScheduleSnapshot, dataset: CommanderScheduleDataset,
                  channel: String, includeDeparture: Bool, now: Date,
-                 departureExclusions: Set<String> = []) async throws {
+                 departureExclusions: Set<String> = [], suppressUntil: Date? = nil) async throws {
     // Validate before removing anything, even when permission has been revoked.
     _ = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
       channel: channel, includeDeparture: includeDeparture, now: now, departureExclusions: departureExclusions)
@@ -866,8 +968,11 @@ private final class IPhoneEventNotificationService {
         dataset.accepts(stableID: String($0.identifier.dropFirst(legacyPrefix.count)))
     }.map(\.identifier)
     let otherCount = pending.filter { !$0.identifier.hasPrefix(prefix) && !legacy.contains($0.identifier) }.count
-    let desired = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
+    let desiredBase = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
       channel: channel, includeDeparture: includeDeparture, now: now, limit: max(0, 60 - otherCount), departureExclusions: departureExclusions)
+    let desired = desiredBase.filter { item in
+      suppressUntil.map { item.fireAt >= $0 } ?? true
+    }
     let current = pending.map { request in
       CommanderScheduledNotification(identifier: request.identifier, title: request.content.title,
         body: request.content.body, fireAt: (request.trigger as? UNCalendarNotificationTrigger)?.nextTriggerDate() ?? .distantPast,
@@ -905,8 +1010,11 @@ private final class IPhoneEventNotificationService {
         throw NSError(domain: "CommanderNotifications", code: 2,
           userInfo: [NSLocalizedDescriptionKey: "Úklid oznámení se nepodařilo ověřit."])
       }
-      let future = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
+      let futureBase = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
         channel: channel, includeDeparture: includeDeparture, now: now, departureExclusions: departureExclusions)
+      let future = futureBase.filter { item in
+        suppressUntil.map { item.fireAt >= $0 } ?? true
+      }
       guard future.isEmpty else {
         throw NSError(domain: "CommanderNotifications", code: 3,
           userInfo: [NSLocalizedDescriptionKey: "Pro oznámení začátků nezbývá místo v systémové frontě."])

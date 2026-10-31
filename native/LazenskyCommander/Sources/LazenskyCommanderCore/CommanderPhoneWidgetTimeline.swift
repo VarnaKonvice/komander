@@ -48,6 +48,19 @@ public struct CommanderPhoneWidgetTimelinePoint: Sendable {
   public let presentation: CommanderPhoneWidgetPresentation
 }
 
+public enum CommanderCircularWidgetCountdown {
+  public static func text(now: Date, target: Date) -> String {
+    let seconds = max(0, target.timeIntervalSince(now))
+    guard seconds > 0 else { return "teď" }
+
+    let minutes = Int(ceil(seconds / 60))
+    if minutes < 60 { return "\(minutes)m" }
+
+    let hours = Int(ceil(Double(minutes) / 60))
+    return "\(hours)h"
+  }
+}
+
 public enum CommanderPhoneWidgetTimeline {
   public static let horizon: TimeInterval = 24 * 60 * 60
   public static let refreshInterval: TimeInterval = 6 * 60 * 60
@@ -72,6 +85,54 @@ public enum CommanderPhoneWidgetTimeline {
     if let finalEnd = projection.events.map(\.endAt).max() {
       include(finalEnd.addingTimeInterval(CommanderWatchWidgetContract.expiryGracePeriod))
     }
+    return dates.sorted().map {
+      .init(date: $0, presentation: .init(projection: projection, at: $0))
+    }
+  }
+
+  public static func circularPoints(
+    snapshot: WatchScheduleSnapshot,
+    now: Date
+  ) throws -> [CommanderPhoneWidgetTimelinePoint] {
+    let projection = try CommanderScheduleProjection(schedule: snapshot.schedule, overrides: snapshot.leadTimeOverrides)
+    let initial = CommanderPhoneWidgetPresentation(projection: projection, at: now)
+    guard initial.hasSchedule else {
+      return [.init(date: now, presentation: initial)]
+    }
+
+    var dates: Set<Date> = [now]
+    func include(_ date: Date) {
+      if date >= now && date <= now.addingTimeInterval(horizon) { dates.insert(date) }
+    }
+
+    guard let startAt = initial.live.startAt,
+          let endAt = initial.live.endAt,
+          endAt >= now
+    else {
+      return [.init(date: now, presentation: initial)]
+    }
+
+    // Keep far-away countdowns compact and cheap: one whole-hour step is enough
+    // until the final hour, where the circular widget must advance every minute.
+    var hourBoundary = startAt.addingTimeInterval(-60 * 60)
+    while hourBoundary > now {
+      include(hourBoundary)
+      hourBoundary = hourBoundary.addingTimeInterval(-60 * 60)
+    }
+
+    let denseStart = max(now, startAt.addingTimeInterval(-60 * 60))
+    let firstMinute = Date(
+      timeIntervalSinceReferenceDate:
+        floor(denseStart.timeIntervalSinceReferenceDate / 60) * 60 + 60
+    )
+    var minute = firstMinute
+    while minute <= endAt {
+      include(minute)
+      minute = minute.addingTimeInterval(60)
+    }
+    include(startAt)
+    include(endAt)
+
     return dates.sorted().map {
       .init(date: $0, presentation: .init(projection: projection, at: $0))
     }

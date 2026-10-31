@@ -64,6 +64,17 @@ actor CommanderProcedureLiveActivityCoordinator {
     }
   }
 
+  /// Explicit user pause: immediately retire every Commander Live Activity.
+  /// The canonical schedule is untouched; normal reconciliation recreates context after resume.
+  func suspendAll() async {
+    issue = nil
+    _ = try? await CommanderProcedureLiveActivityPolicy.operations.run {
+      for activity in Self.managedActivities where Self.isOngoing(activity.activityState) {
+        await activity.end(nil, dismissalPolicy: .immediate)
+      }
+    }
+  }
+
   /// Retire earlier Commander activities even when no schedule/network is available.
   func retireActivitiesForMVP() async {
     guard !CommanderMVPPolicy.createsLiveActivities else { return }

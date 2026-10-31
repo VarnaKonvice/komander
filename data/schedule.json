@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "scheduleVersion": 13,
-  "updatedAt": "2026-09-30T10:15:11Z",
+  "scheduleVersion": 14,
+  "updatedAt": "2026-10-21T07:28:22Z",
   "stay": {
     "spa": "Rehabilitační sanatorium – Lázně Darkov",
     "dateFrom": "2026-09-30",
@@ -1618,10 +1618,10 @@
       "leadTimeMinutes": 25
     },
     {
-      "stableId": "darkov-2026-10-21-celotelova-viriva-koupel-0915",
+      "stableId": "darkov-2026-10-21-celotelova-viriva-koupel-0945",
       "date": "2026-10-21",
-      "start": "09:15",
-      "end": "09:35",
+      "start": "09:45",
+      "end": "10:05",
       "title": "Celotělová vířivá koupel",
       "location": "LAZ7 · RS D/2 · Svět vitality",
       "kind": "procedure",
@@ -1651,10 +1651,10 @@
       "leadTimeMinutes": 10
     },
     {
-      "stableId": "darkov-2026-10-21-viriva-koupel-hkk-1200",
+      "stableId": "darkov-2026-10-21-viriva-koupel-hkk-1300",
       "date": "2026-10-21",
-      "start": "12:00",
-      "end": "12:20",
+      "start": "13:00",
+      "end": "13:20",
       "title": "Vířivá koupel HKK",
       "location": "LAZ1 · RS C/1 · vodoléčba",
       "kind": "procedure",

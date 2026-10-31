@@ -95,6 +95,41 @@ import Testing
   #expect(summary.procedures.map(\.representativeEvent.stableId) == ["past", "future"])
   let atEnd = try CommanderStayPresentation.make(schedule: schedule, now: overviewNow("2026-08-20T09:30:00"))
   #expect(atEnd.completedProcedures == 2)
+  #expect(atEnd.visits == nil)
+}
+
+@Test func staySeparatesVisitsAndSplitsOnlyIndividualLTVByConcreteTitle() throws {
+  let schedule = overviewSchedule(events: [
+    overviewEvent("walk", start: "08:00", end: "08:20", title: "Elektrický chodník", type: "Individuální LTV"),
+    overviewEvent("imoove", start: "09:00", end: "09:10", title: "ILTV Imoove", type: "ILTV Imoove"),
+    overviewEvent("ergo", start: "09:30", end: "09:50", title: "ILTV ergoterapie", type: "Individuální LTV"),
+    overviewEvent("individual", start: "09:40", end: "10:00", title: "Individuální LTV", type: "Individuální LTV"),
+    overviewEvent("motomed", start: "10:00", end: "10:20", title: "Motomed", type: "Individuální LTV"),
+    overviewEvent("massage", start: "10:30", end: "10:50", title: "Klasická masáž", type: "Klasická masáž"),
+    overviewEvent("bath-a", start: "08:30", end: "08:50", title: "Celotělová vířivá koupel", type: "Vířivá lázeň"),
+    overviewEvent("bath-b", start: "11:00", end: "11:20", title: "Vířivá koupel HKK", type: "Vířivá lázeň"),
+    overviewEvent("visit-past", start: "07:00", end: "07:20", title: "Vizita", type: "Vizita"),
+    overviewEvent("visit-future", start: "12:00", end: "12:20", title: "Vizita", type: "Vizita")
+  ])
+
+  let summary = try CommanderStayPresentation.make(schedule: schedule, now: overviewNow("2026-08-20T09:15:00"))
+
+  #expect(summary.totalProcedures == 8)
+  #expect(summary.completedProcedures == 3)
+  #expect(summary.procedures.map(\.name) == [
+    "Elektrický chodník",
+    "ILTV Imoove",
+    "ILTV ergoterapie",
+    "Individuální LTV",
+    "Motomed",
+    "Klasická masáž",
+    "Vířivá lázeň"
+  ])
+  #expect(summary.procedures.map(\.total) == [1, 1, 1, 1, 1, 1, 2])
+  #expect(summary.procedures.map(\.completed) == [1, 1, 0, 0, 0, 0, 1])
+  #expect(summary.visits?.name == "Vizita")
+  #expect(summary.visits?.total == 2)
+  #expect(summary.visits?.completed == 1)
 }
 
 @Test func stayPeriodIsInclusiveAndDoesNotInventCurrentDayOutsideStay() throws {
@@ -156,7 +191,10 @@ import Testing
   #expect(CommanderDateText.shortDay(date) == "Po 31. 8.")
   #expect(CommanderDateText.numericDate(date) == "31. 8. 2026")
   #expect(CommanderDateText.numericDate(isoDate: "2026-08-15") == "15. 8. 2026")
+  #expect(CommanderDateText.numericDateWithWeekday(isoDate: "2026-10-24") == "Sobota · 24. 10. 2026")
+  #expect(CommanderDateText.numericDateWithWeekday(isoDate: "2026-10-25") == "Neděle · 25. 10. 2026")
   #expect(CommanderDateText.numericDate(isoDate: "2026-02-30") == nil)
+  #expect(CommanderDateText.numericDateWithWeekday(isoDate: "2026-02-30") == nil)
 }
 
 @Test func emptyScheduleHasNoWeekEventsOrProcedures() throws {
@@ -166,6 +204,7 @@ import Testing
   #expect(stay.totalProcedures == 0)
   #expect(stay.completedProcedures == 0)
   #expect(stay.procedures.isEmpty)
+  #expect(stay.visits == nil)
 }
 
 @Test func invalidScheduleIsReportedInsteadOfPartiallyPresented() throws {

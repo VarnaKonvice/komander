@@ -68,23 +68,24 @@ public struct CommanderStayPresentation: Equatable, Sendable {
   public let completedProcedures: Int
   public let totalProcedures: Int
   public let procedures: [CommanderProcedureSummary]
+  public let visits: CommanderProcedureSummary?
 
   public static func make(schedule: Schedule, now: Date) throws -> Self {
     try NativeAlarmContract.validate(schedule)
-    let procedures = schedule.events.filter { $0.kind == .procedure }
+    let allProcedures = schedule.events.filter { $0.kind == .procedure }
     // Schedule has no attendance records: completion means the scheduled end has passed.
-    let completedIDs = Set(try procedures.filter {
+    let completedIDs = Set(try allProcedures.filter {
       try NativeAlarmContract.dateTime(date: $0.date, time: $0.end) <= now
     }.map(\.stableId))
-    let groups = Dictionary(grouping: procedures) { event in
-      let type = event.procedureType?.trimmingCharacters(in: .whitespacesAndNewlines)
-      return type.flatMap { $0.isEmpty ? nil : $0 } ?? event.title
-    }
+    let visitEvents = allProcedures.filter(isVisit)
+    let procedures = allProcedures.filter { !isVisit($0) }
+    let groups = Dictionary(grouping: procedures, by: procedureSummaryName)
+
     return Self(
       period: period(stay: schedule.stay, now: now),
-      completedProcedures: completedIDs.count,
+      completedProcedures: procedures.filter { completedIDs.contains($0.stableId) }.count,
       totalProcedures: procedures.count,
-      procedures: groups.keys.sorted().map { name in
+      procedures: groups.keys.sorted(by: procedureSummaryComesBefore).map { name in
         let events = groups[name]!
         return CommanderProcedureSummary(
           name: name,
@@ -92,8 +93,58 @@ public struct CommanderStayPresentation: Equatable, Sendable {
           total: events.count,
           representativeEvent: events[0]
         )
+      },
+      visits: visitEvents.first.map { representative in
+        CommanderProcedureSummary(
+          name: "Vizita",
+          completed: visitEvents.filter { completedIDs.contains($0.stableId) }.count,
+          total: visitEvents.count,
+          representativeEvent: representative
+        )
       }
     )
+  }
+
+  private static func procedureSummaryName(for event: ScheduleEvent) -> String {
+    let type = event.procedureType?.trimmingCharacters(in: .whitespacesAndNewlines)
+    let nonEmptyType = type.flatMap { $0.isEmpty ? nil : $0 }
+
+    // "Individuální LTV" is an umbrella type in the canonical schedule. For the stay
+    // overview only, keep its concrete exercise names visible (walking belt, Motomed,
+    // ergotherapy, individual LTV). Other procedure types stay grouped as before.
+    if normalized(nonEmptyType) == "individualni ltv" {
+      let title = event.title.trimmingCharacters(in: .whitespacesAndNewlines)
+      if !title.isEmpty { return title }
+    }
+    return nonEmptyType ?? event.title
+  }
+
+  private static func procedureSummaryComesBefore(_ lhs: String, _ rhs: String) -> Bool {
+    let priority: [String: Int] = [
+      "elektricky chodnik": 0,
+      "iltv imoove": 1,
+      "iltv ergoterapie": 2,
+      "individualni ltv": 3,
+      "motomed": 4
+    ]
+
+    let lhsPriority = priority[normalized(lhs)] ?? Int.max
+    let rhsPriority = priority[normalized(rhs)] ?? Int.max
+    if lhsPriority != rhsPriority {
+      return lhsPriority < rhsPriority
+    }
+    return lhs.localizedStandardCompare(rhs) == .orderedAscending
+  }
+
+  private static func isVisit(_ event: ScheduleEvent) -> Bool {
+    normalized(event.procedureType) == "vizita" || normalized(event.title) == "vizita"
+  }
+
+  private static func normalized(_ value: String?) -> String {
+    value?
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+      .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "cs_CZ"))
+      ?? ""
   }
 
   public static func period(stay: [String: String], now: Date) -> CommanderStayPeriod? {

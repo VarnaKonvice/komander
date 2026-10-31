@@ -153,7 +153,7 @@ private struct CommanderProcedureOverviewCard: View {
       accent: CommanderDesignTokens.Colors.therapyPink
     ) {
       CommanderProgressMeter(
-        title: "Ukončené podle rozpisu",
+        title: "Ukončené procedury podle rozpisu",
         value: "\(stay.completedProcedures) / \(stay.totalProcedures)",
         fraction: procedureFraction,
         accent: CommanderDesignTokens.Colors.therapyPink
@@ -170,6 +170,16 @@ private struct CommanderProcedureOverviewCard: View {
           }
         }
       }
+
+      if let visits = stay.visits {
+        VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.small) {
+          Text("Vizity · nezapočítávají se do procedur")
+            .commanderFont(.label)
+            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          CommanderProcedureProgressRow(procedure: visits, unit: .visit)
+        }
+        .padding(.top, CommanderDesignTokens.Spacing.small)
+      }
     }
   }
 
@@ -179,19 +189,37 @@ private struct CommanderProcedureOverviewCard: View {
   }
 }
 
+private enum CommanderProcedureProgressUnit {
+  case procedure
+  case visit
+
+  func label(for count: Int) -> String {
+    switch (self, count) {
+    case (.procedure, 1): return "procedura"
+    case (.procedure, 2...4): return "procedury"
+    case (.procedure, _): return "procedur"
+    case (.visit, 1): return "vizita"
+    case (.visit, 2...4): return "vizity"
+    case (.visit, _): return "vizit"
+    }
+  }
+}
+
 private struct CommanderProcedureProgressRow: View {
   let procedure: CommanderProcedureSummary
+  let unit: CommanderProcedureProgressUnit
+
+  init(procedure: CommanderProcedureSummary, unit: CommanderProcedureProgressUnit = .procedure) {
+    self.procedure = procedure
+    self.unit = unit
+  }
 
   private var accent: Color {
     Color(commanderHex: CommanderVisualAssets.accent(for: procedure.representativeEvent))
   }
 
   private var procedureUnit: String {
-    switch procedure.total {
-    case 1: return "procedura"
-    case 2...4: return "procedury"
-    default: return "procedur"
-    }
+    unit.label(for: procedure.total)
   }
 
   private var isSingleWordName: Bool {

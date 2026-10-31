@@ -14,6 +14,19 @@ public enum CommanderDateText {
     return numericDate(date)
   }
 
+  public static func numericDateWithWeekday(_ date: Date) -> String {
+    "\(capitalize(format(date, pattern: "EEEE"))) · \(numericDate(date))"
+  }
+
+  public static func numericDateWithWeekday(isoDate: String) -> String? {
+    guard let date = try? NativeAlarmContract.dateTime(date: isoDate, time: "00:00") else { return nil }
+    return numericDateWithWeekday(date)
+  }
+
+  public static func isoDate(_ date: Date) -> String {
+    format(date, pattern: "yyyy-MM-dd")
+  }
+
   private static func format(_ date: Date, pattern: String) -> String {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "cs_CZ")
