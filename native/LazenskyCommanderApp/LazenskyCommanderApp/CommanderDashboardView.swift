@@ -73,6 +73,14 @@ struct CommanderDashboardView: View {
   }
 }
 
+private func commanderCzechDateTime(_ date: Date) -> String {
+  let formatter = DateFormatter()
+  formatter.locale = Locale(identifier: "cs_CZ")
+  formatter.timeZone = .current
+  formatter.dateFormat = "d. M. yyyy 'v' H:mm"
+  return formatter.string(from: date)
+}
+
 struct CommanderDashboardContent: View {
   let schedule: Schedule?
   let overrides: LeadTimeOverrides
@@ -112,7 +120,23 @@ struct CommanderDashboardContent: View {
               endedAt: stayTerminationAt,
               resumeStay: resumeStay
             )
-            CommanderTodayOverviewCard(presentation: presentation)
+
+            VStack(alignment: .leading, spacing: 10) {
+              CommanderTodayOverviewCard(presentation: presentation)
+              CommanderNowDeck(presentation: presentation)
+              if !presentation.timeline.isEmpty {
+                CommanderDayTimelineView(
+                  items: presentation.timeline,
+                  excludedStableIDs: Set(
+                    [presentation.currentEvent, presentation.nextEvent]
+                      .compactMap { $0?.event.stableId }
+                  )
+                )
+              }
+            }
+            .grayscale(0.82)
+            .saturation(0.18)
+            .opacity(0.52)
           } else {
             CommanderAlertPauseCard(
               now: now,
@@ -151,27 +175,27 @@ private struct CommanderStayEndedHeroCard: View {
   let resumeStay: () -> Void
 
   var body: some View {
-    VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
+    VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.section) {
       HStack(alignment: .center, spacing: CommanderDesignTokens.Spacing.medium) {
         CommanderSymbolBadge(
           symbol: "figure.walk",
           color: CommanderDesignTokens.Colors.amber,
-          size: CommanderDesignTokens.Size.featuredBadge
+          size: 68
         )
 
         VStack(alignment: .leading, spacing: 4) {
           Text("Pobyt ukončen")
-            .font(.system(size: 27, weight: .bold))
+            .font(.system(size: 31, weight: .bold))
             .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
 
-          Text("Ukončeno \(endedAt.formatted(date: .abbreviated, time: .shortened))")
-            .font(.system(size: 16, weight: .semibold))
+          Text("Ukončeno \(commanderCzechDateTime(endedAt))")
+            .font(.system(size: 17, weight: .bold))
             .foregroundStyle(CommanderDesignTokens.Colors.amber)
         }
       }
 
       Text("Další alarmy a upozornění jsou vypnuté. Rozpis a historie zůstávají uložené.")
-        .font(.system(size: 16, weight: .medium))
+        .font(.system(size: 17, weight: .medium))
         .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
         .fixedSize(horizontal: false, vertical: true)
 
@@ -184,13 +208,13 @@ private struct CommanderStayEndedHeroCard: View {
           )
 
           Text("Obnovit pobyt")
-            .font(.system(size: 18, weight: .bold))
+            .font(.system(size: 19, weight: .bold))
             .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
 
           Spacer(minLength: CommanderDesignTokens.Spacing.small)
         }
         .padding(CommanderDesignTokens.Spacing.small)
-        .frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 68, alignment: .leading)
         .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
@@ -199,7 +223,8 @@ private struct CommanderStayEndedHeroCard: View {
         surface: .depthInset
       )
     }
-    .padding(CommanderDesignTokens.Spacing.medium)
+    .padding(.horizontal, CommanderDesignTokens.Spacing.medium)
+    .padding(.vertical, 22)
     .frame(maxWidth: .infinity, alignment: .leading)
     .commanderCard(
       accent: CommanderDesignTokens.Colors.amber,
@@ -247,7 +272,7 @@ private struct CommanderAlertPauseCard: View {
 
   private func stayTerminationDetail(_ date: Date) -> String {
     let prefix = date > now ? "Naplánováno na" : "Ukončeno"
-    return "\(prefix) \(date.formatted(date: .abbreviated, time: .shortened))"
+    return "\(prefix) \(commanderCzechDateTime(date))"
   }
 
   var body: some View {
