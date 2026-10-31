@@ -135,9 +135,8 @@ struct CommanderDashboardContent: View {
                 )
               }
             }
-            .grayscale(1)
-            .saturation(0)
-            .opacity(0.28)
+            .saturation(0.7)
+            .opacity(0.92)
           } else {
             CommanderAlertPauseCard(
               now: now,
@@ -373,28 +372,28 @@ private struct CommanderAlertPauseCard: View {
 
   private func actionButton(_ title: String, action: @escaping () -> Void) -> some View {
     Button(action: action) {
-      Text(title)
-        .font(.system(size: 17, weight: .bold))
-        .foregroundStyle(.white)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 11)
-        .background(
-          LinearGradient(
-            colors: [
-              Color(commanderHex: "#14245A"),
-              Color(commanderHex: "#1B3B7F")
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-          )
+      HStack(spacing: 12) {
+        CommanderSymbolBadge(
+          symbol: "arrow.uturn.backward",
+          color: CommanderDesignTokens.Colors.locationBlue,
+          size: CommanderDesignTokens.Size.rowMetricBadge
         )
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(
-          RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .stroke(CommanderDesignTokens.Colors.panelStroke.opacity(0.28), lineWidth: 1)
-        )
+
+        Text(title)
+          .font(.system(size: 18, weight: .bold))
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+
+        Spacer(minLength: 0)
+      }
+      .padding(12)
+      .frame(maxWidth: .infinity, minHeight: 68, alignment: .leading)
+      .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
+    .commanderCard(
+      accent: CommanderDesignTokens.Colors.locationBlue,
+      surface: .depthInset
+    )
   }
 
   private func standardHeader(showChevron: Bool) -> some View {
