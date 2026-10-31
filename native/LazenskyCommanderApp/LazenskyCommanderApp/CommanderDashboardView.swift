@@ -169,17 +169,17 @@ private struct CommanderAlertPauseCard: View {
     let calendar = Calendar.current
     let time = pauseUntil.formatted(date: .omitted, time: .shortened)
     if calendar.isDateInToday(pauseUntil) {
-      return "Do dnes (time)"
+      return "Do dnes \(time)"
     }
     if calendar.isDateInTomorrow(pauseUntil) {
-      return "Do zítřka (time)"
+      return "Do zítřka \(time)"
     }
-    return "Do (pauseUntil.formatted(date: .abbreviated, time: .shortened))"
+    return "Do \(pauseUntil.formatted(date: .abbreviated, time: .shortened))"
   }
 
   private func stayTerminationDetail(_ date: Date) -> String {
     let prefix = date > now ? "Naplánováno na" : "Ukončeno"
-    return "(prefix) (date.formatted(date: .abbreviated, time: .shortened))"
+    return "\(prefix) \(date.formatted(date: .abbreviated, time: .shortened))"
   }
 
   var body: some View {
@@ -232,7 +232,7 @@ private struct CommanderAlertPauseCard: View {
     VStack(alignment: .leading, spacing: 12) {
       HStack(alignment: .center, spacing: 12) {
         CommanderSymbolBadge(
-          symbol: "door.left.hand.open",
+          symbol: "arrow.right.circle.fill",
           color: CommanderDesignTokens.Colors.amber,
           size: CommanderDesignTokens.Size.standardBadge
         )
@@ -305,9 +305,21 @@ private struct CommanderAlertPauseCard: View {
             .fixedSize(horizontal: false, vertical: true)
         }
       } else {
-        Text("Pozastavit upozornění")
-          .font(.system(size: 19, weight: .bold))
-          .foregroundStyle(.white)
+        VStack(alignment: .leading, spacing: 4) {
+          Text("Pozastavit upozornění")
+            .font(.system(size: 19, weight: .bold))
+            .foregroundStyle(.white)
+
+          HStack(spacing: 5) {
+            Image(systemName: "arrow.right.circle.fill")
+              .font(.system(size: 13, weight: .semibold))
+              .foregroundStyle(CommanderDesignTokens.Colors.amber)
+
+            Text("Předčasný odjezd")
+              .font(.system(size: 14, weight: .semibold))
+              .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          }
+        }
       }
 
       Spacer(minLength: 8)
@@ -439,26 +451,26 @@ private struct CommanderAlertPauseCard: View {
           VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
             HStack(spacing: CommanderDesignTokens.Spacing.small) {
               CommanderSymbolBadge(
-                symbol: "door.left.hand.open",
+                symbol: "arrow.right.circle.fill",
                 color: CommanderDesignTokens.Colors.amber,
                 size: CommanderDesignTokens.Size.sectionBadge
               )
 
-              Text("Ukončit pobyt dříve")
+              Text("Předčasný odjezd")
                 .commanderFont(.section)
                 .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
             }
 
-            Text("Použij, když lázně opouštíš před plánovaným koncem. Rozpis a historie zůstanou uložené.")
+            Text("Když odjíždíš dřív, Commander od zvoleného času vypne další upozornění. Rozpis i historie zůstanou uložené.")
               .commanderFont(.label)
               .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
               .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: CommanderDesignTokens.Spacing.small) {
-              Text("Ukončit od")
+            VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.small) {
+              Text("Odjezd od")
                 .commanderFont(.label)
                 .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-              Spacer(minLength: CommanderDesignTokens.Spacing.small)
+
               DatePicker(
                 "",
                 selection: $stayEndAt,
@@ -468,9 +480,10 @@ private struct CommanderAlertPauseCard: View {
               .labelsHidden()
               .datePickerStyle(.compact)
               .tint(CommanderDesignTokens.Colors.amber)
+              .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(CommanderDesignTokens.Spacing.small)
-            .frame(maxWidth: .infinity, minHeight: 58)
+            .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
             .commanderCard(
               accent: CommanderDesignTokens.Colors.amber,
               surface: .depthInset
@@ -485,7 +498,7 @@ private struct CommanderAlertPauseCard: View {
                   color: CommanderDesignTokens.Colors.amber,
                   size: CommanderDesignTokens.Size.rowMetricBadge
                 )
-                Text("Ukončit pobyt od vybraného času")
+                Text("Potvrdit odjezd")
                   .commanderFont(.label)
                   .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
                   .multilineTextAlignment(.leading)
