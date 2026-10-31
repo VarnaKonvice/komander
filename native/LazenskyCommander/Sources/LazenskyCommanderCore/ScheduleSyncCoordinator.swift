@@ -20,6 +20,7 @@ public struct CommanderScheduleSyncResult: Equatable, Sendable {
   public let watchSnapshot: WatchScheduleSnapshot
   public let watchDeliveryStatus: WatchScheduleDeliveryStatus
   public let suppressedAlertStableIDs: Set<String>
+  public let spaProfileResolution: CommanderSpaProfileResolution
 
   public var succeeded: Bool {
     // Watch acknowledgement is diagnostic, not a prerequisite for iPhone operation.
@@ -36,6 +37,7 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
   private let scheduleStore: any ScheduleSnapshotStoring
   private let watchDelivery: (any WatchScheduleSnapshotDelivering)?
   private let spaProfile: CommanderSpaProfile?
+  private let spaProfileCatalog: CommanderSpaProfileCatalog
 
   public init(
     scheduleService: any ScheduleServing,
@@ -43,6 +45,7 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     scheduleStore: any ScheduleSnapshotStoring,
     watchDelivery: (any WatchScheduleSnapshotDelivering)? = nil,
     spaProfile: CommanderSpaProfile? = nil,
+    spaProfileCatalog: CommanderSpaProfileCatalog = .empty,
     dataset: CommanderScheduleDataset? = nil,
     clock: @escaping @Sendable () -> Date = { Date() }
   ) {
@@ -53,6 +56,7 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     self.scheduleStore = scheduleStore
     self.watchDelivery = watchDelivery
     self.spaProfile = spaProfile
+    self.spaProfileCatalog = spaProfileCatalog
   }
 
   public func loadLastSchedule() async throws -> Schedule? {
@@ -109,17 +113,25 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
       }
     }
 
-    var effectiveOverrides = overrides ?? LeadTimeOverrides()
+    let spaProfileResolution: CommanderSpaProfileResolution
     if let spaProfile {
+      spaProfileResolution = .matched(spaProfile)
+    } else {
+      spaProfileResolution = spaProfileCatalog.resolve(schedule: schedule)
+    }
+    let resolvedSpaProfile = spaProfileResolution.profile
+
+    var effectiveOverrides = overrides ?? LeadTimeOverrides()
+    if let resolvedSpaProfile {
       for event in schedule.events where event.kind == .meal {
-        guard let template = spaProfile.mealTemplate(matching: event),
+        guard let template = resolvedSpaProfile.mealTemplate(matching: event),
               let lead = template.effectiveOpeningAlarmLeadTimeMinutes
         else { continue }
         effectiveOverrides.eventOverrides[event.stableId] = lead
       }
     }
     let projection = try CommanderScheduleProjection(schedule: schedule, overrides: effectiveOverrides)
-    let suppressedAlertStableIDs = try spaProfile.map {
+    let suppressedAlertStableIDs = try resolvedSpaProfile.map {
       try CommanderProcedureContinuity.suppressedAlertStableIDs(schedule: schedule, profile: $0)
     } ?? []
     let acceptedAt = now ?? clock()
@@ -182,7 +194,8 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
       alarmSummary: summary,
       watchSnapshot: watchSnapshot,
       watchDeliveryStatus: watchDeliveryStatus,
-      suppressedAlertStableIDs: suppressedAlertStableIDs
+      suppressedAlertStableIDs: suppressedAlertStableIDs,
+      spaProfileResolution: spaProfileResolution
     )
   }
 }

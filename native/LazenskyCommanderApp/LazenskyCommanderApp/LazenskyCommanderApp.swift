@@ -48,6 +48,7 @@ final class CommanderViewModel: ObservableObject {
   @Published private(set) var alertPauseUntil: Date?
   @Published private(set) var alertPauseIndefinitely = false
   @Published private(set) var stayTerminationAt: Date?
+  @Published private(set) var spaProfileResolution: CommanderSpaProfileResolution = .genericMissingSpaID
 
   @Published private(set) var phoneWidgetIssue: String?
   private var phoneWidgetCache: FileWatchScheduleCache?
@@ -136,12 +137,18 @@ final class CommanderViewModel: ObservableObject {
       alarmSyncService: service,
       scheduleStore: UserDefaultsScheduleSnapshotStore(key: scheduleSnapshotKey),
       watchDelivery: nil,
+      spaProfileCatalog: configuration.spaProfileCatalog,
       dataset: CommanderRuntimeDataset.current,
       clock: clock
     )
     if let initialSchedule {
       self.latestSchedule = initialSchedule
+      self.spaProfileResolution = configuration.spaProfileCatalog.resolve(schedule: initialSchedule)
     }
+  }
+
+  var scheduleAuditPolicy: CommanderScheduleAuditPolicy {
+    spaProfileResolution.profile?.scheduleAuditRules?.auditPolicy ?? .init()
   }
 
   var watchScheduleSnapshot: WatchScheduleSnapshot? {
@@ -780,7 +787,7 @@ final class CommanderViewModel: ObservableObject {
 
   func scheduleAuditReviewState() -> CommanderScheduleAuditReviewState? {
     guard let schedule = latestSchedule else { return nil }
-    let report = CommanderScheduleAudit.run(schedule, policy: .petrSpaOperational)
+    let report = CommanderScheduleAudit.run(schedule, policy: scheduleAuditPolicy)
     return CommanderScheduleAuditReview.resolve(
       report: report,
       acknowledgements: scheduleAuditAcknowledgements
@@ -875,6 +882,7 @@ final class CommanderViewModel: ObservableObject {
         )
         acceptedSnapshot = result.watchSnapshot
         latestSchedule = result.schedule
+        spaProfileResolution = result.spaProfileResolution
         summary = result.alarmSummary
         await reloadHomeWidgets()
         let stayHasEnded = suppressionStartingAt.map { $0 <= clock() } == true

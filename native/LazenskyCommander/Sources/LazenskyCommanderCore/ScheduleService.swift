@@ -10,10 +10,16 @@ public struct AppConfiguration: Sendable {
 
   public var scheduleURL: URL
   public var channel: ScheduleChannel
+  public var spaProfileCatalog: CommanderSpaProfileCatalog
 
-  public init(scheduleURL: URL = productionScheduleURL, channel: ScheduleChannel? = nil) {
+  public init(
+    scheduleURL: URL = productionScheduleURL,
+    channel: ScheduleChannel? = nil,
+    spaProfileCatalog: CommanderSpaProfileCatalog = .empty
+  ) {
     self.scheduleURL = scheduleURL
     self.channel = channel ?? Self.inferChannel(from: scheduleURL)
+    self.spaProfileCatalog = spaProfileCatalog
   }
 
   private static func inferChannel(from url: URL) -> ScheduleChannel {

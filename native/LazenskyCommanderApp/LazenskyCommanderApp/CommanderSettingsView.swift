@@ -65,7 +65,7 @@ enum CommanderScheduleAuditVisualStatus: Equatable {
 @MainActor
 func commanderScheduleAuditVisualStatus(for model: CommanderViewModel) -> CommanderScheduleAuditVisualStatus {
   guard let schedule = model.latestSchedule else { return .unavailable }
-  let report = CommanderScheduleAudit.run(schedule, policy: .petrSpaOperational)
+  let report = CommanderScheduleAudit.run(schedule, policy: model.scheduleAuditPolicy)
   let review = CommanderScheduleAuditReview.resolve(
     report: report,
     acknowledgements: model.scheduleAuditAcknowledgements,
@@ -139,7 +139,7 @@ struct CommanderScheduleAuditView: View {
   let onClose: () -> Void
 
   private var report: CommanderScheduleAuditReport? {
-    model.latestSchedule.map { CommanderScheduleAudit.run($0, policy: .petrSpaOperational) }
+    model.latestSchedule.map { CommanderScheduleAudit.run($0, policy: model.scheduleAuditPolicy) }
   }
 
   private var review: CommanderScheduleAuditReviewState? {
