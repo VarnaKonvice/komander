@@ -1,0 +1,24 @@
+{
+  "brand": "BOHANES TECHNOLOGIES",
+  "slogan": "Technologie, které dávají smysl.",
+  "fontFamily": "Montserrat",
+  "colors": {
+    "primaryNavy": "#0B3B5B",
+    "primaryTurquoise": "#14B8A6",
+    "lightAqua": "#7DD3D0",
+    "accentViolet": "#8B7CC7",
+    "mistGray": "#E9EEF4"
+  },
+  "vectorGradients": {
+    "note": "Barevná SVG používají vektorové přechody zachované z vektorizace schváleného referenčního loga.",
+    "gradient1": [
+      "rgb(128,215,228)",
+      "rgb(80,161,196)",
+      "rgb(3,58,95)"
+    ],
+    "gradient2": [
+      "rgb(177,178,224)",
+      "rgb(60,79,131)"
+    ]
+  }
+}
