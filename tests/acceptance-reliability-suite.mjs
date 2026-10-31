@@ -127,7 +127,7 @@ try {
     }
     assert.doesNotMatch(watch, /if wait_for_watch_connected/);
   });
-  const validate = (changes = {}, phase = 'watch-acknowledged', token = '12/3', count = '1') => {
+  const validate = (changes = {}, phase = 'iphone-verified', token = '12/3', count = '1') => {
     const file = path.join(directory, 'status.json');
     fs.writeFileSync(file, JSON.stringify({ requestID: 'new-request', phase,
       dataset: 'acceptance', expectedToken: '12/3', observedToken: '12/3',
@@ -148,7 +148,7 @@ try {
     assert.equal(validate({phase: 'activity-not-active'}, 'activity-active'), 1);
     assert.equal(validate({expectedToken: '11/3', observedToken: '11/3'}, 'activity-active'), 1);
   });
-  test('cleanup evidence needs zero verified alarms but never an empty Watch ACK', () => {
+  test('cleanup evidence needs zero verified alarms without a Watch ACK', () => {
     assert.equal(validate({alarmCount: 0, expectedToken: null, observedToken: null}, 'cleaned', '', '0'), 0);
     assert.equal(validate({alarmCount: 1}, 'cleaned', '', '0'), 1);
   });

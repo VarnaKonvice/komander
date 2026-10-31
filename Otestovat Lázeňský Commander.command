@@ -277,7 +277,7 @@ wait_for_status() {
   for attempt in $(/usr/bin/seq 1 90); do
     if pull_acceptance_status "$status_file"; then
       if acceptance_status_matches "$status_file" "$phase" "$dataset" "$count" "$launched_epoch"; then
-        if [[ "$phase" == "watch-acknowledged" ]]; then
+        if [[ "$phase" == "iphone-verified" ]]; then
           EXPECTED_TEST_TOKEN="$(acceptance_status_field "$status_file" expectedToken)"
         fi
         status "Ověřeno: $phase; request=$REQUEST_ID"
@@ -297,7 +297,7 @@ wait_for_status() {
 wait_for_acceptance_success() {
   local count=4
   [[ "$MODE" == "--single" ]] && count=1
-  wait_for_status "$1" watch-acknowledged acceptance "$count"
+  wait_for_status "$1" iphone-verified acceptance "$count"
 }
 
 wait_for_activity_active() {
@@ -333,26 +333,21 @@ build_normal_pair() {
     LC_BUILD_BRANCH="$build_branch" LC_BUILD_COMMIT="$build_commit" \
     COMPILER_INDEX_STORE_ENABLE=NO "$flags" build >> "$LOG" 2>&1 || return 1
   local iphone_app="$DERIVED/Build/Products/Debug-iphoneos/LazenskyCommanderApp.app"
-  local watch_app="$DERIVED/Build/Products/Debug-watchos/LazenskyCommanderWatchApp.app"
-  [[ -d "$iphone_app" && -d "$watch_app" ]] || return 1
+  [[ -d "$iphone_app" ]] || return 1
   /usr/bin/codesign --verify --deep --strict "$iphone_app" >> "$LOG" 2>&1 || return 1
-  /usr/bin/codesign --verify --deep --strict "$watch_app" >> "$LOG" 2>&1 || return 1
-  status "Podepsaný iPhone + Watch build připraven: $DERIVED"
+  status "Podepsaný iPhone build připraven; Watch vrstva je zmrazená: $DERIVED"
 }
 
 restore_normal_build() {
   build_normal_pair || return 1
   local iphone_app="$DERIVED/Build/Products/Debug-iphoneos/LazenskyCommanderApp.app"
-  local watch_app="$DERIVED/Build/Products/Debug-watchos/LazenskyCommanderWatchApp.app"
   wait_for_iphone_unlock || return 1
   /usr/bin/xcrun devicectl device install app --device "$IPHONE_UDID" --timeout 60 "$iphone_app" >> "$LOG" 2>&1 || return 1
-  watch_install_with_retry "$watch_app" || return 1
-  launch_watch_companion || return 1
   EXPECTED_TEST_TOKEN=""
   local launched_epoch="$(/bin/date '+%s')"
   launch_iphone_mode "--production-readback" || return 1
   wait_for_status "$launched_epoch" production-verified production || return 1
-  status "Normální iPhone + Watch build a produkční bootstrap ověřeny včetně přesného Watch ACK."
+  status "Normální iPhone build a produkční bootstrap ověřeny; Watch vrstva zůstává zmrazená."
   status "Prodloužení provisioning platnosti tímto není potvrzeno; termín určuje profil v aplikaci."
 }
 
@@ -423,16 +418,12 @@ case "$MODE" in
     wait_for_iphone_unlock || fail "iPhone není dostupný pro cleanup."
     /usr/bin/xcrun devicectl device install app --device "$IPHONE_UDID" --timeout 60 \
       "$DERIVED/Build/Products/Debug-iphoneos/LazenskyCommanderApp.app" >> "$LOG" 2>&1 || fail "Cleanup instalace selhala."
-    watch_install_with_retry "$DERIVED/Build/Products/Debug-watchos/LazenskyCommanderWatchApp.app" ||
-      abort_acceptance_run "Cleanup Watch instalace selhala."
     wait_for_iphone_unlock ||
       fail "iPhone zůstal zamčený. Odemkni ho; cleanup pak lze spustit znovu."
-    launch_watch_companion || true
-    /bin/sleep 2
     CLEANUP_STARTED="$(/bin/date '+%s')"
     if launch_iphone_mode "--acceptance-cleanup" && wait_for_cleanup_success "$CLEANUP_STARTED"; then
       terminate_iphone_app
-      status "iPhone acceptance alarmy/aktivity uklizeny; Watch cache ověří obnova produkce."
+      status "iPhone acceptance alarmy/aktivity uklizeny; Watch vrstva je zmrazená."
     else
       fail "Commander se nepodařilo spustit v cleanup režimu."
     fi
@@ -453,7 +444,7 @@ case "$MODE" in
     exit 0
     ;;
   --install-normal)
-    restore_normal_build || fail "Normální iPhone + Watch sestava nebyla kompletně nainstalována."
+    restore_normal_build || fail "Normální iPhone sestava nebyla kompletně nainstalována."
     exit 0
     ;;
   --run|--single) ;;
@@ -477,7 +468,7 @@ fi
 /usr/bin/xcodebuild -version >> "$LOG" 2>&1 || fail "Xcode není připravený."
 
 # Build je záměrně nezávislý na okamžité dostupnosti zařízení.
-# iPhone se ověří až před instalací a Watch skutečným CoreDevice handshakem.
+# iPhone se ověří až před instalací; Watch vrstva je v hlavním produktu zmrazená.
 BUILD_NUMBER="$(/bin/date '+%y%m%d%H%M')"
 BUILD_BRANCH="$(/usr/bin/git -C "$REPO_ROOT" branch --show-current 2>/dev/null || true)"
 BUILD_COMMIT="$(/usr/bin/git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || true)"
@@ -487,13 +478,11 @@ status "Sestavuji plný Commander s injektovaným rozpisem z $BUILD_BRANCH @ ${B
 
 /usr/bin/xcodebuild -quiet   -project "$PROJECT"   -scheme LazenskyCommanderApp   -configuration Debug   -destination "generic/platform=iOS"   -derivedDataPath "$DERIVED"   -allowProvisioningUpdates   CURRENT_PROJECT_VERSION="$BUILD_NUMBER"   LC_BUILD_BRANCH="$BUILD_BRANCH"   LC_BUILD_COMMIT="$BUILD_COMMIT"   COMPILER_INDEX_STORE_ENABLE=NO   'OTHER_SWIFT_FLAGS=$(inherited) -DCOMMANDER_ACCEPTANCE_FIXTURES'   build >> "$LOG" 2>&1 || {
     /usr/bin/tail -100 "$LOG"
-    fail "Podepsaný iPhone+Watch build selhal."
+    fail "Podepsaný iPhone build selhal."
   }
 
 IPHONE_APP="$DERIVED/Build/Products/Debug-iphoneos/LazenskyCommanderApp.app"
-WATCH_APP="$DERIVED/Build/Products/Debug-watchos/LazenskyCommanderWatchApp.app"
 [[ -d "$IPHONE_APP" ]] || fail "Chybí sestavená iPhone aplikace."
-[[ -d "$WATCH_APP" ]] || fail "Chybí sestavená Watch aplikace."
 
 wait_for_iphone_unlock ||
   fail "iPhone zůstal zamčený po buildu. Odemkni ho a skript bude pokračovat."
@@ -501,19 +490,13 @@ status "Instaluji iPhone Commander…"
 /usr/bin/xcrun devicectl device install app --device "$IPHONE_UDID" --timeout 60 "$IPHONE_APP" >> "$LOG" 2>&1 ||
   fail "Instalace iPhone aplikace selhala."
 
-watch_install_with_retry "$WATCH_APP" ||
-  abort_acceptance_run "Watch app se nepodařilo nainstalovat po třech pokusech."
-
 wait_for_iphone_unlock ||
   abort_acceptance_run "iPhone zůstal zamčený po instalaci."
-status "Aktivuji skutečnou Watch app kvůli potvrzení WatchConnectivity…"
-launch_watch_companion || abort_acceptance_run "Watch app se nepodařilo spustit pro acceptance handshake."
-/bin/sleep 2
 
 status "Nejdřív uklízím případný starý acceptance stav…"
 CLEANUP_STARTED="$(/bin/date '+%s')"
 launch_iphone_mode "--acceptance-cleanup" || abort_acceptance_run "Cleanup před testem selhal."
-wait_for_cleanup_success "$CLEANUP_STARTED" || abort_acceptance_run "Watch cleanup nebyl potvrzen."
+wait_for_cleanup_success "$CLEANUP_STARTED" || abort_acceptance_run "iPhone cleanup nebyl potvrzen."
 
 wait_for_iphone_unlock ||
   abort_acceptance_run "iPhone se před acceptance během znovu zamkl."
@@ -521,26 +504,16 @@ if [[ "$MODE" == "--single" ]]; then
   status "Spouštím krátký single-renderer acceptance stav…"
   ACCEPTANCE_FLAG="--acceptance-single"
 else
-  status "Spouštím společný Live Activity + Watch acceptance stav…"
+  status "Spouštím iPhone Live Activity + alarm acceptance stav…"
   ACCEPTANCE_FLAG="--acceptance-visual"
 fi
 ACCEPTANCE_LAUNCHED_EPOCH="$(/bin/date '+%s')"
 launch_iphone_mode "$ACCEPTANCE_FLAG" || abort_acceptance_run "Acceptance režim se nespustil."
 
-# updateApplicationContext is durable, but not an immediate push. Reactivate the
-# real Watch app after the iPhone published the new acceptance snapshot so it
-# consumes the pending context and ACKs the exact projection under test.
-if ! launch_watch_companion; then
-  abort_acceptance_run "Watch app se po publikaci testovacího rozpisu nepodařilo znovu aktivovat."
-fi
-
 if ! wait_for_acceptance_success "$ACCEPTANCE_LAUNCHED_EPOCH"; then
-  abort_acceptance_run "Watch nepotvrdily stejný acceptance stav jako iPhone."
+  abort_acceptance_run "iPhone nepotvrdil canonical acceptance stav."
 fi
 
-# Watch potvrdily canonical projekci skutečně uloženou ve společné app/widget cache.
-capture_optional "$WATCH_UDID" "$RESULTS/watch-handshake.png"
-terminate_watch_app
 terminate_iphone_app
 
 # Krátký odstup před read-backem produkčního activity plánu.

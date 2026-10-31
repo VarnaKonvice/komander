@@ -36,7 +36,7 @@ final class CommanderViewModel: ObservableObject {
   @Published private(set) var errorMessage: String?
   @Published private(set) var isSynchronizing = false
   @Published private(set) var latestSchedule: Schedule?
-  @Published private(set) var watchTransferStatus = "Aktivuji WatchConnectivity…"
+  @Published private(set) var watchTransferStatus = "Pasivní režim – systémové zrcadlení"
   @Published private(set) var liveActivityIssue: String?
   @Published private(set) var recoveryStatus = "Čekám na první kontrolu"
   @Published private(set) var fallbackStatus = "Nevyužito"
@@ -55,7 +55,6 @@ final class CommanderViewModel: ObservableObject {
   private let procedureActivities: CommanderProcedureLiveActivityCoordinator
   private let service: AlarmSyncService
   private let scheduleSync: CommanderScheduleSyncCoordinator
-  private let watchConnectivity: IPhoneWatchConnectivityCoordinator
   private let eventNotifications = IPhoneEventNotificationService()
   private var acceptedSnapshot: WatchScheduleSnapshot?
   private let leadTimePreferences: LeadTimePreferencesStore
@@ -95,7 +94,6 @@ final class CommanderViewModel: ObservableObject {
         dataset: configuration.channel == .production ? CommanderRuntimeDataset.current : nil),
       adapter: adapter
     )
-    let watchConnectivity = IPhoneWatchConnectivityCoordinator()
     let leadTimePreferences = LeadTimePreferencesStore(
       key: "lazensky.commander.leadTimePreferences.\(namespace).v1",
       isPersistent: !CommanderDesignPreview.enabled
@@ -126,7 +124,6 @@ final class CommanderViewModel: ObservableObject {
     self.adapter = adapter
     self.procedureActivities = procedureActivities
     self.service = service
-    self.watchConnectivity = watchConnectivity
     self.leadTimePreferences = leadTimePreferences
     self.scheduleAuditReviewStore = scheduleAuditReviewStore
     self.channel = configuration.channel
@@ -134,16 +131,11 @@ final class CommanderViewModel: ObservableObject {
     self.leadTimeOverrides = CommanderDesignPreview.enabled ? LeadTimeOverrides() : savedPreferences.overrides
     self.leadTimeProjectionRevision = CommanderDesignPreview.enabled ? 0 : savedPreferences.revision
     self.scheduleAuditAcknowledgements = CommanderDesignPreview.enabled ? [] : scheduleAuditReviewStore.load()
-    #if COMMANDER_ACCEPTANCE_FIXTURES
-    let acceptanceWatchDeliveryEnabled = CommanderAcceptanceLaunchMode.current != .cleanup
-    #else
-    let acceptanceWatchDeliveryEnabled = true
-    #endif
     scheduleSync = CommanderScheduleSyncCoordinator(
       scheduleService: scheduleService,
       alarmSyncService: service,
       scheduleStore: UserDefaultsScheduleSnapshotStore(key: scheduleSnapshotKey),
-      watchDelivery: configuration.channel == .production && acceptanceWatchDeliveryEnabled ? watchConnectivity : nil,
+      watchDelivery: nil,
       dataset: CommanderRuntimeDataset.current,
       clock: clock
     )
@@ -228,44 +220,40 @@ final class CommanderViewModel: ObservableObject {
         writeAcceptanceStatus(phase: "failed-alarm-sync", message: "Acceptance alarmy ještě existují")
         return
       }
-      // Queue the empty dataset but never wait for an empty-snapshot ACK.
-      _ = try? await watchConnectivity.deliver(snapshot)
-      let state = await procedureActivities.activityState(schedule: snapshot.schedule, projectionRevision: snapshot.projectionRevision)
+      let state = await procedureActivities.activityState(
+        schedule: snapshot.schedule,
+        projectionRevision: snapshot.projectionRevision
+      )
       writeAcceptanceStatus(
         phase: "cleaned",
         expectedToken: expectedToken,
-        message: "iPhone cleanup potvrzen; state=\(state); alarms=\(summary?.desiredAlarmCount ?? 0); prepared=\(prepared.count); Watch cleanup se záměrně nečeká"
+        observedToken: expectedToken,
+        message: "iPhone cleanup potvrzen; state=\(state); alarms=\(summary?.desiredAlarmCount ?? 0); prepared=\(prepared.count); Watch vrstva je zmrazená"
       )
       return
     }
-    for attempt in 0..<120 {
-      if await watchConnectivity.verifiedProjectionIdentity() == expected {
-        let state = await procedureActivities.activityState(schedule: snapshot.schedule, projectionRevision: snapshot.projectionRevision)
-        if mode == .none {
-          let defaults = UserDefaults.standard
-          for key in defaults.dictionaryRepresentation().keys where
-            key.hasPrefix("lazensky.commander.acceptance.") ||
-            key.hasPrefix("lazensky.commander.scheduleSnapshot.acceptance.") ||
-            key.hasPrefix("lazensky.commander.leadTimePreferences.acceptance.") ||
-            key.hasPrefix("lazensky.commander.scheduleAuditReview.acceptance.") {
-            defaults.removeObject(forKey: key)
-          }
-          try? await CommanderPhoneWidgetCache.make(dataset: .acceptance)?.remove()
-        }
-        let phase = mode == .none ? "production-verified" : "watch-acknowledged"
-        writeAcceptanceStatus(phase: phase, expectedToken: expectedToken, observedToken: expectedToken,
-          message: "state=\(state); alarms=\(summary?.desiredAlarmCount ?? 0); prepared=\(prepared.count)")
-        return
+
+    let state = await procedureActivities.activityState(
+      schedule: snapshot.schedule,
+      projectionRevision: snapshot.projectionRevision
+    )
+    if mode == .none {
+      let defaults = UserDefaults.standard
+      for key in defaults.dictionaryRepresentation().keys where
+        key.hasPrefix("lazensky.commander.acceptance.") ||
+        key.hasPrefix("lazensky.commander.scheduleSnapshot.acceptance.") ||
+        key.hasPrefix("lazensky.commander.leadTimePreferences.acceptance.") ||
+        key.hasPrefix("lazensky.commander.scheduleAuditReview.acceptance.") {
+        defaults.removeObject(forKey: key)
       }
-      if attempt < 119 { try? await Task.sleep(for: .milliseconds(250)) }
+      try? await CommanderPhoneWidgetCache.make(dataset: .acceptance)?.remove()
     }
-    let observed = await watchConnectivity.verifiedProjectionIdentity()
-    let observedToken = observed.map { "\($0.scheduleVersion)/\($0.projectionRevision)" }
+    let phase = mode == .none ? "production-verified" : "iphone-verified"
     writeAcceptanceStatus(
-      phase: "failed-watch-ack",
+      phase: phase,
       expectedToken: expectedToken,
-      observedToken: observedToken,
-      message: "Watch nepotvrdily canonical snapshot z cache; observed=\(observedToken ?? "none")"
+      observedToken: expectedToken,
+      message: "state=\(state); alarms=\(summary?.desiredAlarmCount ?? 0); prepared=\(prepared.count); watch=frozen"
     )
   }
 
@@ -579,15 +567,7 @@ final class CommanderViewModel: ObservableObject {
   private func performLaunchMaintenance() async {
     await procedureActivities.retireActivitiesForMVP()
     await reloadHomeWidgets()
-    if channel == .production, let watchScheduleSnapshot {
-      do {
-        watchTransferStatus = try await watchConnectivity.deliver(watchScheduleSnapshot).diagnosticText
-      } catch {
-        watchTransferStatus = "Čeká na automatické předání"
-      }
-    } else if channel == .e2e {
-      watchTransferStatus = "Testovací kanál je od Watch oddělený"
-    }
+    watchTransferStatus = "Pasivní režim – systémové zrcadlení"
 
     recordAcceptanceProgress("bootstrap-before-access")
     await refreshAccess()
@@ -910,7 +890,7 @@ final class CommanderViewModel: ObservableObject {
           )
           liveActivityIssue = await procedureActivities.issue
         }
-        watchTransferStatus = result.watchDeliveryStatus.diagnosticText
+        watchTransferStatus = "Pasivní režim – systémové zrcadlení"
         recovery.recordAlarmVerification(succeeded: result.alarmSummary.succeeded)
 
         var notificationIssue: String?

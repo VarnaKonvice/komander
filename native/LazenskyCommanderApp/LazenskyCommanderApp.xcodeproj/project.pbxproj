@@ -491,7 +491,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000003 /* LazenskyCommanderCore in Frameworks */,
-				E50000000000000000000003 /* WatchConnectivity.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -720,13 +719,11 @@
 				A10000000000000000000020 /* Frameworks */,
 				A10000000000000000000022 /* Resources */,
 				B20000000000000000000033 /* Embed App Extensions */,
-				D40000000000000000000033 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				B20000000000000000000091 /* PBXTargetDependency */,
-				D40000000000000000000091 /* PBXTargetDependency */,
 			);
 			name = LazenskyCommanderApp;
 			packageProductDependencies = (
@@ -1055,7 +1052,6 @@
 				A10000000000000000000001 /* LazenskyCommanderApp.swift in Sources */,
 				A10000000000000000000002 /* AlarmKitAdapter.swift in Sources */,
 				J10000000000000000000001 /* CommanderProcedureLiveActivityCoordinator.swift in Sources */,
-				E50000000000000000000001 /* IPhoneWatchConnectivityCoordinator.swift in Sources */,
 				C30000000000000000000001 /* CommanderLiveCard.swift in Sources */,
 				C30000000000000000000002 /* CommanderVisualAssets.swift in Sources */,
 				I90000000000000000000001 /* CommanderDashboardView.swift in Sources */,
