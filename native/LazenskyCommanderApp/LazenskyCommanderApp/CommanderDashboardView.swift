@@ -232,7 +232,7 @@ private struct CommanderAlertPauseCard: View {
     VStack(alignment: .leading, spacing: 12) {
       HStack(alignment: .center, spacing: 12) {
         CommanderSymbolBadge(
-          symbol: "arrow.right.circle.fill",
+          symbol: "figure.walk",
           color: CommanderDesignTokens.Colors.amber,
           size: CommanderDesignTokens.Size.standardBadge
         )
@@ -310,13 +310,15 @@ private struct CommanderAlertPauseCard: View {
             .font(.system(size: 19, weight: .bold))
             .foregroundStyle(.white)
 
-          HStack(spacing: 5) {
-            Image(systemName: "arrow.right.circle.fill")
-              .font(.system(size: 13, weight: .semibold))
-              .foregroundStyle(CommanderDesignTokens.Colors.amber)
+          HStack(spacing: 7) {
+            CommanderSymbolBadge(
+              symbol: "figure.walk",
+              color: CommanderDesignTokens.Colors.amber,
+              size: 28
+            )
 
             Text("Předčasný odjezd")
-              .font(.system(size: 14, weight: .semibold))
+              .font(.system(size: 15, weight: .semibold))
               .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
           }
         }
@@ -351,7 +353,7 @@ private struct CommanderAlertPauseCard: View {
                 .fixedSize(horizontal: false, vertical: true)
             }
 
-            Text("Hodí se, když několik hodin nebo dní nechceš, aby tě Commander rušil — třeba při nemoci nebo klidovém režimu. Rozpis zůstane uložený.")
+            Text("Dočasně vypne budíky a upozornění. Rozpis zůstane uložený.")
               .commanderFont(.label)
               .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
               .fixedSize(horizontal: false, vertical: true)
@@ -451,7 +453,7 @@ private struct CommanderAlertPauseCard: View {
           VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
             HStack(spacing: CommanderDesignTokens.Spacing.small) {
               CommanderSymbolBadge(
-                symbol: "arrow.right.circle.fill",
+                symbol: "figure.walk",
                 color: CommanderDesignTokens.Colors.amber,
                 size: CommanderDesignTokens.Size.sectionBadge
               )
@@ -466,11 +468,11 @@ private struct CommanderAlertPauseCard: View {
               .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
               .fixedSize(horizontal: false, vertical: true)
 
-            VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.small) {
+            HStack(spacing: CommanderDesignTokens.Spacing.small) {
               Text("Odjezd od")
                 .commanderFont(.label)
                 .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
-
+              Spacer(minLength: CommanderDesignTokens.Spacing.small)
               DatePicker(
                 "",
                 selection: $stayEndAt,
@@ -480,10 +482,9 @@ private struct CommanderAlertPauseCard: View {
               .labelsHidden()
               .datePickerStyle(.compact)
               .tint(CommanderDesignTokens.Colors.amber)
-              .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(CommanderDesignTokens.Spacing.small)
-            .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: 58)
             .commanderCard(
               accent: CommanderDesignTokens.Colors.amber,
               surface: .depthInset
