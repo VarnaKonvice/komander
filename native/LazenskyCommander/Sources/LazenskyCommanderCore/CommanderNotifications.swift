@@ -51,7 +51,8 @@ public enum CommanderNotificationContract {
 
   public static func desired(snapshot: WatchScheduleSnapshot, dataset: CommanderScheduleDataset,
                              channel: String, includeDeparture: Bool, now: Date,
-                             limit: Int = 60, departureExclusions: Set<String> = []) throws -> [CommanderScheduledNotification] {
+                             limit: Int = 60, departureExclusions: Set<String> = [],
+                             alertExclusions: Set<String> = []) throws -> [CommanderScheduledNotification] {
     guard dataset.accepts(snapshot.schedule),
           snapshot.schedule.events.allSatisfy({ dataset.accepts(stableID: $0.stableId) }) else {
       throw CocoaError(.coderReadCorrupt)
@@ -59,6 +60,7 @@ public enum CommanderNotificationContract {
     let projection = try CommanderScheduleProjection(schedule: snapshot.schedule, overrides: snapshot.leadTimeOverrides)
     var result: [CommanderScheduledNotification] = []
     for item in projection.events {
+      if alertExclusions.contains(item.event.stableId) { continue }
       for departure in includeDeparture ? [false, true] : [false] {
         if departure && departureExclusions.contains(item.event.stableId) { continue }
         let date = departure ? item.leaveAt : item.startAt

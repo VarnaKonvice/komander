@@ -7,6 +7,7 @@ public struct CommanderSpaProfile: Codable, Equatable, Sendable {
   public let displayName: String
   public let timeZoneIdentifier: String
   public let procedures: [CommanderSpaProcedureDefinition]
+  public let continuationRules: [CommanderSpaContinuationRule]
   public let mealShifts: [CommanderSpaMealShift]
 
   public init(
@@ -16,6 +17,7 @@ public struct CommanderSpaProfile: Codable, Equatable, Sendable {
     displayName: String,
     timeZoneIdentifier: String = "Europe/Prague",
     procedures: [CommanderSpaProcedureDefinition],
+    continuationRules: [CommanderSpaContinuationRule] = [],
     mealShifts: [CommanderSpaMealShift] = []
   ) {
     self.schemaVersion = schemaVersion
@@ -24,7 +26,43 @@ public struct CommanderSpaProfile: Codable, Equatable, Sendable {
     self.displayName = displayName
     self.timeZoneIdentifier = timeZoneIdentifier
     self.procedures = procedures
+    self.continuationRules = continuationRules
     self.mealShifts = mealShifts
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case schemaVersion
+    case profileVersion
+    case spaID
+    case displayName
+    case timeZoneIdentifier
+    case procedures
+    case continuationRules
+    case mealShifts
+  }
+
+  public init(from decoder: Decoder) throws {
+    let values = try decoder.container(keyedBy: CodingKeys.self)
+    schemaVersion = try values.decode(Int.self, forKey: .schemaVersion)
+    profileVersion = try values.decode(Int.self, forKey: .profileVersion)
+    spaID = try values.decode(String.self, forKey: .spaID)
+    displayName = try values.decode(String.self, forKey: .displayName)
+    timeZoneIdentifier = try values.decodeIfPresent(String.self, forKey: .timeZoneIdentifier) ?? "Europe/Prague"
+    procedures = try values.decodeIfPresent([CommanderSpaProcedureDefinition].self, forKey: .procedures) ?? []
+    continuationRules = try values.decodeIfPresent([CommanderSpaContinuationRule].self, forKey: .continuationRules) ?? []
+    mealShifts = try values.decodeIfPresent([CommanderSpaMealShift].self, forKey: .mealShifts) ?? []
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var values = encoder.container(keyedBy: CodingKeys.self)
+    try values.encode(schemaVersion, forKey: .schemaVersion)
+    try values.encode(profileVersion, forKey: .profileVersion)
+    try values.encode(spaID, forKey: .spaID)
+    try values.encode(displayName, forKey: .displayName)
+    try values.encode(timeZoneIdentifier, forKey: .timeZoneIdentifier)
+    try values.encode(procedures, forKey: .procedures)
+    try values.encode(continuationRules, forKey: .continuationRules)
+    try values.encode(mealShifts, forKey: .mealShifts)
   }
 
   public func validate() throws {
@@ -51,6 +89,17 @@ public struct CommanderSpaProfile: Codable, Equatable, Sendable {
         guard procedureKeys.insert(key).inserted else {
           throw CommanderSpaProfileValidationError.duplicateProcedureAlias(key)
         }
+      }
+    }
+
+    let canonicalTypes = Set(procedures.map {
+      Self.normalizedLookupKey($0.canonicalType)
+    })
+    var continuationPairs: Set<String> = []
+    for rule in continuationRules {
+      try rule.validate(knownProcedureTypes: canonicalTypes)
+      guard continuationPairs.insert(rule.normalizedPairKey).inserted else {
+        throw CommanderSpaProfileValidationError.duplicateContinuationRule(rule.normalizedPairKey)
       }
     }
 
@@ -120,6 +169,51 @@ public struct CommanderSpaProcedureDefinition: Codable, Equatable, Sendable {
     }
     if let defaultLeadTimeMinutes, !(0...180).contains(defaultLeadTimeMinutes) {
       throw CommanderSpaProfileValidationError.invalidLeadTime(canonicalType)
+    }
+  }
+}
+
+public struct CommanderSpaContinuationRule: Codable, Equatable, Sendable {
+  public let fromCanonicalType: String
+  public let toCanonicalType: String
+  public let maximumGapMinutes: Int
+  public let requiresSameLocation: Bool
+
+  public init(
+    fromCanonicalType: String,
+    toCanonicalType: String,
+    maximumGapMinutes: Int,
+    requiresSameLocation: Bool = false
+  ) {
+    self.fromCanonicalType = fromCanonicalType
+    self.toCanonicalType = toCanonicalType
+    self.maximumGapMinutes = maximumGapMinutes
+    self.requiresSameLocation = requiresSameLocation
+  }
+
+  fileprivate var normalizedPairKey: String {
+    let from = CommanderSpaProfile.normalizedLookupKey(fromCanonicalType)
+    let to = CommanderSpaProfile.normalizedLookupKey(toCanonicalType)
+    return "\(from)->\(to)"
+  }
+
+  fileprivate func validate(knownProcedureTypes: Set<String>) throws {
+    let from = CommanderSpaProfile.normalizedLookupKey(fromCanonicalType)
+    let to = CommanderSpaProfile.normalizedLookupKey(toCanonicalType)
+    guard !from.isEmpty else {
+      throw CommanderSpaProfileValidationError.missingField("continuation.fromCanonicalType")
+    }
+    guard !to.isEmpty else {
+      throw CommanderSpaProfileValidationError.missingField("continuation.toCanonicalType")
+    }
+    guard knownProcedureTypes.contains(from) else {
+      throw CommanderSpaProfileValidationError.unknownContinuationProcedure(fromCanonicalType)
+    }
+    guard knownProcedureTypes.contains(to) else {
+      throw CommanderSpaProfileValidationError.unknownContinuationProcedure(toCanonicalType)
+    }
+    guard (0...180).contains(maximumGapMinutes) else {
+      throw CommanderSpaProfileValidationError.invalidContinuationGap(normalizedPairKey)
     }
   }
 }
@@ -202,6 +296,9 @@ public enum CommanderSpaProfileValidationError: LocalizedError, Equatable {
   case duplicateProcedureAlias(String)
   case invalidProcedureDuration(String)
   case invalidLeadTime(String)
+  case unknownContinuationProcedure(String)
+  case invalidContinuationGap(String)
+  case duplicateContinuationRule(String)
   case duplicateMealShift(String)
   case duplicateMealType(String)
   case invalidTime(String)
@@ -223,6 +320,12 @@ public enum CommanderSpaProfileValidationError: LocalizedError, Equatable {
       return "Invalid expected procedure duration: \(value)."
     case .invalidLeadTime(let value):
       return "Invalid default procedure lead time: \(value)."
+    case .unknownContinuationProcedure(let value):
+      return "Unknown procedure in continuation rule: \(value)."
+    case .invalidContinuationGap(let value):
+      return "Invalid continuation gap: \(value)."
+    case .duplicateContinuationRule(let value):
+      return "Duplicate continuation rule: \(value)."
     case .duplicateMealShift(let value):
       return "Duplicate meal shift: \(value)."
     case .duplicateMealType(let value):

@@ -905,7 +905,8 @@ final class CommanderViewModel: ObservableObject {
             includeDeparture: !result.alarmSummary.succeeded && existingAlarmEvents != nil, now: clock(),
             departureExclusions: existingAlarmEvents ?? Set(result.schedule.events.map(\.stableId)),
             suppressUntil: suppressionUntil,
-            suppressStartingAt: suppressionStartingAt)
+            suppressStartingAt: suppressionStartingAt,
+            alertExclusions: result.suppressedAlertStableIDs)
           notificationsVerified = true
           fallbackStatus = result.alarmSummary.succeeded ? "Začátky událostí ověřeny" :
             existingAlarmEvents == nil ? "Začátky ověřeny; odchod nelze ověřit" : "Záloha odchodu a začátky ověřeny"
@@ -1007,10 +1008,12 @@ private final class IPhoneEventNotificationService {
   func reconcile(snapshot: WatchScheduleSnapshot, dataset: CommanderScheduleDataset,
                  channel: String, includeDeparture: Bool, now: Date,
                  departureExclusions: Set<String> = [], suppressUntil: Date? = nil,
-                 suppressStartingAt: Date? = nil) async throws {
+                 suppressStartingAt: Date? = nil,
+                 alertExclusions: Set<String> = []) async throws {
     // Validate before removing anything, even when permission has been revoked.
     _ = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
-      channel: channel, includeDeparture: includeDeparture, now: now, departureExclusions: departureExclusions)
+      channel: channel, includeDeparture: includeDeparture, now: now,
+      departureExclusions: departureExclusions, alertExclusions: alertExclusions)
     let prefix = CommanderNotificationContract.prefix(dataset: dataset, channel: channel)
     let pending = await center.pendingNotificationRequests()
     // Migrate only legacy fallback IDs belonging to this dataset. Other namespaces,
@@ -1022,7 +1025,8 @@ private final class IPhoneEventNotificationService {
     }.map(\.identifier)
     let otherCount = pending.filter { !$0.identifier.hasPrefix(prefix) && !legacy.contains($0.identifier) }.count
     let desiredBase = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
-      channel: channel, includeDeparture: includeDeparture, now: now, limit: max(0, 60 - otherCount), departureExclusions: departureExclusions)
+      channel: channel, includeDeparture: includeDeparture, now: now, limit: max(0, 60 - otherCount),
+      departureExclusions: departureExclusions, alertExclusions: alertExclusions)
     let desired = desiredBase.filter { item in
       let afterPause = suppressUntil.map { item.fireAt >= $0 } ?? true
       let beforeStayEnd = suppressStartingAt.map { item.fireAt < $0 } ?? true
@@ -1040,7 +1044,7 @@ private final class IPhoneEventNotificationService {
     center.removePendingNotificationRequests(withIdentifiers: obsolete + legacy)
     let allEvents = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
       channel: channel, includeDeparture: includeDeparture, now: .distantPast,
-      limit: Int.max, departureExclusions: departureExclusions)
+      limit: Int.max, departureExclusions: departureExclusions, alertExclusions: alertExclusions)
     let delivered = await center.deliveredNotifications()
     center.removeDeliveredNotifications(withIdentifiers: delivered.filter { notification in
       let request = notification.request
@@ -1066,7 +1070,8 @@ private final class IPhoneEventNotificationService {
           userInfo: [NSLocalizedDescriptionKey: "Úklid oznámení se nepodařilo ověřit."])
       }
       let futureBase = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
-        channel: channel, includeDeparture: includeDeparture, now: now, departureExclusions: departureExclusions)
+        channel: channel, includeDeparture: includeDeparture, now: now,
+        departureExclusions: departureExclusions, alertExclusions: alertExclusions)
       let future = futureBase.filter { item in
         let afterPause = suppressUntil.map { item.fireAt >= $0 } ?? true
         let beforeStayEnd = suppressStartingAt.map { item.fireAt < $0 } ?? true

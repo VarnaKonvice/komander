@@ -112,7 +112,7 @@ func requiredStoryNeverKeepsDepartureOrProgressAtOrAfterEnd(mode: CommanderLiveA
   }
 }
 
-@Test func acceptanceUsesFullProductionBootstrapAndTransport() throws {
+@Test func acceptanceUsesFullProductionBootstrapWithoutActiveWatchDependency() throws {
   let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
     .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
   func source(_ path: String) throws -> String {
@@ -136,10 +136,19 @@ func requiredStoryNeverKeepsDepartureOrProgressAtOrAfterEnd(mode: CommanderLiveA
   #expect(app.contains("CommanderAcceptanceSchedule("))
   #expect(app.contains("--acceptance-single"))
   #expect(app.contains("mode == .single ? .singleRenderer : .fullSpaDay"))
-  #expect(app.contains("CommanderAcceptanceLaunchMode.current != .cleanup"))
-  #expect(app.contains("configuration.channel == .production && acceptanceWatchDeliveryEnabled ? watchConnectivity : nil"))
+  #expect(app.contains("watchDelivery: nil"))
   #expect(app.contains("summary?.readbackCoverage.isComplete == true"))
-  #expect(app.contains("watchConnectivity.verifiedProjectionIdentity() == expected"))
+  #expect(!app.contains("watchConnectivity.verifiedProjectionIdentity() == expected"))
+  #expect(!app.contains("watchConnectivity.deliver("))
+  #expect(app.contains("Pasivní režim – systémové zrcadlení"))
+  let project = try source("LazenskyCommanderApp.xcodeproj/project.pbxproj")
+  let appTargetStart = try #require(project.range(of: "A10000000000000000000050 /* LazenskyCommanderApp */ = {"))
+  let appTargetEnd = try #require(project.range(of: "B20000000000000000000050 /* LazenskyCommanderLiveActivity */ = {"))
+  let appTarget = project[appTargetStart.lowerBound..<appTargetEnd.lowerBound]
+  #expect(!appTarget.contains("Embed Watch Content"))
+  #expect(!appTarget.contains("D40000000000000000000091 /* PBXTargetDependency */"))
+  #expect(project.contains("name = LazenskyCommanderWatchApp;"))
+
   let coordinator = try source("LazenskyCommanderApp/CommanderProcedureLiveActivityCoordinator.swift")
   #expect(!coordinator.contains("#if COMMANDER_ACCEPTANCE"))
   #expect(coordinator.contains("guard enabled && CommanderMVPPolicy.createsLiveActivities else"))

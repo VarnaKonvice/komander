@@ -19,6 +19,7 @@ public struct CommanderScheduleSyncResult: Equatable, Sendable {
   public let alarmSummary: AlarmSyncSummary
   public let watchSnapshot: WatchScheduleSnapshot
   public let watchDeliveryStatus: WatchScheduleDeliveryStatus
+  public let suppressedAlertStableIDs: Set<String>
 
   public var succeeded: Bool {
     // Watch acknowledgement is diagnostic, not a prerequisite for iPhone operation.
@@ -34,12 +35,14 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
   private let alarmSyncService: AlarmSyncService
   private let scheduleStore: any ScheduleSnapshotStoring
   private let watchDelivery: (any WatchScheduleSnapshotDelivering)?
+  private let spaProfile: CommanderSpaProfile?
 
   public init(
     scheduleService: any ScheduleServing,
     alarmSyncService: AlarmSyncService,
     scheduleStore: any ScheduleSnapshotStoring,
     watchDelivery: (any WatchScheduleSnapshotDelivering)? = nil,
+    spaProfile: CommanderSpaProfile? = nil,
     dataset: CommanderScheduleDataset? = nil,
     clock: @escaping @Sendable () -> Date = { Date() }
   ) {
@@ -49,6 +52,7 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     self.alarmSyncService = alarmSyncService
     self.scheduleStore = scheduleStore
     self.watchDelivery = watchDelivery
+    self.spaProfile = spaProfile
   }
 
   public func loadLastSchedule() async throws -> Schedule? {
@@ -107,6 +111,9 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
 
     let effectiveOverrides = overrides ?? LeadTimeOverrides()
     let projection = try CommanderScheduleProjection(schedule: schedule, overrides: effectiveOverrides)
+    let suppressedAlertStableIDs = try spaProfile.map {
+      try CommanderProcedureContinuity.suppressedAlertStableIDs(schedule: schedule, profile: $0)
+    } ?? []
     let acceptedAt = now ?? clock()
     let summary: AlarmSyncSummary
     do {
@@ -115,7 +122,8 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
         // The network may cross a departure deadline; project at acceptance time.
         now: acceptedAt,
         suppressAlertsUntil: suppressAlertsUntil,
-        suppressAlertsStartingAt: suppressAlertsStartingAt
+        suppressAlertsStartingAt: suppressAlertsStartingAt,
+        suppressedAlertStableIDs: suppressedAlertStableIDs
       )
     } catch {
       // A platform/persistence failure is not a failed schedule acceptance. Keep
@@ -123,6 +131,7 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
       // while reporting AlarmKit as unverified and retaining its ownership ledger.
       summary = AlarmSyncSummary(scheduleVersion: schedule.scheduleVersion,
         desiredAlarmCount: projection.events.filter {
+          guard !suppressedAlertStableIDs.contains($0.event.stableId) else { return false }
           guard $0.leaveAt > acceptedAt else { return false }
           if let suppressAlertsUntil, suppressAlertsUntil > acceptedAt, $0.leaveAt < suppressAlertsUntil {
             return false
@@ -164,7 +173,8 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
       scheduleDecision: decision,
       alarmSummary: summary,
       watchSnapshot: watchSnapshot,
-      watchDeliveryStatus: watchDeliveryStatus
+      watchDeliveryStatus: watchDeliveryStatus,
+      suppressedAlertStableIDs: suppressedAlertStableIDs
     )
   }
 }
