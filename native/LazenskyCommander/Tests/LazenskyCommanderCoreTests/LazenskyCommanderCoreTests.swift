@@ -213,6 +213,67 @@ import Testing
   #expect(await scheduleStore.load() == schedule)
 }
 
+@Test func stayTerminationKeepsOnlyAlarmsBeforeTerminationBoundary() async throws {
+  let schedule = watchSchedule(events: [
+    watchEvent("before-end", date: "2026-08-20", start: "09:00", end: "09:30", title: "Před ukončením"),
+    watchEvent("end-boundary", date: "2026-08-20", start: "10:30", end: "11:00", title: "Na hranici"),
+    watchEvent("after-end", date: "2026-08-20", start: "12:00", end: "12:30", title: "Po ukončení")
+  ], lead: 0)
+  let adapter = RecordingAlarmAdapter()
+  let store = InMemoryAlarmStateStore()
+  let service = AlarmSyncService(
+    scheduleService: StaticScheduleService(schedule: schedule),
+    store: store,
+    adapter: adapter
+  )
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:00:00")
+  let stayEnd = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T10:30:00")
+
+  let summary = try await service.synchronize(now: now, suppressAlertsStartingAt: stayEnd)
+
+  #expect(summary.succeeded)
+  #expect(summary.desiredAlarmCount == 1)
+  #expect(Set((await store.load()).records.keys) == ["before-end"])
+}
+
+@Test func restoringStayRecreatesFutureAlarmsWithoutChangingCanonicalSchedule() async throws {
+  let schedule = watchSchedule(events: [
+    watchEvent("early", date: "2026-08-20", start: "09:00", end: "09:30", title: "Brzy"),
+    watchEvent("late", date: "2026-08-20", start: "12:00", end: "12:30", title: "Později")
+  ], lead: 0)
+  let source = CountingScheduleService(schedule: schedule)
+  let alarms = InMemoryAlarmStateStore()
+  let adapter = RecordingAlarmAdapter()
+  let scheduleStore = InMemoryScheduleSnapshotStore()
+  let coordinator = CommanderScheduleSyncCoordinator(
+    scheduleService: source,
+    alarmSyncService: AlarmSyncService(scheduleService: source, store: alarms, adapter: adapter),
+    scheduleStore: scheduleStore
+  )
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:00:00")
+  _ = try await coordinator.synchronize(now: now)
+
+  let stayEnd = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T10:00:00")
+  let ended = try await coordinator.synchronize(
+    source: .cached,
+    now: now,
+    suppressAlertsStartingAt: stayEnd
+  )
+  #expect(ended.alarmSummary.desiredAlarmCount == 1)
+  #expect(ended.alarmSummary.plan.cancel.map(\.stableId) == ["late"])
+  #expect(Set((await alarms.load()).records.keys) == ["early"])
+  #expect(ended.schedule == schedule)
+  #expect(await scheduleStore.load() == schedule)
+
+  let restored = try await coordinator.synchronize(source: .cached, now: now)
+  #expect(restored.alarmSummary.desiredAlarmCount == 2)
+  #expect(restored.alarmSummary.plan.create.map(\.stableId) == ["late"])
+  #expect(Set((await alarms.load()).records.keys) == ["early", "late"])
+  #expect(restored.schedule == schedule)
+  #expect(restored.watchSnapshot.schedule == schedule)
+  #expect(await scheduleStore.load() == schedule)
+}
+
 @Test func mixedScheduleRemainsWholeForIPhoneAndWatchSnapshot() async throws {
   let schedule = watchSchedule(events: [
     watchEvent("past", date: "2026-08-20", start: "09:00", end: "09:30", title: "Minulá procedura"),

@@ -148,7 +148,8 @@ public struct AlarmSyncService: Sendable {
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
     now: Date? = nil,
-    suppressAlertsUntil: Date? = nil
+    suppressAlertsUntil: Date? = nil,
+    suppressAlertsStartingAt: Date? = nil
   ) async throws -> AlarmSyncSummary {
     let schedule = try await scheduleService.fetchSchedule()
     let result = try await synchronizeValidated(
@@ -156,7 +157,8 @@ public struct AlarmSyncService: Sendable {
       overrides: overrides,
       projectionRevision: projectionRevision,
       now: now ?? Date(),
-      suppressAlertsUntil: suppressAlertsUntil
+      suppressAlertsUntil: suppressAlertsUntil,
+      suppressAlertsStartingAt: suppressAlertsStartingAt
     )
     // Preserve the standalone service API's historical permission signal. The Commander
     // coordinator intentionally uses synchronizeValidated so a denied AlarmKit projection
@@ -172,7 +174,8 @@ public struct AlarmSyncService: Sendable {
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
     now: Date = Date(),
-    suppressAlertsUntil: Date? = nil
+    suppressAlertsUntil: Date? = nil,
+    suppressAlertsStartingAt: Date? = nil
   ) async throws -> AlarmSyncSummary {
     let payload = try NativeAlarmContract.payload(schedule: schedule, overrides: overrides)
     return try await synchronize(
@@ -181,7 +184,8 @@ public struct AlarmSyncService: Sendable {
       overrides: overrides,
       projectionRevision: projectionRevision,
       now: now,
-      suppressAlertsUntil: suppressAlertsUntil
+      suppressAlertsUntil: suppressAlertsUntil,
+      suppressAlertsStartingAt: suppressAlertsStartingAt
     )
   }
 
@@ -190,7 +194,8 @@ public struct AlarmSyncService: Sendable {
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
     now: Date = Date(),
-    suppressAlertsUntil: Date? = nil
+    suppressAlertsUntil: Date? = nil,
+    suppressAlertsStartingAt: Date? = nil
   ) async throws -> AlarmSyncSummary {
     let payload = try NativeAlarmContract.payloadValidated(schedule: schedule, overrides: overrides)
     return try await synchronize(
@@ -199,7 +204,8 @@ public struct AlarmSyncService: Sendable {
       overrides: overrides,
       projectionRevision: projectionRevision,
       now: now,
-      suppressAlertsUntil: suppressAlertsUntil
+      suppressAlertsUntil: suppressAlertsUntil,
+      suppressAlertsStartingAt: suppressAlertsStartingAt
     )
   }
 
@@ -209,20 +215,28 @@ public struct AlarmSyncService: Sendable {
     overrides: LeadTimeOverrides?,
     projectionRevision: Int,
     now: Date,
-    suppressAlertsUntil: Date?
+    suppressAlertsUntil: Date?,
+    suppressAlertsStartingAt: Date?
   ) async throws -> AlarmSyncSummary {
     try await operations.run {
       try await self.performSynchronization(schedule: schedule, payload: payload,
         overrides: overrides, projectionRevision: projectionRevision, now: now,
-        suppressAlertsUntil: suppressAlertsUntil)
+        suppressAlertsUntil: suppressAlertsUntil,
+        suppressAlertsStartingAt: suppressAlertsStartingAt)
     }
   }
 
   private func performSynchronization(
     schedule: Schedule, payload: NativeAlarmPayload, overrides: LeadTimeOverrides?,
-    projectionRevision: Int, now: Date, suppressAlertsUntil: Date?
+    projectionRevision: Int, now: Date, suppressAlertsUntil: Date?,
+    suppressAlertsStartingAt: Date?
   ) async throws -> AlarmSyncSummary {
-    let desiredPayload = try desiredPayload(from: payload, now: now, suppressAlertsUntil: suppressAlertsUntil)
+    let desiredPayload = try desiredPayload(
+      from: payload,
+      now: now,
+      suppressAlertsUntil: suppressAlertsUntil,
+      suppressAlertsStartingAt: suppressAlertsStartingAt
+    )
     await adapter.prepare(
       schedule: schedule,
       projectionRevision: max(0, projectionRevision),
@@ -276,7 +290,10 @@ public struct AlarmSyncService: Sendable {
     // An explicit user pause is different: it must silence even an alarm that is
     // currently alerting, so no alerting ID is protected while suppression is active.
     do {
-      if suppressAlertsUntil.map({ $0 > now }) != true {
+      let userSuppressionActiveNow =
+        suppressAlertsUntil.map({ $0 > now }) == true ||
+        suppressAlertsStartingAt.map({ $0 <= now }) == true
+      if !userSuppressionActiveNow {
         let alerting = try await adapter.existingPlatformAlertingAlarmIDs()
         // A crash after platform scheduling may leave no managed record. Foreground
         // reconciliation must not silently stop such an already ringing owned alarm.
@@ -461,14 +478,19 @@ public struct AlarmSyncService: Sendable {
   private func desiredPayload(
     from payload: NativeAlarmPayload,
     now: Date,
-    suppressAlertsUntil: Date?
+    suppressAlertsUntil: Date?,
+    suppressAlertsStartingAt: Date?
   ) throws -> NativeAlarmPayload {
     let futureAlarms = try payload.alarms.filter {
       let leaveAt = try NativeAlarmContract.date(fromLocalISO: $0.leaveAt)
-      if let suppressAlertsUntil, suppressAlertsUntil > now {
-        return leaveAt >= suppressAlertsUntil
+      guard leaveAt > now else { return false }
+      if let suppressAlertsUntil, suppressAlertsUntil > now, leaveAt < suppressAlertsUntil {
+        return false
       }
-      return leaveAt > now
+      if let suppressAlertsStartingAt, leaveAt >= suppressAlertsStartingAt {
+        return false
+      }
+      return true
     }
     return NativeAlarmPayload(
       contractVersion: payload.contractVersion,

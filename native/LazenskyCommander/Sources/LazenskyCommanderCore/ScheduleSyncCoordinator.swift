@@ -62,18 +62,21 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
     now: Date? = nil,
-    suppressAlertsUntil: Date? = nil
+    suppressAlertsUntil: Date? = nil,
+    suppressAlertsStartingAt: Date? = nil
   ) async throws -> CommanderScheduleSyncResult {
     try await operations.run {
       try await self.performSynchronization(source: source, overrides: overrides,
         projectionRevision: projectionRevision, now: now,
-        suppressAlertsUntil: suppressAlertsUntil)
+        suppressAlertsUntil: suppressAlertsUntil,
+        suppressAlertsStartingAt: suppressAlertsStartingAt)
     }
   }
 
   private func performSynchronization(
     source: CommanderScheduleSource, overrides: LeadTimeOverrides?,
-    projectionRevision: Int, now: Date?, suppressAlertsUntil: Date?
+    projectionRevision: Int, now: Date?, suppressAlertsUntil: Date?,
+    suppressAlertsStartingAt: Date?
   ) async throws -> CommanderScheduleSyncResult {
     let decision: ScheduleSnapshotDecision
     let schedule: Schedule
@@ -111,14 +114,24 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
         schedule: schedule, overrides: effectiveOverrides, projectionRevision: projectionRevision,
         // The network may cross a departure deadline; project at acceptance time.
         now: acceptedAt,
-        suppressAlertsUntil: suppressAlertsUntil
+        suppressAlertsUntil: suppressAlertsUntil,
+        suppressAlertsStartingAt: suppressAlertsStartingAt
       )
     } catch {
       // A platform/persistence failure is not a failed schedule acceptance. Keep
       // widgets, Watch and start notifications on the accepted canonical snapshot,
       // while reporting AlarmKit as unverified and retaining its ownership ledger.
       summary = AlarmSyncSummary(scheduleVersion: schedule.scheduleVersion,
-        desiredAlarmCount: projection.events.filter { $0.leaveAt > acceptedAt }.count,
+        desiredAlarmCount: projection.events.filter {
+          guard $0.leaveAt > acceptedAt else { return false }
+          if let suppressAlertsUntil, suppressAlertsUntil > acceptedAt, $0.leaveAt < suppressAlertsUntil {
+            return false
+          }
+          if let suppressAlertsStartingAt, $0.leaveAt >= suppressAlertsStartingAt {
+            return false
+          }
+          return true
+        }.count,
         plan: AlarmReconciliationPlan(), appliedCreate: 0, appliedUpdate: 0, appliedCancel: 0,
         errorMessage: error.localizedDescription, completedAt: acceptedAt, verified: false, repairAttempts: 0)
     }

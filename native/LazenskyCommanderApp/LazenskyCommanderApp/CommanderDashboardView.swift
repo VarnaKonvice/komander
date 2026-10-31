@@ -60,9 +60,12 @@ struct CommanderDashboardView: View {
         isSynchronizing: model.isSynchronizing,
         alertPauseUntil: model.alertPauseUntil,
         alertPauseIndefinitely: model.alertPauseIndefinitely,
+        stayTerminationAt: model.stayTerminationAt,
         synchronize: model.synchronize,
         pauseAlerts: model.pauseAlerts,
-        resumeAlerts: model.resumeAlerts
+        resumeAlerts: model.resumeAlerts,
+        endStay: model.endStay,
+        resumeStay: model.resumeStay
       )
     }
     .background(CommanderDepthBackground().ignoresSafeArea())
@@ -77,9 +80,12 @@ struct CommanderDashboardContent: View {
   let isSynchronizing: Bool
   let alertPauseUntil: Date?
   let alertPauseIndefinitely: Bool
+  let stayTerminationAt: Date?
   let synchronize: () -> Void
   let pauseAlerts: (Date?) -> Void
   let resumeAlerts: () -> Void
+  let endStay: (Date) -> Void
+  let resumeStay: () -> Void
 
   private var presentation: CommanderDashboardPresentation {
     CommanderDashboardPresentation.make(schedule: schedule, now: now, overrides: overrides)
@@ -106,8 +112,11 @@ struct CommanderDashboardContent: View {
               now: now,
               pauseUntil: alertPauseUntil,
               pauseIndefinitely: alertPauseIndefinitely,
+              stayTerminationAt: stayTerminationAt,
               pauseAlerts: pauseAlerts,
-              resumeAlerts: resumeAlerts
+              resumeAlerts: resumeAlerts,
+              endStay: endStay,
+              resumeStay: resumeStay
             )
             CommanderTodayOverviewCard(presentation: presentation)
             CommanderNowDeck(presentation: presentation)
@@ -135,11 +144,16 @@ private struct CommanderAlertPauseCard: View {
   let now: Date
   let pauseUntil: Date?
   let pauseIndefinitely: Bool
+  let stayTerminationAt: Date?
   let pauseAlerts: (Date?) -> Void
   let resumeAlerts: () -> Void
+  let endStay: (Date) -> Void
+  let resumeStay: () -> Void
 
   @State private var showingPauseSheet = false
   @State private var customUntil = Date().addingTimeInterval(24 * 60 * 60)
+  @State private var stayEndAt = Date().addingTimeInterval(60 * 60)
+  @State private var showingStayEndConfirmation = false
 
   private var isPaused: Bool {
     pauseIndefinitely || (pauseUntil.map { $0 > now } ?? false)
@@ -155,24 +169,32 @@ private struct CommanderAlertPauseCard: View {
     let calendar = Calendar.current
     let time = pauseUntil.formatted(date: .omitted, time: .shortened)
     if calendar.isDateInToday(pauseUntil) {
-      return "Do dnes \(time)"
+      return "Do dnes (time)"
     }
     if calendar.isDateInTomorrow(pauseUntil) {
-      return "Do zítřka \(time)"
+      return "Do zítřka (time)"
     }
-    return "Do \(pauseUntil.formatted(date: .abbreviated, time: .shortened))"
+    return "Do (pauseUntil.formatted(date: .abbreviated, time: .shortened))"
+  }
+
+  private func stayTerminationDetail(_ date: Date) -> String {
+    let prefix = date > now ? "Naplánováno na" : "Ukončeno"
+    return "(prefix) (date.formatted(date: .abbreviated, time: .shortened))"
   }
 
   var body: some View {
     Group {
-      if isPaused {
+      if let stayTerminationAt {
+        stayTerminationCard(stayTerminationAt)
+      } else if isPaused {
         pausedCard
       } else {
         Button {
           customUntil = max(customUntil, now.addingTimeInterval(60 * 60))
+          stayEndAt = max(stayEndAt, now.addingTimeInterval(15 * 60))
           showingPauseSheet = true
         } label: {
-          cardHeader(showChevron: true)
+          standardHeader(showChevron: true)
             .padding(14)
         }
         .buttonStyle(.plain)
@@ -195,33 +217,9 @@ private struct CommanderAlertPauseCard: View {
 
   private var pausedCard: some View {
     VStack(alignment: .leading, spacing: 12) {
-      cardHeader(showChevron: false)
+      standardHeader(showChevron: false)
 
-      Button {
-        resumeAlerts()
-      } label: {
-        Text("Obnovit upozornění")
-          .font(.system(size: 17, weight: .bold))
-          .foregroundStyle(.white)
-          .frame(maxWidth: .infinity)
-          .padding(.vertical, 11)
-          .background(
-            LinearGradient(
-              colors: [
-                Color(commanderHex: "#14245A"),
-                Color(commanderHex: "#1B3B7F")
-              ],
-              startPoint: .leading,
-              endPoint: .trailing
-            )
-          )
-          .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-          .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-              .stroke(CommanderDesignTokens.Colors.panelStroke.opacity(0.28), lineWidth: 1)
-          )
-      }
-      .buttonStyle(.plain)
+      actionButton("Obnovit upozornění", action: resumeAlerts)
     }
     .padding(14)
     .commanderCard(
@@ -230,7 +228,64 @@ private struct CommanderAlertPauseCard: View {
     )
   }
 
-  private func cardHeader(showChevron: Bool) -> some View {
+  private func stayTerminationCard(_ date: Date) -> some View {
+    VStack(alignment: .leading, spacing: 12) {
+      HStack(alignment: .center, spacing: 12) {
+        CommanderSymbolBadge(
+          symbol: "door.left.hand.open",
+          color: CommanderDesignTokens.Colors.amber,
+          size: CommanderDesignTokens.Size.standardBadge
+        )
+
+        VStack(alignment: .leading, spacing: 3) {
+          Text(date > now ? "Pobyt bude ukončen" : "Pobyt ukončen")
+            .font(.system(size: 19, weight: .bold))
+            .foregroundStyle(.white)
+
+          Text(stayTerminationDetail(date))
+            .font(.system(size: 14, weight: .medium))
+            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        }
+
+        Spacer(minLength: 8)
+      }
+
+      actionButton("Obnovit pobyt", action: resumeStay)
+    }
+    .padding(14)
+    .commanderCard(
+      accent: CommanderDesignTokens.Colors.amber,
+      surface: .card
+    )
+  }
+
+  private func actionButton(_ title: String, action: @escaping () -> Void) -> some View {
+    Button(action: action) {
+      Text(title)
+        .font(.system(size: 17, weight: .bold))
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 11)
+        .background(
+          LinearGradient(
+            colors: [
+              Color(commanderHex: "#14245A"),
+              Color(commanderHex: "#1B3B7F")
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+          )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+          RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .stroke(CommanderDesignTokens.Colors.panelStroke.opacity(0.28), lineWidth: 1)
+        )
+    }
+    .buttonStyle(.plain)
+  }
+
+  private func standardHeader(showChevron: Bool) -> some View {
     HStack(alignment: .center, spacing: 12) {
       CommanderSymbolBadge(
         symbol: isPaused ? "pause.fill" : "bell.slash.fill",
@@ -380,6 +435,78 @@ private struct CommanderAlertPauseCard: View {
             accent: CommanderDesignTokens.Colors.locationBlue,
             surface: .depthCard
           )
+
+          VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
+            HStack(spacing: CommanderDesignTokens.Spacing.small) {
+              CommanderSymbolBadge(
+                symbol: "door.left.hand.open",
+                color: CommanderDesignTokens.Colors.amber,
+                size: CommanderDesignTokens.Size.sectionBadge
+              )
+
+              Text("Ukončit pobyt dříve")
+                .commanderFont(.section)
+                .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+            }
+
+            Text("Použij, když lázně opouštíš před plánovaným koncem. Rozpis a historie zůstanou uložené.")
+              .commanderFont(.label)
+              .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+              .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: CommanderDesignTokens.Spacing.small) {
+              Text("Ukončit od")
+                .commanderFont(.label)
+                .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+              Spacer(minLength: CommanderDesignTokens.Spacing.small)
+              DatePicker(
+                "",
+                selection: $stayEndAt,
+                in: now...,
+                displayedComponents: [.date, .hourAndMinute]
+              )
+              .labelsHidden()
+              .datePickerStyle(.compact)
+              .tint(CommanderDesignTokens.Colors.amber)
+            }
+            .padding(CommanderDesignTokens.Spacing.small)
+            .frame(maxWidth: .infinity, minHeight: 58)
+            .commanderCard(
+              accent: CommanderDesignTokens.Colors.amber,
+              surface: .depthInset
+            )
+
+            Button {
+              showingStayEndConfirmation = true
+            } label: {
+              HStack(spacing: CommanderDesignTokens.Spacing.small) {
+                CommanderSymbolBadge(
+                  symbol: "checkmark",
+                  color: CommanderDesignTokens.Colors.amber,
+                  size: CommanderDesignTokens.Size.rowMetricBadge
+                )
+                Text("Ukončit pobyt od vybraného času")
+                  .commanderFont(.label)
+                  .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+                  .multilineTextAlignment(.leading)
+                Spacer(minLength: CommanderDesignTokens.Spacing.small)
+              }
+              .padding(CommanderDesignTokens.Spacing.small)
+              .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+              .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .commanderCard(
+              accent: CommanderDesignTokens.Colors.amber,
+              surface: .depthInset
+            )
+          }
+          .padding(CommanderDesignTokens.Spacing.medium)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .commanderCard(
+            accent: CommanderDesignTokens.Colors.amber,
+            surface: .depthCard
+          )
         }
         .padding(.horizontal, CommanderDesignTokens.Spacing.page)
         .padding(.top, CommanderDesignTokens.Spacing.medium)
@@ -398,6 +525,15 @@ private struct CommanderAlertPauseCard: View {
           Button("Zrušit") { showingPauseSheet = false }
             .foregroundStyle(CommanderDesignTokens.Colors.primaryPurple)
         }
+      }
+      .alert("Ukončit pobyt dříve?", isPresented: $showingStayEndConfirmation) {
+        Button("Ukončit pobyt", role: .destructive) {
+          endStay(stayEndAt)
+          showingPauseSheet = false
+        }
+        Button("Zrušit", role: .cancel) {}
+      } message: {
+        Text("Rozpis zůstane uložený. Od zvoleného času Commander zruší další alarmy a upozornění. Akci lze vrátit přes „Obnovit pobyt“.")
       }
     }
   }
