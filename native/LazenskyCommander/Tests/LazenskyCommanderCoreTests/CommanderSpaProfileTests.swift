@@ -67,6 +67,52 @@ struct CommanderSpaProfileTests {
     #expect(profile.mealShifts.first?.meals.count == 3)
   }
 
+  @Test func spaProfileCanCarryOperationalAuditRules() throws {
+    let profile = CommanderSpaProfile(
+      profileVersion: 1,
+      spaID: "darkov",
+      displayName: "Lázně Darkov",
+      procedures: [],
+      scheduleAuditRules: CommanderSpaScheduleAuditRules(
+        minimumProceduresMondayThroughSaturday: 3,
+        sundayExpectedProcedureCount: 0,
+        sundayExpectedMealTypes: ["Snídaně", "Oběd", "Večeře"]
+      )
+    )
+
+    try profile.validate()
+    let policy = try #require(profile.scheduleAuditRules?.auditPolicy)
+    #expect(policy == .petrSpaOperational)
+  }
+
+  @Test func invalidSpaAuditRulesAreRejected() {
+    let invalidCount = CommanderSpaProfile(
+      profileVersion: 1,
+      spaID: "test",
+      displayName: "Test",
+      procedures: [],
+      scheduleAuditRules: .init(minimumProceduresMondayThroughSaturday: 101)
+    )
+    #expect(throws: CommanderSpaProfileValidationError.invalidAuditProcedureCount(
+      "minimumProceduresMondayThroughSaturday"
+    )) {
+      try invalidCount.validate()
+    }
+
+    let duplicateMeal = CommanderSpaProfile(
+      profileVersion: 1,
+      spaID: "test",
+      displayName: "Test",
+      procedures: [],
+      scheduleAuditRules: .init(
+        sundayExpectedMealTypes: ["Snídaně", "snidane"]
+      )
+    )
+    #expect(throws: CommanderSpaProfileValidationError.duplicateAuditMealType("snidane")) {
+      try duplicateMeal.validate()
+    }
+  }
+
   @Test func invalidProcedureDurationAndLeadTimeAreRejected() {
     let tooLong = CommanderSpaProfile(
       profileVersion: 1,

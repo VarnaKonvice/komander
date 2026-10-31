@@ -8,6 +8,7 @@ public struct CommanderSpaProfile: Codable, Equatable, Sendable {
   public let timeZoneIdentifier: String
   public let procedures: [CommanderSpaProcedureDefinition]
   public let continuationRules: [CommanderSpaContinuationRule]
+  public let scheduleAuditRules: CommanderSpaScheduleAuditRules?
   public let mealShifts: [CommanderSpaMealShift]
 
   public init(
@@ -18,6 +19,7 @@ public struct CommanderSpaProfile: Codable, Equatable, Sendable {
     timeZoneIdentifier: String = "Europe/Prague",
     procedures: [CommanderSpaProcedureDefinition],
     continuationRules: [CommanderSpaContinuationRule] = [],
+    scheduleAuditRules: CommanderSpaScheduleAuditRules? = nil,
     mealShifts: [CommanderSpaMealShift] = []
   ) {
     self.schemaVersion = schemaVersion
@@ -27,6 +29,7 @@ public struct CommanderSpaProfile: Codable, Equatable, Sendable {
     self.timeZoneIdentifier = timeZoneIdentifier
     self.procedures = procedures
     self.continuationRules = continuationRules
+    self.scheduleAuditRules = scheduleAuditRules
     self.mealShifts = mealShifts
   }
 
@@ -38,6 +41,7 @@ public struct CommanderSpaProfile: Codable, Equatable, Sendable {
     case timeZoneIdentifier
     case procedures
     case continuationRules
+    case scheduleAuditRules
     case mealShifts
   }
 
@@ -50,6 +54,7 @@ public struct CommanderSpaProfile: Codable, Equatable, Sendable {
     timeZoneIdentifier = try values.decodeIfPresent(String.self, forKey: .timeZoneIdentifier) ?? "Europe/Prague"
     procedures = try values.decodeIfPresent([CommanderSpaProcedureDefinition].self, forKey: .procedures) ?? []
     continuationRules = try values.decodeIfPresent([CommanderSpaContinuationRule].self, forKey: .continuationRules) ?? []
+    scheduleAuditRules = try values.decodeIfPresent(CommanderSpaScheduleAuditRules.self, forKey: .scheduleAuditRules)
     mealShifts = try values.decodeIfPresent([CommanderSpaMealShift].self, forKey: .mealShifts) ?? []
   }
 
@@ -62,6 +67,7 @@ public struct CommanderSpaProfile: Codable, Equatable, Sendable {
     try values.encode(timeZoneIdentifier, forKey: .timeZoneIdentifier)
     try values.encode(procedures, forKey: .procedures)
     try values.encode(continuationRules, forKey: .continuationRules)
+    try values.encodeIfPresent(scheduleAuditRules, forKey: .scheduleAuditRules)
     try values.encode(mealShifts, forKey: .mealShifts)
   }
 
@@ -102,6 +108,8 @@ public struct CommanderSpaProfile: Codable, Equatable, Sendable {
         throw CommanderSpaProfileValidationError.duplicateContinuationRule(rule.normalizedPairKey)
       }
     }
+
+    try scheduleAuditRules?.validate()
 
     var shiftIDs: Set<String> = []
     for shift in mealShifts {
@@ -169,6 +177,56 @@ public struct CommanderSpaProcedureDefinition: Codable, Equatable, Sendable {
     }
     if let defaultLeadTimeMinutes, !(0...180).contains(defaultLeadTimeMinutes) {
       throw CommanderSpaProfileValidationError.invalidLeadTime(canonicalType)
+    }
+  }
+}
+
+public struct CommanderSpaScheduleAuditRules: Codable, Equatable, Sendable {
+  public let minimumProceduresMondayThroughSaturday: Int?
+  public let sundayExpectedProcedureCount: Int?
+  public let sundayExpectedMealTypes: [String]
+
+  public init(
+    minimumProceduresMondayThroughSaturday: Int? = nil,
+    sundayExpectedProcedureCount: Int? = nil,
+    sundayExpectedMealTypes: [String] = []
+  ) {
+    self.minimumProceduresMondayThroughSaturday = minimumProceduresMondayThroughSaturday
+    self.sundayExpectedProcedureCount = sundayExpectedProcedureCount
+    self.sundayExpectedMealTypes = sundayExpectedMealTypes
+  }
+
+  public var auditPolicy: CommanderScheduleAuditPolicy {
+    CommanderScheduleAuditPolicy(
+      minimumProceduresMondayThroughSaturday: minimumProceduresMondayThroughSaturday,
+      sundayExpectedProcedureCount: sundayExpectedProcedureCount,
+      sundayExpectedMealTypes: Set(sundayExpectedMealTypes)
+    )
+  }
+
+  fileprivate func validate() throws {
+    if let minimumProceduresMondayThroughSaturday,
+       !(0...100).contains(minimumProceduresMondayThroughSaturday) {
+      throw CommanderSpaProfileValidationError.invalidAuditProcedureCount(
+        "minimumProceduresMondayThroughSaturday"
+      )
+    }
+    if let sundayExpectedProcedureCount,
+       !(0...100).contains(sundayExpectedProcedureCount) {
+      throw CommanderSpaProfileValidationError.invalidAuditProcedureCount(
+        "sundayExpectedProcedureCount"
+      )
+    }
+
+    var mealKeys: Set<String> = []
+    for mealType in sundayExpectedMealTypes {
+      let key = CommanderSpaProfile.normalizedLookupKey(mealType)
+      guard !key.isEmpty else {
+        throw CommanderSpaProfileValidationError.missingField("scheduleAuditRules.sundayExpectedMealTypes")
+      }
+      guard mealKeys.insert(key).inserted else {
+        throw CommanderSpaProfileValidationError.duplicateAuditMealType(mealType)
+      }
     }
   }
 }
@@ -299,6 +357,8 @@ public enum CommanderSpaProfileValidationError: LocalizedError, Equatable {
   case unknownContinuationProcedure(String)
   case invalidContinuationGap(String)
   case duplicateContinuationRule(String)
+  case invalidAuditProcedureCount(String)
+  case duplicateAuditMealType(String)
   case duplicateMealShift(String)
   case duplicateMealType(String)
   case invalidTime(String)
@@ -326,6 +386,10 @@ public enum CommanderSpaProfileValidationError: LocalizedError, Equatable {
       return "Invalid continuation gap: \(value)."
     case .duplicateContinuationRule(let value):
       return "Duplicate continuation rule: \(value)."
+    case .invalidAuditProcedureCount(let value):
+      return "Invalid schedule audit procedure count: \(value)."
+    case .duplicateAuditMealType(let value):
+      return "Duplicate schedule audit meal type: \(value)."
     case .duplicateMealShift(let value):
       return "Duplicate meal shift: \(value)."
     case .duplicateMealType(let value):
