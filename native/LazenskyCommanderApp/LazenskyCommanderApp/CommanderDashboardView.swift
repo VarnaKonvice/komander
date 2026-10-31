@@ -115,9 +115,10 @@ struct CommanderDashboardContent: View {
               isSynchronizing: isSynchronizing,
               synchronize: synchronize
             )
-          } else if let stayTerminationAt, stayTerminationAt <= now {
+          } else if let stayTerminationAt {
             CommanderStayEndedHeroCard(
-              endedAt: stayTerminationAt,
+              terminationAt: stayTerminationAt,
+              now: now,
               resumeStay: resumeStay
             )
 
@@ -134,9 +135,9 @@ struct CommanderDashboardContent: View {
                 )
               }
             }
-            .grayscale(0.82)
-            .saturation(0.18)
-            .opacity(0.52)
+            .grayscale(1)
+            .saturation(0)
+            .opacity(0.28)
           } else {
             CommanderAlertPauseCard(
               now: now,
@@ -171,36 +172,54 @@ struct CommanderDashboardContent: View {
 }
 
 private struct CommanderStayEndedHeroCard: View {
-  let endedAt: Date
+  let terminationAt: Date
+  let now: Date
   let resumeStay: () -> Void
 
+  private var isEnded: Bool {
+    terminationAt <= now
+  }
+
   var body: some View {
-    VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.section) {
-      HStack(alignment: .center, spacing: CommanderDesignTokens.Spacing.medium) {
+    VStack(alignment: .leading, spacing: 20) {
+      HStack(alignment: .center, spacing: 18) {
         CommanderSymbolBadge(
           symbol: "figure.walk",
           color: CommanderDesignTokens.Colors.amber,
-          size: 68
+          size: 78
         )
 
-        VStack(alignment: .leading, spacing: 4) {
-          Text("Pobyt ukončen")
-            .font(.system(size: 31, weight: .bold))
+        VStack(alignment: .leading, spacing: 6) {
+          Text(isEnded ? "Pobyt ukončen" : "Pobyt bude ukončen")
+            .font(.system(size: 34, weight: .heavy))
             .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+            .minimumScaleFactor(0.82)
+            .fixedSize(horizontal: false, vertical: true)
 
-          Text("Ukončeno \(commanderCzechDateTime(endedAt))")
-            .font(.system(size: 17, weight: .bold))
-            .foregroundStyle(CommanderDesignTokens.Colors.amber)
+          Text(
+            isEnded
+              ? "Ukončeno \(commanderCzechDateTime(terminationAt))"
+              : "Odjezd \(commanderCzechDateTime(terminationAt))"
+          )
+          .font(.system(size: 18, weight: .bold))
+          .foregroundStyle(CommanderDesignTokens.Colors.amber)
+          .fixedSize(horizontal: false, vertical: true)
         }
+
+        Spacer(minLength: 0)
       }
 
-      Text("Další alarmy a upozornění jsou vypnuté. Rozpis a historie zůstávají uložené.")
-        .font(.system(size: 17, weight: .medium))
-        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
-        .fixedSize(horizontal: false, vertical: true)
+      Text(
+        isEnded
+          ? "Další alarmy a upozornění jsou vypnuté. Rozpis a historie zůstávají uložené."
+          : "Od zvoleného času se další alarmy a upozornění vypnou. Rozpis a historie zůstanou uložené."
+      )
+      .font(.system(size: 18, weight: .semibold))
+      .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+      .fixedSize(horizontal: false, vertical: true)
 
       Button(action: resumeStay) {
-        HStack(spacing: CommanderDesignTokens.Spacing.small) {
+        HStack(spacing: 12) {
           CommanderSymbolBadge(
             symbol: "arrow.uturn.backward",
             color: CommanderDesignTokens.Colors.locationBlue,
@@ -208,13 +227,13 @@ private struct CommanderStayEndedHeroCard: View {
           )
 
           Text("Obnovit pobyt")
-            .font(.system(size: 19, weight: .bold))
+            .font(.system(size: 20, weight: .bold))
             .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
 
-          Spacer(minLength: CommanderDesignTokens.Spacing.small)
+          Spacer(minLength: 0)
         }
-        .padding(CommanderDesignTokens.Spacing.small)
-        .frame(maxWidth: .infinity, minHeight: 68, alignment: .leading)
+        .padding(12)
+        .frame(maxWidth: .infinity, minHeight: 72, alignment: .leading)
         .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
@@ -223,9 +242,9 @@ private struct CommanderStayEndedHeroCard: View {
         surface: .depthInset
       )
     }
-    .padding(.horizontal, CommanderDesignTokens.Spacing.medium)
-    .padding(.vertical, 22)
-    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.horizontal, 18)
+    .padding(.vertical, 24)
+    .frame(maxWidth: .infinity, minHeight: 235, alignment: .leading)
     .commanderCard(
       accent: CommanderDesignTokens.Colors.amber,
       surface: .depthCard
