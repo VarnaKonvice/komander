@@ -107,6 +107,12 @@ struct CommanderDashboardContent: View {
               isSynchronizing: isSynchronizing,
               synchronize: synchronize
             )
+          } else if let stayTerminationAt, stayTerminationAt <= now {
+            CommanderStayEndedHeroCard(
+              endedAt: stayTerminationAt,
+              resumeStay: resumeStay
+            )
+            CommanderTodayOverviewCard(presentation: presentation)
           } else {
             CommanderAlertPauseCard(
               now: now,
@@ -137,6 +143,68 @@ struct CommanderDashboardContent: View {
       .scrollIndicators(.hidden)
       .clipped()
     }
+  }
+}
+
+private struct CommanderStayEndedHeroCard: View {
+  let endedAt: Date
+  let resumeStay: () -> Void
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
+      HStack(alignment: .center, spacing: CommanderDesignTokens.Spacing.medium) {
+        CommanderSymbolBadge(
+          symbol: "figure.walk",
+          color: CommanderDesignTokens.Colors.amber,
+          size: CommanderDesignTokens.Size.featuredBadge
+        )
+
+        VStack(alignment: .leading, spacing: 4) {
+          Text("Pobyt ukončen")
+            .font(.system(size: 27, weight: .bold))
+            .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+
+          Text("Ukončeno \(endedAt.formatted(date: .abbreviated, time: .shortened))")
+            .font(.system(size: 16, weight: .semibold))
+            .foregroundStyle(CommanderDesignTokens.Colors.amber)
+        }
+      }
+
+      Text("Další alarmy a upozornění jsou vypnuté. Rozpis a historie zůstávají uložené.")
+        .font(.system(size: 16, weight: .medium))
+        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        .fixedSize(horizontal: false, vertical: true)
+
+      Button(action: resumeStay) {
+        HStack(spacing: CommanderDesignTokens.Spacing.small) {
+          CommanderSymbolBadge(
+            symbol: "arrow.uturn.backward",
+            color: CommanderDesignTokens.Colors.locationBlue,
+            size: CommanderDesignTokens.Size.rowMetricBadge
+          )
+
+          Text("Obnovit pobyt")
+            .font(.system(size: 18, weight: .bold))
+            .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+
+          Spacer(minLength: CommanderDesignTokens.Spacing.small)
+        }
+        .padding(CommanderDesignTokens.Spacing.small)
+        .frame(maxWidth: .infinity, minHeight: 62, alignment: .leading)
+        .contentShape(Rectangle())
+      }
+      .buttonStyle(.plain)
+      .commanderCard(
+        accent: CommanderDesignTokens.Colors.locationBlue,
+        surface: .depthInset
+      )
+    }
+    .padding(CommanderDesignTokens.Spacing.medium)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .commanderCard(
+      accent: CommanderDesignTokens.Colors.amber,
+      surface: .depthCard
+    )
   }
 }
 
