@@ -68,7 +68,8 @@ func commanderScheduleAuditVisualStatus(for model: CommanderViewModel) -> Comman
   let report = CommanderScheduleAudit.run(schedule, policy: .petrSpaOperational)
   let review = CommanderScheduleAuditReview.resolve(
     report: report,
-    acknowledgements: model.scheduleAuditAcknowledgements
+    acknowledgements: model.scheduleAuditAcknowledgements,
+    operationalWarningsOnOrAfter: CommanderDateText.isoDate(Date())
   )
   if !review.errors.isEmpty { return .error(review.errors.count) }
   if !review.openWarnings.isEmpty { return .warning(review.openWarnings.count) }
@@ -145,7 +146,8 @@ struct CommanderScheduleAuditView: View {
     guard let report else { return nil }
     return CommanderScheduleAuditReview.resolve(
       report: report,
-      acknowledgements: model.scheduleAuditAcknowledgements
+      acknowledgements: model.scheduleAuditAcknowledgements,
+      operationalWarningsOnOrAfter: CommanderDateText.isoDate(Date())
     )
   }
 
@@ -247,6 +249,7 @@ struct CommanderScheduleAuditView: View {
         auditMetric("Pobyt", value: report.stayDayCount.map { "\($0) dní" } ?? "—")
         auditMetric("Události", value: "\(report.eventCount)")
         auditMetric("Procedury", value: "\(report.procedureCount)")
+        auditMetric("Vizity", value: "\(report.visitCount)")
         auditMetric("Jídla", value: "\(report.mealCount)")
         auditMetric("Verze rozpisu", value: "v\(report.scheduleVersion)")
       }
@@ -388,7 +391,7 @@ struct CommanderScheduleAuditView: View {
           .frame(width: 24)
         VStack(alignment: .leading, spacing: 3) {
           if let date = issue.date {
-            Text(CommanderDateText.numericDate(isoDate: date) ?? date)
+            Text(CommanderDateText.numericDateWithWeekday(isoDate: date) ?? date)
               .commanderFont(.label)
               .foregroundStyle(color)
           }

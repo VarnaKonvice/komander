@@ -17,7 +17,7 @@ public struct CommanderCountdownPresentation: Equatable, Sendable {
                 target: liveState.leaveAt, referenceLabel: "Odchod",
                 referenceDate: liveState.leaveAt, symbol: "figure.walk")
     case .leaveNow:
-      self.init(status: "Vyrazit teď", countdownLabel: "Začíná za",
+      self.init(status: "Vyrazit teď", countdownLabel: "Do začátku",
                 target: liveState.startAt, referenceLabel: "Začátek",
                 referenceDate: liveState.startAt, symbol: "clock.badge")
     case .inProgress:

@@ -61,17 +61,19 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     source: CommanderScheduleSource = .remote,
     overrides: LeadTimeOverrides? = nil,
     projectionRevision: Int = 0,
-    now: Date? = nil
+    now: Date? = nil,
+    suppressAlertsUntil: Date? = nil
   ) async throws -> CommanderScheduleSyncResult {
     try await operations.run {
       try await self.performSynchronization(source: source, overrides: overrides,
-        projectionRevision: projectionRevision, now: now)
+        projectionRevision: projectionRevision, now: now,
+        suppressAlertsUntil: suppressAlertsUntil)
     }
   }
 
   private func performSynchronization(
     source: CommanderScheduleSource, overrides: LeadTimeOverrides?,
-    projectionRevision: Int, now: Date?
+    projectionRevision: Int, now: Date?, suppressAlertsUntil: Date?
   ) async throws -> CommanderScheduleSyncResult {
     let decision: ScheduleSnapshotDecision
     let schedule: Schedule
@@ -108,7 +110,8 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
       summary = try await alarmSyncService.synchronizeValidated(
         schedule: schedule, overrides: effectiveOverrides, projectionRevision: projectionRevision,
         // The network may cross a departure deadline; project at acceptance time.
-        now: acceptedAt
+        now: acceptedAt,
+        suppressAlertsUntil: suppressAlertsUntil
       )
     } catch {
       // A platform/persistence failure is not a failed schedule acceptance. Keep

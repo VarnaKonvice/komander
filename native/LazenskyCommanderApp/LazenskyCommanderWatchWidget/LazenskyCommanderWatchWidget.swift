@@ -135,6 +135,10 @@ private struct CommanderWatchWidgetView: View {
     return entry.liveState.nextEvent
   }
 
+  private var timing: CommanderCountdownPresentation {
+    CommanderCountdownPresentation(liveState: entry.liveState)
+  }
+
   var body: some View {
     VStack(alignment: .leading, spacing: 2) {
       switch entry.liveState.state {
@@ -224,30 +228,11 @@ private struct CommanderWatchWidgetView: View {
   @ViewBuilder
   private var firstLine: some View {
     switch entry.liveState.state {
-    case .upcoming:
-      if let leaveAt = entry.liveState.leaveAt {
+    case .upcoming, .leaveNow, .inProgress:
+      if let target = timing.target {
         countdownLine(
-          label: "Vyrazit za",
-          symbol: "figure.walk",
-          target: leaveAt
-        )
-      }
-
-    case .leaveNow:
-      if let startAt = entry.liveState.startAt {
-        countdownLine(
-          label: "Začíná za",
-          symbol: "figure.walk.motion",
-          target: startAt
-        )
-      }
-
-    case .inProgress:
-      if let endAt = entry.liveState.endAt {
-        countdownLine(
-          label: "Končí za",
-          symbol: "timer",
-          target: endAt
+          symbol: timing.symbol,
+          target: target
         )
       }
 
@@ -257,26 +242,28 @@ private struct CommanderWatchWidgetView: View {
   }
 
   private func countdownLine(
-    label: String,
     symbol: String,
     target: Date
   ) -> some View {
-    HStack(spacing: 5) {
+    HStack(spacing: 7) {
       Image(systemName: symbol)
-        .frame(width: 14, alignment: .leading)
+        .frame(width: 17, alignment: .leading)
 
-      if isLuminanceReduced {
-        Text(reducedCountdownText(to: target))
-          .monospacedDigit()
-      } else {
-        Text(target, style: .timer)
-          .monospacedDigit()
+      Group {
+        if isLuminanceReduced {
+          Text(reducedCountdownText(to: target))
+        } else {
+          Text(target, style: .timer)
+        }
       }
+      .font(.headline.weight(.bold))
+      .monospacedDigit()
     }
-    .font(.headline.weight(.bold))
     .widgetAccentable()
     .lineLimit(1)
-    .accessibilityLabel(label)
+    .minimumScaleFactor(0.82)
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel(timing.countdownLabel)
   }
 
   private func reducedCountdownText(to target: Date) -> String {
@@ -288,28 +275,12 @@ private struct CommanderWatchWidgetView: View {
   private var referenceLine: some View {
     Group {
       switch entry.liveState.state {
-      case .upcoming:
-        if let startAt = entry.liveState.startAt {
+      case .upcoming, .leaveNow, .inProgress:
+        if let label = timing.referenceLabel, let date = timing.referenceDate {
           HStack(spacing: 4) {
             Image(systemName: "clock.fill")
-            Text("Začátek")
-            Text(startAt, style: .time).monospacedDigit()
-          }
-        }
-      case .leaveNow:
-        if let startAt = entry.liveState.startAt {
-          HStack(spacing: 4) {
-            Image(systemName: "clock.fill")
-            Text("Začátek")
-            Text(startAt, style: .time).monospacedDigit()
-          }
-        }
-      case .inProgress:
-        if let endAt = entry.liveState.endAt {
-          HStack(spacing: 4) {
-            Image(systemName: "clock.fill")
-            Text("Konec")
-            Text(endAt, style: .time).monospacedDigit()
+            Text(label)
+            Text(date, style: .time).monospacedDigit()
           }
         }
       case .dayDone:

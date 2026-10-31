@@ -214,6 +214,31 @@ private actor OrphanRingingPlatform: AlarmAdapting {
   #expect(watchWidget.contains("entries: [noScheduleEntry(at: now)], policy: .after"))
 }
 
+@Test func circularLockWidgetUsesCompactTimelineDrivenCountdown() throws {
+  let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+    .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+  let widget = try String(
+    contentsOf: repo.appendingPathComponent(
+      "native/LazenskyCommanderApp/LazenskyCommanderLiveActivity/LazenskyCommanderHomeWidget.swift"),
+    encoding: .utf8
+  )
+
+  let circularStart = try #require(widget.range(of: "private struct CommanderCircularLockWidget"))
+  let circularEnd = try #require(widget.range(
+    of: "private struct CommanderRectangularLockWidget",
+    range: circularStart.upperBound..<widget.endIndex
+  ))
+  let circular = String(widget[circularStart.lowerBound..<circularEnd.lowerBound])
+
+  #expect(circular.contains("Text(CommanderCircularWidgetCountdown.text(now: state.entry.date, target: target))"))
+  #expect(circular.contains(".trim(from: 0, to: remainingFraction)"))
+  #expect(circular.contains("target.timeIntervalSince(state.entry.date)"))
+  #expect(!circular.contains("TimelineView(.periodic"))
+  #expect(!circular.contains("Text(target, style: .relative)"))
+  #expect(!circular.contains("ProgressView(timerInterval:"))
+  #expect(widget.contains("CommanderPhoneWidgetTimeline.circularPoints"))
+}
+
 @Test func ambiguousCanonicalDepartureCannotReplaceValidOfflineSchedule() async throws {
   let valid = pass2Schedule()
   let store = InMemoryScheduleSnapshotStore(valid)

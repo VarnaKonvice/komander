@@ -58,7 +58,11 @@ struct CommanderDashboardView: View {
         overrides: model.leadTimeOverrides,
         now: context.date,
         isSynchronizing: model.isSynchronizing,
-        synchronize: model.synchronize
+        alertPauseUntil: model.alertPauseUntil,
+        alertPauseIndefinitely: model.alertPauseIndefinitely,
+        synchronize: model.synchronize,
+        pauseAlerts: model.pauseAlerts,
+        resumeAlerts: model.resumeAlerts
       )
     }
     .background(CommanderDepthBackground().ignoresSafeArea())
@@ -71,7 +75,11 @@ struct CommanderDashboardContent: View {
   let overrides: LeadTimeOverrides
   let now: Date
   let isSynchronizing: Bool
+  let alertPauseUntil: Date?
+  let alertPauseIndefinitely: Bool
   let synchronize: () -> Void
+  let pauseAlerts: (Date?) -> Void
+  let resumeAlerts: () -> Void
 
   private var presentation: CommanderDashboardPresentation {
     CommanderDashboardPresentation.make(schedule: schedule, now: now, overrides: overrides)
@@ -94,6 +102,13 @@ struct CommanderDashboardContent: View {
               synchronize: synchronize
             )
           } else {
+            CommanderAlertPauseCard(
+              now: now,
+              pauseUntil: alertPauseUntil,
+              pauseIndefinitely: alertPauseIndefinitely,
+              pauseAlerts: pauseAlerts,
+              resumeAlerts: resumeAlerts
+            )
             CommanderTodayOverviewCard(presentation: presentation)
             CommanderNowDeck(presentation: presentation)
             if !presentation.timeline.isEmpty {
@@ -113,6 +128,325 @@ struct CommanderDashboardContent: View {
       .scrollIndicators(.hidden)
       .clipped()
     }
+  }
+}
+
+private struct CommanderAlertPauseCard: View {
+  let now: Date
+  let pauseUntil: Date?
+  let pauseIndefinitely: Bool
+  let pauseAlerts: (Date?) -> Void
+  let resumeAlerts: () -> Void
+
+  @State private var showingPauseSheet = false
+  @State private var customUntil = Date().addingTimeInterval(24 * 60 * 60)
+
+  private var isPaused: Bool {
+    pauseIndefinitely || (pauseUntil.map { $0 > now } ?? false)
+  }
+
+  private var pauseDetail: String {
+    if pauseIndefinitely {
+      return "Dokud je znovu nezapneš"
+    }
+    guard let pauseUntil, pauseUntil > now else {
+      return "Dočasně vypnout budíky a upozornění"
+    }
+    let calendar = Calendar.current
+    let time = pauseUntil.formatted(date: .omitted, time: .shortened)
+    if calendar.isDateInToday(pauseUntil) {
+      return "Do dnes \(time)"
+    }
+    if calendar.isDateInTomorrow(pauseUntil) {
+      return "Do zítřka \(time)"
+    }
+    return "Do \(pauseUntil.formatted(date: .abbreviated, time: .shortened))"
+  }
+
+  var body: some View {
+    Group {
+      if isPaused {
+        pausedCard
+      } else {
+        Button {
+          customUntil = max(customUntil, now.addingTimeInterval(60 * 60))
+          showingPauseSheet = true
+        } label: {
+          cardHeader(showChevron: true)
+            .padding(14)
+        }
+        .buttonStyle(.plain)
+        .commanderCard(
+          accent: CommanderDesignTokens.Colors.locationBlue,
+          surface: .card
+        )
+      }
+    }
+    .sheet(isPresented: $showingPauseSheet) {
+      pauseSheet
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground {
+          CommanderDepthBackground()
+        }
+        .presentationCornerRadius(28)
+    }
+  }
+
+  private var pausedCard: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      cardHeader(showChevron: false)
+
+      Button {
+        resumeAlerts()
+      } label: {
+        Text("Obnovit upozornění")
+          .font(.system(size: 17, weight: .bold))
+          .foregroundStyle(.white)
+          .frame(maxWidth: .infinity)
+          .padding(.vertical, 11)
+          .background(
+            LinearGradient(
+              colors: [
+                Color(commanderHex: "#14245A"),
+                Color(commanderHex: "#1B3B7F")
+              ],
+              startPoint: .leading,
+              endPoint: .trailing
+            )
+          )
+          .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+          .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+              .stroke(CommanderDesignTokens.Colors.panelStroke.opacity(0.28), lineWidth: 1)
+          )
+      }
+      .buttonStyle(.plain)
+    }
+    .padding(14)
+    .commanderCard(
+      accent: CommanderDesignTokens.Colors.amber,
+      surface: .card
+    )
+  }
+
+  private func cardHeader(showChevron: Bool) -> some View {
+    HStack(alignment: .center, spacing: 12) {
+      CommanderSymbolBadge(
+        symbol: isPaused ? "pause.fill" : "bell.slash.fill",
+        color: isPaused ? CommanderDesignTokens.Colors.amber : CommanderDesignTokens.Colors.locationBlue,
+        size: CommanderDesignTokens.Size.standardBadge
+      )
+
+      if isPaused {
+        VStack(alignment: .leading, spacing: 3) {
+          Text("Upozornění pozastavena")
+            .font(.system(size: 19, weight: .bold))
+            .foregroundStyle(.white)
+
+          Text(pauseDetail)
+            .font(.system(size: 14, weight: .medium))
+            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      } else {
+        Text("Pozastavit upozornění")
+          .font(.system(size: 19, weight: .bold))
+          .foregroundStyle(.white)
+      }
+
+      Spacer(minLength: 8)
+
+      if showChevron {
+        Image(systemName: "chevron.right")
+          .font(.system(size: 14, weight: .bold))
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+      }
+    }
+    .contentShape(Rectangle())
+  }
+
+  private var pauseSheet: some View {
+    NavigationStack {
+      ScrollView {
+        VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.section) {
+          VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
+            HStack(spacing: CommanderDesignTokens.Spacing.small) {
+              CommanderSymbolBadge(
+                symbol: "pause.circle.fill",
+                color: CommanderDesignTokens.Colors.primaryPurple,
+                size: CommanderDesignTokens.Size.sectionBadge
+              )
+
+              Text("Jak dlouho tě Commander nemá rušit?")
+                .commanderFont(.section)
+                .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Text("Hodí se, když několik hodin nebo dní nechceš, aby tě Commander rušil — třeba při nemoci nebo klidovém režimu. Rozpis zůstane uložený.")
+              .commanderFont(.label)
+              .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+              .fixedSize(horizontal: false, vertical: true)
+
+            VStack(spacing: CommanderDesignTokens.Spacing.small) {
+              pauseChoice("Do zítřka 8:00", systemImage: "sunrise.fill") {
+                pauseAlerts(tomorrowAtEight())
+                showingPauseSheet = false
+              }
+
+              pauseChoice("Na 3 dny", systemImage: "calendar.badge.clock") {
+                pauseAlerts(Calendar.current.date(byAdding: .day, value: 3, to: now))
+                showingPauseSheet = false
+              }
+
+              pauseChoice("Dokud je znovu nezapnu", systemImage: "pause.circle.fill") {
+                pauseAlerts(nil)
+                showingPauseSheet = false
+              }
+            }
+          }
+          .padding(CommanderDesignTokens.Spacing.medium)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .commanderCard(
+            accent: CommanderDesignTokens.Colors.primaryPurple,
+            surface: .depthCard
+          )
+
+          VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
+            HStack(spacing: CommanderDesignTokens.Spacing.small) {
+              CommanderSymbolBadge(
+                symbol: "calendar.badge.clock",
+                color: CommanderDesignTokens.Colors.locationBlue,
+                size: CommanderDesignTokens.Size.sectionBadge
+              )
+
+              Text("Jiný konec")
+                .commanderFont(.section)
+                .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+            }
+
+            HStack(spacing: CommanderDesignTokens.Spacing.small) {
+              Text("Pozastavit do")
+                .commanderFont(.label)
+                .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+              Spacer(minLength: CommanderDesignTokens.Spacing.small)
+              DatePicker(
+                "",
+                selection: $customUntil,
+                in: now.addingTimeInterval(5 * 60)...,
+                displayedComponents: [.date, .hourAndMinute]
+              )
+              .labelsHidden()
+              .datePickerStyle(.compact)
+              .tint(CommanderDesignTokens.Colors.locationBlue)
+            }
+            .padding(CommanderDesignTokens.Spacing.small)
+            .frame(maxWidth: .infinity, minHeight: 58)
+            .commanderCard(
+              accent: CommanderDesignTokens.Colors.locationBlue,
+              surface: .depthInset
+            )
+
+            Button {
+              pauseAlerts(customUntil)
+              showingPauseSheet = false
+            } label: {
+              HStack(spacing: CommanderDesignTokens.Spacing.small) {
+                CommanderSymbolBadge(
+                  symbol: "checkmark",
+                  color: CommanderDesignTokens.Colors.locationBlue,
+                  size: CommanderDesignTokens.Size.rowMetricBadge
+                )
+                Text("Pozastavit do vybraného času")
+                  .commanderFont(.label)
+                  .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+                  .multilineTextAlignment(.leading)
+                Spacer(minLength: CommanderDesignTokens.Spacing.small)
+              }
+              .padding(CommanderDesignTokens.Spacing.small)
+              .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+              .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .commanderCard(
+              accent: CommanderDesignTokens.Colors.locationBlue,
+              surface: .depthInset
+            )
+          }
+          .padding(CommanderDesignTokens.Spacing.medium)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .commanderCard(
+            accent: CommanderDesignTokens.Colors.locationBlue,
+            surface: .depthCard
+          )
+        }
+        .padding(.horizontal, CommanderDesignTokens.Spacing.page)
+        .padding(.top, CommanderDesignTokens.Spacing.medium)
+        .padding(.bottom, CommanderDesignTokens.Spacing.bottom)
+      }
+      .scrollIndicators(.hidden)
+      .scrollContentBackground(.hidden)
+      .background(CommanderDepthBackground().ignoresSafeArea())
+      .navigationTitle("Pauza upozornění")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbarBackground(CommanderDesignTokens.Colors.backgroundDeep.opacity(0.96), for: .navigationBar)
+      .toolbarBackground(.visible, for: .navigationBar)
+      .tint(CommanderDesignTokens.Colors.locationBlue)
+      .toolbar {
+        ToolbarItem(placement: .cancellationAction) {
+          Button("Zrušit") { showingPauseSheet = false }
+            .foregroundStyle(CommanderDesignTokens.Colors.primaryPurple)
+        }
+      }
+    }
+  }
+
+  private func pauseChoice(
+    _ title: String,
+    systemImage: String,
+    action: @escaping () -> Void
+  ) -> some View {
+    Button(action: action) {
+      HStack(spacing: CommanderDesignTokens.Spacing.small) {
+        CommanderSymbolBadge(
+          symbol: systemImage,
+          color: CommanderDesignTokens.Colors.locationBlue,
+          size: CommanderDesignTokens.Size.rowMetricBadge
+        )
+
+        Text(title)
+          .commanderFont(.label)
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .fixedSize(horizontal: false, vertical: true)
+
+        Spacer(minLength: CommanderDesignTokens.Spacing.small)
+
+        Image(systemName: "chevron.right")
+          .font(.system(size: 13, weight: .semibold))
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          .accessibilityHidden(true)
+      }
+      .padding(CommanderDesignTokens.Spacing.small)
+      .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
+      .contentShape(Rectangle())
+    }
+    .buttonStyle(.plain)
+    .commanderCard(
+      accent: CommanderDesignTokens.Colors.locationBlue,
+      surface: .depthInset
+    )
+  }
+
+  private func tomorrowAtEight() -> Date? {
+    let calendar = Calendar.current
+    let tomorrow = calendar.date(byAdding: .day, value: 1, to: now)
+      ?? now.addingTimeInterval(24 * 60 * 60)
+    var components = calendar.dateComponents([.year, .month, .day], from: tomorrow)
+    components.hour = 8
+    components.minute = 0
+    components.second = 0
+    return calendar.date(from: components)
   }
 }
 

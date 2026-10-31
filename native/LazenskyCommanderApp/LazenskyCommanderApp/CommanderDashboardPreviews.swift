@@ -47,7 +47,11 @@ private struct CommanderDashboardPreview: View {
         overrides: LeadTimeOverrides(),
         now: now,
         isSynchronizing: false,
-        synchronize: {}
+        alertPauseUntil: nil,
+        alertPauseIndefinitely: false,
+        synchronize: {},
+        pauseAlerts: { _ in },
+        resumeAlerts: {}
       )
       .background(CommanderDesignTokens.Colors.background.ignoresSafeArea())
       .toolbar(.hidden, for: .navigationBar)
@@ -195,7 +199,9 @@ struct CommanderApprovedVisualProof: View {
     Group {
       if Self.mode == "today" {
         CommanderDashboardContent(schedule: schedule, overrides: LeadTimeOverrides(), now: now,
-                                  isSynchronizing: false, synchronize: {})
+                                  isSynchronizing: false, alertPauseUntil: nil,
+                                  alertPauseIndefinitely: false, synchronize: {},
+                                  pauseAlerts: { _ in }, resumeAlerts: {})
       } else {
         ScrollView {
           VStack(spacing: CommanderDesignTokens.Spacing.medium) {

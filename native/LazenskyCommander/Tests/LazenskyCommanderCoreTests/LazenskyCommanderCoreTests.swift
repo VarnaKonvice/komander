@@ -157,6 +157,62 @@ import Testing
   #expect((await store.load()).lastSuccessfulPayload?.alarms.isEmpty == true)
 }
 
+@Test func alertPauseKeepsOnlyAlarmsAtOrAfterPauseEnd() async throws {
+  let schedule = watchSchedule(events: [
+    watchEvent("during-pause", date: "2026-08-20", start: "09:00", end: "09:30", title: "Během pauzy"),
+    watchEvent("pause-boundary", date: "2026-08-20", start: "10:30", end: "11:00", title: "Na hranici"),
+    watchEvent("after-pause", date: "2026-08-20", start: "12:00", end: "12:30", title: "Po pauze")
+  ], lead: 0)
+  let adapter = RecordingAlarmAdapter()
+  let store = InMemoryAlarmStateStore()
+  let service = AlarmSyncService(
+    scheduleService: StaticScheduleService(schedule: schedule),
+    store: store,
+    adapter: adapter
+  )
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:00:00")
+  let pauseEnd = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T10:30:00")
+
+  let summary = try await service.synchronize(now: now, suppressAlertsUntil: pauseEnd)
+
+  #expect(summary.succeeded)
+  #expect(summary.desiredAlarmCount == 2)
+  #expect(Set((await store.load()).records.keys) == ["pause-boundary", "after-pause"])
+}
+
+@Test func alertPauseCancelsEarlierManagedAlarmWithoutChangingScheduleSnapshot() async throws {
+  let schedule = watchSchedule(events: [
+    watchEvent("early", date: "2026-08-20", start: "09:00", end: "09:30", title: "Brzy"),
+    watchEvent("late", date: "2026-08-20", start: "12:00", end: "12:30", title: "Později")
+  ], lead: 0)
+  let source = CountingScheduleService(schedule: schedule)
+  let alarms = InMemoryAlarmStateStore()
+  let adapter = RecordingAlarmAdapter()
+  let scheduleStore = InMemoryScheduleSnapshotStore()
+  let coordinator = CommanderScheduleSyncCoordinator(
+    scheduleService: source,
+    alarmSyncService: AlarmSyncService(scheduleService: source, store: alarms, adapter: adapter),
+    scheduleStore: scheduleStore
+  )
+  let now = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T08:00:00")
+  _ = try await coordinator.synchronize(now: now)
+
+  let pauseEnd = try NativeAlarmContract.date(fromLocalISO: "2026-08-20T10:00:00")
+  let paused = try await coordinator.synchronize(
+    source: .cached,
+    now: now,
+    suppressAlertsUntil: pauseEnd
+  )
+
+  #expect(paused.alarmSummary.desiredAlarmCount == 1)
+  #expect(paused.alarmSummary.plan.cancel.map(\.stableId) == ["early"])
+  #expect(Set((await alarms.load()).records.keys) == ["late"])
+  #expect(await adapter.cancelledCount() == 1)
+  #expect(paused.schedule == schedule)
+  #expect(paused.watchSnapshot.schedule == schedule)
+  #expect(await scheduleStore.load() == schedule)
+}
+
 @Test func mixedScheduleRemainsWholeForIPhoneAndWatchSnapshot() async throws {
   let schedule = watchSchedule(events: [
     watchEvent("past", date: "2026-08-20", start: "09:00", end: "09:30", title: "Minulá procedura"),

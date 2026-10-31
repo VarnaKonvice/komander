@@ -35,6 +35,7 @@ struct CommanderHomeWidgetProvider: TimelineProvider {
     in context: Context,
     completion: @escaping @Sendable (Timeline<CommanderHomeWidgetEntry>) -> Void
   ) {
+    let family = context.family
     Task {
       let now = Date()
       guard let snapshot = await cachedSnapshot(),
@@ -48,11 +49,16 @@ struct CommanderHomeWidgetProvider: TimelineProvider {
       }
 
       do {
-        let points = try CommanderPhoneWidgetTimeline.points(snapshot: snapshot, now: now)
+        let points = try family == .accessoryCircular
+          ? CommanderPhoneWidgetTimeline.circularPoints(snapshot: snapshot, now: now)
+          : CommanderPhoneWidgetTimeline.points(snapshot: snapshot, now: now)
         let entries = points.map {
           CommanderHomeWidgetEntry(date: $0.date, snapshot: snapshot, presentation: $0.presentation)
         }
-        completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(CommanderPhoneWidgetTimeline.refreshInterval))))
+        let reloadDate = family == .accessoryCircular
+          ? (entries.last?.date.addingTimeInterval(1) ?? now.addingTimeInterval(15 * 60))
+          : now.addingTimeInterval(CommanderPhoneWidgetTimeline.refreshInterval)
+        completion(Timeline(entries: entries, policy: .after(reloadDate)))
       } catch {
         completion(Timeline(
           entries: [CommanderHomeWidgetEntry(date: now, snapshot: snapshot)],
@@ -577,8 +583,8 @@ private struct CommanderCircularLockWidget: View {
           Image(systemName: phaseSymbol)
             .font(.system(size: 9, weight: .bold))
             .foregroundStyle(accent)
-          Text(compactCountdown(target))
-            .font(.system(size: 15, weight: .heavy, design: .rounded))
+          Text(CommanderCircularWidgetCountdown.text(now: state.entry.date, target: target))
+            .font(.system(size: 15, weight: .heavy, design: .rounded).monospacedDigit())
             .minimumScaleFactor(0.62)
             .lineLimit(1)
         }
@@ -615,10 +621,8 @@ private struct CommanderCircularLockWidget: View {
 
   private var phaseStartDate: Date? {
     switch state.live.state {
-    case .upcoming:
+    case .upcoming, .leaveNow:
       return state.live.startAt?.addingTimeInterval(-30 * 60)
-    case .leaveNow:
-      return state.live.startAt
     case .inProgress:
       return state.live.startAt
     case .dayDone, .noSchedule:
@@ -640,16 +644,6 @@ private struct CommanderCircularLockWidget: View {
     case .dayDone: return "checkmark"
     case .noSchedule: return "calendar"
     }
-  }
-
-  private func compactCountdown(_ target: Date) -> String {
-    let seconds = max(0, target.timeIntervalSince(state.entry.date))
-    if seconds <= 0 { return "teď" }
-    let minutes = Int(ceil(seconds / 60))
-    if minutes < 60 { return "\(minutes)m" }
-    let hours = minutes / 60
-    let rest = minutes % 60
-    return rest == 0 ? "\(hours)h" : "\(hours)h\(rest)"
   }
 
   private var circularLabel: String {
