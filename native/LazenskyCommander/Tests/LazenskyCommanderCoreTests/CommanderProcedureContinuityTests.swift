@@ -156,6 +156,66 @@ struct CommanderProcedureContinuityTests {
     #expect(Set((await store.load()).records.keys) == ["a"])
   }
 
+  @Test func openWindowMealSchedulesAlarmAtOpeningWithoutChangingCanonicalSchedule() async throws {
+    let schedule = makeSchedule(events: [
+      ScheduleEvent(
+        stableId: "breakfast",
+        date: "2026-10-31",
+        start: "07:00",
+        end: "09:00",
+        title: "Snídaně",
+        location: "Jídelna",
+        kind: .meal,
+        procedureType: nil,
+        mealType: "Snídaně",
+        leadTimeMinutes: nil
+      )
+    ])
+    let profile = CommanderSpaProfile(
+      profileVersion: 1,
+      spaID: "selfpayer",
+      displayName: "Samoplátce",
+      procedures: [],
+      mealShifts: [
+        CommanderSpaMealShift(
+          id: "selfpayer",
+          displayName: "Volný režim",
+          meals: [
+            CommanderSpaMealTemplate(
+              mealType: "Snídaně",
+              start: "07:00",
+              end: "09:00",
+              timingMode: .openWindow
+            )
+          ]
+        )
+      ]
+    )
+    try profile.validate()
+
+    let source = ContinuityScheduleService(schedule: schedule)
+    let alarmStore = InMemoryAlarmStateStore()
+    let adapter = ContinuityAlarmAdapter()
+    let coordinator = CommanderScheduleSyncCoordinator(
+      scheduleService: source,
+      alarmSyncService: AlarmSyncService(
+        scheduleService: source,
+        store: alarmStore,
+        adapter: adapter
+      ),
+      scheduleStore: InMemoryScheduleSnapshotStore(),
+      spaProfile: profile
+    )
+    let now = try NativeAlarmContract.dateTime(date: "2026-10-31", time: "06:30")
+    let result = try await coordinator.synchronize(now: now)
+
+    #expect(result.schedule == schedule)
+    #expect(result.alarmSummary.desiredAlarmCount == 1)
+    let record = try #require((await alarmStore.load()).records["breakfast"])
+    #expect(record.alarm.effectiveLeadTimeMinutes == 0)
+    #expect(record.alarm.leaveAt.hasSuffix("T07:00:00"))
+  }
+
   @Test func oldProfileJSONWithoutContinuationRulesStillDecodes() throws {
     let json = """
     {

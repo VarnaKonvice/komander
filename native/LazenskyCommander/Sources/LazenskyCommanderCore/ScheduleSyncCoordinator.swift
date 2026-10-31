@@ -109,7 +109,15 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
       }
     }
 
-    let effectiveOverrides = overrides ?? LeadTimeOverrides()
+    var effectiveOverrides = overrides ?? LeadTimeOverrides()
+    if let spaProfile {
+      for event in schedule.events where event.kind == .meal {
+        guard let template = spaProfile.mealTemplate(matching: event),
+              let lead = template.effectiveOpeningAlarmLeadTimeMinutes
+        else { continue }
+        effectiveOverrides.eventOverrides[event.stableId] = lead
+      }
+    }
     let projection = try CommanderScheduleProjection(schedule: schedule, overrides: effectiveOverrides)
     let suppressedAlertStableIDs = try spaProfile.map {
       try CommanderProcedureContinuity.suppressedAlertStableIDs(schedule: schedule, profile: $0)

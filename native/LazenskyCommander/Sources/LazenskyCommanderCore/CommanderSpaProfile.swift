@@ -121,6 +121,19 @@ public struct CommanderSpaProfile: Codable, Equatable, Sendable {
     }
   }
 
+  public func mealTemplate(matching event: ScheduleEvent) -> CommanderSpaMealTemplate? {
+    guard event.kind == .meal else { return nil }
+    let eventType = Self.normalizedLookupKey(event.mealType ?? event.title)
+    guard !eventType.isEmpty else { return nil }
+
+    let exact = mealShifts.flatMap(\.meals).filter {
+      Self.normalizedLookupKey($0.mealType) == eventType &&
+      $0.start == event.start &&
+      $0.end == event.end
+    }
+    return exact.count == 1 ? exact[0] : nil
+  }
+
   public func procedureDefinition(matching rawValue: String) -> CommanderSpaProcedureDefinition? {
     let key = Self.normalizedLookupKey(rawValue)
     guard !key.isEmpty else { return nil }
@@ -305,15 +318,65 @@ public struct CommanderSpaMealShift: Codable, Equatable, Sendable {
   }
 }
 
+public enum CommanderSpaMealTimingMode: String, Codable, Equatable, Sendable {
+  case fixedSlot
+  case openWindow
+}
+
 public struct CommanderSpaMealTemplate: Codable, Equatable, Sendable {
   public let mealType: String
   public let start: String
   public let end: String
+  public let timingMode: CommanderSpaMealTimingMode
+  public let openingAlarmLeadTimeMinutes: Int?
 
-  public init(mealType: String, start: String, end: String) {
+  public init(
+    mealType: String,
+    start: String,
+    end: String,
+    timingMode: CommanderSpaMealTimingMode = .fixedSlot,
+    openingAlarmLeadTimeMinutes: Int? = nil
+  ) {
     self.mealType = mealType
     self.start = start
     self.end = end
+    self.timingMode = timingMode
+    self.openingAlarmLeadTimeMinutes = openingAlarmLeadTimeMinutes
+  }
+
+  private enum CodingKeys: String, CodingKey {
+    case mealType
+    case start
+    case end
+    case timingMode
+    case openingAlarmLeadTimeMinutes
+  }
+
+  public init(from decoder: Decoder) throws {
+    let values = try decoder.container(keyedBy: CodingKeys.self)
+    mealType = try values.decode(String.self, forKey: .mealType)
+    start = try values.decode(String.self, forKey: .start)
+    end = try values.decode(String.self, forKey: .end)
+    timingMode = try values.decodeIfPresent(CommanderSpaMealTimingMode.self, forKey: .timingMode) ?? .fixedSlot
+    openingAlarmLeadTimeMinutes = try values.decodeIfPresent(Int.self, forKey: .openingAlarmLeadTimeMinutes)
+  }
+
+  public func encode(to encoder: Encoder) throws {
+    var values = encoder.container(keyedBy: CodingKeys.self)
+    try values.encode(mealType, forKey: .mealType)
+    try values.encode(start, forKey: .start)
+    try values.encode(end, forKey: .end)
+    try values.encode(timingMode, forKey: .timingMode)
+    try values.encodeIfPresent(openingAlarmLeadTimeMinutes, forKey: .openingAlarmLeadTimeMinutes)
+  }
+
+  public var effectiveOpeningAlarmLeadTimeMinutes: Int? {
+    switch timingMode {
+    case .fixedSlot:
+      return openingAlarmLeadTimeMinutes
+    case .openWindow:
+      return openingAlarmLeadTimeMinutes ?? 0
+    }
   }
 
   fileprivate func validate() throws {
@@ -331,6 +394,10 @@ public struct CommanderSpaMealTemplate: Codable, Equatable, Sendable {
           endMinutes > startMinutes
     else {
       throw CommanderSpaProfileValidationError.invalidMealRange(mealType)
+    }
+    if let openingAlarmLeadTimeMinutes,
+       !(0...180).contains(openingAlarmLeadTimeMinutes) {
+      throw CommanderSpaProfileValidationError.invalidMealAlarmLeadTime(mealType)
     }
   }
 
@@ -363,6 +430,7 @@ public enum CommanderSpaProfileValidationError: LocalizedError, Equatable {
   case duplicateMealType(String)
   case invalidTime(String)
   case invalidMealRange(String)
+  case invalidMealAlarmLeadTime(String)
 
   public var errorDescription: String? {
     switch self {
@@ -398,6 +466,8 @@ public enum CommanderSpaProfileValidationError: LocalizedError, Equatable {
       return "Invalid spa profile time: \(value)."
     case .invalidMealRange(let value):
       return "Meal end must be after start: \(value)."
+    case .invalidMealAlarmLeadTime(let value):
+      return "Invalid meal opening alarm lead time: \(value)."
     }
   }
 }

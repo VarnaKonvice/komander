@@ -113,6 +113,44 @@ struct CommanderSpaProfileTests {
     }
   }
 
+  @Test func openWindowMealDefaultsToAlarmAtWindowOpening() throws {
+    let meal = CommanderSpaMealTemplate(
+      mealType: "Snídaně",
+      start: "07:00",
+      end: "09:00",
+      timingMode: .openWindow
+    )
+    #expect(meal.effectiveOpeningAlarmLeadTimeMinutes == 0)
+
+    let encoded = try JSONEncoder().encode(meal)
+    let decoded = try JSONDecoder().decode(CommanderSpaMealTemplate.self, from: encoded)
+    #expect(decoded == meal)
+  }
+
+  @Test func legacyMealTemplateDecodesAsFixedSlot() throws {
+    let json = """
+    {
+      "mealType": "Snídaně",
+      "start": "07:30",
+      "end": "08:00"
+    }
+    """.data(using: .utf8)!
+    let meal = try JSONDecoder().decode(CommanderSpaMealTemplate.self, from: json)
+    #expect(meal.timingMode == .fixedSlot)
+    #expect(meal.effectiveOpeningAlarmLeadTimeMinutes == nil)
+  }
+
+  @Test func openWindowCanUseExplicitOpeningLeadTime() throws {
+    let meal = CommanderSpaMealTemplate(
+      mealType: "Oběd",
+      start: "11:30",
+      end: "13:30",
+      timingMode: .openWindow,
+      openingAlarmLeadTimeMinutes: 10
+    )
+    #expect(meal.effectiveOpeningAlarmLeadTimeMinutes == 10)
+  }
+
   @Test func invalidProcedureDurationAndLeadTimeAreRejected() {
     let tooLong = CommanderSpaProfile(
       profileVersion: 1,
