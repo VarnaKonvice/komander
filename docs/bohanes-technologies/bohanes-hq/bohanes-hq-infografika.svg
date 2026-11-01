@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+<defs>
+  <linearGradient id="nav" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0B3B5B"/><stop offset="1" stop-color="#07506f"/></linearGradient>
+  <linearGradient id="card" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#f2f8fb"/></linearGradient>
+  <filter id="shadow"><feDropShadow dx="0" dy="5" stdDeviation="8" flood-opacity=".12"/></filter>
+  <style>
+    .h1{font:700 44px Arial,sans-serif;fill:#0B3B5B}.sub{font:600 21px Arial,sans-serif;fill:#536273}
+    .title{font:700 22px Arial,sans-serif;fill:#0B2944}.body{font:16px Arial,sans-serif;fill:#1e2d3d}
+    .small{font:14px Arial,sans-serif;fill:#1e2d3d}.nav{font:17px Arial,sans-serif;fill:#fff}
+    .center{font:700 33px Arial,sans-serif;fill:#fff}.centerSub{font:18px Arial,sans-serif;fill:#e9eef4}
+    .dot{fill:#14B8A6}.line{stroke:#51a6c3;stroke-width:3;fill:none;opacity:.75}
+  </style>
+</defs>
+
+<rect width="1600" height="1000" fill="#f7fbfd"/>
+<rect x="0" y="0" width="205" height="1000" fill="url(#nav)"/>
+<image href="../../../assets/brand/bohanes-technologies-v1/vector/bohanes-technologies-logo-mono-white.svg" x="30" y="28" width="145" height="92" preserveAspectRatio="xMidYMid meet"/>
+<rect x="12" y="145" rx="10" width="181" height="48" fill="#176b85"/>
+<text x="34" y="176" class="nav" font-weight="700">⌂  Bohanes HQ</text>
+<text x="34" y="225" class="nav">Obchod &amp; CRM</text><text x="34" y="270" class="nav">Procedury</text>
+<text x="34" y="315" class="nav">Právo</text><text x="34" y="360" class="nav">Marketing</text>
+<text x="34" y="405" class="nav">Finance</text><text x="34" y="450" class="nav">Dokumenty</text>
+<text x="34" y="495" class="nav">E-mail a kalendář</text><text x="34" y="540" class="nav">Research</text>
+<text x="34" y="585" class="nav">Kontrola</text>
+
+<text x="250" y="60" class="h1">Bohanes HQ</text>
+<text x="250" y="92" class="sub">Firemní AI centrála Bohanes Technologies · interně: HQčko</text>
+
+<!-- connectors -->
+<path class="line" d="M800 410 C700 360 650 310 600 250"/><path class="line" d="M800 410 C800 330 800 280 800 250"/>
+<path class="line" d="M800 410 C900 360 950 310 1000 250"/><path class="line" d="M800 500 C680 500 650 470 600 470"/>
+<path class="line" d="M800 500 C920 500 950 470 1000 470"/><path class="line" d="M800 570 C700 620 650 680 600 700"/>
+<path class="line" d="M800 570 C800 630 800 660 800 700"/><path class="line" d="M800 570 C900 620 950 680 1000 700"/>
+
+<!-- cards top -->
+<g filter="url(#shadow)">
+<rect x="240" y="130" rx="18" width="360" height="185" fill="url(#card)" stroke="#c8e0ea"/>
+<rect x="620" y="130" rx="18" width="360" height="185" fill="url(#card)" stroke="#c8e0ea"/>
+<rect x="1000" y="130" rx="18" width="360" height="185" fill="url(#card)" stroke="#c8e0ea"/>
+</g>
+<text x="270" y="168" class="title">Obchod &amp; CRM</text>
+<text x="275" y="201" class="body">• kontakty a firmy</text><text x="275" y="228" class="body">• obchodní případy</text><text x="275" y="255" class="body">• historie jednání</text><text x="275" y="282" class="body">• další krok</text>
+
+<text x="650" y="168" class="title">Procedury / Lázeňský komandér</text>
+<text x="655" y="201" class="body">• převod procedurových listin</text><text x="655" y="228" class="body">• párování klient – pobyt – instalace</text><text x="655" y="255" class="body">• přehled každé instalace</text><text x="655" y="282" class="body">• bezpečné doručení plánu</text>
+
+<text x="1030" y="168" class="title">Právní oddělení</text>
+<text x="1035" y="201" class="body">• smlouvy a dodatky</text><text x="1035" y="228" class="body">• obchodní podmínky</text><text x="1035" y="255" class="body">• GDPR a souhlasy</text><text x="1035" y="282" class="body">• standardizované šablony</text>
+
+<!-- middle side cards -->
+<g filter="url(#shadow)">
+<rect x="240" y="345" rx="18" width="360" height="185" fill="url(#card)" stroke="#c8e0ea"/>
+<rect x="1000" y="345" rx="18" width="360" height="185" fill="url(#card)" stroke="#c8e0ea"/>
+<rect x="640" y="355" rx="22" width="320" height="210" fill="url(#nav)"/>
+</g>
+<text x="270" y="383" class="title">Marketing</text>
+<text x="275" y="416" class="body">• kampaně a follow-up</text><text x="275" y="443" class="body">• webový obsah</text><text x="275" y="470" class="body">• nabídky a texty</text><text x="275" y="497" class="body">• komunikace se zákazníkem</text>
+<text x="1030" y="383" class="title">Finance a účetnictví</text>
+<text x="1035" y="416" class="body">• fakturace a platby</text><text x="1035" y="443" class="body">• náklady a rozpočty</text><text x="1035" y="470" class="body">• účetní podklady</text><text x="1035" y="497" class="body">• mzdová agenda</text>
+
+<text x="800" y="440" text-anchor="middle" class="center">Bohanes HQ</text>
+<line x1="690" y1="460" x2="910" y2="460" stroke="#e9eef4" stroke-width="2"/>
+<text x="800" y="493" text-anchor="middle" class="centerSub">Koordinátor práce, úkolů,</text>
+<text x="800" y="520" text-anchor="middle" class="centerSub">dat a firemních procesů</text>
+
+<!-- lower cards -->
+<g filter="url(#shadow)">
+<rect x="240" y="575" rx="18" width="360" height="170" fill="url(#card)" stroke="#c8e0ea"/>
+<rect x="620" y="610" rx="18" width="360" height="170" fill="url(#card)" stroke="#c8e0ea"/>
+<rect x="1000" y="575" rx="18" width="360" height="170" fill="url(#card)" stroke="#c8e0ea"/>
+</g>
+<text x="270" y="613" class="title">Dokumenty + e-mail + kalendář</text>
+<text x="275" y="646" class="body">• smlouvy, zápisy a přílohy</text><text x="275" y="673" class="body">• kontrola firemních e-mailů</text><text x="275" y="700" class="body">• termíny, úkoly a návrhy odpovědí</text>
+<text x="650" y="648" class="title">Research &amp; veřejné zdroje</text>
+<text x="655" y="681" class="body">• web, ARES a veřejné kontakty</text><text x="655" y="708" class="body">• podklady pro rozhodnutí</text><text x="655" y="735" class="body">• porovnání variant</text>
+<text x="1030" y="613" class="title">Kontrola, identita a schvalování</text>
+<text x="1035" y="646" class="body">• customer_id / stay_id / installation_id</text><text x="1035" y="673" class="body">• validace výstupů a auditní stopa</text><text x="1035" y="700" class="body">• citlivé akce až po schválení</text>
+
+<!-- process -->
+<rect x="240" y="815" rx="18" width="1120" height="135" fill="#fff" stroke="#c8e0ea" filter="url(#shadow)"/>
+<text x="270" y="850" class="title">Jak to budu používat</text>
+<text x="285" y="895" class="body">1  Zadám úkol / pošlu podklad / proběhne porada</text>
+<text x="610" y="895" class="body">→ Bohanes HQ rozdělí práci agentům</text>
+<text x="965" y="895" class="body">→ agenti připraví výstupy</text>
+<text x="285" y="925" class="body">→ Radovan řeší strategii a nejednoznačnosti</text>
+<text x="750" y="925" class="body">→ po schválení se výsledek zapíše do CRM / kalendáře / dokumentů</text>
+
+</svg>
