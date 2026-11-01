@@ -85,4 +85,4 @@ Volitelně lze zřídit vlastní servisní adresu typu hq@bohanestechnologies.cz
 Server rozhoduje, který klient smí získat který procedure_plan_id. App Store ani Google Play neslouží jako zdroj identity klienta; pouze distribuují aplikaci.
 
 ## Infografika
-Viz soubor: bohanes-hq-infografika.jpeg
+Viz soubor: bohanes-hq-infografika.svg
