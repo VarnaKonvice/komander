@@ -15,6 +15,18 @@ Obsahuje zejména:
 - mapu,
 - přehled klientů / obchodního potenciálu.
 
+## Uložený finální stav
+Finální stav CRM k 2. 11. 2026 je uložen přímo v tomto repozitáři:
+
+- `docs/bohanes-technologies/crm/app/index.html` – kompletní aplikace,
+- `docs/bohanes-technologies/crm/data/regions.json` – regionální mapová data,
+- `docs/bohanes-technologies/crm/data/border.json` – hranice mapy,
+- `docs/bohanes-technologies/crm/assets/symbol.svg` – schválený hlavní symbol,
+- `docs/bohanes-technologies/crm/assets/symbol-navy.svg` – tmavá varianta symbolu,
+- `docs/bohanes-technologies/crm/assets/favicon-final.svg` – finální favicon.
+
+Tento snapshot odpovídá produkční verzi nasazené na stabilní adrese výše.
+
 ## Důležité
 Tento odkaz je stabilní produkční adresa CRM a má se používat jako hlavní vstup do systému.
 
