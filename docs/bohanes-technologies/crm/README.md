@@ -15,9 +15,15 @@ Obsahuje zejména:
 - mapu,
 - přehled klientů / obchodního potenciálu.
 
-## Uložený finální stav
-Finální stav CRM k 2. 11. 2026 je uložen přímo v tomto repozitáři:
+## Aktuální finální stav
+Snapshot uložený v tomto repozitáři odpovídá produkční verzi po doplnění pilotního cíle:
 
+- Teplice nad Bečvou zůstávají jedním lázeňským místem v mapě,
+- pilotní cíl je **Lázeňský dům Moravan**,
+- Moravan je viditelný v seznamu, mini kartě, tooltipu mapy a horním podtitulu detailu,
+- při otevření velkého detailu se mini karta automaticky zavře.
+
+## Uložené soubory
 - `docs/bohanes-technologies/crm/app/index.html` – kompletní aplikace,
 - `docs/bohanes-technologies/crm/data/regions.json` – regionální mapová data,
 - `docs/bohanes-technologies/crm/data/border.json` – hranice mapy,
@@ -25,9 +31,18 @@ Finální stav CRM k 2. 11. 2026 je uložen přímo v tomto repozitáři:
 - `docs/bohanes-technologies/crm/assets/symbol-navy.svg` – tmavá varianta symbolu,
 - `docs/bohanes-technologies/crm/assets/favicon-final.svg` – finální favicon.
 
-Tento snapshot odpovídá produkční verzi nasazené na stabilní adrese výše.
+## Další fáze
+Další práce má navazovat doplňováním obsahu do stávající struktury CRM:
+- kontaktní osoby,
+- telefony a e-maily,
+- firmy / provozovatelé,
+- obchodní poznámky,
+- stav obchodního případu.
+
+Struktura a vizuální základ CRM se mají zachovat, pokud nebude výslovně rozhodnuto jinak.
 
 ## Důležité
-Tento odkaz je stabilní produkční adresa CRM a má se používat jako hlavní vstup do systému.
+Stabilní produkční adresa CRM je:
+https://bohanes-technologies-crm-petbohanes-8088.vercel.app/
 
 Při úpravách CRM se nemá vytvářet nový odkaz pro běžné používání; změny se mají nasazovat na stejnou stabilní adresu.
