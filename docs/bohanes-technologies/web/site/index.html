@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0B3B5B">
+<title>Bohanes Technologies | Lázeňský Commander</title>
+<link rel="icon" href="/symbol-navy.svg" type="image/svg+xml">
+<style>
+:root{
+  --navy:#0B3B5B;--navy2:#082F49;--turq:#14B8A6;--aqua:#7DD3D0;--violet:#8B7CC7;
+  --mist:#E9EEF4;--ink:#112238;--muted:#64798a;--line:#d7e2e9;--bg:#f5f8fb;--white:#fff;
+  --commander:#6E56CF;--commander-dark:#2B1A4D;--water:#38B6FF;--gold:#FFC45A;
+  --meal:#50B863;--hydro:#2ED4FF;--rehab:#2EE6C4;--massage:#FF7A59;--heat:#FFC857;--electro:#D6B4FE;--therapy:#FF5DA8;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,Montserrat,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.55}
+a{text-decoration:none;color:inherit}
+button,input,textarea{font:inherit}
+.container{width:min(1180px,calc(100% - 40px));margin:auto}
+.topbar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid rgba(215,226,233,.9)}
+.nav{height:76px;display:flex;align-items:center;gap:28px}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto}
+.brand img{width:46px;height:32px;object-fit:contain}
+.brand-copy{line-height:1}
+.brand-copy strong{display:block;font-size:16px;letter-spacing:.08em;color:var(--navy)}
+.brand-copy span{display:block;font-size:8px;letter-spacing:.28em;color:var(--muted);margin-top:5px}
+.navlinks{display:flex;align-items:center;gap:24px;font-size:14px;font-weight:700;color:#385063}
+.navlinks a:hover{color:var(--navy)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border-radius:12px;padding:12px 18px;font-weight:800;border:1px solid transparent;cursor:pointer;transition:.18s}
+.btn-primary{background:var(--navy);color:#fff;box-shadow:0 8px 22px rgba(11,59,91,.16)}
+.btn-primary:hover{background:#0e4c72;transform:translateY(-1px)}
+.btn-secondary{background:#fff;color:var(--navy);border-color:#bfd0da}
+.btn-secondary:hover{background:var(--mist)}
+.hero{position:relative;overflow:hidden;background:linear-gradient(135deg,#f9fbfd 0%,#edf5f7 52%,#f4f0fb 100%);border-bottom:1px solid var(--line)}
+.hero:before{content:"";position:absolute;right:-160px;top:-220px;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(20,184,166,.14),rgba(20,184,166,0) 66%)}
+.hero:after{content:"";position:absolute;left:-180px;bottom:-300px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(139,124,199,.12),rgba(139,124,199,0) 66%)}
+.hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.02fr .98fr;gap:64px;align-items:center;min-height:680px;padding:72px 0}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--navy);font-size:12px;font-weight:800;box-shadow:0 5px 18px rgba(11,59,91,.06)}
+.eyebrow i{width:8px;height:8px;border-radius:50%;background:var(--turq)}
+h1{font-size:clamp(45px,6vw,72px);line-height:1.02;letter-spacing:-.04em;color:var(--navy);margin:22px 0 20px}
+.hero h1 span{color:var(--commander)}
+.lead{font-size:20px;line-height:1.55;color:#496275;max-width:680px}
+.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+.trustline{display:flex;gap:24px;flex-wrap:wrap;margin-top:30px;color:#536b7c;font-size:13px;font-weight:700}
+.trustline span{display:flex;gap:8px;align-items:center}
+.trustline b{width:8px;height:8px;border-radius:50%;background:var(--turq)}
+.device-stage{position:relative;min-height:520px}
+.app-orb{position:absolute;inset:34px 10px 14px 70px;border-radius:44px;background:linear-gradient(145deg,#20266F,#0F326F 45%,#161B49);box-shadow:0 36px 80px rgba(28,31,74,.24);transform:rotate(2deg)}
+.app-orb:before,.app-orb:after{content:"";position:absolute;border-radius:50%;filter:blur(1px)}
+.app-orb:before{width:280px;height:280px;right:-30px;top:30px;background:radial-gradient(circle,rgba(69,136,255,.35),transparent 68%)}
+.app-orb:after{width:240px;height:240px;left:-30px;bottom:20px;background:radial-gradient(circle,rgba(139,70,255,.25),transparent 68%)}
+.phone{position:absolute;right:36px;top:0;width:310px;height:610px;background:#0e1422;border:9px solid #1d2633;border-radius:48px;box-shadow:0 35px 80px rgba(17,34,56,.30);overflow:hidden}
+.phone:before{content:"";position:absolute;z-index:5;top:10px;left:50%;transform:translateX(-50%);width:92px;height:26px;border-radius:17px;background:#080c13}
+.screen{height:100%;padding:52px 16px 18px;color:#fff;background:linear-gradient(150deg,#20266F,#0F326F 50%,#161B49)}
+.screen-title{font-size:28px;font-weight:850}.screen-sub{font-size:12px;color:#c9d6ec;margin-top:3px}
+.today-card{margin-top:16px;padding:15px;border-radius:22px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.14)}
+.today-card small{color:#cfd8ee;font-weight:700}.today-card strong{display:block;font-size:19px;margin-top:3px}
+.next-card{margin-top:12px;border-radius:22px;padding:16px;background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.07));border:1px solid rgba(255,255,255,.15)}
+.event-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.event-badge{width:46px;height:46px;border-radius:50%;background:var(--hydro);display:grid;place-items:center;font-size:22px;color:#062c3b;box-shadow:0 0 0 6px rgba(46,212,255,.12)}
+.time-ring{width:76px;height:76px;border-radius:50%;border:7px solid rgba(46,212,255,.22);border-top-color:var(--hydro);display:grid;place-items:center;text-align:center;font-size:10px;color:#cfeeff}.time-ring b{font-size:16px;color:#fff}
+.event-title{font-size:24px;font-weight:850;color:var(--hydro);margin-top:12px}.location{font-size:12px;color:#d9e2f0;margin-top:4px}
+.next-line{display:flex;align-items:center;gap:10px;margin-top:13px;padding:11px;border-radius:16px;background:rgba(255,255,255,.08)}
+.next-line .dot{width:10px;height:10px;border-radius:50%;background:var(--massage)}
+.watch{position:absolute;left:20px;bottom:-8px;width:185px;height:225px}
+.watch-body{position:absolute;left:38px;top:25px;width:112px;height:142px;border-radius:31px;background:#121923;border:8px solid #293541;box-shadow:0 25px 45px rgba(17,34,56,.28)}
+.watch-screen{margin:7px;height:112px;border-radius:22px;background:linear-gradient(160deg,#20266F,#0F326F);padding:12px;color:#fff}
+.watch-screen small{font-size:8px;color:#cbd5e1}.watch-screen b{display:block;font-size:14px;margin-top:6px;color:var(--gold)}.watch-screen strong{display:block;font-size:21px;margin-top:7px}
+.watch-band{position:absolute;left:73px;width:42px;height:58px;background:#273340}.watch-band.top{top:0;border-radius:18px 18px 8px 8px}.watch-band.bottom{top:163px;border-radius:8px 8px 18px 18px}
+.product-mark{position:absolute;left:7px;top:0;width:92px;height:92px;border-radius:26px;box-shadow:0 18px 40px rgba(43,26,77,.24)}
+section{padding:90px 0}
+.section-kicker{font-size:12px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;color:var(--turq)}
+h2{font-size:clamp(34px,4vw,48px);line-height:1.1;letter-spacing:-.025em;color:var(--navy);margin:10px 0 16px}
+.section-lead{font-size:18px;color:#5c7181;max-width:760px}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:36px}
+.feature{background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px;box-shadow:0 8px 28px rgba(11,59,91,.05)}
+.feature .ico{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;background:var(--mist);color:var(--navy);font-size:22px;margin-bottom:18px}
+.feature h3{margin:0 0 8px;color:var(--navy);font-size:20px}.feature p{margin:0;color:#64798a;font-size:14px}
+.product-band{background:var(--navy);color:#fff;position:relative;overflow:hidden}
+.product-band:after{content:"";position:absolute;right:-170px;top:-160px;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(125,211,208,.20),transparent 68%)}
+.product-grid{position:relative;z-index:2;display:grid;grid-template-columns:.9fr 1.1fr;gap:64px;align-items:center}
+.product-copy h2{color:#fff}.product-copy .section-lead{color:#d2e0e8}
+.product-logo-row{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.product-logo-row img{width:82px;height:82px;border-radius:24px}.product-logo-row strong{font-size:22px}.product-logo-row span{display:block;font-size:12px;color:#b9cbd6;margin-top:4px}
+.flow{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.flow-step{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);border-radius:17px;padding:18px}
+.flow-step b{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:var(--turq);color:#083b4a;font-size:14px;margin-bottom:13px}
+.flow-step strong{display:block;font-size:16px}.flow-step span{display:block;font-size:13px;color:#ccdae2;margin-top:5px}
+.for-spas{background:#fff}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:42px;align-items:start}
+.checks{display:grid;gap:12px;margin-top:26px}.check{display:flex;gap:12px;align-items:flex-start;padding:15px;border:1px solid var(--line);border-radius:14px;background:#fbfdfe}.check i{width:24px;height:24px;border-radius:50%;background:rgba(20,184,166,.14);color:#087e72;font-style:normal;display:grid;place-items:center;font-weight:900;flex:0 0 24px}
+.pilot-card{padding:28px;border-radius:24px;background:linear-gradient(145deg,#f1f6f8,#f4f0fb);border:1px solid var(--line)}
+.pilot-card h3{font-size:27px;color:var(--navy);margin:0 0 10px}.pilot-card p{color:#5e7384}
+.pilot-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}.metric{padding:14px;border-radius:13px;background:#fff;border:1px solid var(--line)}.metric b{display:block;color:var(--navy);font-size:16px}.metric span{font-size:12px;color:var(--muted)}
+.install{background:linear-gradient(180deg,#f5f8fb,#edf3f6)}
+.qr-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:34px;max-width:800px}
+.qr-card{display:flex;gap:20px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px}
+.qr-placeholder{width:132px;height:132px;flex:0 0 132px;border:8px solid var(--navy);border-radius:12px;background:
+ linear-gradient(90deg,var(--navy) 14px,transparent 14px) 0 0/32px 32px,
+ linear-gradient(var(--navy) 14px,transparent 14px) 0 0/32px 32px,
+ #fff;position:relative;overflow:hidden;opacity:.17}
+.qr-placeholder:after{content:"QR";position:absolute;inset:0;display:grid;place-items:center;color:var(--navy);font-size:34px;font-weight:900;background:rgba(255,255,255,.78)}
+.qr-card h3{margin:0 0 6px;color:var(--navy)}.qr-card p{margin:0;color:var(--muted);font-size:13px}
+.security-strip{margin-top:28px;padding:18px 20px;border:1px solid #c9d9e1;border-radius:16px;background:#fff;color:#526a7a;font-size:13px}
+.contact{background:#0a314d;color:#fff}
+.contact-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:56px}
+.contact h2{color:#fff}.contact .section-lead{color:#c9d8e1}
+.contact-note{margin-top:26px;padding:16px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(255,255,255,.06);color:#d7e4ea;font-size:13px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#fff;border-radius:22px;padding:24px;color:var(--ink)}
+.form .full{grid-column:1/-1}.form label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px}.form input,.form textarea{width:100%;border:1px solid #cedbe3;border-radius:11px;padding:11px 12px;background:#fff;color:var(--ink)}.form textarea{min-height:110px;resize:vertical}
+.form .submit-row{grid-column:1/-1;display:flex;align-items:center;gap:14px;flex-wrap:wrap}.form-status{font-size:12px;color:var(--muted)}
+footer{background:#072b43;color:#b8cad4;border-top:1px solid rgba(255,255,255,.08);padding:28px 0}.footer{display:flex;align-items:center;justify-content:space-between;gap:20px;font-size:12px}.footer .mini-brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:800}.footer img{width:34px;height:24px}
+.mobile-menu{display:none}
+@media(max-width:980px){
+ .navlinks{display:none}.hero-grid,.product-grid,.two-col,.contact-grid{grid-template-columns:1fr}.hero-grid{padding:54px 0 76px}.device-stage{min-height:620px;max-width:620px;width:100%;margin:auto}.feature-grid{grid-template-columns:1fr 1fr}.product-grid{gap:36px}.contact-grid{gap:30px}
+}
+@media(max-width:640px){
+ .container{width:min(100% - 28px,1180px)}.nav{height:68px}.brand-copy{display:none}.topbar .btn{padding:10px 12px;font-size:12px}
+ h1{font-size:43px}.lead{font-size:17px}section{padding:68px 0}.feature-grid,.flow,.qr-grid{grid-template-columns:1fr}.feature-grid{gap:12px}.phone{right:0;width:285px;height:570px}.app-orb{left:30px}.watch{left:-4px}.product-mark{left:0}.qr-card{align-items:flex-start}.qr-placeholder{width:104px;height:104px;flex-basis:104px}.form{grid-template-columns:1fr}.form .full,.form .submit-row{grid-column:auto}.footer{align-items:flex-start;flex-direction:column}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="container nav">
+    <a class="brand" href="#top" aria-label="Bohanes Technologies">
+      <img src="/symbol-navy.svg" alt="">
+      <span class="brand-copy"><strong>BOHANES</strong><span>TECHNOLOGIES</span></span>
+    </a>
+    <nav class="navlinks">
+      <a href="#produkt">Lázeňský Commander</a>
+      <a href="#jak-funguje">Jak funguje</a>
+      <a href="#pro-lazne">Pro lázně</a>
+      <a href="#instalace">Instalace</a>
+    </nav>
+    <a class="btn btn-primary" href="#kontakt">Kontaktujte nás</a>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow"><i></i> Bohanes Technologies · lázeňské technologie</span>
+      <h1>Lázeňský pobyt.<br><span>Bez chaosu v rozpisu.</span></h1>
+      <p class="lead">Lázeňský Commander převádí denní program klienta do přehledné mobilní podoby. Ukáže, co právě probíhá, co následuje, kdy vyrazit a jak vypadá celý pobyt.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#kontakt">Chci pilotní nasazení</a>
+        <a class="btn btn-secondary" href="#produkt">Podívat se na produkt</a>
+      </div>
+      <div class="trustline">
+        <span><b></b> iPhone + Apple Watch</span>
+        <span><b></b> osobní procedurový rozpis</span>
+        <span><b></b> přehled dne i celého pobytu</span>
+      </div>
+    </div>
+    <div class="device-stage" aria-label="Ukázka Lázeňského Commanderu na iPhonu a Apple Watch">
+      <div class="app-orb"></div>
+      <img class="product-mark" src="https://raw.githubusercontent.com/VarnaKonvice/komander/main/assets/brand/lazensky-commander-v1/masters/launcher-full-1024.png" alt="Lázeňský Commander">
+      <div class="phone">
+        <div class="screen">
+          <div class="screen-title">Dnes</div>
+          <div class="screen-sub">Přehled dne a aktuální stav</div>
+          <div class="today-card"><small>PROGRAM DNE</small><strong>6 událostí · 4 procedury</strong></div>
+          <div class="next-card">
+            <div class="event-top">
+              <div><div class="event-badge">◉</div><small style="display:block;margin-top:8px;color:#d6ecf5;font-weight:800">NÁSLEDUJE</small></div>
+              <div class="time-ring"><div>Odchod<br><b>14 min</b></div></div>
+            </div>
+            <div class="event-title">Jodobromová koupel</div>
+            <div class="location">Léčebný dům · 14:20–14:40</div>
+            <div class="next-line"><span class="dot"></span><div><small style="color:#cbd5e1">Potom</small><strong style="display:block;font-size:14px">Individuální rehabilitace · 15:10</strong></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="watch">
+        <div class="watch-band top"></div><div class="watch-band bottom"></div>
+        <div class="watch-body"><div class="watch-screen"><small>NÁSLEDUJE</small><b>Hydrojet</b><strong>14:20</strong><small>Vyrazit za 14 min</small></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="produkt">
+  <div class="container">
+    <div class="section-kicker">Lázeňský Commander</div>
+    <h2>Klient vždy ví, co ho čeká.</h2>
+    <p class="section-lead">Commander používá jeden procedurový rozpis jako zdroj denního přehledu, upozornění a zobrazení na telefonu i hodinkách. Cílem není přidat další administrativu, ale odstranit z pobytu zbytečný stres.</p>
+    <div class="feature-grid">
+      <article class="feature"><div class="ico">⌚</div><h3>Co mě teď čeká</h3><p>Aktuální a následující událost, čas začátku, konec, místo a odchod v jednom pohledu.</p></article>
+      <article class="feature"><div class="ico">◷</div><h3>Upozornění na odchod</h3><p>Systémová upozornění pomáhají klientovi reagovat včas před procedurou, ne až ve chvíli jejího začátku.</p></article>
+      <article class="feature"><div class="ico">◫</div><h3>Live Activity</h3><p>Průběžný kontext může být dostupný na zamčené obrazovce a v Dynamic Islandu bez nutnosti aplikaci stále otevírat.</p></article>
+      <article class="feature"><div class="ico">◎</div><h3>Apple Watch</h3><p>Nejdůležitější informace jsou dostupné i na hodinkách, včetně další události a časového kontextu.</p></article>
+      <article class="feature"><div class="ico">▦</div><h3>Celý pobyt</h3><p>Souhrn termínu pobytu, jeho průběhu a jednotlivých terapií včetně počtu naplánovaných procedur.</p></article>
+      <article class="feature"><div class="ico">●</div><h3>Barevná orientace</h3><p>Procedury jsou rozlišeny konzistentními barvami a ikonami, aby byl rozpis čitelný na první pohled.</p></article>
+    </div>
+  </div>
+</section>
+
+<section class="product-band" id="jak-funguje">
+  <div class="container product-grid">
+    <div class="product-copy">
+      <div class="product-logo-row">
+        <img src="https://raw.githubusercontent.com/VarnaKonvice/komander/main/assets/brand/lazensky-commander-v1/masters/launcher-full-1024.png" alt="Lázeňský Commander">
+        <div><strong>Lázeňský Commander</strong><span>produkt Bohanes Technologies</span></div>
+      </div>
+      <div class="section-kicker" style="color:#7DD3D0">Jednoduchý princip</div>
+      <h2>Od instalace k osobnímu programu.</h2>
+      <p class="section-lead">Klient dostane aplikaci a svůj konkrétní pobyt. Commander pak pracuje s časovým plánem procedur a jídel a převádí ho do přehledného denního průvodce.</p>
+    </div>
+    <div class="flow">
+      <div class="flow-step"><b>1</b><strong>Instalace aplikace</strong><span>Klient naskenuje instalační QR kód a otevře Commander na svém iPhonu.</span></div>
+      <div class="flow-step"><b>2</b><strong>Přiřazení pobytu</strong><span>Instalace se bezpečně spojí s konkrétním klientem a konkrétním lázeňským pobytem.</span></div>
+      <div class="flow-step"><b>3</b><strong>Osobní rozpis</strong><span>Do aplikace se načte platný plán procedur a jídel pro daný pobyt.</span></div>
+      <div class="flow-step"><b>4</b><strong>Každodenní průvodce</strong><span>Commander ukazuje aktuální stav, další program, časový kontext a souhrn pobytu.</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="for-spas" id="pro-lazne">
+  <div class="container two-col">
+    <div>
+      <div class="section-kicker">Pro lázně</div>
+      <h2>Pilot nejdřív. Rozšíření až podle výsledku.</h2>
+      <p class="section-lead">První nasazení nemusí znamenat změnu celého provozu. Commander lze ověřit na omezené skupině klientů a vyhodnotit reálné používání před větším rozšířením.</p>
+      <div class="checks">
+        <div class="check"><i>✓</i><div><strong>Malý organizační zásah</strong><br><span style="color:var(--muted);font-size:13px">Pilot se dá oddělit od plošného nasazení v celém lázeňském komplexu.</span></div></div>
+        <div class="check"><i>✓</i><div><strong>Jednoznačný rozsah</strong><br><span style="color:var(--muted);font-size:13px">Jeden lázeňský dům, konkrétní skupina klientů, jasné období a měřitelné výstupy.</span></div></div>
+        <div class="check"><i>✓</i><div><strong>Další krok podle dat</strong><br><span style="color:var(--muted);font-size:13px">Teprve po ověření se rozhoduje o rozšíření, úpravách nebo integraci do dalšího provozu.</span></div></div>
+      </div>
+    </div>
+    <aside class="pilot-card">
+      <div class="section-kicker">Pilotní spolupráce</div>
+      <h3>Začněme jedním dobře měřitelným provozem.</h3>
+      <p>Pro první ověření doporučujeme menší počet licencí a přesně vymezenou skupinu hostů. Cílem je získat reálnou zpětnou vazbu bez zbytečného provozního rizika.</p>
+      <div class="pilot-metrics">
+        <div class="metric"><b>omezený rozsah</b><span>bez plošného nasazení</span></div>
+        <div class="metric"><b>jasný scénář</b><span>konkrétní pobyt a skupina</span></div>
+        <div class="metric"><b>měřitelný výsledek</b><span>používání a zpětná vazba</span></div>
+        <div class="metric"><b>rychlá iterace</b><span>úpravy podle reality</span></div>
+      </div>
+      <a class="btn btn-primary" href="#kontakt">Domluvit pilot</a>
+    </aside>
+  </div>
+</section>
+
+<section class="install" id="instalace">
+  <div class="container">
+    <div class="section-kicker">Instalace a aktivace</div>
+    <h2>QR kódy budou součástí finálního nasazení.</h2>
+    <p class="section-lead">Stránka je na ně připravená už teď. Skutečný instalační kód doplníme až ve chvíli, kdy bude definitivní distribuční odkaz aplikace. Párovací kód pobytu může být oddělený od samotné instalace.</p>
+    <div class="qr-grid">
+      <div class="qr-card"><div class="qr-placeholder"></div><div><h3>Instalace aplikace</h3><p>Sem přijde ostrý QR kód pro stažení nebo otevření Lázeňského Commanderu na podporovaném zařízení.</p></div></div>
+      <div class="qr-card"><div class="qr-placeholder"></div><div><h3>Aktivace pobytu</h3><p>Volitelný jednorázový QR kód může spojit konkrétní instalaci s konkrétním klientem a pobytem.</p></div></div>
+    </div>
+    <div class="security-strip"><strong>Bezpečnostní princip:</strong> aplikace nemá určovat identitu klienta jen podle instalace. Přístup k procedurovému plánu má být svázaný s autorizovaným klientem a konkrétním pobytem.</div>
+  </div>
+</section>
+
+<section class="contact" id="kontakt">
+  <div class="container contact-grid">
+    <div>
+      <div class="section-kicker" style="color:#7DD3D0">Kontakt</div>
+      <h2>Chcete Commander vyzkoušet v lázních?</h2>
+      <p class="section-lead">Domluvíme rozsah pilotu, způsob práce s rozpisem a konkrétní skupinu klientů. Web zatím běží jako pracovní verze před pořízením firemní domény.</p>
+      <div class="contact-note"><strong>Bohanes Technologies</strong><br>Firemní e-mail, telefon a právní údaje doplníme před ostrým spuštěním na vlastní doméně.</div>
+    </div>
+    <form class="form" id="contactForm">
+      <div><label>Jméno</label><input name="name" placeholder="Jméno a příjmení"></div>
+      <div><label>Lázně / firma</label><input name="company" placeholder="Název organizace"></div>
+      <div><label>E-mail</label><input type="email" name="email" placeholder="vas@email.cz"></div>
+      <div><label>Telefon</label><input name="phone" placeholder="+420 …"></div>
+      <div class="full"><label>Co chcete řešit</label><textarea name="message" placeholder="Např. pilotní nasazení pro jednu skupinu klientů…"></textarea></div>
+      <div class="submit-row"><button class="btn btn-primary" type="submit">Odeslat poptávku</button><span class="form-status" id="formStatus">Odesílání zapojíme po zřízení firemní e-mailové adresy.</span></div>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="container footer">
+    <div class="mini-brand"><img src="/symbol.svg" alt=""> BOHANES TECHNOLOGIES</div>
+    <div>© 2026 Bohanes Technologies · Lázeňský Commander</div>
+  </div>
+</footer>
+
+<script>
+document.getElementById('contactForm').addEventListener('submit',function(e){
+  e.preventDefault();
+  document.getElementById('formStatus').textContent='Formulář je připravený. Ostré odesílání zapojíme s firemním e-mailem a doménou.';
+});
+</script>
+</body></html>
