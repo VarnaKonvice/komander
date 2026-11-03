@@ -25,7 +25,7 @@ button,input,textarea{font:inherit}
 header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.96);backdrop-filter:blur(16px);border-bottom:1px solid rgba(216,228,235,.95);box-shadow:0 5px 20px rgba(11,59,91,.04)}
 .nav{height:88px;display:flex;align-items:center;gap:22px}
 .nav-logo{display:block;width:auto;height:58px;object-fit:contain;margin-right:auto}
-.navlinks{display:flex;align-items:center;gap:5px}
+.navlinks{display:flex;align-items:center;gap:5px;margin-left:auto}
 .navlinks a{padding:9px 10px;border-radius:10px;font-size:12px;font-weight:800;color:#506878}
 .navlinks a:hover,.navlinks a.active{background:#E6F4F2;color:#087E72}
 .cta{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:11px 16px;background:var(--navy);color:#fff;font-size:13px;font-weight:850;border:1px solid transparent}
@@ -121,6 +121,27 @@ footer{background:linear-gradient(145deg,#06283F,#0A3450 70%,#252455);color:#C4D
 @media(max-width:680px){
   .wrap{width:min(100% - 26px,1220px)}.nav-logo{height:48px;width:auto}.hero-stage{min-height:570px}.hero-glow{width:390px;height:390px}.hero-phone{width:248px;left:42%}.real-widget{width:255px;right:-7px;top:92px;padding:13px;border-radius:23px}.rw-head{font-size:11px}.rw-head img{width:27px;height:27px}.rw-body{grid-template-columns:45px 1fr auto;gap:7px;margin-top:9px}.rw-icon{width:43px;height:43px;font-size:20px}.rw-title{font-size:15px}.rw-time{font-size:13px}.hero-calendar{width:220px;bottom:30px;right:0}.pad{padding:26px}.section-tile{border-radius:22px}.future-grid,.qrs,.form,.footer-grid{grid-template-columns:1fr}.form .full{grid-column:auto}.paper{width:92%;padding:18px}.procedure-row{margin-top:18px}.section-tile{box-shadow:0 10px 28px rgba(11,59,91,.07)}
 }
+
+.real-widget-img{position:absolute;z-index:5;right:-2px;top:128px;width:330px;height:auto;border-radius:26px;box-shadow:0 22px 44px rgba(10,31,51,.22);border:1px solid rgba(255,255,255,.18)}
+.alarm-real-grid{display:grid;grid-template-columns:.78fr 1.22fr;gap:18px;align-items:center}
+.alarm-shot{margin:0;background:#050505;border-radius:26px;padding:10px;box-shadow:0 18px 40px rgba(10,31,51,.22)}
+.alarm-shot img{width:100%;border-radius:19px}
+.alarm-shot figcaption{text-align:center;color:#6C7780;background:#fff;border-radius:12px;padding:8px 10px;margin-top:9px;font-size:10px;font-weight:800}
+.alarm-open-card{background:#fff;border:1px solid var(--line);border-radius:24px;padding:24px;box-shadow:0 14px 34px rgba(11,59,91,.07)}
+.alarm-open-card h3{font-size:25px;margin:11px 0 8px}.alarm-open-card p{color:var(--muted);font-size:14px;margin:0}
+.alarm-open-icon{width:54px;height:54px;border-radius:17px;background:#FFF0D0;color:#8B6200;display:grid;place-items:center;font-size:27px}
+.alarm-code-note{margin-top:18px;border-radius:12px;padding:10px 12px;background:#F4F7F9;color:#667985;font-size:10px;font-weight:800}
+.widget-real-panel{background:#fff;border:1px solid var(--line);border-radius:24px;padding:20px;box-shadow:0 10px 28px rgba(11,59,91,.06)}
+.widget-real-panel p{font-size:11px;color:var(--muted);margin:14px 0 0}.widget-real-panel b{color:var(--navy)}
+.widget-long-photo{width:100%;border-radius:18px;margin-top:18px;box-shadow:0 12px 26px rgba(11,59,91,.13)}
+.widgets-small-photo{width:100%;border-radius:18px;margin-top:12px;box-shadow:0 12px 26px rgba(11,59,91,.10)}
+.future-live img{width:78px;height:auto;border-radius:14px;float:right;margin:-30px 0 8px 12px;box-shadow:0 8px 18px rgba(11,59,91,.15)}
+@media(max-width:680px){
+  .real-widget-img{width:250px;right:-5px;top:100px}
+  .alarm-real-grid{grid-template-columns:1fr}
+  .future-live img{width:65px}
+}
+
 </style>
 </head>
 <body>
@@ -134,6 +155,8 @@ footer{background:linear-gradient(145deg,#06283F,#0A3450 70%,#252455);color:#C4D
    <a href="#jak-funguje" data-section="jak-funguje">Jak funguje</a>
    <a href="#alarmy" data-section="alarmy">Alarmy</a>
    <a href="#kalendar" data-section="kalendar">Kalendář a widgety</a>
+   <a href="#pro-lazne" data-section="pro-lazne">Pro lázně</a>
+   <a href="#pripravujeme" data-section="pripravujeme">Co chystáme</a>
    <a href="#instalace" data-section="instalace">Instalace</a>
   </nav>
   <a class="cta" href="#kontakt">Kontaktujte nás</a>
@@ -150,18 +173,13 @@ footer{background:linear-gradient(145deg,#06283F,#0A3450 70%,#252455);color:#C4D
    <div class="hero-actions"><a class="cta" href="#commander">Prohlédnout aplikaci</a><a class="cta secondary" href="#kontakt">Domluvit pilot</a></div>
    <div class="platforms">
     <span class="platform"> iPhone <small>iOS 26.1+</small></span>
-    <span class="platform android">● Android <small>připravujeme</small></span>
+    <span class="platform android">● Android</span>
    </div>
-   <div class="hero-note">Android verzi a její minimální požadavky doplníme po dokončení distribuční verze.</div>
   </div>
   <div class="hero-stage">
    <div class="hero-glow"></div>
    <img class="hero-phone" src="/screens/commander-today-proof.png" alt="Lázeňský Commander – Dnes">
-   <div class="real-widget">
-    <div class="rw-head"><img src="/commander-official.png" alt=""><span>Lázeňský Commander</span><span>st 7. 10.</span></div>
-    <div class="rw-body"><div class="rw-icon">✚</div><div><div class="rw-title">Vizita</div><div class="rw-sub">RS · 7. patro<br>6:35–6:40</div></div><div class="rw-time"><small>Začátek za</small>2 h 41 min</div></div>
-    <div class="rw-next"><span>Potom<br><b>Snídaně</b></span><strong>Začátek 6:45</strong></div>
-   </div>
+   <img class="real-widget-img" src="/real-ui/widget-long-real.jpg" alt="Skutečný podlouhlý widget Lázeňského Commanderu">
    <div class="hero-calendar">
     <div class="hcal-head"><span>Kalendář pobytu</span><span>Říjen 2026</span></div>
     <div class="hcal-week"><span>Po</span><span>Út</span><span>St</span><span>Čt</span><span>Pá</span><span>So</span><span>Ne</span></div>
@@ -248,9 +266,9 @@ footer{background:linear-gradient(145deg,#06283F,#0A3450 70%,#252455);color:#C4D
      <div class="alarm-point"><i>3</i><div><b>Systémové upozornění</b><br><span>Upozornění se zobrazí i mimo otevřenou aplikaci po udělení oprávnění.</span></div></div>
     </div>
    </div>
-   <div class="alarm-visual">
-    <div class="notification"><img src="/commander-official.png" alt=""><div><strong>Lázeňský Commander</strong><span>Upozornění · je čas připravit se k odchodu</span></div><time>teď</time></div>
-    <div class="countdown-card"><div><h3>Elektroléčba · budova 2</h3><p style="margin:0;color:#C7D8E1">Aktuální kontext procedury a zbývající čas.</p></div><div class="count-ring"><span><b>4</b>min</span></div></div>
+   <div class="alarm-real-grid">
+    <figure class="alarm-shot"><img src="/real-ui/alarm-lock-real.jpg" alt="Skutečný systémový alarm Lázeňského Commanderu na iPhonu"><figcaption>Skutečný AlarmKit alarm na iPhonu</figcaption></figure>
+    <div class="alarm-open-card"><div class="alarm-open-icon">⏰</div><h3>Při otevřené aplikaci</h3><p>Alarm stále zobrazuje systém iOS. Commander dodává název události a přesný čas odchodu; vzhled a ovládání „Zastavit“ zajišťuje systémový AlarmKit.</p><div class="alarm-code-note">AlarmKit · systémové zobrazení · bez vlastní napodobeniny</div></div>
    </div>
   </div>
  </div>
@@ -261,10 +279,11 @@ footer{background:linear-gradient(145deg,#06283F,#0A3450 70%,#252455);color:#C4D
   <div class="pad">
    <div class="screens-head"><div><div class="kicker">Kalendář a widgety</div><h2>Program i mimo aplikaci.</h2></div><p class="lead">Kalendář dává pobytu známou podobu a widget ukáže nejbližší událost přímo na ploše telefonu. Apple a Google kalendář mohou nabídnout podobný, intuitivní přehled podle platformy.</p></div>
    <div class="calendar-grid">
-    <div class="widget-card">
-     <div class="rw-head"><img src="/commander-official.png" alt=""><span>Lázeňský Commander</span><span>st 7. 10.</span></div>
-     <div class="rw-body"><div class="rw-icon">✚</div><div><div class="rw-title">Vizita</div><div class="rw-sub">RS · 7. patro<br>6:35–6:40</div></div><div class="rw-time"><small>Začátek za</small>2 h 41 min</div></div>
-     <div class="rw-next"><span>Potom<br><b>Snídaně</b></span><strong>Začátek 6:45</strong></div>
+    <div class="widget-real-panel">
+     <div class="cal-brand"><span class="logo">◫</span><span>Skutečné widgety Commanderu</span></div>
+     <img class="widget-long-photo" src="/real-ui/widget-long-real.jpg" alt="Skutečný podlouhlý widget Lázeňského Commanderu">
+     <img class="widgets-small-photo" src="/real-ui/widgets-small-real.jpg" alt="Skutečné malé widgety Lázeňského Commanderu">
+     <p>Přístup ke kalendáři bude přímo z <b>Nastavení → Kalendář pobytu</b>.</p>
     </div>
     <div class="applecal">
      <div class="cal-brand"><span class="logo"></span><span>Apple Kalendář</span></div>
@@ -293,10 +312,10 @@ footer{background:linear-gradient(145deg,#06283F,#0A3450 70%,#252455);color:#C4D
   <div class="pad">
    <div class="kicker">Co chystáme</div><h2>Commander nekončí u dnešního iPhonu.</h2>
    <div class="future-grid">
-    <article class="future-card"><span class="tag">Připravujeme</span><h3>Android</h3><p>Samostatná Android verze se stejnou logikou pobytu a upozornění.</p></article>
     <article class="future-card"><span class="tag">Připravujeme</span><h3>Apple Watch</h3><p>Nejbližší procedura, odchod a časový kontext přímo na zápěstí.</p></article>
-    <article class="future-card"><span class="tag">Rozvoj</span><h3>Kalendářové propojení</h3><p>Přehled pobytu v prostředí, které už klient používá na telefonu.</p></article>
-    <article class="future-card"><span class="tag">Rozvoj</span><h3>Další widgety</h3><p>Rychlejší přehled dne a nejbližších procedur bez otevření aplikace.</p></article>
+    <article class="future-card future-live"><span class="tag">Rozvoj</span><h3>Live Activity</h3><img src="/real-ui/live-activity-real.jpg" alt="Skutečná Live Activity Lázeňského Commanderu"><p>Aktuální procedura a odpočet přímo na zamčené obrazovce.</p></article>
+    <article class="future-card"><span class="tag">Rozvoj</span><h3>Dynamic Island</h3><p>Krátký kontext nejbližší procedury bez nutnosti otevírat aplikaci.</p></article>
+    <article class="future-card"><span class="tag">Rozvoj</span><h3>Další widgety</h3><p>Rychlejší přehled dne a nejbližších procedur přímo na ploše telefonu.</p></article>
    </div>
   </div>
  </div>
@@ -316,10 +335,10 @@ footer{background:linear-gradient(145deg,#06283F,#0A3450 70%,#252455);color:#C4D
   <div class="pad install-grid">
    <div>
     <div class="kicker">Instalace a aktivace</div><h2>Tři QR kódy. Jasný postup.</h2>
-    <p class="lead">Samostatný QR pro iPhone, samostatný pro připravovanou Android verzi a třetí kód pro aktivaci konkrétního pobytu.</p>
+    <p class="lead">Samostatný QR pro iPhone, samostatný QR pro Android a třetí kód pro aktivaci konkrétního pobytu.</p>
     <div class="qrs">
      <div class="qr-card"><div class="qr-brand"></div><b>iPhone</b><span>Instalace aplikace</span></div>
-     <div class="qr-card"><div class="qr-brand"></div><b>Android</b><span>Připravovaná verze</span></div>
+     <div class="qr-card"><div class="qr-brand"></div><b>Android</b><span>Instalace aplikace</span></div>
      <div class="qr-card"><div class="qr-brand"></div><b>Aktivace pobytu</b><span>Propojení aplikace a pobytu</span></div>
     </div>
    </div>
@@ -341,7 +360,7 @@ footer{background:linear-gradient(145deg,#06283F,#0A3450 70%,#252455);color:#C4D
 <footer>
  <div class="wrap footer-grid">
   <div><img class="footer-logo" src="/bohanes-logo-white.svg" alt="Bohanes Technologies"><div class="footer-copy">Digitální řešení pro lázně a jejich klienty. Prakticky, přehledně a s důrazem na reálné použití.</div></div>
-  <div><div class="footer-title">Navigace</div><div class="footer-links"><a href="#domu">Domů</a><a href="#o-nas">O nás</a><a href="#commander">Lázeňský Commander</a><a href="#jak-funguje">Jak funguje</a><a href="#alarmy">Alarmy</a><a href="#kalendar">Kalendář a widgety</a><a href="#instalace">Instalace</a></div></div>
+  <div><div class="footer-title">Navigace</div><div class="footer-links"><a href="#domu">Domů</a><a href="#o-nas">O nás</a><a href="#commander">Lázeňský Commander</a><a href="#jak-funguje">Jak funguje</a><a href="#alarmy">Alarmy</a><a href="#kalendar">Kalendář a widgety</a><a href="#pro-lazne">Pro lázně</a><a href="#pripravujeme">Co chystáme</a><a href="#instalace">Instalace</a></div></div>
   <div><div class="footer-title">Kontakt</div><div class="footer-contact"><span>info@bohanastechnology.cz</span><span>+420 777 000 000</span></div></div>
  </div>
 </footer>
