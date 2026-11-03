@@ -132,6 +132,20 @@ footer{background:#072b43;color:#b8cad4;border-top:1px solid rgba(255,255,255,.0
 @media(max-width:980px){.hero-product{min-height:600px;max-width:620px;width:100%;margin:auto}.roadmap-grid{grid-template-columns:1fr}}
 @media(max-width:640px){.hero-product{min-height:560px}.hero-product:before{width:400px;height:400px}.hero-glyph{width:90px;height:90px;left:0}.hero-screen{width:300px}.real-badge{right:0}.screen-card{flex-basis:245px}}
 
+
+.real-procedure{padding:18px}
+.procedure-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:14px}
+.procedure-head h3{margin:8px 0 0;font-size:18px}
+.source-pill{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;background:rgba(125,211,208,.16);border:1px solid rgba(125,211,208,.26);color:#b7f0ec;font-size:10px;font-weight:850;letter-spacing:.07em;text-transform:uppercase}
+.source-note{font-size:10px;line-height:1.35;color:#b9cbd6;max-width:190px;text-align:right}
+.schedule-day{background:#fff;color:var(--ink);border-radius:14px;padding:12px 13px;margin-top:10px;box-shadow:0 10px 24px rgba(0,0,0,.10)}
+.schedule-date{display:flex;justify-content:space-between;gap:10px;align-items:center;padding-bottom:8px;margin-bottom:3px;border-bottom:1px solid var(--line)}
+.schedule-date strong{color:var(--navy);font-size:13px}.schedule-date span{font-size:10px;color:var(--muted);font-weight:700}
+.schedule-row{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:start;padding:7px 0;border-bottom:1px dashed #dce5ea}
+.schedule-row:last-child{border-bottom:0}
+.schedule-row time{color:var(--navy);font-weight:850;font-size:12px;font-variant-numeric:tabular-nums}
+.schedule-row b{display:block;font-size:12px;color:var(--ink);line-height:1.25}.schedule-row span{display:block;font-size:10px;color:var(--muted);margin-top:2px;line-height:1.25}
+@media(max-width:640px){.procedure-head{display:block}.source-note{display:block;text-align:left;max-width:none;margin-top:7px}}
 </style>
 </head>
 <body>
@@ -228,15 +242,28 @@ footer{background:#072b43;color:#b8cad4;border-top:1px solid rgba(255,255,255,.0
       <div class="section-kicker" style="color:#7DD3D0">Jak to funguje</div>
       <h2>Od procedurového listu k osobnímu programu.</h2>
       <p class="section-lead">Vstupem je skutečný procedurový rozpis konkrétního klienta. Ten se převede do jednotné digitální podoby a Commander z něj vytvoří přehled dne, týdne i celého pobytu.</p>
-      <div class="procedure-demo">
-        <h3>Ukázkový procedurový list</h3>
-        <div class="paper">
-          <div class="paper-title"><span>Procedurový rozpis klienta</span><span>ukázka</span></div>
-          <div class="paper-row"><b>08:30</b><span>Individuální rehabilitace</span><span>20 min</span></div>
-          <div class="paper-row"><b>10:10</b><span>Hydrojet</span><span>20 min</span></div>
-          <div class="paper-row"><b>14:20</b><span>Jodobromová koupel</span><span>20 min</span></div>
+      <div class="procedure-demo real-procedure">
+        <div class="procedure-head">
+          <div>
+            <span class="source-pill">Anonymizovaný vzor</span>
+            <h3>Čistý vstup pro Commander</h3>
+          </div>
+          <span class="source-note">bez osobních údajů a interních identifikátorů</span>
         </div>
-        <div class="paper-note">Tuto ukázku později nahradíme anonymizovaným reálným procedurovým listem.</div>
+        <div class="schedule-day">
+          <div class="schedule-date"><strong>Den 1</strong><span>4 události</span></div>
+          <div class="schedule-row"><time>8:15</time><div><b>Procedura A</b><span>2. etáž</span></div></div>
+          <div class="schedule-row"><time>9:45</time><div><b>Procedura B</b><span>specializované pracoviště</span></div></div>
+          <div class="schedule-row"><time>10:30</time><div><b>Procedura C</b><span>2. etáž</span></div></div>
+          <div class="schedule-row"><time>13:00</time><div><b>Procedura D</b><span>cvičební sál</span></div></div>
+        </div>
+        <div class="schedule-day">
+          <div class="schedule-date"><strong>Den 2</strong><span>4 události</span></div>
+          <div class="schedule-row"><time>8:00</time><div><b>Procedura E</b><span>2. etáž</span></div></div>
+          <div class="schedule-row"><time>9:15</time><div><b>Procedura F</b><span>4. etáž</span></div></div>
+          <div class="schedule-row"><time>10:15</time><div><b>Procedura A</b><span>2. etáž</span></div></div>
+          <div class="schedule-row"><time>12:30</time><div><b>Procedura G</b><span>pracoviště</span></div></div>
+        </div>
       </div>
     </div>
     <div class="flow">
