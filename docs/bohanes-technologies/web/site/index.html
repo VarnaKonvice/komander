@@ -517,12 +517,15 @@ sheetButtons.forEach(btn=>btn.addEventListener('click',()=>{
 }));
 const navAnchors=[...document.querySelectorAll('[data-section]')];
 const sections=navAnchors.map(a=>document.getElementById(a.dataset.section)).filter(Boolean);
-const observer=new IntersectionObserver(entries=>{
-  const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio)[0];
-  if(!visible)return;
-  navAnchors.forEach(a=>a.classList.toggle('active',a.dataset.section===visible.target.id));
-},{rootMargin:'-25% 0px -60% 0px',threshold:[0,.15,.35,.6]});
-sections.forEach(s=>observer.observe(s));
+function updateActiveNav(){
+  const y=window.scrollY+130;
+  let current=sections[0]?.id || 'domu';
+  sections.forEach(section=>{ if(section.offsetTop<=y) current=section.id; });
+  navAnchors.forEach(a=>a.classList.toggle('active',a.dataset.section===current));
+}
+window.addEventListener('scroll',updateActiveNav,{passive:true});
+window.addEventListener('resize',updateActiveNav);
+updateActiveNav();
 document.getElementById('contactForm').addEventListener('submit',e=>{
   e.preventDefault();
   document.getElementById('formStatus').textContent='Formulář bude aktivní při ostrém spuštění webu.';
