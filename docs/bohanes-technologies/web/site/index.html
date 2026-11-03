@@ -5,531 +5,259 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#0B3B5B">
-<title>Bohanes Technologies | Lázeňský Commander</title>
-<link rel="icon" href="/favicon-white-v2.svg?v=3" type="image/svg+xml">
-<link rel="shortcut icon" href="/favicon-white-v2.svg?v=3">
+<title>Bohanes Technologies · Lázeňský Commander</title>
+<link rel="icon" href="/favicon-white-v2.svg?v=5" type="image/svg+xml">
 <style>
 :root{
-  --navy:#0B3B5B;--navy-deep:#082F49;--ink:#10283c;--muted:#607789;--line:#d7e3ea;
-  --teal:#14B8A6;--aqua:#7DD3D0;--violet:#7357C9;--violet-soft:#EEEAFB;
-  --blue-soft:#EAF3FA;--teal-soft:#EAF8F6;--sand:#F7F4EC;--white:#fff;--bg:#F4F7FA;
-  --orange:#F59E0B;--green:#28A36A;
+ --navy:#0B3B5B;--navy2:#082F49;--teal:#14B8A6;--aqua:#7DD3D0;--violet:#8B7CC7;
+ --mist:#E9EEF4;--ink:#10283c;--muted:#617687;--line:#d8e4eb;--white:#fff;
+ --softblue:#eef6fb;--softteal:#eef9f7;--softviolet:#f3f0fa;--sand:#faf7ef;
+ --shadow:0 18px 46px rgba(11,59,91,.10);
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;font-family:Inter,Montserrat,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.55}
+body{margin:0;font-family:Montserrat,Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:var(--ink);background:#f7fafc;line-height:1.5}
 a{text-decoration:none;color:inherit}
-button,input,textarea{font:inherit}
-img{max-width:100%}
-.container{width:min(1180px,calc(100% - 40px));margin:auto}
-.topbar{position:sticky;top:0;z-index:80;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border-bottom:1px solid rgba(215,227,234,.95);box-shadow:0 5px 24px rgba(8,47,73,.04)}
+img{display:block;max-width:100%}
+.container{width:min(1220px,calc(100% - 42px));margin:auto}
+header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(216,228,235,.95)}
 .nav{height:74px;display:flex;align-items:center;gap:22px}
-.brand{display:flex;align-items:center;gap:11px;margin-right:auto}
-.brand img{width:43px;height:31px;object-fit:contain}
-.brand-copy{line-height:1}
-.brand-copy strong{display:block;font-size:15px;letter-spacing:.09em;color:var(--navy)}
-.brand-copy span{display:block;font-size:8px;letter-spacing:.28em;color:var(--muted);margin-top:5px}
-.navlinks{display:flex;align-items:center;gap:6px}
-.navlinks a{font-size:13px;font-weight:800;color:#496274;padding:9px 11px;border-radius:10px;transition:.18s}
-.navlinks a:hover{background:#eef4f7;color:var(--navy)}
-.navlinks a.active{background:#e5f4f3;color:#087e72;box-shadow:inset 0 0 0 1px #c6e5e2}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;padding:12px 17px;font-weight:850;border:1px solid transparent;cursor:pointer;transition:.18s}
-.btn-primary{background:var(--navy);color:#fff;box-shadow:0 8px 22px rgba(11,59,91,.15)}
-.btn-primary:hover{background:#0e4c72;transform:translateY(-1px)}
-.btn-secondary{background:#fff;color:var(--navy);border-color:#b9ccd7}
-.btn-secondary:hover{background:#edf4f7}
-.hero{position:relative;overflow:hidden;background:
- radial-gradient(circle at 85% 18%,rgba(115,87,201,.17),transparent 28%),
- radial-gradient(circle at 12% 92%,rgba(20,184,166,.14),transparent 32%),
- linear-gradient(135deg,#f9fbfd 0%,#eaf4f7 48%,#f2eefb 100%);
- border-bottom:1px solid var(--line)}
-.hero-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:60px;align-items:center;min-height:690px;padding:66px 0}
-.eyebrow{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--navy);font-size:12px;font-weight:850;box-shadow:0 5px 18px rgba(11,59,91,.06)}
-.eyebrow i{width:8px;height:8px;border-radius:50%;background:var(--teal)}
-h1{font-size:clamp(45px,6vw,72px);line-height:1.02;letter-spacing:-.04em;color:var(--navy);margin:22px 0 20px}
-.hero h1 span{color:var(--violet)}
-.lead{font-size:20px;line-height:1.55;color:#4e6577;max-width:680px}
-.hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
-.hero-meta{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
-.meta-pill{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.82);border:1px solid var(--line);border-radius:999px;padding:7px 11px;color:#506778;font-size:12px;font-weight:800}
-.meta-pill.price{background:#fff5da;border-color:#efdaa3;color:#7b5a00}
-.hero-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:24px}
-.hero-tool{background:rgba(255,255,255,.82);border:1px solid var(--line);border-radius:14px;padding:11px 10px;min-height:78px}
-.hero-tool b{display:block;color:var(--navy);font-size:13px}.hero-tool span{display:block;color:var(--muted);font-size:10px;margin-top:3px}.hero-tool em{display:inline-block;margin-top:7px;color:#6650b2;font-size:9px;font-style:normal;font-weight:850;text-transform:uppercase;letter-spacing:.06em}
-.hero-product{position:relative;display:flex;align-items:center;justify-content:center;min-height:590px}
-.hero-orb{position:absolute;width:500px;height:500px;border-radius:42%;background:linear-gradient(145deg,#1f347a,#123c70 50%,#252153);transform:rotate(4deg);box-shadow:0 38px 85px rgba(26,38,77,.22)}
-.commander-mark-wrap{position:absolute;z-index:5;left:4%;top:3%;width:116px;height:116px;border-radius:30px;background:linear-gradient(145deg,#fff,#eee8ff);display:grid;place-items:center;border:1px solid #ddd4fa;box-shadow:0 18px 40px rgba(52,37,106,.18)}
-.commander-mark-wrap img{width:90px;height:90px;object-fit:contain}
-.hero-screen{position:relative;z-index:3;width:min(335px,82%);border-radius:38px;border:8px solid #fff;box-shadow:0 30px 70px rgba(17,34,56,.35)}
-.screen-badge{position:absolute;z-index:6;right:2%;bottom:8%;background:#fff;color:var(--navy);border:1px solid var(--line);border-radius:999px;padding:9px 12px;font-size:11px;font-weight:850;box-shadow:0 8px 26px rgba(17,34,56,.14)}
-section{padding:88px 0;scroll-margin-top:88px}
-.section-kicker{font-size:12px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--teal)}
-h2{font-size:clamp(34px,4vw,49px);line-height:1.1;letter-spacing:-.028em;color:var(--navy);margin:10px 0 16px}
-.section-lead{font-size:18px;color:#607586;max-width:790px}
-.about{background:linear-gradient(180deg,#fff,#eef8f6)}
-.about-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:46px;align-items:center}
-.about-card{background:#fff;border:1px solid #cfe2df;border-radius:25px;padding:28px;box-shadow:0 12px 34px rgba(11,59,91,.07)}
-.about-brand{display:flex;gap:14px;align-items:center}.about-brand img{width:72px}.about-brand strong{display:block;color:var(--navy);font-size:23px}.about-brand span{display:block;color:var(--muted);font-size:12px}
-.about-points{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}
-.about-point{border-radius:16px;padding:16px;background:#f7fbfb;border:1px solid #d8e9e6}.about-point b{color:var(--navy)}.about-point span{display:block;color:var(--muted);font-size:12px;margin-top:4px}
-.product{background:linear-gradient(180deg,#f6f3fe,#eef4fa)}
-.product-top{display:flex;justify-content:space-between;gap:32px;align-items:end}
-.product-top .section-lead{max-width:690px}
-.tab-strip{display:flex;gap:8px;flex-wrap:wrap;margin:32px 0 18px}
-.tab-strip button{border:1px solid #d5dce6;background:#fff;color:#576b7b;border-radius:999px;padding:9px 14px;font-weight:850;cursor:pointer}
-.tab-strip button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
-.app-showcase{display:grid;grid-template-columns:.78fr 1.22fr;gap:30px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:28px;padding:28px;box-shadow:0 14px 42px rgba(11,59,91,.07)}
-.app-preview{min-height:610px;display:grid;place-items:center;position:relative;background:linear-gradient(145deg,#e8f3fa,#f0ebfb);border-radius:24px;overflow:hidden}
-.app-preview img{max-height:570px;width:auto;border-radius:34px;box-shadow:0 24px 52px rgba(14,35,57,.28)}
-.app-panel{display:none}.app-panel.active{display:block}
-.app-copy h3{font-size:30px;color:var(--navy);margin:0 0 10px}.app-copy p{color:var(--muted);font-size:16px}
-.app-copy ul{padding:0;margin:22px 0 0;display:grid;gap:11px;list-style:none}.app-copy li{display:flex;gap:10px;align-items:flex-start}.app-copy li:before{content:"";width:10px;height:10px;border-radius:50%;background:var(--teal);margin-top:7px;flex:0 0 10px}
-.phone-ui{width:330px;min-height:570px;border-radius:38px;background:linear-gradient(165deg,#2d4397,#123f79 48%,#23245f);padding:18px 16px 14px;color:#fff;box-shadow:0 24px 52px rgba(14,35,57,.28);border:7px solid #fff;position:relative}
-.phone-head{display:flex;align-items:center;gap:9px;background:#0e2d52;border:1px solid rgba(125,211,208,.22);padding:10px 12px;border-radius:14px;margin-top:12px}.phone-head img{width:38px;height:38px;object-fit:contain}.phone-head b{font-size:17px}.phone-head b span{color:#c78cff}
-.phone-title{font-size:28px;font-weight:900;margin:12px 0 2px}.phone-sub{font-size:12px;color:#d6e3f0;margin-bottom:12px}
-.phone-card{background:#17355e;border:1px solid rgba(109,208,230,.42);border-radius:17px;padding:13px;margin-top:9px}.phone-card h4{margin:0 0 9px;color:#fff;font-size:17px}.detail-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid rgba(255,255,255,.10);font-size:12px}.detail-row:first-of-type{border-top:0}.detail-row span{color:#c6d7e6}.detail-row b{color:#fff;text-align:right}
-.phone-nav{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-top:12px;background:#173c71;border:1px solid rgba(125,211,208,.32);border-radius:17px;padding:5px}.phone-nav div{text-align:center;font-size:9px;color:#d6e4ee;padding:4px 1px;border-radius:11px}.phone-nav div.active{background:#36275f;color:#fff;box-shadow:inset 0 0 0 1px #8b79d2}.phone-nav b{display:block;font-size:16px;line-height:1.1}
-.how{background:linear-gradient(145deg,#0b3b5b,#102f58 58%,#282456);color:#fff}
-.how h2{color:#fff}.how .section-lead{color:#c8d8e2}
-.how-grid{display:grid;grid-template-columns:1.22fr .78fr;gap:34px;align-items:start}
-.sheet-viewer{margin-top:28px}
-.sheet-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}.sheet-tabs button{border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#d9e6ed;border-radius:9px;padding:8px 11px;font-size:12px;font-weight:800;cursor:pointer}.sheet-tabs button.active{background:#fff;color:var(--navy)}
-.sheet{display:none;background:#fff;color:#1c2c38;border-radius:7px;padding:24px 28px;box-shadow:0 18px 40px rgba(0,0,0,.20);min-height:630px}.sheet.active{display:block}
-.sheet-head{text-align:center;border-bottom:2px solid #3a4349;padding-bottom:8px}.sheet-head strong{display:block;font-size:22px;letter-spacing:.12em}.sheet-head span{font-size:11px;color:#57636d}
-.patient-grid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:8px 16px;padding:12px 0;border-bottom:1px solid #aeb7bd;font-size:11px}.patient-grid b{color:#1c2c38}.patient-grid span{color:#52616c}
-.diag{grid-column:1/-1}
-.day-block{margin-top:10px}.day-title{display:flex;justify-content:space-between;background:#e3e6e8;border-top:1px solid #9fa8ae;border-bottom:1px solid #aeb6bb;padding:5px 7px;font-size:11px;font-weight:850}
-.proc-row{display:grid;grid-template-columns:58px 1.15fr 1fr;gap:9px;padding:5px 7px;border-bottom:1px solid #eef0f1;font-size:10.5px}.proc-row time{font-weight:850}.proc-row b{font-weight:800}.proc-row span{color:#54626c}
-.sheet-foot{font-size:9px;color:#6d767c;text-align:center;margin-top:20px;padding-top:9px;border-top:1px solid #adb5bb}
-.flow{display:grid;gap:12px;position:sticky;top:105px}.flow-step{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:17px;padding:18px}.flow-step b{width:34px;height:34px;border-radius:50%;background:var(--aqua);color:#083b4a;display:grid;place-items:center;margin-bottom:10px}.flow-step strong{display:block}.flow-step span{display:block;color:#c8d8e2;font-size:13px;margin-top:4px}
-.spa{background:linear-gradient(180deg,#edf6fb,#fff)}
-.spa-grid{display:grid;grid-template-columns:1fr 1fr;gap:36px}
-.checks{display:grid;gap:12px;margin-top:24px}.check{display:flex;gap:12px;align-items:flex-start;background:#fff;border:1px solid var(--line);border-radius:15px;padding:15px}.check i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#dff4ef;color:#087e72;font-style:normal;font-weight:900;flex:0 0 24px}.check span{color:var(--muted);font-size:13px}
-.pilot{background:#fff;border:1px solid #cfdce4;border-radius:24px;padding:28px;box-shadow:0 12px 34px rgba(11,59,91,.06)}.pilot h3{font-size:27px;color:var(--navy);margin:0 0 10px}.pilot p{color:var(--muted)}
-.pilot-metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}.metric{background:#f3f7fa;border:1px solid #dbe5eb;border-radius:13px;padding:13px}.metric b{display:block;color:var(--navy)}.metric span{display:block;color:var(--muted);font-size:11px;margin-top:3px}
-.roadmap{background:linear-gradient(135deg,#f4f0fb,#edf7f6)}
-.roadmap-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-top:30px}.roadmap-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;min-height:185px;position:relative;overflow:hidden}.roadmap-card:after{content:"";position:absolute;right:-45px;bottom:-55px;width:130px;height:130px;border-radius:50%;background:rgba(115,87,201,.08)}.roadmap-card h3{color:var(--navy);margin:13px 0 7px}.roadmap-card p{color:var(--muted);font-size:13px}.status{display:inline-block;border-radius:999px;background:#eee8ff;color:#6047b2;border:1px solid #d8cff6;padding:5px 9px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.07em}
-.mini-visual{height:54px;margin-top:15px;border-radius:12px;background:linear-gradient(135deg,#163968,#2d2e72);border:1px solid #5b6b9c;display:flex;align-items:center;justify-content:center;color:#d7e9f5;font-size:11px;font-weight:850}
-.install{background:linear-gradient(180deg,#f7f4ec,#eef6f6)}
+.brand-mini{display:flex;align-items:center;gap:10px;margin-right:auto}
+.brand-mini img{width:48px;height:36px;object-fit:contain}
+.brand-mini strong{display:block;font-size:14px;letter-spacing:.11em;color:var(--navy)}
+.brand-mini span{display:block;font-size:8px;letter-spacing:.26em;color:#6d7c87}
+.navlinks{display:flex;gap:5px;align-items:center}
+.navlinks a{padding:9px 10px;border-radius:10px;font-size:12px;font-weight:800;color:#506878}
+.navlinks a:hover,.navlinks a.active{background:#e6f4f2;color:#087d72}
+.cta{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:11px 16px;background:var(--navy);color:#fff;font-weight:850;font-size:13px}
+section{padding:92px 0;scroll-margin-top:84px}
+.kicker{font-size:11px;letter-spacing:.13em;text-transform:uppercase;font-weight:900;color:var(--teal)}
+h1{font-size:clamp(46px,6vw,76px);line-height:1.01;letter-spacing:-.045em;color:var(--navy);margin:15px 0 18px}
+h2{font-size:clamp(34px,4.2vw,52px);line-height:1.08;letter-spacing:-.035em;color:var(--navy);margin:9px 0 16px}
+.lead{font-size:19px;color:#536c7d;max-width:720px}
+.pill{display:inline-flex;align-items:center;border-radius:999px;border:1px solid var(--line);padding:7px 11px;background:#fff;font-size:11px;font-weight:850;color:#4f6879}
+.price-pill{background:#fff7dc;border-color:#ebd69a;color:#765600}
+.hero{background:
+ radial-gradient(circle at 78% 18%,rgba(139,124,199,.16),transparent 26%),
+ radial-gradient(circle at 12% 88%,rgba(20,184,166,.13),transparent 30%),
+ linear-gradient(135deg,#fbfdff 0%,#eef7f8 50%,#f4f1fa 100%);
+ overflow:hidden;border-bottom:1px solid var(--line)}
+.hero-grid{display:grid;grid-template-columns:.88fr 1.12fr;gap:56px;align-items:center;min-height:720px}
+.corp-logo{width:235px;margin-bottom:24px}
+.product-line{display:flex;align-items:center;gap:15px;margin:21px 0 8px}
+.product-line img{width:76px;height:76px;border-radius:19px;box-shadow:0 12px 28px rgba(43,26,77,.18)}
+.product-line strong{font-size:24px;color:var(--navy)}
+.product-line span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+.hero-actions .ghost{background:#fff;border:1px solid #bccfd9;color:var(--navy)}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.hero-stage{position:relative;min-height:650px}
+.hero-glow{position:absolute;left:50%;top:50%;width:520px;height:520px;border-radius:46%;transform:translate(-50%,-50%) rotate(5deg);background:linear-gradient(145deg,#173d76,#0c3d66 52%,#342968);box-shadow:0 38px 90px rgba(26,38,77,.20)}
+.phone-main{position:absolute;z-index:4;left:50%;top:50%;transform:translate(-50%,-50%);width:315px;border-radius:42px;border:8px solid #fff;box-shadow:0 28px 70px rgba(10,31,51,.34)}
+.float-card{position:absolute;z-index:5;border-radius:18px;background:linear-gradient(145deg,#243b76,#1b2d58 62%,#29234e);color:#fff;border:1px solid rgba(255,255,255,.16);box-shadow:0 18px 38px rgba(10,31,51,.22)}
+.widget-big{left:0;top:64px;width:270px;padding:16px 17px}
+.widget-current{right:-6px;top:132px;width:255px;padding:14px 15px}
+.widget-mini{left:25px;bottom:52px;width:245px;padding:14px}
+.calendar-float{right:0;bottom:38px;width:250px;padding:14px;background:#fff;color:var(--ink);border-color:var(--line)}
+.w-head{display:flex;align-items:center;gap:8px;font-weight:850;font-size:13px}.w-head img{width:30px;height:30px;border-radius:8px}.w-head small{margin-left:auto;color:#d4deea;font-size:10px}
+.w-body{margin-top:14px;font-size:14px;font-weight:800}.w-sub{font-size:10px;color:#c3d0de;margin-top:3px}
+.current-row{display:grid;grid-template-columns:38px 1fr auto;gap:9px;align-items:center}.proc-icon{width:34px;height:34px;border-radius:11px;background:#ff5da8;display:grid;place-items:center;font-size:17px}.current-row b{display:block;color:#ff88be}.countdown{color:#ffc857;font-size:17px;font-weight:900}
+.mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mini-box{background:rgba(255,255,255,.08);border-radius:13px;padding:10px}.mini-box b{display:block;font-size:18px;color:#ffc857}.mini-box span{font-size:9px;color:#d4ddeb}
+.cal-head{display:flex;justify-content:space-between;font-weight:900;color:var(--navy);font-size:12px}.cal-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:9px;text-align:center;margin-top:9px;color:#71828e}.cal-dates{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;font-size:10px;text-align:center;margin-top:4px}.cal-dates span{padding:5px 0;border-radius:9px}.cal-dates .active{background:#8b7cc7;color:#fff}.cal-event{margin-top:9px;border-top:1px solid var(--line);padding-top:8px;font-size:9px;color:#536c7d}.cal-event b{color:#0b3b5b}
+.about{background:#fff}
+.about-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:center}
+.about-card{background:linear-gradient(145deg,#f3f8fa,#eef9f7);border:1px solid #d3e4e7;border-radius:25px;padding:30px;box-shadow:var(--shadow)}
+.about-logo{width:240px;margin-bottom:18px}
+.values{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:24px}.value{background:#fff;border:1px solid var(--line);border-radius:15px;padding:16px}.value b{display:block;color:var(--navy)}.value span{display:block;font-size:11px;color:var(--muted);margin-top:4px}
+.commander{background:linear-gradient(180deg,#f4f1fa,#edf5fa)}
+.section-head{display:flex;justify-content:space-between;gap:30px;align-items:end;margin-bottom:34px}.section-head .lead{max-width:610px}
+.screen-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;align-items:start}
+.screen-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:11px;box-shadow:0 12px 30px rgba(11,59,91,.07)}
+.screen-card img{width:100%;border-radius:17px;border:1px solid #cad6df}
+.screen-card h3{margin:13px 5px 3px;color:var(--navy);font-size:16px}.screen-card p{margin:0 5px 6px;font-size:10px;color:var(--muted)}
+.how{background:linear-gradient(145deg,#0b3b5b,#0b3454 58%,#292657);color:#fff}
+.how h2{color:#fff}.how .lead{color:#c8d8e1}
+.flowline{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:28px 0 34px}
+.flowstep{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:16px}.flowstep b{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--aqua);color:#083b4a;margin-bottom:9px}.flowstep strong{display:block}.flowstep span{display:block;font-size:11px;color:#c5d5de;margin-top:3px}
+.docs-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:start}
+.paper{background:#fff;color:#1a2934;border-radius:5px;padding:12px 10px;min-height:390px;box-shadow:0 12px 28px rgba(0,0,0,.18)}
+.paper:nth-child(1){transform:rotate(-1.4deg)}.paper:nth-child(2){transform:rotate(.8deg)}.paper:nth-child(3){transform:rotate(-.4deg)}.paper:nth-child(4){transform:rotate(1deg)}.paper:nth-child(5){transform:rotate(-.7deg)}
+.paper-title{text-align:center;border-bottom:1.5px solid #4b555c;padding-bottom:5px}.paper-title strong{display:block;font-size:11px;letter-spacing:.09em}.paper-title span{font-size:7px;color:#5f6c75}
+.patient{display:grid;grid-template-columns:1fr 1fr;gap:3px 6px;font-size:6.8px;padding:7px 0;border-bottom:1px solid #aeb7bd}.patient b{font-size:7.2px}.patient .wide{grid-column:1/-1}
+.day{margin-top:7px}.dayhead{background:#e5e8ea;border-top:1px solid #abb3b8;border-bottom:1px solid #abb3b8;padding:3px 4px;font-size:7px;font-weight:850}.prow{display:grid;grid-template-columns:32px 1fr;padding:3px 4px;border-bottom:1px solid #eef1f2;font-size:6.7px}.prow time{font-weight:850}.prow small{display:block;color:#607078;font-size:5.9px}
+.widgets{background:linear-gradient(180deg,#eef8f6,#f7fafc)}
+.widgets-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:stretch}
+.calendar-large{background:#fff;border:1px solid var(--line);border-radius:25px;padding:26px;box-shadow:var(--shadow)}
+.calendar-large .month{display:flex;justify-content:space-between;align-items:center}.calendar-large .month strong{font-size:24px;color:var(--navy)}.weekdays,.days{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;text-align:center}.weekdays{margin-top:20px;color:#7a8993;font-size:11px}.days{margin-top:8px}.days span{padding:12px 0;border-radius:12px;background:#f5f8fa;font-size:12px}.days .stay{background:#e9e4f8;color:#5c4ca2}.days .today{background:#14b8a6;color:#fff;font-weight:900}
+.calendar-list{margin-top:20px;display:grid;gap:8px}.calendar-item{display:flex;gap:10px;align-items:center;padding:11px 12px;border-radius:13px;background:#f5f8fa}.dot{width:8px;height:8px;border-radius:50%;background:#14b8a6}.calendar-item b{font-size:12px;color:#0b3b5b}.calendar-item span{font-size:10px;color:#6d7f8b}
+.widget-stack{display:grid;grid-template-columns:1fr 1fr;gap:12px}.wcard{background:linear-gradient(145deg,#243b76,#172a53 60%,#2c244e);color:#fff;border-radius:20px;padding:16px;border:1px solid rgba(255,255,255,.14);box-shadow:0 12px 28px rgba(11,59,91,.14)}.wcard.wide{grid-column:1/-1}.wcard .title{display:flex;align-items:center;gap:8px;font-weight:900}.wcard .title img{width:28px;height:28px;border-radius:7px}.wcard .date{margin-left:auto;font-size:9px;color:#d5deeb}.metric{font-size:25px;font-weight:950;color:#ffc857;margin-top:11px}.wcard p{margin:7px 0 0;font-size:10px;color:#d0dceb}.live{background:linear-gradient(145deg,#152f45,#0b1f2d 60%,#193a40)}.live .metric{color:#9fd9e2}
+.spa{background:#fff}
+.spa-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}.bullet-list{display:grid;gap:10px;margin-top:22px}.bullet{background:#f6fafb;border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;gap:10px}.bullet i{width:24px;height:24px;border-radius:50%;background:#dff4ef;color:#087e72;display:grid;place-items:center;font-style:normal;font-weight:900}.pilot{background:linear-gradient(145deg,#f4f1fa,#eef8f6);border:1px solid #d7e2e8;border-radius:24px;padding:28px}.pilot h3{font-size:28px;color:var(--navy);margin:0 0 8px}.pilot p{color:var(--muted)}
+.install{background:linear-gradient(180deg,#faf7ef,#eef7f7)}
 .install-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:34px;align-items:center}
-.price-card{background:#fff;border:1px solid #d7dfd5;border-radius:22px;padding:25px;box-shadow:0 12px 34px rgba(11,59,91,.06)}
-.price{font-size:52px;line-height:1;color:var(--navy);font-weight:950;letter-spacing:-.04em}.price span{font-size:18px;color:var(--muted);font-weight:700}
-.price-card p{color:var(--muted)}
-.qr-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}.qr-box{display:flex;gap:13px;align-items:center;border:1px solid var(--line);border-radius:15px;padding:12px;background:#fbfdfd}.qr{width:90px;height:90px;flex:0 0 90px;border-radius:10px;border:6px solid var(--navy);background:
-linear-gradient(90deg,var(--navy) 10px,transparent 10px) 0 0/24px 24px,
-linear-gradient(var(--navy) 10px,transparent 10px) 0 0/24px 24px,#fff;opacity:.18;position:relative}.qr:after{content:"QR";position:absolute;inset:0;background:rgba(255,255,255,.78);display:grid;place-items:center;color:var(--navy);font-weight:950;font-size:23px}.qr-box b{color:var(--navy)}.qr-box span{display:block;color:var(--muted);font-size:11px}
-.settings-phone{margin:auto;width:340px;min-height:610px;border:7px solid #fff;border-radius:40px;background:linear-gradient(165deg,#2d4397,#123f79 48%,#23245f);padding:18px;color:#fff;box-shadow:0 28px 60px rgba(17,34,56,.26)}
-.settings-phone .phone-head{margin-top:7px}.settings-phone .phone-card{background:#18365e}.settings-phone .phone-card h4{display:flex;justify-content:space-between}.setting-link{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid rgba(255,255,255,.11);padding:11px 0;font-size:12px}.setting-link:first-of-type{border-top:0}.setting-link span{color:#d1deea}.setting-link b{color:#fff}.setting-link .arrow{color:#9be4df}
-.activate{margin-top:11px;background:linear-gradient(135deg,#4d3f9a,#1d6b81);border:1px solid #72cdd2;border-radius:15px;padding:15px}.activate strong{display:block;font-size:18px}.activate span{display:block;color:#d8edf0;font-size:11px;margin-top:3px}
-.contact{background:linear-gradient(145deg,#082f49,#0a3e5c 60%,#26245a);color:#fff}
-.contact-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:46px}.contact h2{color:#fff}.contact .section-lead{color:#c6d8e1}
-.contact-links{display:grid;gap:10px;margin-top:24px}.contact-link{display:flex;gap:12px;align-items:center;padding:13px 15px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:rgba(255,255,255,.06)}.contact-link .ci{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:rgba(125,211,208,.16);color:#a7ece7;font-weight:900}.contact-link b{display:block}.contact-link span span{display:block;color:#b9ccd6;font-size:11px;margin-top:2px}
-.form{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#fff;border-radius:22px;padding:24px;color:var(--ink)}.form .full{grid-column:1/-1}.form label{display:block;font-size:12px;color:var(--muted);font-weight:750;margin-bottom:5px}.form input,.form textarea{width:100%;border:1px solid #cedbe3;border-radius:11px;padding:11px 12px}.form textarea{min-height:105px;resize:vertical}.submit-row{grid-column:1/-1;display:flex;align-items:center;gap:12px;flex-wrap:wrap}.form-status{font-size:11px;color:var(--muted)}
-footer{background:#06283f;color:#b9ccd6;border-top:1px solid rgba(255,255,255,.08);padding:26px 0}.footer{display:flex;justify-content:space-between;align-items:center;gap:20px;font-size:12px}.footer-brand{display:flex;align-items:center;gap:9px;color:#fff;font-weight:850}.footer-brand img{width:34px}
-@media(max-width:1080px){.navlinks{display:none}.hero-grid,.about-grid,.app-showcase,.how-grid,.spa-grid,.install-grid,.contact-grid{grid-template-columns:1fr}.hero-grid{padding:55px 0 75px}.hero-product{min-height:590px}.roadmap-grid{grid-template-columns:1fr 1fr}.flow{position:static}.app-showcase{gap:18px}.app-copy{padding:0 8px}.about-points{grid-template-columns:1fr 1fr 1fr}}
-@media(max-width:680px){.container{width:min(100% - 28px,1180px)}.brand-copy{display:none}.topbar .btn{font-size:11px;padding:10px 11px}h1{font-size:43px}.lead{font-size:17px}section{padding:66px 0}.hero-tools{grid-template-columns:1fr 1fr}.hero-product{min-height:540px}.hero-orb{width:390px;height:390px}.commander-mark-wrap{width:92px;height:92px;left:0}.commander-mark-wrap img{width:70px;height:70px}.hero-screen{width:290px}.screen-badge{right:0}.about-points,.roadmap-grid,.pilot-metrics,.qr-row{grid-template-columns:1fr}.app-showcase{padding:16px}.app-preview{min-height:540px}.phone-ui,.settings-phone{width:100%;max-width:340px}.sheet{padding:18px 14px;min-height:590px;overflow-x:auto}.patient-grid{grid-template-columns:1fr 1fr}.proc-row{grid-template-columns:50px 1.15fr 1fr}.product-top{display:block}.form{grid-template-columns:1fr}.form .full,.submit-row{grid-column:auto}.footer{flex-direction:column;align-items:flex-start}}
+.settings-img{background:#fff;border:1px solid var(--line);border-radius:26px;padding:18px;box-shadow:var(--shadow)}.settings-img img{max-height:610px;margin:auto;border-radius:28px}
+.price-box{background:linear-gradient(135deg,#f0eafa,#e3fbf8);border:1px solid #d6e2e6;border-radius:24px;padding:24px;margin:22px 0}.price-box strong{font-size:46px;color:var(--navy);letter-spacing:-.04em}.price-box span{font-size:16px;color:#657787}
+.qr-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.qr-card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:14px;display:flex;gap:12px;align-items:center}.qr{width:88px;height:88px;border:6px solid #0b3b5b;border-radius:8px;background:
+linear-gradient(90deg,#0b3b5b 10px,transparent 10px) 0 0/24px 24px,
+linear-gradient(#0b3b5b 10px,transparent 10px) 0 0/24px 24px,#fff;opacity:.22}.qr-card b{display:block;color:var(--navy)}.qr-card span{font-size:10px;color:var(--muted)}
+.contact{background:linear-gradient(145deg,#082f49,#0b3b5b 58%,#282458);color:#fff}
+.contact h2{color:#fff}.contact-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:40px}.contact .lead{color:#c8d8e2}.contact-links{display:grid;gap:10px;margin-top:22px}.contact-link{padding:13px 14px;border:1px solid rgba(255,255,255,.15);border-radius:13px;background:rgba(255,255,255,.06)}.contact-link b{display:block}.contact-link span{font-size:11px;color:#bad0da}
+.form{background:#fff;border-radius:20px;padding:22px;display:grid;grid-template-columns:1fr 1fr;gap:11px;color:var(--ink)}.form .full{grid-column:1/-1}.form label{display:block;font-size:10px;color:var(--muted);font-weight:800;margin-bottom:4px}.form input,.form textarea{width:100%;border:1px solid #cbd9e1;border-radius:10px;padding:10px}.form textarea{min-height:100px}.form button{border:0;cursor:pointer}
+footer{background:#06283f;color:#bcd0d9;padding:25px 0}.footer{display:flex;align-items:center;justify-content:space-between;gap:20px;font-size:11px}.footer img{width:150px;filter:brightness(0) invert(1)}
+@media(max-width:1100px){.navlinks{display:none}.hero-grid,.about-grid,.widgets-grid,.spa-grid,.install-grid,.contact-grid{grid-template-columns:1fr}.hero-stage{min-height:690px}.screen-row,.docs-grid{overflow-x:auto;display:flex;padding-bottom:15px}.screen-card{flex:0 0 210px}.paper{flex:0 0 180px}.widget-stack{grid-template-columns:1fr 1fr}.values{grid-template-columns:1fr}.section-head{display:block}}
+@media(max-width:680px){.container{width:min(100% - 26px,1220px)}.brand-mini strong,.brand-mini span{display:none}.hero-grid{min-height:auto;padding:58px 0 70px}.hero-stage{min-height:620px}.hero-glow{width:390px;height:390px}.phone-main{width:255px}.widget-big{width:210px;left:-4px}.widget-current{width:205px;right:-5px}.widget-mini{width:205px;left:0}.calendar-float{width:205px}.flowline{grid-template-columns:1fr 1fr}.widget-stack,.qr-grid,.form{grid-template-columns:1fr}.wcard.wide,.form .full{grid-column:auto}.footer{align-items:flex-start;flex-direction:column}}
 </style>
 </head>
 <body>
-<header class="topbar">
-  <div class="container nav">
-    <a class="brand" href="#domu" aria-label="Bohanes Technologies">
-      <img src="/symbol-navy.svg" alt="">
-      <span class="brand-copy"><strong>BOHANES</strong><span>TECHNOLOGIES</span></span>
-    </a>
-    <nav class="navlinks" id="navlinks">
-      <a href="#domu" data-section="domu" class="active">Domů</a>
-      <a href="#o-nas" data-section="o-nas">O nás</a>
-      <a href="#produkt" data-section="produkt">Lázeňský Commander</a>
-      <a href="#jak-funguje" data-section="jak-funguje">Jak funguje</a>
-      <a href="#pro-lazne" data-section="pro-lazne">Pro lázně</a>
-      <a href="#pripravujeme" data-section="pripravujeme">Připravujeme</a>
-      <a href="#instalace" data-section="instalace">Instalace</a>
-    </nav>
-    <a class="btn btn-primary" href="#kontakt">Kontaktujte nás</a>
-  </div>
+<header>
+ <div class="container nav">
+  <a class="brand-mini" href="#domu"><img src="/bohanes-symbol.svg" alt=""><div><strong>BOHANES</strong><span>TECHNOLOGIES</span></div></a>
+  <nav class="navlinks" id="navlinks">
+   <a href="#domu" data-section="domu" class="active">Domů</a>
+   <a href="#o-nas" data-section="o-nas">O nás</a>
+   <a href="#commander" data-section="commander">Lázeňský Commander</a>
+   <a href="#jak-funguje" data-section="jak-funguje">Jak funguje</a>
+   <a href="#widgety" data-section="widgety">Kalendář a widgety</a>
+   <a href="#pro-lazne" data-section="pro-lazne">Pro lázně</a>
+   <a href="#instalace" data-section="instalace">Instalace</a>
+  </nav>
+  <a class="cta" href="#kontakt">Kontaktujte nás</a>
+ </div>
 </header>
 
 <main>
 <section class="hero" id="domu">
-  <div class="container hero-grid">
-    <div>
-      <span class="eyebrow"><i></i> Bohanes Technologies · lázeňské technologie</span>
-      <h1>Lázeňský pobyt.<br><span>Přehledně v telefonu.</span></h1>
-      <p class="lead">Lázeňský Commander převádí procedurový plán do srozumitelné mobilní podoby. Klient vidí, co právě probíhá, co následuje, kdy vyrazit a jak vypadá celý pobyt.</p>
-      <div class="hero-actions">
-        <a class="btn btn-primary" href="#produkt">Prohlédnout Commander</a>
-        <a class="btn btn-secondary" href="#kontakt">Domluvit pilot</a>
-      </div>
-      <div class="hero-meta">
-        <span class="meta-pill">iPhone aplikace</span>
-        <span class="meta-pill">QR aktivace</span>
-        <span class="meta-pill price">299 Kč / aktivace pobytu</span>
-      </div>
-      <div class="hero-tools">
-        <div class="hero-tool"><b>Kalendář</b><span>pohled na další dny</span><em>připravujeme</em></div>
-        <div class="hero-tool"><b>Widget</b><span>rychlý přehled bez otevření aplikace</span><em>připravujeme</em></div>
-        <div class="hero-tool"><b>Live Activity</b><span>aktuální procedura na zamčené obrazovce</span><em>připravujeme</em></div>
-        <div class="hero-tool"><b>Apple Watch</b><span>čas, odchod a další událost na ruce</span><em>připravujeme</em></div>
-      </div>
-    </div>
-    <div class="hero-product">
-      <div class="hero-orb"></div>
-      <div class="commander-mark-wrap"><img src="/screens/commander-glyph.png" alt="Lázeňský Commander"></div>
-      <img class="hero-screen" src="/screens/commander-today-proof.png" alt="Lázeňský Commander – obrazovka Dnes">
-      <span class="screen-badge">Skutečná obrazovka Commanderu</span>
-    </div>
+ <div class="container hero-grid">
+  <div>
+   <img class="corp-logo" src="/bohanes-logo-full.svg" alt="Bohanes Technologies">
+   <div class="kicker">Digitální služby pro lázně a jejich klienty</div>
+   <div class="product-line"><img src="/commander-official.png" alt="Lázeňský Commander"><div><strong>Lázeňský Commander</strong><span>První produkt Bohanes Technologies</span></div></div>
+   <h1>Lázeňský pobyt.<br>Přehledně v telefonu.</h1>
+   <p class="lead">Commander převádí procedurový rozpis do srozumitelného denního programu. Klient vidí, co ho čeká, kde procedura je, kdy vyrazit a jak vypadá celý pobyt.</p>
+   <div class="hero-actions"><a class="cta" href="#commander">Prohlédnout aplikaci</a><a class="cta ghost" href="#kontakt">Domluvit pilot</a></div>
+   <div class="hero-tags"><span class="pill">iPhone</span><span class="pill">Kalendář pobytu</span><span class="pill">Widgety a Live Activity</span><span class="pill price-pill">299 Kč / aktivace pobytu</span></div>
   </div>
+  <div class="hero-stage" aria-label="Lázeňský Commander a reálné widgety">
+   <div class="hero-glow"></div>
+   <img class="phone-main" src="/screens/commander-today-proof.png" alt="Lázeňský Commander Dnes">
+   <div class="float-card widget-big">
+    <div class="w-head"><img src="/commander-official.png" alt=""><span>Lázeňský Commander</span><small>út 29. 9.</small></div>
+    <div class="w-body">▦&nbsp;&nbsp;Načti rozpis v aplikaci</div>
+   </div>
+   <div class="float-card widget-current">
+    <div class="w-head"><img src="/commander-official.png" alt=""><span>Lázeňský Commander</span><small>st 7. 10.</small></div>
+    <div class="current-row" style="margin-top:11px"><div class="proc-icon">✚</div><div><b>Vizita</b><span class="w-sub">RS · 7. patro · 6:35–6:40</span></div><div class="countdown">2 h 41 min</div></div>
+   </div>
+   <div class="float-card widget-mini">
+    <div class="mini-grid"><div class="mini-box"><span>Dnes</span><b>5</b><span>procedur · konec 12:20</span></div><div class="mini-box"><span>Commander</span><b>2 h 41 min</b><span>do Vizity</span></div></div>
+   </div>
+   <div class="float-card calendar-float">
+    <div class="cal-head"><span>Kalendář pobytu</span><span>Říjen 2026</span></div>
+    <div class="cal-week"><span>Po</span><span>Út</span><span>St</span><span>Čt</span><span>Pá</span><span>So</span><span>Ne</span></div>
+    <div class="cal-dates"><span>28</span><span>29</span><span>30</span><span class="active">1</span><span>2</span><span>3</span><span>4</span></div>
+    <div class="cal-event"><b>● Lázeňský pobyt</b><br>30. 9. – 28. 10. · procedury podle rozpisu</div>
+   </div>
+  </div>
+ </div>
 </section>
 
 <section class="about" id="o-nas">
-  <div class="container about-grid">
-    <div>
-      <div class="section-kicker">O nás</div>
-      <h2>Technologie, které mají člověku zjednodušit lázeňský pobyt.</h2>
-      <p class="section-lead">Bohanes Technologies staví jednoduché digitální nástroje kolem reálného provozu lázní. Začínáme u problému, který klient skutečně řeší: kdy mám proceduru, kde je, co následuje a kdy mám vyrazit.</p>
-      <div class="about-points">
-        <div class="about-point"><b>Pro klienta</b><span>Méně papírů, méně hledání a rychlá orientace v programu.</span></div>
-        <div class="about-point"><b>Pro lázně</b><span>Jednodušší digitální služba bez nutnosti měnit celý provoz.</span></div>
-        <div class="about-point"><b>Pilot nejdřív</b><span>Nejdřív malý rozsah, potom rozhodnutí podle reálného používání.</span></div>
-      </div>
-    </div>
-    <aside class="about-card">
-      <div class="about-brand">
-        <img src="/symbol-navy.svg" alt="">
-        <div><strong>BOHANES</strong><span>TECHNOLOGIES</span></div>
-      </div>
-      <p style="color:var(--muted);margin:18px 0 0">Prvním produktem je Lázeňský Commander. Další vrstva projektu počítá s kalendářem, widgety, Live Activity a Apple Watch tak, aby klient dostal správnou informaci ve správnou chvíli.</p>
-    </aside>
+ <div class="container about-grid">
+  <div>
+   <div class="kicker">O nás</div><h2>Bohanes Technologies</h2>
+   <p class="lead">Vyvíjíme praktické digitální nástroje, které mají člověku zjednodušit orientaci v lázeňském pobytu a lázním umožnit nabídnout moderní službu bez zbytečné složitosti.</p>
+   <div class="values">
+    <div class="value"><b>Jednoduchost</b><span>Klient dostane správnou informaci ve správnou chvíli.</span></div>
+    <div class="value"><b>Přehlednost</b><span>Procedury, pobyt, kalendář i důležité údaje na jednom místě.</span></div>
+    <div class="value"><b>Pilotní přístup</b><span>Nejdřív ověřit v malém, potom rozšiřovat podle výsledku.</span></div>
+   </div>
   </div>
+  <aside class="about-card"><img class="about-logo" src="/bohanes-logo-full.svg" alt="Bohanes Technologies"><p style="color:var(--muted);margin:0">Schválený firemní vizuál stojí na tmavě modré, tyrkysové, aqua a fialové. Produktová značka Lázeňský Commander zůstává samostatná a používá vlastní schválené logo s lotosem, kapkou, vlnami a zlatými hodinami.</p></aside>
+ </div>
 </section>
 
-<section class="product" id="produkt">
-  <div class="container">
-    <div class="product-top">
-      <div>
-        <div class="section-kicker">Lázeňský Commander</div>
-        <h2>Jedna aplikace. Pět hlavních obrazovek.</h2>
-      </div>
-      <p class="section-lead">Přepni si jednotlivé části aplikace. Dnes, Týden a Pobyt používají skutečné obrazovky současného Commanderu. Info a Nastavení ukazují cílovou podobu s fiktivním pobytem a bez testovacích varování.</p>
-    </div>
-
-    <div class="tab-strip" id="appTabs">
-      <button class="active" data-app="dnes">Dnes</button>
-      <button data-app="tyden">Týden</button>
-      <button data-app="pobyt">Pobyt</button>
-      <button data-app="info">Info</button>
-      <button data-app="nastaveni">Nastavení</button>
-    </div>
-
-    <div class="app-showcase">
-      <div class="app-preview">
-        <div class="app-panel active" data-panel="dnes"><img src="/screens/commander-today-proof.png" alt="Commander Dnes"></div>
-        <div class="app-panel" data-panel="tyden"><img src="/screens/commander-week.png" alt="Commander Týden"></div>
-        <div class="app-panel" data-panel="pobyt"><img src="/screens/commander-stay.png" alt="Commander Pobyt"></div>
-        <div class="app-panel" data-panel="info">
-          <div class="phone-ui">
-            <div class="phone-head"><img src="/screens/commander-glyph.png" alt=""><b>Lázeňský <span>Commander</span></b></div>
-            <div class="phone-title">Info</div><div class="phone-sub">Informace o vašem pobytu</div>
-            <div class="phone-card"><h4>Údaje o pobytu</h4>
-              <div class="detail-row"><span>Klient</span><b>Jan Novák</b></div>
-              <div class="detail-row"><span>Lázně</span><b>Lázně Harmonie</b></div>
-              <div class="detail-row"><span>Pokoj</span><b>212</b></div>
-              <div class="detail-row"><span>Lékař</span><b>MUDr. Jana Novotná</b></div>
-              <div class="detail-row"><span>Pobyt</span><b>3. 11. – 30. 11. 2026</b></div>
-              <div class="detail-row"><span>Stravovací směna</span><b>2. směna</b></div>
-              <div class="detail-row"><span>Osobní procedury</span><b>24 naplánováno</b></div>
-            </div>
-            <div class="phone-nav"><div><b>☀</b>Dnes</div><div><b>▦</b>Týden</div><div><b>▣</b>Pobyt</div><div class="active"><b>ⓘ</b>Info</div><div><b>⚙</b>Nastavení</div></div>
-          </div>
-        </div>
-        <div class="app-panel" data-panel="nastaveni">
-          <div class="phone-ui">
-            <div class="phone-head"><img src="/screens/commander-glyph.png" alt=""><b>Lázeňský <span>Commander</span></b></div>
-            <div class="phone-title">Nastavení</div><div class="phone-sub">Upravte si aplikaci podle svých potřeb</div>
-            <div class="phone-card"><h4>Čas odchodu</h4><div class="detail-row"><span>Předstihy</span><b>20 min</b></div></div>
-            <div class="phone-card"><h4>Rozpis</h4>
-              <div class="detail-row"><span>Kontrola rozpisu</span><b>V pořádku</b></div>
-              <div class="detail-row"><span>Kalendář</span><b>Otevřít ›</b></div>
-              <div class="detail-row"><span>Procedurový list</span><b>Zobrazit ›</b></div>
-            </div>
-            <div class="phone-card"><h4>Aktivace</h4><div class="detail-row"><span>Aktuální pobyt</span><b>Aktivní</b></div><div class="detail-row"><span>Cena aktivace</span><b>299 Kč</b></div></div>
-            <div class="phone-nav"><div><b>☀</b>Dnes</div><div><b>▦</b>Týden</div><div><b>▣</b>Pobyt</div><div><b>ⓘ</b>Info</div><div class="active"><b>⚙</b>Nastavení</div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="app-copy">
-        <div class="app-panel active" data-copy="dnes"><h3>Dnes</h3><p>Hlavní obrazovka ukazuje stav dne, nejbližší událost a časový kontext procedury.</p><ul><li>Co mě teď čeká</li><li>Aktuální procedura a čas do konce</li><li>Rychlý přehled dne</li></ul></div>
-        <div class="app-panel" data-copy="tyden"><h3>Týden</h3><p>Přehled jednotlivých dnů pobytu se souhrnem procedur a aktivit.</p><ul><li>Den po dni</li><li>Počet procedur</li><li>Rozbalení detailu konkrétního dne</li></ul></div>
-        <div class="app-panel" data-copy="pobyt"><h3>Pobyt</h3><p>Souhrn celého pobytu, jeho délky a přehledu terapií.</p><ul><li>Průběh pobytu</li><li>Počty absolvovaných procedur</li><li>Souhrn terapií</li></ul></div>
-        <div class="app-panel" data-copy="info"><h3>Info</h3><p>Jedno místo pro základní údaje, které klient během pobytu potřebuje znát.</p><ul><li>Pokoj a lékař</li><li>Termín pobytu a stravovací směna</li><li>Osobní procedury a základní informace</li></ul></div>
-        <div class="app-panel" data-copy="nastaveni"><h3>Nastavení</h3><p>Tady má být přístup k rozpisu, kalendáři a aktivaci pobytu.</p><ul><li>Kalendář</li><li>Samostatný procedurový list</li><li>Aktivace pobytu za 299 Kč</li></ul></div>
-      </div>
-    </div>
+<section class="commander" id="commander">
+ <div class="container">
+  <div class="section-head"><div><div class="kicker">Lázeňský Commander</div><h2>Všech pět obrazovek najednou.</h2></div><p class="lead">Bez přepínání na webu. Každý pohled má vlastní roli a návštěvník hned vidí, co aplikace skutečně obsahuje.</p></div>
+  <div class="screen-row">
+   <article class="screen-card"><img src="/screens/commander-today-proof.png" alt="Dnes"><h3>Dnes</h3><p>Aktuální stav, další procedura a časový kontext.</p></article>
+   <article class="screen-card"><img src="/screens/commander-week.png" alt="Týden"><h3>Týden</h3><p>Přehled procedur po jednotlivých dnech.</p></article>
+   <article class="screen-card"><img src="/screens/commander-stay.png" alt="Pobyt"><h3>Pobyt</h3><p>Souhrn pobytu, průběhu a terapií.</p></article>
+   <article class="screen-card"><img src="/screens/commander-info.png" alt="Info"><h3>Info</h3><p>Informace o pobytu, lázních a klientovi.</p></article>
+   <article class="screen-card"><img src="/screens/commander-settings.png" alt="Nastavení"><h3>Nastavení</h3><p>Předstihy, kontrola rozpisu a další volby.</p></article>
   </div>
+ </div>
 </section>
 
 <section class="how" id="jak-funguje">
-  <div class="container how-grid">
-    <div>
-      <div class="section-kicker" style="color:#9ce7df">Jak to funguje</div>
-      <h2>Z léčebného průkazu vznikne osobní digitální program.</h2>
-      <p class="section-lead">Níže je pět listů modelového léčebného průkazu. Identita je kompletně smyšlená, ale procedury a místa jsou záměrně konkrétní, aby bylo jasné, jaký typ podkladu Commander zpracovává.</p>
-      <div class="sheet-viewer">
-        <div class="sheet-tabs" id="sheetTabs">
-          <button class="active" data-sheet="1">List 1</button><button data-sheet="2">List 2</button><button data-sheet="3">List 3</button><button data-sheet="4">List 4</button><button data-sheet="5">List 5</button>
-        </div>
-
-        <article class="sheet active" data-sheet-panel="1">
-          <div class="sheet-head"><strong>LÉČEBNÝ PRŮKAZ</strong><span>Lázně Harmonie · modelový dokument</span></div>
-          <div class="patient-grid"><div><span>Klient</span><br><b>Jan Novák</b></div><div><span>Číslo pobytu</span><br><b>BT-2026-0158</b></div><div><span>Pokoj</span><br><b>212</b></div><div><span>Datum narození</span><br><b>12. 3. 1958</b></div><div><span>Lékař</span><br><b>MUDr. Jana Novotná</b></div><div><span>Typ péče</span><br><b>Komplexní lázeňská péče</b></div><div class="diag"><span>Diagnóza</span><br><b>Gonartróza pravého kolenního kloubu · modelový údaj</b></div></div>
-          <div class="day-block"><div class="day-title"><span>03.11.2026 · Úterý</span><span></span></div>
-            <div class="proc-row"><time>8:00</time><b>Elektrický chodník</b><span>Rehabilitace · 2. patro · sál 8</span></div>
-            <div class="proc-row"><time>9:00</time><b>ILTV ergoterapie</b><span>Ergoterapie · 2. patro · místnost 232</span></div>
-            <div class="proc-row"><time>12:00</time><b>Individuální LTV</b><span>Tělocvična · 2. patro · sál 224</span></div>
-            <div class="proc-row"><time>12:45</time><b>Čtyřkomorová lázeň</b><span>Centrum elektroléčby I.</span></div>
-            <div class="proc-row"><time>14:00</time><b>Perličková koupel + zábal</b><span>Balneo · 4. patro</span></div>
-          </div>
-          <div class="day-block"><div class="day-title"><span>04.11.2026 · Středa</span><span></span></div>
-            <div class="proc-row"><time>7:45</time><b>Vodní CO₂ koupel + zábal</b><span>Balneo · 4. patro</span></div>
-            <div class="proc-row"><time>9:10</time><b>Vířivá koupel HKK</b><span>Vodoléčebný sál · 1. patro</span></div>
-            <div class="proc-row"><time>9:45</time><b>Motomed</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-            <div class="proc-row"><time>12:00</time><b>ILTV Imoove</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-            <div class="proc-row"><time>13:30</time><b>Parafango-obklad</b><span>Termoterapie · 2. patro · místnost 11</span></div>
-          </div>
-          <div class="sheet-foot">Modelový léčebný průkaz pro prezentaci Bohanes Technologies.</div>
-        </article>
-
-        <article class="sheet" data-sheet-panel="2">
-          <div class="sheet-head"><strong>LÉČEBNÝ PRŮKAZ</strong><span>Lázně Harmonie · modelový dokument</span></div>
-          <div class="patient-grid"><div><span>Klient</span><br><b>Jan Novák</b></div><div><span>Číslo pobytu</span><br><b>BT-2026-0158</b></div><div><span>Pokoj</span><br><b>212</b></div><div><span>Datum narození</span><br><b>12. 3. 1958</b></div><div><span>Lékař</span><br><b>MUDr. Jana Novotná</b></div><div><span>Typ péče</span><br><b>Komplexní lázeňská péče</b></div><div class="diag"><span>Diagnóza</span><br><b>Gonartróza pravého kolenního kloubu · modelový údaj</b></div></div>
-          <div class="day-block"><div class="day-title"><span>06.11.2026 · Pátek</span><span></span></div>
-            <div class="proc-row"><time>7:30</time><b>Perličková koupel + zábal</b><span>Balneo · 4. patro</span></div>
-            <div class="proc-row"><time>8:45</time><b>Motomed</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-            <div class="proc-row"><time>12:00</time><b>ILTV Imoove</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-          </div>
-          <div class="day-block"><div class="day-title"><span>07.11.2026 · Sobota</span><span></span></div>
-            <div class="proc-row"><time>8:00</time><b>Elektrický chodník</b><span>Rehabilitace · 2. patro · sál 8</span></div>
-            <div class="proc-row"><time>9:30</time><b>ILTV ergoterapie</b><span>Ergoterapie · 2. patro · místnost 232</span></div>
-            <div class="proc-row"><time>12:30</time><b>Individuální LTV</b><span>Tělocvična · 2. patro · sál 224</span></div>
-            <div class="proc-row"><time>13:15</time><b>Čtyřkomorová lázeň</b><span>Centrum elektroléčby I.</span></div>
-          </div>
-          <div class="day-block"><div class="day-title"><span>09.11.2026 · Pondělí</span><span></span></div>
-            <div class="proc-row"><time>8:15</time><b>Motomed</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-            <div class="proc-row"><time>9:30</time><b>Parafango-obklad</b><span>Termoterapie · 2. patro · místnost 11</span></div>
-            <div class="proc-row"><time>10:15</time><b>Celotělová vířivá koupel</b><span>Svět vitality · 2. patro</span></div>
-            <div class="proc-row"><time>12:00</time><b>ILTV Imoove</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-          </div>
-          <div class="sheet-foot">Modelový léčebný průkaz pro prezentaci Bohanes Technologies.</div>
-        </article>
-
-        <article class="sheet" data-sheet-panel="3">
-          <div class="sheet-head"><strong>LÉČEBNÝ PRŮKAZ</strong><span>Lázně Harmonie · modelový dokument</span></div>
-          <div class="patient-grid"><div><span>Klient</span><br><b>Jan Novák</b></div><div><span>Číslo pobytu</span><br><b>BT-2026-0158</b></div><div><span>Pokoj</span><br><b>212</b></div><div><span>Datum narození</span><br><b>12. 3. 1958</b></div><div><span>Lékař</span><br><b>MUDr. Jana Novotná</b></div><div><span>Typ péče</span><br><b>Komplexní lázeňská péče</b></div><div class="diag"><span>Diagnóza</span><br><b>Gonartróza pravého kolenního kloubu · modelový údaj</b></div></div>
-          <div class="day-block"><div class="day-title"><span>13.11.2026 · Pátek</span><span></span></div>
-            <div class="proc-row"><time>8:00</time><b>ILTV Imoove</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-            <div class="proc-row"><time>9:15</time><b>Motomed</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-            <div class="proc-row"><time>10:15</time><b>Čtyřkomorová lázeň</b><span>Centrum elektroléčby I.</span></div>
-            <div class="proc-row"><time>12:45</time><b>Vodní CO₂ koupel + zábal</b><span>Balneo · 4. patro</span></div>
-          </div>
-          <div class="day-block"><div class="day-title"><span>14.11.2026 · Sobota</span><span></span></div>
-            <div class="proc-row"><time>7:30</time><b>Parafango-obklad</b><span>Termoterapie · 2. patro · místnost 11</span></div>
-            <div class="proc-row"><time>8:15</time><b>Motomed</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-            <div class="proc-row"><time>10:00</time><b>Individuální LTV</b><span>Tělocvična · 2. patro · sál 224</span></div>
-            <div class="proc-row"><time>12:30</time><b>Celotělová vířivá koupel</b><span>Svět vitality · 2. patro</span></div>
-          </div>
-          <div class="day-block"><div class="day-title"><span>16.11.2026 · Pondělí</span><span></span></div>
-            <div class="proc-row"><time>8:00</time><b>Elektrický chodník</b><span>Rehabilitace · 2. patro · sál 8</span></div>
-            <div class="proc-row"><time>9:00</time><b>Parafango-obklad</b><span>Termoterapie · 2. patro · místnost 11</span></div>
-            <div class="proc-row"><time>9:50</time><b>Vířivá koupel HKK</b><span>Vodoléčebný sál · 1. patro</span></div>
-          </div>
-          <div class="sheet-foot">Modelový léčebný průkaz pro prezentaci Bohanes Technologies.</div>
-        </article>
-
-        <article class="sheet" data-sheet-panel="4">
-          <div class="sheet-head"><strong>LÉČEBNÝ PRŮKAZ</strong><span>Lázně Harmonie · modelový dokument</span></div>
-          <div class="patient-grid"><div><span>Klient</span><br><b>Jan Novák</b></div><div><span>Číslo pobytu</span><br><b>BT-2026-0158</b></div><div><span>Pokoj</span><br><b>212</b></div><div><span>Datum narození</span><br><b>12. 3. 1958</b></div><div><span>Lékař</span><br><b>MUDr. Jana Novotná</b></div><div><span>Typ péče</span><br><b>Komplexní lázeňská péče</b></div><div class="diag"><span>Diagnóza</span><br><b>Gonartróza pravého kolenního kloubu · modelový údaj</b></div></div>
-          <div class="day-block"><div class="day-title"><span>21.11.2026 · Sobota</span><span></span></div>
-            <div class="proc-row"><time>8:15</time><b>Motomed</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-            <div class="proc-row"><time>9:45</time><b>Celotělová vířivá koupel</b><span>Svět vitality · 2. patro</span></div>
-            <div class="proc-row"><time>10:30</time><b>Parafango-obklad</b><span>Termoterapie · 2. patro · místnost 11</span></div>
-            <div class="proc-row"><time>13:00</time><b>Vířivá koupel HKK</b><span>Vodoléčebný sál · 1. patro</span></div>
-          </div>
-          <div class="day-block"><div class="day-title"><span>23.11.2026 · Pondělí</span><span></span></div>
-            <div class="proc-row"><time>8:00</time><b>ILTV Imoove</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-            <div class="proc-row"><time>9:15</time><b>Vodní CO₂ koupel + zábal</b><span>Balneo · 4. patro</span></div>
-            <div class="proc-row"><time>10:15</time><b>Motomed</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-            <div class="proc-row"><time>12:30</time><b>Klasická masáž</b><span>Masérna · 4. patro</span></div>
-          </div>
-          <div class="day-block"><div class="day-title"><span>24.11.2026 · Úterý</span><span></span></div>
-            <div class="proc-row"><time>8:15</time><b>Celotělová vířivá koupel</b><span>Svět vitality · 2. patro</span></div>
-            <div class="proc-row"><time>9:15</time><b>Čtyřkomorová lázeň</b><span>Centrum elektroléčby I.</span></div>
-            <div class="proc-row"><time>10:30</time><b>Individuální LTV</b><span>Tělocvična · 2. patro · sál 224</span></div>
-            <div class="proc-row"><time>12:30</time><b>Elektrický chodník</b><span>Rehabilitace · 2. patro · sál 8</span></div>
-          </div>
-          <div class="sheet-foot">Modelový léčebný průkaz pro prezentaci Bohanes Technologies.</div>
-        </article>
-
-        <article class="sheet" data-sheet-panel="5">
-          <div class="sheet-head"><strong>LÉČEBNÝ PRŮKAZ</strong><span>Lázně Harmonie · modelový dokument</span></div>
-          <div class="patient-grid"><div><span>Klient</span><br><b>Jan Novák</b></div><div><span>Číslo pobytu</span><br><b>BT-2026-0158</b></div><div><span>Pokoj</span><br><b>212</b></div><div><span>Datum narození</span><br><b>12. 3. 1958</b></div><div><span>Lékař</span><br><b>MUDr. Jana Novotná</b></div><div><span>Typ péče</span><br><b>Komplexní lázeňská péče</b></div><div class="diag"><span>Diagnóza</span><br><b>Gonartróza pravého kolenního kloubu · modelový údaj</b></div></div>
-          <div class="day-block"><div class="day-title"><span>27.11.2026 · Pátek</span><span></span></div>
-            <div class="proc-row"><time>7:30</time><b>ILTV Imoove</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-            <div class="proc-row"><time>8:45</time><b>Celotělová vířivá koupel</b><span>Svět vitality · 2. patro</span></div>
-            <div class="proc-row"><time>10:15</time><b>Motomed</b><span>Rehabilitace · 2. patro · sál 7</span></div>
-            <div class="proc-row"><time>12:00</time><b>Parafango-obklad</b><span>Termoterapie · 2. patro · místnost 11</span></div>
-          </div>
-          <div class="day-block"><div class="day-title"><span>30.11.2026 · Pondělí</span><span></span></div>
-            <div class="proc-row"><time>8:00</time><b>Výstupní kontrola</b><span>Lékařská ordinace · 3. patro</span></div>
-          </div>
-          <div class="sheet-foot">Modelový léčebný průkaz pro prezentaci Bohanes Technologies.</div>
-        </article>
-      </div>
-    </div>
-
-    <aside class="flow">
-      <div class="flow-step"><b>1</b><strong>Léčebný průkaz</strong><span>Klient dostane svůj rozpis procedur jako zdrojový podklad.</span></div>
-      <div class="flow-step"><b>2</b><strong>Převod a kontrola</strong><span>Časy, názvy procedur a místa se převedou do jednotného digitálního formátu.</span></div>
-      <div class="flow-step"><b>3</b><strong>Aktivace pobytu</strong><span>QR kód spojí aplikaci s konkrétním pobytem.</span></div>
-      <div class="flow-step"><b>4</b><strong>Commander</strong><span>Aplikace z jednoho zdroje ukazuje Dnes, Týden, Pobyt, Info i Nastavení.</span></div>
-    </aside>
+ <div class="container">
+  <div class="kicker" style="color:#9be5df">Jak to funguje</div><h2>Od papíru k osobnímu programu.</h2>
+  <p class="lead">Zdroj je léčebný průkaz. Commander z něj potřebuje hlavně den, čas, název procedury a místo. Níže je všech pět modelových listů vedle sebe — bez přepínání.</p>
+  <div class="flowline">
+   <div class="flowstep"><b>1</b><strong>Procedurový list</strong><span>Rozpis konkrétního pobytu.</span></div>
+   <div class="flowstep"><b>2</b><strong>Převod a kontrola</strong><span>Čas, procedura, místo a návaznosti.</span></div>
+   <div class="flowstep"><b>3</b><strong>Aktivace pobytu</strong><span>QR kód spojí klienta s pobytem.</span></div>
+   <div class="flowstep"><b>4</b><strong>Commander</strong><span>Telefon, kalendář, widgety a upozornění.</span></div>
   </div>
+  <div class="docs-grid">
+   <article class="paper"><div class="paper-title"><strong>LÉČEBNÝ PRŮKAZ</strong><span>List 1 / 5 · modelová data</span></div><div class="patient"><div>Klient<br><b>Jan Novák</b></div><div>Pokoj<br><b>212</b></div><div>Lékař<br><b>MUDr. Jana Novotná</b></div><div>Č. pobytu<br><b>BT-0158</b></div><div class="wide">Diagnóza<br><b>Ortopedická rehabilitace · modelový údaj</b></div></div><div class="day"><div class="dayhead">Úterý 3. 11.</div><div class="prow"><time>8:00</time><div><b>Elektrický chodník</b><small>Rehabilitace · 2. patro · sál 8</small></div></div><div class="prow"><time>9:00</time><div><b>ILTV ergoterapie</b><small>Ergoterapie · místnost 232</small></div></div><div class="prow"><time>12:00</time><div><b>Individuální LTV</b><small>Tělocvična · sál 224</small></div></div><div class="prow"><time>12:45</time><div><b>Čtyřkomorová lázeň</b><small>Centrum elektroléčby</small></div></div></div></article>
+   <article class="paper"><div class="paper-title"><strong>LÉČEBNÝ PRŮKAZ</strong><span>List 2 / 5 · modelová data</span></div><div class="patient"><div>Klient<br><b>Jan Novák</b></div><div>Pokoj<br><b>212</b></div><div>Lékař<br><b>MUDr. Jana Novotná</b></div><div>Č. pobytu<br><b>BT-0158</b></div><div class="wide">Diagnóza<br><b>Ortopedická rehabilitace · modelový údaj</b></div></div><div class="day"><div class="dayhead">Pátek 6. 11.</div><div class="prow"><time>7:30</time><div><b>Perličková koupel + zábal</b><small>Balneo · 4. patro</small></div></div><div class="prow"><time>8:45</time><div><b>Motomed</b><small>Rehabilitace · sál 7</small></div></div><div class="prow"><time>12:00</time><div><b>ILTV Imoove</b><small>Rehabilitace · sál 7</small></div></div></div></article>
+   <article class="paper"><div class="paper-title"><strong>LÉČEBNÝ PRŮKAZ</strong><span>List 3 / 5 · modelová data</span></div><div class="patient"><div>Klient<br><b>Jan Novák</b></div><div>Pokoj<br><b>212</b></div><div>Lékař<br><b>MUDr. Jana Novotná</b></div><div>Č. pobytu<br><b>BT-0158</b></div><div class="wide">Diagnóza<br><b>Ortopedická rehabilitace · modelový údaj</b></div></div><div class="day"><div class="dayhead">Pátek 13. 11.</div><div class="prow"><time>8:00</time><div><b>ILTV Imoove</b><small>Rehabilitace · sál 7</small></div></div><div class="prow"><time>9:15</time><div><b>Motomed</b><small>Rehabilitace · sál 7</small></div></div><div class="prow"><time>10:15</time><div><b>Čtyřkomorová lázeň</b><small>Centrum elektroléčby</small></div></div><div class="prow"><time>12:45</time><div><b>Vodní CO₂ koupel + zábal</b><small>Balneo · 4. patro</small></div></div></div></article>
+   <article class="paper"><div class="paper-title"><strong>LÉČEBNÝ PRŮKAZ</strong><span>List 4 / 5 · modelová data</span></div><div class="patient"><div>Klient<br><b>Jan Novák</b></div><div>Pokoj<br><b>212</b></div><div>Lékař<br><b>MUDr. Jana Novotná</b></div><div>Č. pobytu<br><b>BT-0158</b></div><div class="wide">Diagnóza<br><b>Ortopedická rehabilitace · modelový údaj</b></div></div><div class="day"><div class="dayhead">Sobota 21. 11.</div><div class="prow"><time>8:15</time><div><b>Motomed</b><small>Rehabilitace · sál 7</small></div></div><div class="prow"><time>9:45</time><div><b>Celotělová vířivá koupel</b><small>Svět vitality · 2. patro</small></div></div><div class="prow"><time>10:30</time><div><b>Parafango-obklad</b><small>Termoterapie · místnost 11</small></div></div><div class="prow"><time>13:00</time><div><b>Vířivá koupel HKK</b><small>Vodoléčebný sál</small></div></div></div></article>
+   <article class="paper"><div class="paper-title"><strong>LÉČEBNÝ PRŮKAZ</strong><span>List 5 / 5 · modelová data</span></div><div class="patient"><div>Klient<br><b>Jan Novák</b></div><div>Pokoj<br><b>212</b></div><div>Lékař<br><b>MUDr. Jana Novotná</b></div><div>Č. pobytu<br><b>BT-0158</b></div><div class="wide">Diagnóza<br><b>Ortopedická rehabilitace · modelový údaj</b></div></div><div class="day"><div class="dayhead">Pátek 27. 11.</div><div class="prow"><time>7:30</time><div><b>ILTV Imoove</b><small>Rehabilitace · sál 7</small></div></div><div class="prow"><time>8:45</time><div><b>Celotělová vířivá koupel</b><small>Svět vitality · 2. patro</small></div></div><div class="prow"><time>10:15</time><div><b>Motomed</b><small>Rehabilitace · sál 7</small></div></div><div class="prow"><time>12:00</time><div><b>Parafango-obklad</b><small>Termoterapie · místnost 11</small></div></div></div></article>
+  </div>
+ </div>
+</section>
+
+<section class="widgets" id="widgety">
+ <div class="container">
+  <div class="section-head"><div><div class="kicker">Kalendář a widgety</div><h2>Commander nemusí být pořád otevřený.</h2></div><p class="lead">Tady vycházím přímo z widgetů, které už máš na iPhonu: denní souhrn, odpočet do procedury, aktuální událost a kalendář pobytu.</p></div>
+  <div class="widgets-grid">
+   <div class="calendar-large">
+    <div class="month"><span>‹</span><strong>Říjen 2026</strong><span>›</span></div>
+    <div class="weekdays"><span>Po</span><span>Út</span><span>St</span><span>Čt</span><span>Pá</span><span>So</span><span>Ne</span></div>
+    <div class="days"><span>28</span><span>29</span><span>30</span><span class="today">1</span><span class="stay">2</span><span class="stay">3</span><span class="stay">4</span><span class="stay">5</span><span class="stay">6</span><span class="stay">7</span><span class="stay">8</span><span class="stay">9</span><span class="stay">10</span><span class="stay">11</span><span class="stay">12</span><span class="stay">13</span><span class="stay">14</span><span class="stay">15</span><span class="stay">16</span><span class="stay">17</span><span class="stay">18</span><span class="stay">19</span><span class="stay">20</span><span class="stay">21</span><span class="stay">22</span><span class="stay">23</span><span class="stay">24</span><span class="stay">25</span><span class="stay">26</span><span class="stay">27</span><span class="stay">28</span><span>29</span><span>30</span><span>31</span><span>1</span></div>
+    <div class="calendar-list"><div class="calendar-item"><i class="dot"></i><div><b>Lázeňský pobyt</b><br><span>30. 9. – 28. 10. 2026</span></div></div><div class="calendar-item"><i class="dot" style="background:#8b7cc7"></i><div><b>Dnešní procedury</b><br><span>5 událostí · konec procedur 12:20</span></div></div></div>
+   </div>
+   <div class="widget-stack">
+    <article class="wcard"><div class="title"><img src="/commander-official.png" alt="">Dnes<span class="date">út 29. 9.</span></div><div class="metric">5 procedur</div><p>Konec procedur 12:20 · večeře 16:45</p></article>
+    <article class="wcard"><div class="title"><img src="/commander-official.png" alt="">Commander<span class="date">teď</span></div><div class="metric">2 h 41 min</div><p>Vizita · RS · 7. patro</p></article>
+    <article class="wcard wide"><div class="title"><img src="/commander-official.png" alt="">Lázeňský Commander<span class="date">st 7. 10.</span></div><div class="current-row" style="margin-top:13px"><div class="proc-icon">✚</div><div><b style="color:#ff88be">Vizita</b><p style="margin:1px 0 0">RS · 7. patro · 6:35–6:40</p></div><div class="countdown">2 h 41 min</div></div></article>
+    <article class="wcard live wide"><div class="title"><img src="/commander-official.png" alt="">Live Activity<span class="date">zamčená obrazovka</span></div><div class="metric">Elektroléčba · 4 min</div><p>Aktuální stav a časový kontext bez otevření aplikace.</p></article>
+   </div>
+  </div>
+ </div>
 </section>
 
 <section class="spa" id="pro-lazne">
-  <div class="container spa-grid">
-    <div>
-      <div class="section-kicker">Pro lázně</div>
-      <h2>Pilot nejdřív. Rozšíření až podle výsledku.</h2>
-      <p class="section-lead">Commander lze ověřit na jedné skupině klientů bez toho, aby se hned měnil celý provoz lázní.</p>
-      <div class="checks">
-        <div class="check"><i>✓</i><div><strong>Omezený rozsah</strong><br><span>Jeden lázeňský dům nebo konkrétní skupina hostů.</span></div></div>
-        <div class="check"><i>✓</i><div><strong>Jasný proces</strong><br><span>Léčebný průkaz → aktivace → používání → zpětná vazba.</span></div></div>
-        <div class="check"><i>✓</i><div><strong>Měřitelný výsledek</strong><br><span>Teprve podle reálného používání se rozhoduje o dalším rozšíření.</span></div></div>
-      </div>
-    </div>
-    <aside class="pilot">
-      <h3>Pilotní nasazení</h3>
-      <p>Začněme malou skupinou klientů a přesně vymezeným obdobím. Commander se tak dá ověřit bez zbytečného provozního rizika.</p>
-      <div class="pilot-metrics">
-        <div class="metric"><b>299 Kč</b><span>aktivace jednoho pobytu</span></div>
-        <div class="metric"><b>QR aktivace</b><span>jednoduché propojení klienta a pobytu</span></div>
-        <div class="metric"><b>iPhone</b><span>hlavní aplikace</span></div>
-        <div class="metric"><b>Další moduly</b><span>kalendář, widgety, Watch</span></div>
-      </div>
-      <a class="btn btn-primary" href="#kontakt" style="margin-top:18px">Domluvit pilot</a>
-    </aside>
-  </div>
-</section>
-
-<section class="roadmap" id="pripravujeme">
-  <div class="container">
-    <div class="section-kicker">Připravujeme</div>
-    <h2>Další části Commanderu budou vidět na první pohled.</h2>
-    <p class="section-lead">Nechci je schovat do jedné věty. Každý modul má vlastní roli a vlastní vizuální místo.</p>
-    <div class="roadmap-grid">
-      <article class="roadmap-card"><span class="status">Připravujeme</span><h3>Kalendář</h3><p>Přehled celého pobytu v kalendářním zobrazení.</p><div class="mini-visual">Po · Út · St · Čt · Pá</div></article>
-      <article class="roadmap-card"><span class="status">Připravujeme</span><h3>Widget</h3><p>Další událost nebo souhrn dne bez otevření aplikace.</p><div class="mini-visual">Další: Hydrojet · 14:20</div></article>
-      <article class="roadmap-card"><span class="status">Připravujeme</span><h3>Live Activity</h3><p>Aktuální procedura a odpočet na zamčené obrazovce.</p><div class="mini-visual">Do odchodu · 14 min</div></article>
-      <article class="roadmap-card"><span class="status">Připravujeme</span><h3>Apple Watch</h3><p>Další procedura, čas a odchod přímo na zápěstí.</p><div class="mini-visual">Jodobromová koupel · 14:20</div></article>
-    </div>
-  </div>
+ <div class="container spa-grid">
+  <div><div class="kicker">Pro lázně</div><h2>Pilot nejdřív. Rozšíření až podle výsledku.</h2><p class="lead">Commander lze ověřit na malé skupině klientů, jednom lázeňském domě nebo jednom konkrétním typu pobytu.</p><div class="bullet-list"><div class="bullet"><i>✓</i><div><b>Malý organizační zásah</b><br><span style="font-size:11px;color:var(--muted)">Není nutné měnit celý provoz.</span></div></div><div class="bullet"><i>✓</i><div><b>Jasný scénář</b><br><span style="font-size:11px;color:var(--muted)">Konkrétní skupina, období a způsob vyhodnocení.</span></div></div><div class="bullet"><i>✓</i><div><b>Další krok podle dat</b><br><span style="font-size:11px;color:var(--muted)">Rozšíření až po reálné zkušenosti klientů.</span></div></div></div></div>
+  <aside class="pilot"><h3>Pilotní aktivace</h3><p>Jedna aktivace Commanderu je navázaná na jeden konkrétní pobyt.</p><div class="price-box"><strong>299 Kč</strong><br><span>za aktivaci pobytu</span></div><a class="cta" href="#kontakt">Domluvit pilot</a></aside>
+ </div>
 </section>
 
 <section class="install" id="instalace">
-  <div class="container install-grid">
-    <div>
-      <div class="section-kicker">Instalace a aktivace</div>
-      <h2>Jedna aktivace pobytu za 299 Kč.</h2>
-      <p class="section-lead">Klient naskenuje instalační QR kód, aktivuje konkrétní pobyt a v Nastavení má přístup ke kalendáři i samostatnému procedurovému listu.</p>
-      <div class="price-card">
-        <div class="price">299 Kč <span>/ aktivace pobytu</span></div>
-        <p>Jednorázová aktivace pro konkrétní lázeňský pobyt. Ostré instalační QR kódy doplníme až k finální distribuční adrese aplikace.</p>
-        <div class="qr-row">
-          <div class="qr-box"><div class="qr"></div><div><b>Instalace aplikace</b><span>QR pro stažení nebo otevření Commanderu.</span></div></div>
-          <div class="qr-box"><div class="qr"></div><div><b>Aktivace pobytu</b><span>QR pro konkrétní pobyt klienta.</span></div></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="settings-phone">
-      <div class="phone-head"><img src="/screens/commander-glyph.png" alt=""><b>Lázeňský <span>Commander</span></b></div>
-      <div class="phone-title">Nastavení</div><div class="phone-sub">Pobyt a dokumenty</div>
-      <div class="phone-card"><h4>Rozpis <span style="font-size:11px;color:#9ce7df">aktivní</span></h4>
-        <div class="setting-link"><span>Kalendář</span><b>Otevřít <span class="arrow">›</span></b></div>
-        <div class="setting-link"><span>Procedurový list</span><b>Zobrazit <span class="arrow">›</span></b></div>
-        <div class="setting-link"><span>Kontrola rozpisu</span><b>V pořádku</b></div>
-      </div>
-      <div class="activate"><strong>Aktivace pobytu</strong><span>Jednorázově 299 Kč · QR kód nebo aktivační odkaz</span></div>
-      <div class="phone-card"><h4>Čas odchodu</h4><div class="setting-link"><span>Předstihy</span><b>20 min <span class="arrow">›</span></b></div></div>
-      <div class="phone-nav"><div><b>☀</b>Dnes</div><div><b>▦</b>Týden</div><div><b>▣</b>Pobyt</div><div><b>ⓘ</b>Info</div><div class="active"><b>⚙</b>Nastavení</div></div>
-    </div>
-  </div>
+ <div class="container install-grid">
+  <div><div class="kicker">Instalace a aktivace</div><h2>Jednoduchý vstup do aplikace.</h2><p class="lead">Instalační QR povede na aplikaci. Druhý QR nebo aktivační kód spojí konkrétní instalaci s pobytem klienta.</p><div class="price-box"><strong>299 Kč</strong><br><span>jednorázová aktivace konkrétního pobytu</span></div><div class="qr-grid"><div class="qr-card"><div class="qr"></div><div><b>Instalace aplikace</b><span>Finální QR doplníme podle distribučního odkazu.</span></div></div><div class="qr-card"><div class="qr"></div><div><b>Aktivace pobytu</b><span>Jednorázové spojení klienta a pobytu.</span></div></div></div></div>
+  <div class="settings-img"><img src="/screens/commander-settings.png" alt="Nastavení Lázeňského Commanderu"></div>
+ </div>
 </section>
 
 <section class="contact" id="kontakt">
-  <div class="container contact-grid">
-    <div>
-      <div class="section-kicker" style="color:#9ce7df">Kontakt</div>
-      <h2>Chcete Commander vyzkoušet v lázních?</h2>
-      <p class="section-lead">Použijte formulář, nebo se ozvěte přímo.</p>
-      <div class="contact-links">
-        <a class="contact-link" href="mailto:info@bohanastechnology.cz"><span class="ci">@</span><span><b>info@bohanastechnology.cz</b><span>Napište nám</span></span></a>
-        <a class="contact-link" href="tel:+420777000000"><span class="ci">☎</span><span><b>+420 777 000 000</b><span>Zavolejte nám</span></span></a>
-      </div>
-    </div>
-    <form class="form" id="contactForm">
-      <div><label>Jméno</label><input name="name" placeholder="Jméno a příjmení"></div>
-      <div><label>Lázně / firma</label><input name="company" placeholder="Název organizace"></div>
-      <div><label>E-mail</label><input type="email" name="email" placeholder="vas@email.cz"></div>
-      <div><label>Telefon</label><input name="phone" placeholder="+420 …"></div>
-      <div class="full"><label>Co chcete řešit</label><textarea name="message" placeholder="Např. pilotní nasazení pro jednu skupinu klientů…"></textarea></div>
-      <div class="submit-row"><button class="btn btn-primary" type="submit">Odeslat poptávku</button><span class="form-status" id="formStatus">Formulář bude aktivní při ostrém spuštění webu.</span></div>
-    </form>
-  </div>
+ <div class="container contact-grid">
+  <div><div class="kicker" style="color:#9be6df">Kontakt</div><h2>Chcete Commander vyzkoušet?</h2><p class="lead">Použijte formulář, nebo se ozvěte přímo.</p><div class="contact-links"><a class="contact-link" href="mailto:info@bohanastechnology.cz"><b>info@bohanastechnology.cz</b><span>E-mail</span></a><a class="contact-link" href="tel:+420777000000"><b>+420 777 000 000</b><span>Telefon</span></a></div></div>
+  <form class="form" id="contactForm"><div><label>Jméno</label><input placeholder="Jméno a příjmení"></div><div><label>Lázně / firma</label><input placeholder="Název organizace"></div><div><label>E-mail</label><input type="email" placeholder="vas@email.cz"></div><div><label>Telefon</label><input placeholder="+420 …"></div><div class="full"><label>Zpráva</label><textarea placeholder="Např. pilotní nasazení pro jednu skupinu klientů…"></textarea></div><div class="full"><button class="cta" type="submit">Odeslat poptávku</button></div></form>
+ </div>
 </section>
 </main>
 
-<footer>
-  <div class="container footer">
-    <div class="footer-brand"><img src="/symbol.svg" alt=""> BOHANES TECHNOLOGIES</div>
-    <div>© 2026 Bohanes Technologies · Lázeňský Commander</div>
-  </div>
-</footer>
+<footer><div class="container footer"><img src="/bohanes-logo-white.svg" alt="Bohanes Technologies"><span>© 2026 Bohanes Technologies · Technologie, které dávají smysl.</span></div></footer>
 
 <script>
-const appButtons=[...document.querySelectorAll('#appTabs button')];
-const appPanels=[...document.querySelectorAll('[data-panel]')];
-const appCopies=[...document.querySelectorAll('[data-copy]')];
-appButtons.forEach(btn=>btn.addEventListener('click',()=>{
-  const key=btn.dataset.app;
-  appButtons.forEach(x=>x.classList.toggle('active',x===btn));
-  appPanels.forEach(x=>x.classList.toggle('active',x.dataset.panel===key));
-  appCopies.forEach(x=>x.classList.toggle('active',x.dataset.copy===key));
-}));
-const sheetButtons=[...document.querySelectorAll('#sheetTabs button')];
-const sheets=[...document.querySelectorAll('[data-sheet-panel]')];
-sheetButtons.forEach(btn=>btn.addEventListener('click',()=>{
-  const key=btn.dataset.sheet;
-  sheetButtons.forEach(x=>x.classList.toggle('active',x===btn));
-  sheets.forEach(x=>x.classList.toggle('active',x.dataset.sheetPanel===key));
-}));
-const navAnchors=[...document.querySelectorAll('[data-section]')];
-const sections=navAnchors.map(a=>document.getElementById(a.dataset.section)).filter(Boolean);
-function updateActiveNav(){
-  const y=window.scrollY+130;
-  let current=sections[0]?.id || 'domu';
-  sections.forEach(section=>{ if(section.offsetTop<=y) current=section.id; });
-  navAnchors.forEach(a=>a.classList.toggle('active',a.dataset.section===current));
-}
-window.addEventListener('scroll',updateActiveNav,{passive:true});
-window.addEventListener('resize',updateActiveNav);
-updateActiveNav();
-document.getElementById('contactForm').addEventListener('submit',e=>{
-  e.preventDefault();
-  document.getElementById('formStatus').textContent='Formulář bude aktivní při ostrém spuštění webu.';
-});
+const links=[...document.querySelectorAll('[data-section]')];
+const secs=links.map(a=>document.getElementById(a.dataset.section)).filter(Boolean);
+function syncNav(){const y=scrollY+130;let cur=secs[0]?.id||'domu';secs.forEach(s=>{if(s.offsetTop<=y)cur=s.id});links.forEach(a=>a.classList.toggle('active',a.dataset.section===cur))}
+addEventListener('scroll',syncNav,{passive:true});addEventListener('resize',syncNav);syncNav();
+document.getElementById('contactForm').addEventListener('submit',e=>e.preventDefault());
 </script>
-</body>
-</html>
+</body></html>
