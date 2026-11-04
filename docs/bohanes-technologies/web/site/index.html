@@ -1806,23 +1806,8 @@ header:after{
 }
 </style>
 <style id="final-copy-centering">
-/* Krátké vysvětlující texty tvoří jeden vycentrovaný celek. Dlouhé obsahové bloky zůstávají vlevo. */
-#commander .section-heading,
-#jak-funguje .section-heading,
-#alarmy .section-heading{
-  grid-template-columns:minmax(0,1fr)!important;
-  justify-items:center;
-  align-items:center!important;
-  gap:10px;
-  text-align:center;
-}
-#commander .section-heading>.lead,
-#jak-funguje .section-heading>.lead,
-#alarmy .section-heading>.lead{
-  margin:0 auto!important;
-  max-width:760px;
-  text-align:center;
-}
+/* Hlavní nadpisy a úvodní texty sekcí používají původní levé zarovnání.
+   Na střed patří pouze text uvnitř jednotlivých malých karet. */
 #commander .screen-card h3,
 #commander .screen-card p,
 #jak-funguje .flow-step h3,

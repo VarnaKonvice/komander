@@ -3,6 +3,10 @@
 Lokální pracovní web. Poslední dolaďovací kolo dokončeno 4. 11. 2026.
 
 
+## Oprava rozsahu centrování – 4. 11. 2026
+
+Na základě vizuální kontroly vráceno původní levé zarovnání hlavních nadpisů a úvodních textů Užitečné obrazovky / Jak to funguje / Alarmy a upozornění. Centrované zůstávají pouze názvy a popisy uvnitř malých karet (Dnes, Týden, Pobyt, Info, Nastavení, pět kroků a tři alarmové karty). Předchozí popis širšího centrování níže je historický a již neplatí.
+
 ## Závěrečné centrování a synchronizace – 4. 11. 2026
 
 - U sekcí Užitečné obrazovky, Jak to funguje a Alarmy a upozornění jsou nadpisy a jejich krátké doprovodné věty centrovány jako jeden celek.
