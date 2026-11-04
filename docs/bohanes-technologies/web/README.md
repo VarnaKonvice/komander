@@ -3,6 +3,10 @@
 Lokální pracovní web. Poslední dolaďovací kolo dokončeno 4. 11. 2026.
 
 
+## Společná poddlaždice widgetů – 4. 11. 2026
+
+Tři nativní widgety s nadpisem „Teď, potom a zbytek dne.“ mají společný jemně modrý vnitřní rámeček `widget-summary-panel`. Žádná nová kopie obrázků, textů ani jiná změna sekcí nevznikla. Původní poměry widgetů zůstaly zachovány.
+
 ## Srovnání záhlaví widgetů – 4. 11. 2026
 
 V souhrnné dlaždici Kalendář a widgety je vysvětlení „Widget ukazuje proceduru, místo…“ přesunuto na stejnou horní úroveň jako název „Widgety a kalendáře“, při desktopové šířce do pravého sloupce. Pod touto hlavičkou pokračují nativní widgety, kalendáře a původní titulek „Teď, potom a zbytek dne.“. Na úzkých obrazovkách se řadí pod sebe. Ostatní sekce se neměnily.
