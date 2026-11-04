@@ -3,6 +3,10 @@
 Lokální pracovní web. Poslední dolaďovací kolo dokončeno 4. 11. 2026.
 
 
+## Pojmenování souhrnných poddlaždic – 4. 11. 2026
+
+Každá souhrnná vnitřní dlaždice nyní obsahuje vlastní titulek obdobně jako již existující blok Procedury: Přehled obrazovek, Cesta od rozpisu k upozornění, Od nastavení předstihu k alarmu, Widgety a kalendáře, Instalace a aktivace, Připravované funkce. Nadpisy mateřských sekcí a jejich zarovnání se nemění. Nové názvy jsou součástí původních vnitřních bloků; nevzniká další úroveň dlaždic.
+
 ## Oprava rozsahu centrování – 4. 11. 2026
 
 Na základě vizuální kontroly vráceno původní levé zarovnání hlavních nadpisů a úvodních textů Užitečné obrazovky / Jak to funguje / Alarmy a upozornění. Centrované zůstávají pouze názvy a popisy uvnitř malých karet (Dnes, Týden, Pobyt, Info, Nastavení, pět kroků a tři alarmové karty). Předchozí popis širšího centrování níže je historický a již neplatí.
