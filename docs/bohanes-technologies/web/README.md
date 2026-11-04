@@ -3,6 +3,10 @@
 Lokální pracovní web. Poslední dolaďovací kolo dokončeno 4. 11. 2026.
 
 
+## Srovnání záhlaví widgetů – 4. 11. 2026
+
+V souhrnné dlaždici Kalendář a widgety je vysvětlení „Widget ukazuje proceduru, místo…“ přesunuto na stejnou horní úroveň jako název „Widgety a kalendáře“, při desktopové šířce do pravého sloupce. Pod touto hlavičkou pokračují nativní widgety, kalendáře a původní titulek „Teď, potom a zbytek dne.“. Na úzkých obrazovkách se řadí pod sebe. Ostatní sekce se neměnily.
+
 ## Pojmenování souhrnných poddlaždic – 4. 11. 2026
 
 Každá souhrnná vnitřní dlaždice nyní obsahuje vlastní titulek obdobně jako již existující blok Procedury: Přehled obrazovek, Cesta od rozpisu k upozornění, Od nastavení předstihu k alarmu, Widgety a kalendáře, Instalace a aktivace, Připravované funkce. Nadpisy mateřských sekcí a jejich zarovnání se nemění. Nové názvy jsou součástí původních vnitřních bloků; nevzniká další úroveň dlaždic.
