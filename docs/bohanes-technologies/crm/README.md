@@ -23,6 +23,16 @@ Snapshot uložený v tomto repozitáři odpovídá produkční verzi po doplněn
 - Moravan je viditelný v seznamu, mini kartě, tooltipu mapy a horním podtitulu detailu,
 - při otevření velkého detailu se mini karta automaticky zavře.
 
+## UX úprava detailu a mapy — 5. 11. 2026
+
+- mini karta na mapě používá reprezentativní fotografii lázní a odděluje osobu od kontaktu obchodního oddělení,
+- běžné otevření detailu vždy začíná na záložce **Přehled**; z modulu Kontakty se otevírá cíleně záložka **Kontakty**,
+- adresy jsou v detailu zobrazované strukturovaně po blocích a nejsou současně duplikované v rychlém přehledu,
+- hlavní telefon a e-mail jsou v jedné kartě **Kontaktní údaje**, editace je sbalená,
+- pole **Co aktuálně řešíme** je oddělené soukromé obchodní pole businessNote; veřejný audit zůstává zachovaný a je sbalený pod **Ověření veřejných dat**,
+- kontaktní karty zobrazují primárně jméno, funkci, telefon a e-mail; dlouhé zdrojové poznámky jsou sbalené pod **Ověření dat**,
+- verified-records.json, generovaná veřejná data a fotografie nebyly touto UX úpravou změněny.
+
 ## Uložené soubory
 - `docs/bohanes-technologies/crm/app/index.html` – kompletní aplikace,
 - `docs/bohanes-technologies/crm/data/regions.json` – regionální mapová data,

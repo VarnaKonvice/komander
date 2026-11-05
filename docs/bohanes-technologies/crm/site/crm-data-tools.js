@@ -52,7 +52,7 @@ function validateCRMBackup(value,knownRecords){
  const rows=Array.isArray(value)?value:(value?.format==='bohanes-crm'&&value?.schemaVersion===1?value.records:null);
  if(!Array.isArray(rows)||!rows.length||rows.length>1000)throw new Error('Soubor neobsahuje platnou zálohu CRM.');
  const seen=new Set(),known=new Map(knownRecords.map(x=>[x.id,x.name]));
- const keys=['company','ico','website','phone','email','facilityAddress','registeredAddress','note','status','photo','historicalLand'];
+ const keys=['company','ico','website','phone','email','facilityAddress','registeredAddress','note','businessNote','status','photo','historicalLand'];
  return rows.map(row=>{
   if(!row||!Number.isInteger(row.id)||seen.has(row.id)||known.get(row.id)!==row.name)throw new Error('Záloha obsahuje neznámý nebo duplicitní záznam.');
   seen.add(row.id);const result={id:row.id,name:row.name};
@@ -94,7 +94,7 @@ function undoCRMImport(){
   localStorage.setItem('bohanesCRM-before-import',JSON.stringify(data));
   for(const row of rows){
    const target=data.find(v=>v.id===row.id);
-   for(const key of ['company','ico','website','phone','email','facilityAddress','registeredAddress','note','status','photo','historicalLand','contacts'])delete target[key];
+   for(const key of ['company','ico','website','phone','email','facilityAddress','registeredAddress','note','businessNote','status','photo','historicalLand','contacts'])delete target[key];
    Object.assign(target,row);
   }
   persist();location.reload();
