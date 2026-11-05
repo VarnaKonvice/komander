@@ -1,6 +1,6 @@
 
 // Společná veřejná data jsou verzovaná odděleně od místních obchodních úprav.
-const VERIFIED_DATA_VERSION='2026-11-05.1';
+const VERIFIED_DATA_VERSION='2026-11-05.2';
 function crmNameKey(name){return String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\b(prof|paeddr|phdr|judr|mudr|mgr|ing|bc|dr|csc|ph|d|mba|m|b|a|ll|dis)\b/g,'').replace(/[^a-z]/g,'')}
 function applyVerifiedRecords(records,verified){
  const fields=['company','ico','website','phone','email','facilityAddress','registeredAddress','photo','historicalLand'];
@@ -13,7 +13,8 @@ function applyVerifiedRecords(records,verified){
   }
   const marker='\n\n— Ověřené veřejné údaje —\n';
   const base=(x.note||'').split(marker)[0];
-  x.note=(!base||base===legacy.note)?row.note:base+marker+row.note;
+  const priorPublicNote=row.name==='Luhačovice'?row.note.replace("Soupis adres všech hotelů není úplný; ověřené objekty jsou pojmenované v poli adresy zařízení, sídlo se za jejich adresy nepovažuje.","Konkrétní adresy jednotlivých hotelů zatím nedoplněny; sídlo se za jejich adresy nepovažuje."):row.note;
+  x.note=(!base||base===legacy.note||base===priorPublicNote||base===previous.note)?row.note:base+marker+row.note;
   x.contacts=Array.isArray(x.contacts)?x.contacts:[];
   for(const c of row.contacts||[]){
    const key=crmNameKey(c.name);let old=x.contacts.find(v=>crmNameKey(v.name)===key);
@@ -37,6 +38,7 @@ function applyVerifiedRecords(records,verified){
    if(c){if(c.role==='Obchodní ředitelka')c.role+=' (stávající údaj, aktuálnost neověřena)';c.note=[c.note,'Telefon +420 596 373 301 je zveřejněn pro oznamování protiprávního jednání; nejde o ověřený obchodní kontakt. Zdroj: https://www.laznedarkov.cz/kontakt'].filter(Boolean).join('\n')}
   }
   x._verifiedBaseline=Object.fromEntries(fields.filter(k=>row[k]!==undefined).map(k=>[k,row[k]]));
+  x._verifiedBaseline.note=row.note;
   x.verifiedDataVersion=VERIFIED_DATA_VERSION;
  }
  return records;
