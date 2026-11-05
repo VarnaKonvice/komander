@@ -1,6 +1,6 @@
 
 // Společná veřejná data jsou verzovaná odděleně od místních obchodních úprav.
-const VERIFIED_DATA_VERSION='2026-11-05.3';
+const VERIFIED_DATA_VERSION='2026-11-05.4';
 function crmNameKey(name){return String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\b(prof|paeddr|phdr|judr|mudr|mgr|ing|bc|dr|csc|ph|d|mba|m|b|a|ll|dis)\b/g,'').replace(/[^a-z]/g,'')}
 function applyVerifiedRecords(records,verified){
  const fields=['company','ico','website','phone','email','facilityAddress','registeredAddress','photo','historicalLand'];
@@ -11,6 +11,8 @@ function applyVerifiedRecords(records,verified){
    if(row[k]===undefined)continue;
    if(!x[k]||x[k]===legacy[k]||x[k]===previous[k])x[k]=row[k];
   }
+  // Credit always belongs to the selected verified photograph, never to a custom replacement.
+  if(x.photo===row.photo)for(const k of ['photoSource','photoDescription','photoAttribution','photoLicense'])x[k]=row[k]||'';
   const marker='\n\n— Ověřené veřejné údaje —\n';
   const base=(x.note||'').split(marker)[0];
   const priorPublicNote=row.name==='Luhačovice'?row.note.replace("Soupis adres všech hotelů není úplný; ověřené objekty jsou pojmenované v poli adresy zařízení, sídlo se za jejich adresy nepovažuje.","Konkrétní adresy jednotlivých hotelů zatím nedoplněny; sídlo se za jejich adresy nepovažuje."):row.note;
@@ -21,7 +23,7 @@ function applyVerifiedRecords(records,verified){
    if(!old){x.contacts.push({...c});continue}
    const original=(legacy.contacts||[]).find(v=>crmNameKey(v.name)===key);
    if(c.role&&old.role!==c.role){
-    if(!old.role||old.role===original?.role)old.role=c.role;
+    if(!old.role||old.role===original?.role||(x.name==='Karviná – Darkov'&&old.role==='Člen statutárního orgánu — Lázně Darkov, a.s.')||(x.name==='Slatinice'&&old.role==='Výkonná ředitelka — Lázně Slatinice a.s.; člen představenstva — Lázně Slatinice a.s.')||(x.name==='Karviná – Darkov'&&old.role==='Obchodní ředitelka (stávající údaj, aktuálnost neověřena)'))old.role=c.role;
     else if(!old.role.includes(c.role))old.role+='; '+c.role;
    }
    for(const k of ['phone','email'])if(c[k]&&(!old[k]||old[k]===original?.[k]))old[k]=c[k];
@@ -32,10 +34,13 @@ function applyVerifiedRecords(records,verified){
     c.note=[c.note,'Stávající kontakt: aktuální funkce a kontaktní údaje nebyly touto veřejnou rešerší potvrzeny.'].filter(Boolean).join('\n');
    }
   }
-  // Historický obchodní kontakt nesmí být považován za ověřený jen převzetím ze staré verze.
+  // Preserve private edits; remove only the previously generated unverified annotation and the known whistleblowing number.
   if(x.name==='Karviná – Darkov'){
    const c=x.contacts.find(v=>crmNameKey(v.name)===crmNameKey('Lenka Krótká'));
-   if(c){if(c.role==='Obchodní ředitelka')c.role+=' (stávající údaj, aktuálnost neověřena)';c.note=[c.note,'Telefon +420 596 373 301 je zveřejněn pro oznamování protiprávního jednání; nejde o ověřený obchodní kontakt. Zdroj: https://www.laznedarkov.cz/kontakt'].filter(Boolean).join('\n')}
+   if(c){
+    c.note=(c.note||'').replace('Stávající kontakt: aktuální funkce a kontaktní údaje nebyly touto veřejnou rešerší potvrzeny.','Obchodní funkce dodatečně potvrzena tiskovou zprávou provozovatele z 27. 3. 2026.');
+    if((c.phone||'').replace(/[^0-9]/g,'').replace(/^420/,'')==='596373301'){c.phone='';c.note+='\nDříve převzaté číslo 596 373 301 odstraněno z pracovního kontaktu: oficiální web jej uvádí pro whistleblowing.'}
+   }
   }
   x._verifiedBaseline=Object.fromEntries(fields.filter(k=>row[k]!==undefined).map(k=>[k,row[k]]));
   x._verifiedBaseline.note=row.note;

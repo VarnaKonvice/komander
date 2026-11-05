@@ -36,5 +36,45 @@ function setup(saved){
  a.run('undoCRMImport()');assert.deepEqual(JSON.parse(a.memory.get('bohanesCRM')),JSON.parse(before),'undo restores original state');
  a.ctx.duplicate=[fresh[0],fresh[0]];assert.throws(()=>a.run('validateCRMBackup(duplicate,data)'),/duplicitní/);
  a.ctx.nofunction=[{...fresh[0],contacts:[{name:''}]}];assert.throws(()=>a.run('validateCRMBackup(nofunction,data)'),/jméno/);
+// Review every public record and protect a real version-3 upgrade, including manual edits.
+const canonical=JSON.parse(read('data/verified-records.json'));
+assert.equal(canonical.filter(r=>r.photo&&r.photoSource&&r.photoDescription).length,36);
+for(const r of canonical){
+ const keys=r.contacts.map(c=>a.run('crmNameKey('+JSON.stringify(c.name)+')'));
+ assert.equal(new Set(keys).size,keys.length,'duplicate contact within '+r.name);
+ assert.ok(r.facilityAddress&&r.registeredAddress&&r.website&&r.historicalLand);
+ assert.ok(r.contacts.every(c=>c.role&&c.note.includes('https://')));
+}
+const prior=JSON.parse(JSON.stringify(canonical));
+// Fixed examples of the deployed version-3 data, independent of the current Git HEAD.
+for(const r of prior)delete r.photo;
+prior.find(r=>r.name==='Teplice nad Bečvou').facilityAddress='Pilotní cíl Moravan: přesné číslo dosud neověřeno (verze 3).';
+prior.find(r=>r.name==='Karviná – Darkov').contacts=prior.find(r=>r.name==='Karviná – Darkov').contacts.filter(c=>c.name!=='Lenka Krótká');
+prior.find(r=>r.name==='Karviná – Darkov').contacts[0].role='Člen statutárního orgánu — Lázně Darkov, a.s.';
+
+const upgrading=JSON.parse(JSON.stringify(fresh));
+for(const r of upgrading){
+ const old=prior.find(x=>x.name===r.name);
+ for(const k of ['company','ico','website','phone','email','facilityAddress','registeredAddress','photo','historicalLand','note']){
+  if(old[k]===undefined)delete r[k];else r[k]=old[k];
+ }
+ r.contacts=JSON.parse(JSON.stringify(old.contacts));
+ r._verifiedBaseline={...old};r.verifiedDataVersion='2026-11-05.3';
+ for(const k of ['photoSource','photoDescription','photoAttribution','photoLicense'])delete r[k];
+}
+const dr=upgrading.find(r=>r.name==='Karviná – Darkov');
+dr.contacts.push({name:'Lenka Krótká',role:'Obchodní ředitelka (stávající údaj, aktuálnost neověřena)',phone:'+420 596 373 301',note:'Stávající kontakt: aktuální funkce a kontaktní údaje nebyly touto veřejnou rešerší potvrzeny.'});
+upgrading[0].note='Moje důležitá poznámka';upgrading[0].company='Moje upravená firma';
+const migrated=JSON.parse(setup(upgrading).memory.get('bohanesCRM'));
+assert.equal(migrated[0].company,'Moje upravená firma');assert.ok(migrated[0].note.startsWith('Moje důležitá poznámka'));
+assert.ok(migrated.find(r=>r.name==='Teplice nad Bečvou').facilityAddress.includes('č.p. 63'));
+const lenka=migrated.find(r=>r.name==='Karviná – Darkov').contacts.find(c=>c.name==='Lenka Krótká');
+assert.equal(lenka.phone,'');assert.equal(lenka.role,'Obchodní ředitelka — Lázně Darkov, a.s.');
+for(const row of migrated){const ref=canonical.find(x=>x.name===row.name);assert.equal(row.photo,ref.photo);assert.equal(row.photoSource,ref.photoSource)}
+const custom=JSON.parse(JSON.stringify(upgrading));custom[1].photo='https://example.com/my-own-photo.jpg';
+const customResult=JSON.parse(setup(custom).memory.get('bohanesCRM'))[1];assert.equal(customResult.photo,custom[1].photo);assert.equal(customResult.photoAttribution,undefined);
+new vm.Script('const seed='+inline,'inline application syntax');
+console.log('PASS: all 36 photos/sources, 134 sourced contacts, duplicate checks, version-3 upgrade, updated roles, whistleblowing removal, preserved private edits and custom photos.');
+
  console.log('PASS: 36 records, mirrors, idempotent migration, custom data preservation, photo replacement, export/import, invalid import, undo, duplicates.');
 })().catch(e=>{console.error(e);process.exitCode=1});
