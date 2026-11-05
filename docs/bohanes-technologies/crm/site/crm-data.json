@@ -657,7 +657,7 @@
     "website": "https://www.laznevbechyni.cz",
     "phone": "+420 381 476 100",
     "facilityAddress": "Lázně Bechyně — hlavní budova Olga / recepce areálu: Lázně 202, 391 65 Bechyně, okres Tábor, Jihočeský kraj, Čechy, Česká republika.",
-    "note": "Ověřeno 5. 11. 2026.\nČechy. Areál má hlavní budovu Olga a další ubytovací objekty; oficiální web zmiňuje Jupiter, Libuše a Vlasta, řád 2025 rovněž Jana, Božena, U Draka, Přemyslovka a Kotěrova vila. Samostatné adresy domů zatím neověřeny. E-mail na aktuální kontaktní stránce byl při automatickém čtení skryt; nebyl odhadnut. Starší oficiální řád 2025 uvádí info@laznebechyni.cz; aktuálnost této schránky neověřena.\n\nLázně Bechyně s.r.o. | IČO 46678654 | společnost s ručením omezeným | AKTIVNI.\nSídlo: Lázně 202, 391 65 Bechyně, okres Tábor, Jihočeský kraj, Česká republika.\nOR: C 1435/KSCB.\nSpolečník: REHAFUTUR s.r.o. (IČO 19071051) — 100 %\nSkutečný majitel dle evidence skutečných majitelů nebyl samostatně ověřen; společníci/akcionáři nejsou s touto rolí zaměňováni.\n\nZdroje: https://www.laznevbechyni.cz/kontakt\nhttps://www.laznevbechyni.cz/\nhttps://www.laznevbechyni.cz/media/67f67dfa51b9c_L%C3%A1ze%C5%88sk%C3%BD%20%C5%99%C3%A1d%20L%C3%A1zn%C4%9B%20Bechyn%C4%9B%20s.r.o.%202025.pdf\nhttps://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/46678654\nhttps://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/46678654",
+    "note": "Ověřeno 5. 11. 2026.\nČechy. Areál má hlavní budovu Olga a další ubytovací objekty; oficiální web zmiňuje Jupiter, Libuše a Vlasta, řád 2025 rovněž Jana, Božena, U Draka, Přemyslovka a Kotěrova vila. Samostatné adresy domů zatím neověřeny. Recepce: recepce@laznevbechyni.cz. Obchodní oddělení: obchod@laznevbechyni.cz. Obě pracovní schránky ověřeny 5. 11. 2026 přímo na oficiální kontaktní stránce včetně dekódování jejího veřejného e-mailového odkazu. Starší řád 2025 uvádí jiné schránky domény laznebechyne.cz; aktuální webové kontakty mají přednost, stará schránka nebyla odhadnuta jako funkční.\n\nLázně Bechyně s.r.o. | IČO 46678654 | společnost s ručením omezeným | AKTIVNI.\nSídlo: Lázně 202, 391 65 Bechyně, okres Tábor, Jihočeský kraj, Česká republika.\nOR: C 1435/KSCB.\nSpolečník: REHAFUTUR s.r.o. (IČO 19071051) — 100 %\nSkutečný majitel dle evidence skutečných majitelů nebyl samostatně ověřen; společníci/akcionáři nejsou s touto rolí zaměňováni.\n\nZdroje: https://www.laznevbechyni.cz/kontakt\nhttps://www.laznevbechyni.cz/\nhttps://www.laznevbechyni.cz/media/67f67dfa51b9c_L%C3%A1ze%C5%88sk%C3%BD%20%C5%99%C3%A1d%20L%C3%A1zn%C4%9B%20Bechyn%C4%9B%20s.r.o.%202025.pdf\nhttps://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/46678654\nhttps://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/46678654",
     "sources": [
       "https://www.laznevbechyni.cz/kontakt",
       "https://www.laznevbechyni.cz/",
@@ -675,7 +675,8 @@
     ],
     "company": "Lázně Bechyně s.r.o.",
     "registeredAddress": "Lázně 202, 391 65 Bechyně, okres Tábor, Jihočeský kraj, Česká republika",
-    "historicalLand": "Čechy"
+    "historicalLand": "Čechy",
+    "email": "recepce@laznevbechyni.cz"
   },
   {
     "name": "Vráž",

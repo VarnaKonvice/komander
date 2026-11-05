@@ -6,7 +6,7 @@
 - Identifikováno **37 hlavních provozujících právnických osob** (Karlovy Vary mají dva doložené provozovatele), navíc **ZLÍNSAT spol. s r.o.** jako hotelový provozovatel/vlastník v Kostelci: celkem **38 popsaných subjektů**. Nejde o 38 nově založených firemních karet; současná aplikace samostatnou firemní tabulku nemá.
 - Ve veřejném souboru je **123 kontaktů s funkcí a zdrojem, 122 různých jmen po normalizaci titulů**. Zahrnují statutární orgány i obchodní/vedoucí osoby; nelze je všechny označit za ředitele. Shodné jméno u různých společností není automaticky duplicitní osoba.
 - Přidáno **15 vizuálně zkontrolovaných fotografických odkazů** na budovy/areály nebo recepci. Ostatním místům nebyla přidána náhradní ilustrační fotografie. Dřívější odkaz Darkova zachován.
-- **36 záznamů zůstává v širším smyslu neúplných**: úplné prověření skutečného majitele, soupis všech budov a všech vedoucích funkcí není dokončen. Nejde o 36 chybných záznamů. U 21 míst nebyla nově schválena reprezentativní fotografie; Bechyně nemá nově ověřený hlavní e-mail; přesná adresa pilotního Moravanu zůstává sporná.
+- **36 záznamů zůstává v širším smyslu neúplných**: úplné prověření skutečného majitele, soupis všech budov a všech vedoucích funkcí není dokončen. Nejde o 36 chybných záznamů. U 21 míst nebyla nově schválena reprezentativní fotografie; přesná adresa pilotního Moravanu zůstává sporná.
 - Země: **21 Čechy, 10 Morava, 5 Slezsko**. Slezská zařízení nebyla nepravdivě zařazena na Moravu. Stávající mapový filtr Morava + Slezsko zůstal zachován.
 
 ## Zdroje a omezení
@@ -27,7 +27,7 @@ Evidence skutečných majitelů nebyla samostatně ověřena. Společník/akcion
 | Teplice v Čechách, Poděbrady, Darkov | Rozdíly PSČ či provozní adresy oproti sídlu jsou zachovány odděleně. |
 | Darkov | Číslo 596 373 301 slouží whistleblowingu. Nebylo použito jako obchodní kontakt Lenky Krótké; její starší obchodní role je označena jako neověřená. |
 | Teplice nad Bečvou | Pilotní cíl Moravan zachován. Oficiální lázeňský řád uvádí č. p. 47, jiné zdroje č. p. 63; adresa není svévolně rozhodnuta. |
-| Bechyně | Aktuální e-mail se nepodařilo ověřit; starší e-mail je uveden pouze jako historický, nikoli jako nový potvrzený kontakt. |
+| Bechyně | Při dodatečné kontrole 5. 11. byly přímo na oficiální kontaktní stránce potvrzeny recepce@laznevbechyni.cz a obchod@laznevbechyni.cz. Starší řád uvádí odlišnou doménu; aktuální web má přednost. |
 | Velké Losiny | Rozdíl webové adresy a ARES zaznamenán; sídlo se nepřenáší automaticky na každou budovu. |
 | Toušeň | Oznámení o ukončení následné rehabilitační péče od 1. 9. 2026 není důkazem zrušení celých lázní. |
 | Lázně Bohdaneč | Ohlášené rozdělení společnosti není samo důkazem dokončené změny provozovatele. |
@@ -53,7 +53,7 @@ Pomlčka znamená nezjištěný nebo na úrovni celého města nepoužitelný ú
 | Velichovky | Čechy | 03030997 | 4 | ano | skutečný majitel samostatně neověřen |
 | Poděbrady | Čechy | 45147833 | 5 | ne | nové foto neschváleno; skutečný majitel samostatně neověřen |
 | Lázně Bohdaneč | Čechy | 47452421 | 3 | ano | skutečný majitel samostatně neověřen |
-| Bechyně | Čechy | 46678654 | 1 | ne | hlavní e-mail bez potvrzení / více subjektů; nové foto neschváleno; skutečný majitel samostatně neověřen |
+| Bechyně | Čechy | 46678654 | 1 | ne | nové foto neschváleno; skutečný majitel samostatně neověřen |
 | Vráž | Čechy | 25617320 | 3 | ne | nové foto neschváleno; skutečný majitel samostatně neověřen |
 | Lázně Bělohrad | Čechy | 46504834 | 7 | ne | nové foto neschváleno; skutečný majitel samostatně neověřen |
 | Karlova Studánka | Slezsko | 14450216 | 2 | ne | nové foto neschváleno; skutečný majitel samostatně neověřen |

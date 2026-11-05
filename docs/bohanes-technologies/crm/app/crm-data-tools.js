@@ -1,6 +1,6 @@
 
 // Společná veřejná data jsou verzovaná odděleně od místních obchodních úprav.
-const VERIFIED_DATA_VERSION='2026-11-05.2';
+const VERIFIED_DATA_VERSION='2026-11-05.3';
 function crmNameKey(name){return String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\b(prof|paeddr|phdr|judr|mudr|mgr|ing|bc|dr|csc|ph|d|mba|m|b|a|ll|dis)\b/g,'').replace(/[^a-z]/g,'')}
 function applyVerifiedRecords(records,verified){
  const fields=['company','ico','website','phone','email','facilityAddress','registeredAddress','photo','historicalLand'];
