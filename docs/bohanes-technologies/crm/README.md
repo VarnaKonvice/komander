@@ -46,3 +46,33 @@ Stabilní produkční adresa CRM je:
 https://bohanes-technologies-crm-petbohanes-8088.vercel.app/
 
 Při úpravách CRM se nemá vytvářet nový odkaz pro běžné používání; změny se mají nasazovat na stejnou stabilní adresu.
+
+## Přenos mezi Macem a Mac Studiem — aktualizace 5. 11. 2026
+
+Na obou počítačích otevři stejnou produkční adresu výše. Instalace ani kopírování aplikace není potřeba.
+
+### Společné veřejné údaje
+
+- Jediný ručně udržovaný datový soubor: [data/verified-records.json](data/verified-records.json).
+- Obsahuje veřejně ověřené společnosti, adresy, kontakty, zdroje, země a schválené fotografické URL.
+- Změnu tohoto souboru připraví pro nasazení příkaz `python3 build-data.py`; kontrola `node test-data.cjs`.
+- Aplikace načítá soubor `site/crm-data.js` ze svého nasazení. Samotná změna JSON na GitHubu bez generování a nového nasazení aplikaci nezmění.
+- Při dalším datovém vydání zvyš `VERIFIED_DATA_VERSION` v obou kopiích `crm-data-tools.js`. Migrace doplní prázdná pole nebo nahradí poslední známé veřejné hodnoty. Vlastní úpravy zachová.
+- Podrobný výsledek a zbývající nejistoty: [DATA-AUDIT-2026-11-05.md](DATA-AUDIT-2026-11-05.md).
+
+### Vlastní poznámky, kontakty a obchodní stav
+
+Tyto změny se ukládají do prohlížeče daného počítače, ne na GitHub.
+
+1. Na původním počítači otevři nabídku profilu **Profil (ikona osoby)** a vyber **Exportovat zálohu CRM**.
+2. Soubor přenes na Mac Studio, například přes AirDrop nebo soukromý iCloud Drive.
+3. Na Mac Studiu otevři CRM, nabídku **Profil (ikona osoby)** → **Importovat zálohu CRM** a vyber soubor.
+4. Import nahrazuje obchodní údaje obsažených záznamů; po kontrole výzvu potvrď. Poslední import lze vrátit přes **Vrátit poslední import**.
+
+Při střídavých úpravách na dvou počítačích nejprve přenes poslední zálohu. Import neumí slučovat souběžné změny.
+
+### GitHub a skutečná synchronizace
+
+Repozitář `VarnaKonvice/komander` je veřejný. Patří sem společný veřejný katalog a kód. Zálohy obsahující interní obchodní poznámky sem neukládej. Token GitHubu nikdy nevkládej do HTML/JavaScriptu.
+
+Pro automatické sdílení všech změn je další vhodný krok soukromá databáze za serverovým API a přihlášením. Alternativou je soukromý datový repozitář za serverovou službou; samotný GitHub soubor neřeší bezpečné zápisy a konflikty. Takový backend zatím není vytvořen.
