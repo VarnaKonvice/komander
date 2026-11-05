@@ -23,6 +23,10 @@ Snapshot uložený v tomto repozitáři odpovídá produkční verzi po doplněn
 - Moravan je viditelný v seznamu, mini kartě, tooltipu mapy a horním podtitulu detailu,
 - při otevření velkého detailu se mini karta automaticky zavře.
 
+## Doplňkový audit kontaktů — 5. 11. 2026
+
+Veřejný katalog byl znovu porovnán s aktuálními oficiálními kontaktními stránkami. Počet ověřených kontaktů vzrostl z 134 na 161. Doplněny byly hlavně obchodní, rezervační, přijímací a provozní kontakty; hlavní telefon Jáchymova byl aktualizován na +420 410 000 510. Verze veřejné migrace je 2026-11-05.5.
+
 ## UX úprava detailu a mapy — 5. 11. 2026
 
 - mini karta na mapě používá reprezentativní fotografii lázní a odděluje osobu od kontaktu obchodního oddělení,

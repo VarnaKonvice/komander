@@ -1,6 +1,6 @@
 
 // Společná veřejná data jsou verzovaná odděleně od místních obchodních úprav.
-const VERIFIED_DATA_VERSION='2026-11-05.4';
+const VERIFIED_DATA_VERSION='2026-11-05.5';
 function crmNameKey(name){return String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\b(prof|paeddr|phdr|judr|mudr|mgr|ing|bc|dr|csc|ph|d|mba|m|b|a|ll|dis)\b/g,'').replace(/[^a-z]/g,'')}
 function applyVerifiedRecords(records,verified){
  const fields=['company','ico','website','phone','email','facilityAddress','registeredAddress','photo','historicalLand'];
@@ -23,7 +23,7 @@ function applyVerifiedRecords(records,verified){
    if(!old){x.contacts.push({...c});continue}
    const original=(legacy.contacts||[]).find(v=>crmNameKey(v.name)===key);
    if(c.role&&old.role!==c.role){
-    if(!old.role||old.role===original?.role||(x.name==='Karviná – Darkov'&&old.role==='Člen statutárního orgánu — Lázně Darkov, a.s.')||(x.name==='Slatinice'&&old.role==='Výkonná ředitelka — Lázně Slatinice a.s.; člen představenstva — Lázně Slatinice a.s.')||(x.name==='Karviná – Darkov'&&old.role==='Obchodní ředitelka (stávající údaj, aktuálnost neověřena)'))old.role=c.role;
+    if(!old.role||old.role===original?.role||(x.name==='Karviná – Darkov'&&old.role==='Člen statutárního orgánu — Lázně Darkov, a.s.')||(x.name==='Slatinice'&&old.role==='Výkonná ředitelka — Lázně Slatinice a.s.; člen představenstva — Lázně Slatinice a.s.')||(x.name==='Karviná – Darkov'&&old.role==='Obchodní ředitelka (stávající údaj, aktuálnost neověřena)')||(x.name==='Karlova Studánka'&&crmNameKey(old.name)===crmNameKey('Ing. Radka Pazderová')&&old.role==='zástupkyně ředitelky — Horské lázně Karlova Studánka, státní podnik'))old.role=c.role;
     else if(!old.role.includes(c.role))old.role+='; '+c.role;
    }
    for(const k of ['phone','email'])if(c[k]&&(!old[k]||old[k]===original?.[k]))old[k]=c[k];

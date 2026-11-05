@@ -13,8 +13,13 @@ function setup(saved){
  for(const file of ['index.html','crm-data-tools.js','crm-data.js','crm-data.json'])assert.equal(read('app/'+file),read('site/'+file),file+' mirrors');
  const a=setup(),fresh=JSON.parse(a.memory.get('bohanesCRM'));
  assert.equal(fresh.length,36);
- assert.equal(fresh.reduce((n,r)=>n+r.contacts.length,0)>=123,true);
+ assert.equal(fresh.reduce((n,r)=>n+r.contacts.length,0),163,'runtime contacts including two preserved Darkov legacy cards');
  assert.equal(fresh.find(r=>r.name==='Karviná – Darkov').historicalLand,'Slezsko');
+assert.equal(fresh.find(r=>r.name==='Jáchymov').phone,'+420 410 000 510','current Axxos customer line');
+assert.ok(fresh.find(r=>r.name==='Teplice nad Bečvou').contacts.some(c=>c.name==='Jitka Veselá'&&c.phone==='+420 581 683 608'));
+assert.ok(fresh.find(r=>r.name==='Lázně Libverda').contacts.some(c=>c.name==='Ing. Eva Olšová, MBA'&&c.email==='olsova@lazne-libverda.cz'));
+assert.ok(fresh.find(r=>r.name==='Karlova Studánka').contacts.some(c=>c.name==='Ing. Radka Pazderová'&&/obchodně-marketingová/.test(c.role)&&c.email==='pazderova@horskelazne.cz'));
+assert.ok(fresh.find(r=>r.name==='Vráž').contacts.some(c=>c.name==='Martina Kučerová'&&c.email==='puk@lazne-vraz.cz'));
  assert.equal(fresh.find(r=>r.name==='Třeboň').photo.includes('katalog_titul_foto'),false,'bad default photograph replaced');
  const ml=fresh[0];assert.notEqual(ml.facilityAddress,ml.registeredAddress);
  const b=setup(fresh);assert.equal(b.memory.get('bohanesCRM'),JSON.stringify(fresh),'reload is idempotent');
@@ -38,6 +43,7 @@ function setup(saved){
  a.ctx.nofunction=[{...fresh[0],contacts:[{name:''}]}];assert.throws(()=>a.run('validateCRMBackup(nofunction,data)'),/jméno/);
 // Review every public record and protect a real version-3 upgrade, including manual edits.
 const canonical=JSON.parse(read('data/verified-records.json'));
+assert.equal(canonical.reduce((n,r)=>n+r.contacts.length,0),161,'canonical verified contact count');
 assert.equal(canonical.filter(r=>r.photo&&r.photoSource&&r.photoDescription).length,36);
 for(const r of canonical){
  const keys=r.contacts.map(c=>a.run('crmNameKey('+JSON.stringify(c.name)+')'));
@@ -71,10 +77,20 @@ assert.ok(migrated.find(r=>r.name==='Teplice nad Bečvou').facilityAddress.inclu
 const lenka=migrated.find(r=>r.name==='Karviná – Darkov').contacts.find(c=>c.name==='Lenka Krótká');
 assert.equal(lenka.phone,'');assert.equal(lenka.role,'Obchodní ředitelka — Lázně Darkov, a.s.');
 for(const row of migrated){const ref=canonical.find(x=>x.name===row.name);assert.equal(row.photo,ref.photo);assert.equal(row.photoSource,ref.photoSource)}
+// A deployed .4 browser must receive the new .5 public contacts and the corrected Jáchymov line.
+const v4=JSON.parse(JSON.stringify(fresh));
+for(const r of v4){r.verifiedDataVersion='2026-11-05.4'}
+const v4J=v4.find(r=>r.name==='Jáchymov');v4J.phone='+420 410 000 470';v4J._verifiedBaseline={...(v4J._verifiedBaseline||{}),phone:'+420 410 000 470'};
+v4.find(r=>r.name==='Teplice nad Bečvou').contacts=v4.find(r=>r.name==='Teplice nad Bečvou').contacts.filter(c=>c.name!=='Jitka Veselá');
+const v4Ks=v4.find(r=>r.name==='Karlova Studánka').contacts.find(c=>c.name==='Ing. Radka Pazderová');v4Ks.role='zástupkyně ředitelky — Horské lázně Karlova Studánka, státní podnik';v4Ks.phone='';v4Ks.email='';
+const migratedV5=JSON.parse(setup(v4).memory.get('bohanesCRM'));
+assert.equal(migratedV5.find(r=>r.name==='Jáchymov').phone,'+420 410 000 510');
+assert.ok(migratedV5.find(r=>r.name==='Teplice nad Bečvou').contacts.some(c=>c.name==='Jitka Veselá'&&c.email==='j.vesela@ltnb.cz'));
+const migratedRadka=migratedV5.find(r=>r.name==='Karlova Studánka').contacts.find(c=>c.name==='Ing. Radka Pazderová');assert.match(migratedRadka.role,/obchodně-marketingová/);assert.equal(migratedRadka.email,'pazderova@horskelazne.cz');
 const custom=JSON.parse(JSON.stringify(upgrading));custom[1].photo='https://example.com/my-own-photo.jpg';
 const customResult=JSON.parse(setup(custom).memory.get('bohanesCRM'))[1];assert.equal(customResult.photo,custom[1].photo);assert.equal(customResult.photoAttribution,undefined);
 new vm.Script('const seed='+inline,'inline application syntax');
-console.log('PASS: all 36 photos/sources, 134 sourced contacts, duplicate checks, version-3 upgrade, updated roles, whistleblowing removal, preserved private edits and custom photos.');
+console.log('PASS: all 36 photos/sources, 161 verified contacts, current business contacts, version-5 migration, updated roles, preserved legacy/private edits and custom photos.');
 
  console.log('PASS: 36 records, mirrors, idempotent migration, custom data preservation, photo replacement, export/import, invalid import, undo, duplicates.');
 })().catch(e=>{console.error(e);process.exitCode=1});

@@ -174,6 +174,13 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Jan Doucha",
         "role": "člen představenstva — Františkovy Lázně AQUAFORUM a.s.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-01-13. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/10989391"
+      },
+      {
+        "name": "Recepce Spa Resort Pawlik-Aquaforum",
+        "role": "Recepce — Spa Resort Pawlik-Aquaforum",
+        "phone": "+420 354 206 000",
+        "email": "pawlik@frantiskovylazne.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.pawlik-aquaforum.cz/cs/kontakty"
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -298,6 +305,20 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "prof. JUDr. Vilém Kahoun Ph.D.",
         "role": "jednatel — Slatinné lázně Třeboň s.r.o.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2024-01-11. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/25179896"
+      },
+      {
+        "name": "Lenka Doktorová",
+        "role": "Asistentka jednatele — Slatinné lázně Třeboň s.r.o.",
+        "phone": "+420 384 750 840",
+        "email": "doktorova@laznetrebon.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.laznetrebon.cz/cz/kontakt"
+      },
+      {
+        "name": "Mgr. Helena Nekolová",
+        "role": "PR manažerka — Slatinné lázně Třeboň s.r.o.",
+        "phone": "+420 720 816 075",
+        "email": "nekolova@laznetrebon.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.laznetrebon.cz/cz/kontakt"
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -336,6 +357,12 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Radek Popovič",
         "role": "člen představenstva — Lázně Teplice v Čechách a.s.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-06-11. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/44569491"
+      },
+      {
+        "name": "Obchodní úsek",
+        "role": "Obchodní úsek — Lázně Teplice v Čechách a.s.",
+        "phone": "+420 417 977 444",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.lazneteplice.cz/kontakt-a-doprava/kontakt/"
       }
     ],
     "company": "Lázně Teplice v Čechách a.s.",
@@ -351,10 +378,10 @@ window.BOHANES_CRM_VERIFIED=[
     "name": "Jáchymov",
     "ico": "29211808",
     "website": "https://www.axxoshotels.com/cs/lazne-jachymov",
-    "phone": "+420 410 000 470",
+    "phone": "+420 410 000 510",
     "email": "reservations.jachymov@axxoshotels.com",
     "facilityAddress": "Radium Palace: T. G. Masaryka 413, 362 51 Jáchymov.\nBěhounek: Lidická 1015, 362 51 Jáchymov.\nCurie: Agricolovo nám. 1036, 362 51 Jáchymov.\nDagmar: Palackého 712, 362 51 Jáchymov.\nAstoria: T. G. Masaryka 388, 362 51 Jáchymov.\nVše okres Karlovy Vary, Karlovarský kraj, Čechy, Česká republika.",
-    "note": "Ověřeno 5. 11. 2026.\nČechy. Radonové lázně, aktuálně prezentované pod značkou Axxos Hotels. Původní web laznejachymov.cz přesměrovává na Axxos; telefonní čísla starších katalogů se liší. Použity aktuální oficiální kontakty: Radium Palace +420 410 000 430, reception.radiumpalace@axxoshotels.com; Běhounek +420 410 000 440, reception.behounek@axxoshotels.com; Curie +420 410 000 450, reception.curie@axxoshotels.com; Astoria +420 410 000 460, reception.astoria@axxoshotels.com. Léčebné návrhy: lecebnenavrhy@axxoshotels.com.\n\nLéčebné lázně Jáchymov a. s. | IČO 29211808 | akciová společnost | AKTIVNI.\nSídlo: T. G. Masaryka 415, 362 51 Jáchymov, okres Karlovy Vary, Karlovarský kraj, Česká republika.\nOR: B 1603/KSPL.\nAkcionář dle zápisu VR: Al Fardan Investments Limited\nSkutečný majitel: veřejný přístup do evidence skutečných majitelů je pozastaven; z veřejné evidence jej nelze ověřit (kontrola 5. 11. 2026). Společníci/akcionáři nejsou s touto rolí zaměňováni. Zdroj: https://esm.justice.cz/ias/issm/napoveda\n\nZdroje: https://www.axxoshotels.com/cs/kontaktujte-nas\nhttps://www.axxoshotels.com/cs/lazne-jachymov\nhttps://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/29211808\nhttps://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/29211808\nhttps://or.justice.cz/ias/ui/rejstrik-firma.vysledky?subjektId=260880&typ=PLATNY&sp=H4sIAAAAAAAAAKtWykvMTU0JSCwCUiWpRcVKVtHVStmplUpWSpnJ%252BUo6SmWJOaWpQJ6RpZGhoYWB%250D%250AhVJtbC0ASswE3zYAAAA%253D%250D%250A\nPřímý platný výpis justice.cz pro IČO 29211808 porovnán s ARES dne 5. 11. 2026; jména statutárních orgánů nejsou zaměňována s provozním vedením.\nhttps://www.axxoshotels.com/cs/radium-palace-spa-wellness\nFotografie: Radium Palace, průčelí. Zdrojová stránka: https://www.axxoshotels.com/cs/radium-palace-spa-wellness; přímá URL: https://www.axxoshotels.com/files/responsive/1280/0/rp-exterier-2.jpg",
+    "note": "Ověřeno 5. 11. 2026.\nČechy. Radonové lázně, aktuálně prezentované pod značkou Axxos Hotels. Aktuální zákaznická linka Axxos ověřená 5. 11. 2026 je +420 410 000 510; dříve uložené +420 410 000 470 nahrazeno. Původní web laznejachymov.cz přesměrovává na Axxos; telefonní čísla starších katalogů se liší. Použity aktuální oficiální kontakty: Radium Palace +420 410 000 430, reception.radiumpalace@axxoshotels.com; Běhounek +420 410 000 440, reception.behounek@axxoshotels.com; Curie +420 410 000 450, reception.curie@axxoshotels.com; Astoria +420 410 000 460, reception.astoria@axxoshotels.com. Léčebné návrhy: lecebnenavrhy@axxoshotels.com.\n\nLéčebné lázně Jáchymov a. s. | IČO 29211808 | akciová společnost | AKTIVNI.\nSídlo: T. G. Masaryka 415, 362 51 Jáchymov, okres Karlovy Vary, Karlovarský kraj, Česká republika.\nOR: B 1603/KSPL.\nAkcionář dle zápisu VR: Al Fardan Investments Limited\nSkutečný majitel: veřejný přístup do evidence skutečných majitelů je pozastaven; z veřejné evidence jej nelze ověřit (kontrola 5. 11. 2026). Společníci/akcionáři nejsou s touto rolí zaměňováni. Zdroj: https://esm.justice.cz/ias/issm/napoveda\n\nZdroje: https://www.axxoshotels.com/cs/kontaktujte-nas\nhttps://www.axxoshotels.com/cs/lazne-jachymov\nhttps://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/29211808\nhttps://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/29211808\nhttps://or.justice.cz/ias/ui/rejstrik-firma.vysledky?subjektId=260880&typ=PLATNY&sp=H4sIAAAAAAAAAKtWykvMTU0JSCwCUiWpRcVKVtHVStmplUpWSpnJ%252BUo6SmWJOaWpQJ6RpZGhoYWB%250D%250AhVJtbC0ASswE3zYAAAA%253D%250D%250A\nPřímý platný výpis justice.cz pro IČO 29211808 porovnán s ARES dne 5. 11. 2026; jména statutárních orgánů nejsou zaměňována s provozním vedením.\nhttps://www.axxoshotels.com/cs/radium-palace-spa-wellness\nFotografie: Radium Palace, průčelí. Zdrojová stránka: https://www.axxoshotels.com/cs/radium-palace-spa-wellness; přímá URL: https://www.axxoshotels.com/files/responsive/1280/0/rp-exterier-2.jpg",
     "sources": [
       "https://www.axxoshotels.com/cs/kontaktujte-nas",
       "https://www.axxoshotels.com/cs/lazne-jachymov",
@@ -374,6 +401,13 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Daniel Pouska",
         "role": "člen představenstva — Léčebné lázně Jáchymov a. s.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2024-04-05. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/29211808"
+      },
+      {
+        "name": "Zákaznická linka / rezervace",
+        "role": "Rezervace a obecné dotazy — Lázně Jáchymov / Axxos Hotels",
+        "phone": "+420 410 000 510",
+        "email": "reservations.jachymov@axxoshotels.com",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.axxoshotels.com/cs/kontaktujte-nas"
       }
     ],
     "company": "Léčebné lázně Jáchymov a. s.",
@@ -781,6 +815,13 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Dr. Michael Sailer",
         "role": "jednatel — Lázně Bechyně s.r.o.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2025-02-02. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/46678654"
+      },
+      {
+        "name": "Obchodní kancelář",
+        "role": "Individuální klienti, firemní akce, skupiny a agentury — Lázně Bechyně",
+        "phone": "+420 381 476 100 / +420 381 476 307 / +420 381 476 370",
+        "email": "obchod@laznevbechyni.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.laznevbechyni.cz/kontakt"
       }
     ],
     "company": "Lázně Bechyně s.r.o.",
@@ -826,6 +867,13 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Jiří Landa",
         "role": "jednatel — LÁZNĚ HOTEL VRÁŽ s.r.o.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2023-03-30. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/25617320"
+      },
+      {
+        "name": "Martina Kučerová",
+        "role": "Kontaktní osoba přijímací a ubytovací kanceláře — Lázně Hotel Vráž",
+        "phone": "+420 382 737 112",
+        "email": "puk@lazne-vraz.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.lazne-vraz.cz/kontakt"
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -890,6 +938,20 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Luboš Bičiště",
         "role": "Prokurista — Lázně Bělohrad a.s.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-07-03. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/46504834"
+      },
+      {
+        "name": "Přijímací kancelář",
+        "role": "Komplexní a příspěvková lázeňská péče — Lázně Bělohrad",
+        "phone": "+420 493 767 300",
+        "email": "prijimacikancelar@belohrad.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://belohrad.cz/kontakt"
+      },
+      {
+        "name": "Rezervace samopláteckých pobytů",
+        "role": "Samoplátecké pobyty — Lázně Bělohrad",
+        "phone": "+420 493 767 000",
+        "email": "info@belohrad.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://belohrad.cz/kontakt"
       }
     ],
     "company": "Lázně Bělohrad a.s.",
@@ -930,8 +992,10 @@ window.BOHANES_CRM_VERIFIED=[
       },
       {
         "name": "Ing. Radka Pazderová",
-        "role": "zástupkyně ředitelky — Horské lázně Karlova Studánka, státní podnik",
-        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-09-18. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/14450216"
+        "role": "Zástupkyně ředitelky; obchodně-marketingová manažerka — Horské lázně Karlova Studánka, státní podnik",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.horskelazne.cz/o-nas/vedeni-lazni",
+        "phone": "+420 771 243 733",
+        "email": "pazderova@horskelazne.cz"
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -975,6 +1039,27 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Filip Takáč",
         "role": "Předseda správní rady — Lázně Teplice nad Bečvou a.s.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-07-05. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/45192570"
+      },
+      {
+        "name": "Karel Takáč",
+        "role": "Generální ředitel — Lázně Teplice nad Bečvou a.s.",
+        "phone": "+420 581 686 284",
+        "email": "sekretariat@ltnb.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.ltnb.cz/kontakt/"
+      },
+      {
+        "name": "Jitka Veselá",
+        "role": "Specialistka pro rozvoj obchodu — Lázně Teplice nad Bečvou a.s.",
+        "phone": "+420 581 683 608",
+        "email": "j.vesela@ltnb.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.ltnb.cz/kontakt/"
+      },
+      {
+        "name": "Recepce LD Moravan",
+        "role": "Recepce — Lázeňský dům Moravan",
+        "phone": "+420 581 683 640 / +420 736 740 733",
+        "email": "m.recepce@ltnb.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.ltnb.cz/kontakt/"
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -1049,7 +1134,8 @@ window.BOHANES_CRM_VERIFIED=[
       "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty/47915005",
       "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/47915005",
       "https://www.laznenovaves.cz",
-      "https://or.justice.cz/ias/ui/rejstrik-firma.vysledky?subjektId=712417&typ=PLATNY&sp=H4sIAAAAAAAAAKtWykvMTU0JSCwCUiWpRcVKVtHVStmplUpWSpnJ%252BUo6SmWJOaWpQJ6JuaWhqYGB%250D%250AqVJtbC0Adz2a1TYAAAA%253D%250D%250A"
+      "https://or.justice.cz/ias/ui/rejstrik-firma.vysledky?subjektId=712417&typ=PLATNY&sp=H4sIAAAAAAAAAKtWykvMTU0JSCwCUiWpRcVKVtHVStmplUpWSpnJ%252BUo6SmWJOaWpQJ6JuaWhqYGB%250D%250AqVJtbC0Adz2a1TYAAAA%253D%250D%250A",
+      "https://www.laznenovaves.cz/en/contacts"
     ],
     "verifiedAt": "2026-11-05",
     "contacts": [
@@ -1062,6 +1148,13 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Veronika Crha Záhorská",
         "role": "jednatel — Sirnaté lázně Ostrožská Nová Ves, s.r.o.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2021-06-22. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/47915005"
+      },
+      {
+        "name": "Obchodní oddělení",
+        "role": "Obchodní oddělení — Sirnaté lázně Ostrožská Nová Ves",
+        "phone": "+420 572 437 252",
+        "email": "sales@laznenovaves.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.laznenovaves.cz/en/contacts"
       }
     ],
     "company": "Sirnaté lázně Ostrožská Nová Ves, s.r.o.",
@@ -1104,6 +1197,13 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Bc. Jana Šlamborová",
         "role": "člen představenstva — Lázně Kundratice a.s.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2025-04-07. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/46708880"
+      },
+      {
+        "name": "Rezervace pobytu",
+        "role": "Rezervace pobytů — Lázně Kundratice",
+        "phone": "+420 485 344 203",
+        "email": "info@laznekundratice.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.laznekundratice.cz/cz/kontakty"
       }
     ],
     "company": "Lázně Kundratice a.s.",
@@ -1142,6 +1242,13 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Věra Zemková",
         "role": "jednatel — Lázně Velké Losiny, s.r.o.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2024-03-01. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/28561813"
+      },
+      {
+        "name": "Rezervace pobytů",
+        "role": "Rezervace samopláteckých pobytů — Termální lázně Velké Losiny",
+        "phone": "+420 583 394 122",
+        "email": "rezervace@lazne-losiny.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.lazne-losiny.cz/kontakty"
       }
     ],
     "company": "Lázně Velké Losiny, s.r.o.",
@@ -1174,6 +1281,13 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "MUDr. Tomáš Hájek",
         "role": "Člen představenstva — Léčebné lázně Konstantinovy lázně a.s.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-04-16. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/29090300"
+      },
+      {
+        "name": "Rezervace ubytování a prodej pobytů",
+        "role": "Rezervační oddělení — Léčebné lázně Konstantinovy lázně",
+        "phone": "+420 374 615 511 / +420 374 615 512",
+        "email": "info.konstantinovy@llkl.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.konstantinovylazne.cz/cz/kontakt/"
       }
     ],
     "company": "Léčebné lázně Konstantinovy lázně a.s.",
@@ -1206,6 +1320,19 @@ window.BOHANES_CRM_VERIFIED=[
         "phone": "+420 228 222 419",
         "email": "ivo.kramarik@bulovka.cz",
         "note": "Kontaktní stránka ještě obsahuje následnou rehabilitační péči; rozsah současné odpovědnosti po 1. 9. 2026 vyžaduje upřesnění. https://www.bulovka.cz/kliniky-a-oddeleni/slatinne-lazne-tousen/kontakty-lazne ; https://www.bulovka.cz/kliniky-a-oddeleni/slatinne-lazne-tousen/lazne-homepage ; https://bulovka.cz/build/documents/spa-voucher/SLTobchodniPodminky.pdf"
+      },
+      {
+        "name": "Bc. Milena Píšová",
+        "role": "Vrchní sestra — Slatinné lázně Toušeň / Fakultní nemocnice Bulovka",
+        "phone": "+420 228 222 423",
+        "email": "milena.pisova@bulovka.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.bulovka.cz/kliniky-a-oddeleni/slatinne-lazne-tousen/kontakty-lazne"
+      },
+      {
+        "name": "Přijímací kancelář",
+        "role": "Přijímací kancelář — Slatinné lázně Toušeň",
+        "phone": "+420 228 222 413",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.bulovka.cz/kliniky-a-oddeleni/slatinne-lazne-tousen/kontakty-lazne"
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -1247,6 +1374,13 @@ window.BOHANES_CRM_VERIFIED=[
         "phone": "+420 354 672 145",
         "email": "novotna@lazne-kynzvart.cz",
         "note": "Ověřeno na oficiálním webu 5. 11. 2026. Zdroje: https://www.lazne-kynzvart.cz/cs/o-nas/kdo-jsme ; https://www.lazne-kynzvart.cz/cs/o-nas/povinne-zverejnovane-informace ; https://www.lazne-kynzvart.cz/cs/kontakty"
+      },
+      {
+        "name": "Rezervace a obchodní oddělení",
+        "role": "Rezervace, objednávání pobytů a obchodní oddělení — Léčebné lázně Lázně Kynžvart",
+        "phone": "+420 354 672 151 / +420 354 672 152",
+        "email": "recepce@lazne-kynzvart.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.lazne-kynzvart.cz/cs/kontakty"
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -1298,6 +1432,20 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Ing. Jan Hamáček",
         "role": "místopředseda představenstva — LÁZNĚ LIBVERDA, a.s.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2025-07-19. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/44569505"
+      },
+      {
+        "name": "Ing. Eva Olšová, MBA",
+        "role": "Ředitelka obchodu a marketingu — Spa Resort Libverda",
+        "phone": "+420 603 595 677",
+        "email": "olsova@lazne-libverda.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.lazne-libverda.cz/cz/kontakt"
+      },
+      {
+        "name": "Ing. Petr Urban",
+        "role": "Manažer obchodu — Spa Resort Libverda",
+        "phone": "+420 605 407 700",
+        "email": "urban@lazne-libverda.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.lazne-libverda.cz/cz/kontakt"
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -1338,6 +1486,13 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Ing. Petr Berkovec",
         "role": "jednatel — Schrothovy léčebné lázně s.r.o.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-02-08. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/05101051"
+      },
+      {
+        "name": "Obchodní oddělení",
+        "role": "Obchodní oddělení — Schrothovy léčebné lázně",
+        "phone": "+420 777 470 003",
+        "email": "obchod@lazne-lipova.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.lazne-lipova.cz/inpage/kontakty/"
       }
     ],
     "company": "Schrothovy léčebné lázně s.r.o.",
@@ -1468,6 +1623,20 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Ing. Bc. Dominik Szitai",
         "role": "Místopředseda představenstva — Lázně Mšené, a.s.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-08-06. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/44569530"
+      },
+      {
+        "name": "Obchodní oddělení",
+        "role": "Obchodní oddělení, rezervace a prodej služeb — Lázně Mšené",
+        "phone": "+420 416 865 202 / +420 416 865 203",
+        "email": "lazne@msene.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.msene.cz/kontakty"
+      },
+      {
+        "name": "Sekretariát managementu",
+        "role": "Sekretariát managementu společnosti — Lázně Mšené",
+        "phone": "+420 416 865 108",
+        "email": "jmelicharova@msene.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.msene.cz/kontakty"
       }
     ],
     "company": "Lázně Mšené, a.s.",
@@ -1603,7 +1772,8 @@ window.BOHANES_CRM_VERIFIED=[
       "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/25512731",
       "https://or.justice.cz/ias/ui/rejstrik-firma.vysledky?subjektId=569963&typ=PLATNY&sp=H4sIAAAAAAAAAKtWykvMTU0JSCwCUiWpRcVKVtHVStmplUpWSpnJ%252BUo6SmWJOaWpQJ6Rqamhkbmx%250D%250AoVJtbC0AISKBxDYAAAA%253D%250D%250A",
       "https://or.justice.cz/ias/ui/rejstrik-firma.vysledky?subjektId=211074&typ=PLATNY&sp=H4sIAAAAAAAAAKtWykvMTU0JSCwCUiWpRcVKVtHVStmplUpWSpnJ%252BUo6SmWJOaWpQJ6JpaW5kbG5%250D%250AqVJtbC0Ax0ze0jYAAAA%253D%250D%250A",
-      "https://commons.wikimedia.org/wiki/File:Kostelec_(Zl%C3%ADn),_l%C3%A1zn%C4%9B,_hotel_(2).jpg"
+      "https://commons.wikimedia.org/wiki/File:Kostelec_(Zl%C3%ADn),_l%C3%A1zn%C4%9B,_hotel_(2).jpg",
+      "https://www.hotel-kostelec.cz/lide-z-lazni"
     ],
     "verifiedAt": "2026-11-05",
     "contacts": [
@@ -1631,6 +1801,18 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Michal Sobek",
         "role": "jednatel — Lázně Kostelec u Zlína, spol. s r.o.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2015-11-06. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/25512731"
+      },
+      {
+        "name": "Jiří Fadler",
+        "role": "Obchodní a marketingový manažer — Hotel Lázně Kostelec",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.hotel-kostelec.cz/lide-z-lazni"
+      },
+      {
+        "name": "Rezervační a obchodní oddělení",
+        "role": "Rezervační a obchodní oddělení — Hotel Lázně Kostelec",
+        "phone": "+420 577 152 152 / +420 577 152 159",
+        "email": "info@hotel-kostelec.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.hotel-kostelec.cz/kontakt"
       }
     ],
     "company": "Lázně Kostelec u Zlína, spol. s r.o.",
@@ -1674,6 +1856,13 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Mgr. Radka Pjentak Jelínková",
         "role": "místopředseda správní rady — TEREZINY LÁZNĚ DUBÍ a.s.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2025-10-16. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/28687264"
+      },
+      {
+        "name": "Přijímací kancelář",
+        "role": "Přijímací kancelář — Tereziny lázně Dubí",
+        "phone": "+420 474 530 447",
+        "email": "prijimacikancelar@laznedubi.cz",
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.laznedubi.cz/cs/kontakt"
       }
     ],
     "company": "TEREZINY LÁZNĚ DUBÍ a.s.",
