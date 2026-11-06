@@ -227,3 +227,10 @@ Oficiální Google Calendar asset: https://www.gstatic.com/images/branding/produ
 ## Lokální otevření
 
 Web servírujte běžným statickým HTTP serverem s rootem v `site`. Pracovní náhled v této relaci: http://127.0.0.1:8876/
+
+## Navigace a mobilní web — 6. 11. 2026
+
+- Desktopová hlavička odděluje firemní navigaci od produktu: Domů, O nás, propojený blok Lázeňský Commander / Funkce / Instalace, Co chystáme, Pro lázně a Kontakt.
+- Firemní značka v hlavičce používá samostatný znak a čitelný text BOHANES TECHNOLOGIES; pod značkou je schválený claim „Technologie pro skutečný pobyt“.
+- Mobilní verze nepoužívá zmenšené desktopové menu. Má vlastní spodní navigaci Domů / Commander / Funkce / Pro lázně / Kontakt a respektuje iOS safe-area.
+- Desktopová navigace zůstává plná od šířky 1100 px; tabletové rozložení může použít Menu.
