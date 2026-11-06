@@ -258,3 +258,7 @@ Claim „Technologie pro skutečný pobyt“ v tmavém zápatí je zarovnaný na
 ## Cenové karty přes celou šířku — 6. 11. 2026
 
 Dvě veřejné cenové karty v sekci Instalace a aktivace na desktopu společně vyplňují celou šířku prostoru pod kartami iPhone / Android / Aktivace pobytu. Každá zabírá polovinu šířky; mezi nimi zůstává pouze standardní mezera. Na mobilu se dál skládají pod sebe.
+
+## Kompaktní cenové karty — 6. 11. 2026
+
+Dvě široké cenové karty zůstávají přes celou šířku instalačního panelu, ale na desktopu jsou nižší a používají horizontální kompozici: vlevo je název pobytu a informace o DPH, vpravo výrazná cena. Obsah je vertikálně vycentrovaný. Na mobilu zůstává přirozené vertikální skládání.
