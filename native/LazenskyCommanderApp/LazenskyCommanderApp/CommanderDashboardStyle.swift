@@ -4,11 +4,11 @@ import SwiftUI
 // Source-of-Truth v3: saturated neon surfaces with crisp glow, no broad haze.
 enum CommanderDesignTokens {
   enum Colors {
-    static let background = Color(commanderHex: "#1542BA")
-    static let backgroundDeep = Color(commanderHex: "#102884")
-    static let panel = Color(commanderHex: "#1743A5")
-    static let panelBright = Color(commanderHex: "#285DD7")
-    static let panelStroke = Color(commanderHex: "#36DFFF")
+    static let background = Color(commanderHex: CommanderBrandAssets.Colors.iPhoneBackground)
+    static let backgroundDeep = Color(commanderHex: CommanderBrandAssets.Colors.iPhoneBackgroundDeep)
+    static let panel = Color(commanderHex: CommanderBrandAssets.Colors.iPhonePanel)
+    static let panelBright = Color(commanderHex: CommanderBrandAssets.Colors.iPhonePanelBright)
+    static let panelStroke = Color(commanderHex: CommanderBrandAssets.Colors.iPhonePanelStroke)
     static let primaryPurple = Color(commanderHex: "#C77DFF")
     static let locationBlue = Color(commanderHex: "#65E5FF")
     static let mealGreen = Color(commanderHex: CommanderBrandAssets.Colors.mealGreen)
@@ -20,7 +20,7 @@ enum CommanderDesignTokens {
     static let therapyPink = Color(commanderHex: CommanderBrandAssets.Colors.therapyPink)
     static let procedureEndNeutral = Color(commanderHex: CommanderBrandAssets.Colors.procedureEndNeutral)
     static let textPrimary = Color(commanderHex: "#FFFFFF")
-    static let textSecondary = Color(commanderHex: "#F2F6FF")
+    static let textSecondary = Color(commanderHex: CommanderBrandAssets.Colors.iPhoneTextSecondary)
     // Supporting event information (location, departure) stays neutral white.
     // Event accent colors are reserved for the icon/title/border hierarchy.
     static let eventSupportingText = textPrimary

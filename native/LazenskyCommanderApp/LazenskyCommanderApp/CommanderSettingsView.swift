@@ -118,6 +118,18 @@ struct CommanderSettingsView: View {
         accent: CommanderDesignTokens.Colors.textSecondary
       ) {
         NavigationLink {
+          CommanderScheduleFilesView(model: model)
+        } label: {
+          CommanderNavigationRow(
+            title: "Import a kalendář",
+            subtitle: "Načíst rozpis nebo exportovat celý pobyt",
+            symbol: "doc.badge.arrow.up",
+            accent: CommanderDesignTokens.Colors.locationBlue
+          )
+        }
+        .buttonStyle(.plain)
+
+        NavigationLink {
           CommanderSystemStatusView(model: model)
         } label: {
           CommanderNavigationRow(
@@ -129,6 +141,8 @@ struct CommanderSettingsView: View {
         }
         .buttonStyle(.plain)
       }
+
+      CommanderProductFooter()
     }
   }
 }

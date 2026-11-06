@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA1200000000000000000001 /* CommanderScheduleFilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1200000000000000000002; };
 		AC2000000000000000000001 /* icon-map.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000013 /* icon-map.json */; };
 		AC2000000000000000000002 /* colors.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000014 /* colors.json */; };
 		AC2000000000000000000003 /* icon-map.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000013 /* icon-map.json */; };
@@ -379,6 +380,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AA1200000000000000000002 /* CommanderScheduleFilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderScheduleFilesView.swift; sourceTree = "<group>"; };
 		CB1000000000000000000017 /* CommanderProvisioningRenewal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderProvisioningRenewal.swift; sourceTree = "<group>"; };
 		CB1000000000000000000016 /* CommanderDaySummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDaySummaryView.swift; sourceTree = "<group>"; };
 		CB1000000000000000000011 /* CommanderAppTabs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderAppTabs.swift; sourceTree = "<group>"; };
@@ -491,7 +493,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000003 /* LazenskyCommanderCore in Frameworks */,
-				E50000000000000000000003 /* WatchConnectivity.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -564,6 +565,7 @@
 				CB1000000000000000000013 /* CommanderStayView.swift */,
 				CB1000000000000000000014 /* CommanderInfoView.swift */,
 				CB1000000000000000000015 /* CommanderSettingsView.swift */,
+				AA1200000000000000000002 /* CommanderScheduleFilesView.swift */,
 				CB1000000000000000000016 /* CommanderDaySummaryView.swift */,
 				CB1000000000000000000017 /* CommanderProvisioningRenewal.swift */,
 				H80000000000000000000012 /* AppAssets.xcassets */,
@@ -720,13 +722,11 @@
 				A10000000000000000000020 /* Frameworks */,
 				A10000000000000000000022 /* Resources */,
 				B20000000000000000000033 /* Embed App Extensions */,
-				D40000000000000000000033 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				B20000000000000000000091 /* PBXTargetDependency */,
-				D40000000000000000000091 /* PBXTargetDependency */,
 			);
 			name = LazenskyCommanderApp;
 			packageProductDependencies = (
@@ -1055,7 +1055,6 @@
 				A10000000000000000000001 /* LazenskyCommanderApp.swift in Sources */,
 				A10000000000000000000002 /* AlarmKitAdapter.swift in Sources */,
 				J10000000000000000000001 /* CommanderProcedureLiveActivityCoordinator.swift in Sources */,
-				E50000000000000000000001 /* IPhoneWatchConnectivityCoordinator.swift in Sources */,
 				C30000000000000000000001 /* CommanderLiveCard.swift in Sources */,
 				C30000000000000000000002 /* CommanderVisualAssets.swift in Sources */,
 				I90000000000000000000001 /* CommanderDashboardView.swift in Sources */,
@@ -1070,6 +1069,7 @@
 				CB1000000000000000000003 /* CommanderStayView.swift in Sources */,
 				CB1000000000000000000004 /* CommanderInfoView.swift in Sources */,
 				CB1000000000000000000005 /* CommanderSettingsView.swift in Sources */,
+				AA1200000000000000000001 /* CommanderScheduleFilesView.swift in Sources */,
 				CB1000000000000000000006 /* CommanderDaySummaryView.swift in Sources */,
 				CB1000000000000000000007 /* CommanderProvisioningRenewal.swift in Sources */,
 				I90000000000000000000008 /* CommanderDashboardPreviews.swift in Sources */,
@@ -1187,7 +1187,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 2CCL69T42P;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -1210,7 +1210,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = 2CCL69T42P;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -1232,7 +1232,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEVELOPMENT_TEAM = 2CCL69T42P;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -1263,7 +1263,7 @@
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 12;
 				DEVELOPMENT_TEAM = 2CCL69T42P;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = LazenskyCommanderLiveActivity/Info.plist;

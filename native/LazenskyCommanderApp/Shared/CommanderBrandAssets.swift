@@ -15,6 +15,12 @@ enum CommanderBrandAssets {
     }
 
     enum Colors {
+        static let iPhoneBackground = "#1542BA"
+        static let iPhoneBackgroundDeep = "#102884"
+        static let iPhonePanel = "#1743A5"
+        static let iPhonePanelBright = "#285DD7"
+        static let iPhonePanelStroke = "#36DFFF"
+        static let iPhoneTextSecondary = "#F2F6FF"
         static let background = "#0E1530"
         static let panel = "#141C3E"
         static let panelStroke = "#4E68D8"

@@ -280,7 +280,8 @@ import Testing
 
   #expect(!project.contains("CURRENT_PROJECT_VERSION = 4;"))
   #expect(!project.contains("CURRENT_PROJECT_VERSION = \"4\";"))
-  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = 11;").count - 1 == 8)
+  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = 12;").count - 1 == 4)
+  #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = 11;").count - 1 == 4)
   #expect(project.components(separatedBy: "CURRENT_PROJECT_VERSION = \"11\";").count - 1 == 4)
   #expect(appInfo.contains("<string>$(MARKETING_VERSION)</string>"))
   #expect(appInfo.contains("<string>$(CURRENT_PROJECT_VERSION)</string>"))

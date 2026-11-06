@@ -3,13 +3,20 @@ import Foundation
 public enum CommanderScheduleSource: Equatable, Sendable {
   case remote
   case cached
+  case imported(Schedule)
 }
 
 public enum CommanderScheduleSyncError: LocalizedError {
   case noValidatedSnapshot
+  case importVersionConflict(current: Int, incoming: Int)
 
   public var errorDescription: String? {
-    "Nejdřív načti platný rozpis. Bez uloženého rozpisu nelze přepočítat alarmy."
+    switch self {
+    case .noValidatedSnapshot:
+      "Nejdřív načti platný rozpis. Bez uloženého rozpisu nelze přepočítat alarmy."
+    case let .importVersionConflict(current, incoming):
+      "Soubor má verzi \(incoming), uložený rozpis verzi \(current). Změněný rozpis musí mít vyšší verzi."
+    }
   }
 }
 
@@ -84,15 +91,25 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
       try NativeAlarmContract.validateCanonical(cached)
       schedule = cached
       decision = .unchanged
-    case .remote:
-      let fetchedSchedule = try await scheduleService.fetchSchedule()
-      guard dataset?.accepts(fetchedSchedule) != false else { throw CocoaError(.coderReadCorrupt) }
-      // Accept canonical data before projecting it. Local preferences never write this store.
-      decision = try await scheduleStore.accept(fetchedSchedule)
+    case .remote, .imported:
+      let incoming: Schedule
+      if case let .imported(schedule) = source {
+        incoming = schedule
+      } else {
+        incoming = try await scheduleService.fetchSchedule()
+      }
+      guard dataset?.accepts(incoming) != false else { throw CocoaError(.coderReadCorrupt) }
+      try NativeAlarmContract.validateCanonical(incoming)
+      // Check the current local preferences before replacing the offline snapshot.
+      _ = try CommanderScheduleProjection(schedule: incoming, overrides: overrides)
+      decision = try await scheduleStore.accept(incoming)
       switch decision {
       case .stored, .unchanged:
-        schedule = fetchedSchedule
-      case .rejectedVersion:
+        schedule = incoming
+      case let .rejectedVersion(current, version):
+        if case .imported = source {
+          throw CommanderScheduleSyncError.importVersionConflict(current: current, incoming: version)
+        }
         guard let existing = try await loadLastSchedule() else {
           throw ScheduleValidationError.invalidScheduleVersion
         }

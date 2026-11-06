@@ -78,7 +78,6 @@ struct CommanderSystemStatusView: View {
         LabeledContent("Rozpis", value: scheduleVersion)
         LabeledContent("AlarmKit", value: alarmState)
         LabeledContent("Bezpečnostní pojistka", value: model.fallbackStatus)
-        LabeledContent("Apple Watch", value: model.watchTransferStatus)
         LabeledContent("Obnova", value: model.recoveryStatus)
         LabeledContent("Poslední ověření", value: model.summary?.completedAt?.formatted() ?? "Zatím neověřeno")
       }
