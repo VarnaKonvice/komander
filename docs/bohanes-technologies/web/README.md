@@ -242,3 +242,7 @@ Hlavička, kontaktní sekce a zápatí používají stejný firemní systém: ba
 ## Zápatí – firemní a produktová struktura — 6. 11. 2026
 
 Zápatí kopíruje informační architekturu hlavičky: vlevo je značka Bohanes Technologies s claimem a stručným popisem, sloupec Bohanes Technologies obsahuje Domů / O nás / Co chystáme / Pro lázně / Kontakt a sloupec Produkt obsahuje Lázeňský Commander / Funkce / Instalace. Samostatný sloupec Kontakt s neověřeným e-mailem a telefonem byl odstraněn. Pozadí zápatí je tmavší, aby vizuálně uzavíralo stránku.
+
+## Finální sjednocení hlavičky a zápatí — 6. 11. 2026
+
+Tmavé zápatí používá samostatnou transparentní variantu barevného symbolu bez světlého pozadí. Desktopové tlačítko Kontakt má stejnou výšku a radius jako propojený produktový blok Lázeňský Commander / Funkce / Instalace, takže hlavička má vyrovnanou vizuální váhu.
