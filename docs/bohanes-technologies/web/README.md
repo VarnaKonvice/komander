@@ -254,3 +254,7 @@ Značka s claimem a popisem je v levém bloku zápatí vycentrovaná nezávisle 
 ## Jemné zarovnání zápatí a cen — 6. 11. 2026
 
 Claim „Technologie pro skutečný pobyt“ v tmavém zápatí je zarovnaný na levou hranu textu BOHANES, stejně jako v horní hlavičce. Dvě cenové karty v sekci Instalace a aktivace používají na desktopu stejnou třísloupcovou geometrii jako iPhone / Android / Aktivace pobytu: 129 Kč je zarovnáno na levou hranu iPhonu a 299 Kč na pravou hranu Aktivace pobytu. Na mobilu se cenové karty dál skládají pod sebe.
+
+## Cenové karty přes celou šířku — 6. 11. 2026
+
+Dvě veřejné cenové karty v sekci Instalace a aktivace na desktopu společně vyplňují celou šířku prostoru pod kartami iPhone / Android / Aktivace pobytu. Každá zabírá polovinu šířky; mezi nimi zůstává pouze standardní mezera. Na mobilu se dál skládají pod sebe.

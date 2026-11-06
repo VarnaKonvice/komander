@@ -2139,13 +2139,12 @@ footer .footer-brand-message{
 }
 .public-pricing{
   display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-template-columns:repeat(2,minmax(0,1fr));
   gap:22px;
   width:100%;
   margin:28px 0 0;
 }
-.public-price-card:first-child{grid-column:1}
-.public-price-card:nth-child(2){grid-column:3}
+.public-price-card:first-child,.public-price-card:nth-child(2){grid-column:auto}
 .public-price-card{
   padding:18px 20px;
   border:1px solid #4B6A94;
@@ -2194,7 +2193,7 @@ footer .footer-brand-message{
     justify-items:start;
   }
   .public-pricing{grid-template-columns:1fr;gap:10px}
-  .public-price-card:first-child,.public-price-card:nth-child(2){grid-column:1}
+  .public-price-card:first-child,.public-price-card:nth-child(2){grid-column:auto}
   .public-price-note{grid-column:auto}
 }
 </style></head>
