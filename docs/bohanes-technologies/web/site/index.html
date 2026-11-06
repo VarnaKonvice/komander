@@ -1986,6 +1986,112 @@ header .desktop-contact{font-size:14px;padding:10px 15px;min-height:44px}
   .footer-brand-lockup .brand-lockup strong{font-size:16px}
   .footer-brand-lockup .brand-lockup small{font-size:9.5px}
 }
+</style><style id="bohanes-footer-refinement-2026-11-06">
+footer{
+  background:#15384E;
+  color:#EAF3F8;
+  border-top:1px solid #294E64;
+  padding:34px 0 0;
+}
+footer .footer-main-refined{
+  display:grid;
+  grid-template-columns:minmax(360px,1.55fr) minmax(210px,.8fr) minmax(210px,.8fr);
+  gap:64px;
+  align-items:start;
+  min-height:0;
+  padding:4px 0 30px;
+}
+footer .footer-company-refined{
+  display:grid;
+  align-content:start;
+  justify-content:start!important;
+  gap:18px;
+  min-height:0;
+}
+footer .footer-brand-lockup{align-items:center;gap:14px}
+footer .footer-brand-lockup .brand-symbol{width:82px;height:62px;flex:0 0 82px;border-radius:13px}
+footer .footer-brand-lockup .brand-lockup strong{
+  color:#F5FAFD;
+  font-size:22px;
+  letter-spacing:.075em;
+}
+footer .footer-brand-lockup .brand-lockup strong em{
+  color:#C5DBE8;
+}
+footer .footer-brand-lockup .brand-lockup small{
+  color:#B9D0DE;
+  font-size:12px;
+}
+footer .footer-brand-message{
+  max-width:510px;
+  margin:0;
+  color:#D8E6EE;
+  font-size:17px;
+  line-height:1.55;
+}
+footer .footer-column{
+  gap:8px;
+  font-size:16px;
+  line-height:1.45;
+}
+footer .footer-column h3{
+  color:#FFFFFF;
+  font-size:18px;
+  margin:0 0 8px;
+  font-weight:750;
+}
+footer .footer-column a{
+  color:#D8E6EE;
+}
+footer .footer-column a:hover{
+  color:#76E1E7;
+  text-decoration:none;
+}
+footer .footer-copyright{
+  border-top:1px solid rgba(207,226,238,.26);
+  color:#B8CCDA;
+  padding:12px 0 14px;
+  text-align:center;
+  font-size:14px;
+}
+footer .footer-heading{display:none!important}
+
+@media(max-width:900px){
+  footer .footer-main-refined{
+    grid-template-columns:1.2fr .9fr .9fr;
+    gap:34px;
+  }
+  footer .footer-brand-lockup .brand-symbol{width:70px;height:54px;flex-basis:70px}
+  footer .footer-brand-lockup .brand-lockup strong{font-size:18px}
+  footer .footer-brand-message{font-size:16px}
+}
+
+@media(max-width:760px){
+  footer{padding-top:28px}
+  footer .footer-main-refined{
+    grid-template-columns:1fr 1fr;
+    gap:28px 20px;
+    padding-bottom:22px;
+  }
+  footer .footer-company-refined{
+    grid-column:1/-1;
+    gap:14px;
+  }
+  footer .footer-brand-lockup .brand-symbol{width:62px;height:48px;flex-basis:62px}
+  footer .footer-brand-lockup .brand-lockup strong{font-size:17px}
+  footer .footer-brand-lockup .brand-lockup small{font-size:10px}
+  footer .footer-brand-message{
+    max-width:360px;
+    font-size:15px;
+    line-height:1.5;
+  }
+  footer .footer-brand-message br{display:none}
+  footer .footer-column h3{font-size:16px}
+  footer .footer-column{font-size:15px;gap:7px}
+  footer .footer-copyright{
+    padding-bottom:calc(14px + var(--web-mobile-nav) + env(safe-area-inset-bottom));
+  }
+}
 </style></head>
 <body>
 <a class="skip-link" href="#main">Přeskočit na obsah</a>
@@ -2033,7 +2139,7 @@ header .desktop-contact{font-size:14px;padding:10px 15px;min-height:44px}
 <section id="kontakt"><div class="wrap section-tile company-contact"><div class="pad"><div class="contact-grid"><div class="contact-copy"><div class="company-identity"><div class="company-brand-lockup" aria-label="Bohanes Technologies"><img class="brand-symbol" src="/bohanes-symbol.svg" alt=""><span class="brand-lockup"><strong>BOHANES <em>TECHNOLOGIES</em></strong><small>Technologie pro skutečný pobyt</small></span></div><p class="company-founder"><strong>Petr Bohanes</strong><span>Zakladatel</span></p></div><div class="contact-links"><div class="contact-link"><b>E-mail</b><span>Finální adresa čeká na ověření.</span></div><div class="contact-link"><b>Telefon</b><span>Finální číslo čeká na ověření.</span></div></div><p class="contact-note">Kontaktní údaje doplníme před veřejným spuštěním.</p></div><form class="contact-form" id="contactForm" aria-describedby="formStatus"><h3>Napište nám zprávu</h3><div><label for="contactName">Jméno</label><input id="contactName" name="name" autocomplete="name" placeholder="Vaše jméno"></div><div><label for="contactOrganization">Organizace / lázeňské zařízení</label><input id="contactOrganization" name="organization" autocomplete="organization" placeholder="Název organizace nebo lázní"></div><div><label for="contactEmail">E-mail</label><input id="contactEmail" name="email" type="email" autocomplete="email" placeholder="vas@email.cz"></div><div><label for="contactPhone">Telefon</label><input id="contactPhone" name="phone" type="tel" autocomplete="tel" placeholder="+420 …"></div><div><label for="contactMessage">Zpráva</label><textarea id="contactMessage" name="message" placeholder="Co byste s námi chtěli probrat?"></textarea></div><p class="form-state" id="formStatus" role="status">Odesílání připravujeme. Formulář zatím zprávu nikam neodesílá.</p><button class="cta" type="submit" disabled>Odesílání připravujeme</button></form></div></div></div></section>
 </main>
 
-<footer><div class="wrap"><div class="footer-heading"><p>Digitální nástroje pro přehlednější pobyt, jednodušší orientaci a včasné informace.</p></div><div class="footer-main"><div class="footer-company"><div class="footer-brand-lockup" aria-label="Bohanes Technologies"><img class="brand-symbol" src="/bohanes-symbol.svg" alt=""><span class="brand-lockup"><strong>BOHANES <em>TECHNOLOGIES</em></strong><small>Technologie pro skutečný pobyt</small></span></div></div><nav class="footer-column" aria-label="Commander v zápatí"><h3>Commander</h3><a href="#domu">Domů</a><a href="#o-nas">O nás</a><a href="#commander">Lázeňský Commander</a><a href="#jak-funguje">Jak to funguje</a></nav><nav class="footer-column" aria-label="Produkt v zápatí"><h3>Produkt</h3><a href="#alarmy">Alarmy</a><a href="#kalendar">Kalendář a widgety</a><a href="#pripravujeme">Co chystáme</a></nav><div class="footer-column footer-contacts"><h3>Kontakt</h3><span>E-mail: neověřen</span><span>Telefon: neověřen</span><a href="#instalace">Instalace</a><a href="#pro-lazne">Pro lázně</a></div></div><div class="footer-copyright">© 2026 Bohanes Technologies</div></div></footer>
+<footer><div class="wrap"><div class="footer-main footer-main-refined"><div class="footer-company footer-company-refined"><div class="footer-brand-lockup" aria-label="Bohanes Technologies"><img class="brand-symbol" src="/bohanes-symbol.svg" alt=""><span class="brand-lockup"><strong>BOHANES <em>TECHNOLOGIES</em></strong><small>Technologie pro skutečný pobyt</small></span></div><p class="footer-brand-message">Digitální nástroje pro přehlednější pobyt, <br>jednodušší orientaci a včasné informace.</p></div><nav class="footer-column footer-company-nav" aria-label="Bohanes Technologies v zápatí"><h3>Bohanes Technologies</h3><a href="#domu">Domů</a><a href="#o-nas">O nás</a><a href="#pripravujeme">Co chystáme</a><a href="#pro-lazne">Pro lázně</a><a href="#kontakt">Kontakt</a></nav><nav class="footer-column footer-product-nav" aria-label="Produkt v zápatí"><h3>Produkt</h3><a href="#commander">Lázeňský Commander</a><a href="#funkce">Funkce</a><a href="#instalace">Instalace</a></nav></div><div class="footer-copyright">© 2026 Bohanes Technologies</div></div></footer>
 
 <dialog class="lightbox" id="imageDialog" aria-labelledby="imageTitle"><div class="lightbox-top"><h3 id="imageTitle">Obrazovka Commanderu</h3><button class="lightbox-close" type="button">Zavřít</button></div><img id="imageDetail" alt=""><div id="calendarDetail" class="calendar-detail" hidden></div><p id="originalImageRow"><a class="full-size" id="originalImage" target="_blank" rel="noopener">Otevřít obrázek v původní velikosti</a></p></dialog>
 <script>

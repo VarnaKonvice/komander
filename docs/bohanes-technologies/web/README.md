@@ -238,3 +238,7 @@ Web servírujte běžným statickým HTTP serverem s rootem v `site`. Pracovní 
 ## Jednotná firemní identita — 6. 11. 2026
 
 Hlavička, kontaktní sekce a zápatí používají stejný firemní systém: barevný propletený symbol Bohanes Technologies, čitelný nápis BOHANES TECHNOLOGIES a schválený claim „Technologie pro skutečný pobyt“. Starý samostatný plný wordmark už v kontaktu ani zápatí nevytváří druhou vizuální variantu značky. V kontaktu se název firmy zbytečně neopakuje pod logem.
+
+## Zápatí – firemní a produktová struktura — 6. 11. 2026
+
+Zápatí kopíruje informační architekturu hlavičky: vlevo je značka Bohanes Technologies s claimem a stručným popisem, sloupec Bohanes Technologies obsahuje Domů / O nás / Co chystáme / Pro lázně / Kontakt a sloupec Produkt obsahuje Lázeňský Commander / Funkce / Instalace. Samostatný sloupec Kontakt s neověřeným e-mailem a telefonem byl odstraněn. Pozadí zápatí je tmavší, aby vizuálně uzavíralo stránku.
