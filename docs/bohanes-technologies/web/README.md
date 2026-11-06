@@ -250,3 +250,7 @@ Tmavé zápatí používá samostatnou transparentní variantu barevného symbol
 ## Zápatí a veřejné ceny — 6. 11. 2026
 
 Značka s claimem a popisem je v levém bloku zápatí vycentrovaná nezávisle na horní linii navigačních sloupců. Veřejný ceník Lázeňského Commanderu je zjednodušen na dvě pásma: 1–15 dní za 129 Kč a 16–35 dní za 299 Kč, vždy včetně DPH za jednorázovou aktivaci konkrétního pobytu.
+
+## Jemné zarovnání zápatí a cen — 6. 11. 2026
+
+Claim „Technologie pro skutečný pobyt“ v tmavém zápatí je zarovnaný na levou hranu textu BOHANES, stejně jako v horní hlavičce. Dvě cenové karty v sekci Instalace a aktivace používají na desktopu stejnou třísloupcovou geometrii jako iPhone / Android / Aktivace pobytu: 129 Kč je zarovnáno na levou hranu iPhonu a 299 Kč na pravou hranu Aktivace pobytu. Na mobilu se cenové karty dál skládají pod sebe.
