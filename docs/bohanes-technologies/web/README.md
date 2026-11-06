@@ -234,3 +234,7 @@ Web servírujte běžným statickým HTTP serverem s rootem v `site`. Pracovní 
 - Firemní značka v hlavičce používá samostatný znak a čitelný text BOHANES TECHNOLOGIES; pod značkou je schválený claim „Technologie pro skutečný pobyt“.
 - Mobilní verze nepoužívá zmenšené desktopové menu. Má vlastní spodní navigaci Domů / Commander / Funkce / Pro lázně / Kontakt a respektuje iOS safe-area.
 - Desktopová navigace zůstává plná od šířky 1100 px; tabletové rozložení může použít Menu.
+
+## Jednotná firemní identita — 6. 11. 2026
+
+Hlavička, kontaktní sekce a zápatí používají stejný firemní systém: barevný propletený symbol Bohanes Technologies, čitelný nápis BOHANES TECHNOLOGIES a schválený claim „Technologie pro skutečný pobyt“. Starý samostatný plný wordmark už v kontaktu ani zápatí nevytváří druhou vizuální variantu značky. V kontaktu se název firmy zbytečně neopakuje pod logem.
