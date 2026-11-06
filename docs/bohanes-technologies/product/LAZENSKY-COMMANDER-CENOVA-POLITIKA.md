@@ -13,16 +13,20 @@ Cena je za aktivaci jednoho pobytu, nikoli měsíční předplatné.
 
 ## Cena při přímé úhradě klientem
 
+Veřejný ceník je zjednodušen na dvě snadno pochopitelná pásma:
+
 | Délka pobytu | Cena včetně DPH |
 |---|---:|
-| 1–10 dní | 99 Kč |
-| 11–20 dní | 179 Kč |
-| 21–28 dní | 249 Kč |
-| 29–35 dní | 299 Kč |
+| 1–15 dní | 129 Kč |
+| 16–35 dní | 299 Kč |
 
-Základní marketingové sdělení může být:
+Základní marketingové sdělení:
 
-**Od 99 Kč za celý pobyt. Maximálně 299 Kč za běžný lázeňský pobyt až do 35 dní.**
+**Krátký pobyt 129 Kč · standardní lázeňský pobyt 299 Kč.**
+
+Cena je jednorázová aktivace konkrétního pobytu. Nejde o měsíční předplatné.
+
+Důvod zjednodušení: dvě pásma jsou pro klienta okamžitě pochopitelná a nevytvářejí dojem složitého tarifního ceníku.
 
 ## Partnerská cena pro lázně
 
@@ -69,13 +73,14 @@ Hlavní web nemá působit jako složitý tarifní ceník.
 
 Preferovaný způsob:
 
-**Cena podle délky pobytu**  
-**od 99 Kč za celý pobyt**
+**Cena podle délky pobytu**
 
-Pod tím stručně zobrazit čtyři cenová pásma.
+- **1–15 dní: 129 Kč**
+- **16–35 dní: 299 Kč**
 
-Pro část „Pro lázně“ uvést partnerskou cenu:
-**od 99 Kč za klienta, maximálně 249 Kč za pobyt do 35 dní.**
+Doplnit krátké vysvětlení: **jednorázová aktivace konkrétního pobytu, nejde o měsíční předplatné.**
+
+Partnerská cena pro lázně zůstává zatím podle samostatné partnerské řady níže; její případné zjednodušení do dvou pásem vyžaduje samostatné obchodní rozhodnutí.
 
 Je vhodné zdůraznit:
 - žádné měsíční předplatné pro klienta,
@@ -88,14 +93,14 @@ Je vhodné zdůraznit:
 Cenová politika má splnit čtyři cíle:
 
 1. krátkodobý host nemá pocit, že platí cenu určenou pro měsíční lázeňský pobyt,
-2. standardní 21–35denní lázeňský pobyt zůstává hlavním obchodním modelem,
+2. standardní 16–35denní lázeňský pobyt zůstává hlavním obchodním modelem,
 3. lázně mají motivaci aktivaci klientovi samy uhradit nebo ji zahrnout do pobytu,
 4. ceník zůstává jednoduchý a nevyžaduje přesný denní přepočet.
 
 ## Co zatím nedělat
 
 - nevytvářet cenu za každý jednotlivý den,
-- nevytvářet mnoho mezistupňů,
+- veřejný ceník držet pouze ve dvou pásmech,
 - nevytvářet speciální půlroční tarif kvůli jednotlivým výjimečným klientům,
 - neměnit současný web jen kvůli tomuto dokumentu; cenová politika se má zapracovat při nejbližší plánované úpravě sekce Instalace / Aktivace / Pro lázně.
 

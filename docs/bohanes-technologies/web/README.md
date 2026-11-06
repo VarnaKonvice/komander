@@ -246,3 +246,7 @@ Zápatí kopíruje informační architekturu hlavičky: vlevo je značka Bohanes
 ## Finální sjednocení hlavičky a zápatí — 6. 11. 2026
 
 Tmavé zápatí používá samostatnou transparentní variantu barevného symbolu bez světlého pozadí. Desktopové tlačítko Kontakt má stejnou výšku a radius jako propojený produktový blok Lázeňský Commander / Funkce / Instalace, takže hlavička má vyrovnanou vizuální váhu.
+
+## Zápatí a veřejné ceny — 6. 11. 2026
+
+Značka s claimem a popisem je v levém bloku zápatí vycentrovaná nezávisle na horní linii navigačních sloupců. Veřejný ceník Lázeňského Commanderu je zjednodušen na dvě pásma: 1–15 dní za 129 Kč a 16–35 dní za 299 Kč, vždy včetně DPH za jednorázovou aktivaci konkrétního pobytu.
