@@ -23,6 +23,10 @@ Snapshot uložený v tomto repozitáři odpovídá produkční verzi po doplněn
 - Moravan je viditelný v seznamu, mini kartě, tooltipu mapy a horním podtitulu detailu,
 - při otevření velkého detailu se mini karta automaticky zavře.
 
+## Mobilní iPhone rozhraní — 6. 11. 2026
+
+CRM má samostatné mobilní rozložení pro iPhone: spodní navigaci, kompaktní hlavičku a vyhledávání, plnošířkovou mapu a seznam, detail lázní jako celou mobilní obrazovku, jednokolonové kontakty a formuláře. Přidána je podpora iOS safe-area přes `viewport-fit=cover` a `env(safe-area-inset-*)`, takže rozhraní respektuje oblast Dynamic Islandu a spodní home indikátor při otevření v Safari i po přidání na plochu. Desktopové rozložení zůstává samostatné.
+
 ## Doplňkový audit kontaktů — 5. 11. 2026
 
 Veřejný katalog byl znovu porovnán s aktuálními oficiálními kontaktními stránkami. Počet ověřených kontaktů vzrostl z 134 na 161. Doplněny byly hlavně obchodní, rezervační, přijímací a provozní kontakty; hlavní telefon Jáchymova byl aktualizován na +420 410 000 510. Verze veřejné migrace je 2026-11-05.5.
