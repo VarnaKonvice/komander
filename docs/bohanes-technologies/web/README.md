@@ -262,3 +262,7 @@ Dvě veřejné cenové karty v sekci Instalace a aktivace na desktopu společně
 ## Kompaktní cenové karty — 6. 11. 2026
 
 Dvě široké cenové karty zůstávají přes celou šířku instalačního panelu, ale na desktopu jsou nižší a používají horizontální kompozici: vlevo je název pobytu a informace o DPH, vpravo výrazná cena. Obsah je vertikálně vycentrovaný. Na mobilu zůstává přirozené vertikální skládání.
+
+## Typografická hierarchie cen — 6. 11. 2026
+
+V cenových kartách je nyní hlavní informační hierarchie obrácena správně: název typu pobytu a délka jsou výraznější, zatímco text „včetně DPH za celý pobyt“ je menší a vizuálně sekundární. Rozložení karet a ceny zůstaly beze změny.
