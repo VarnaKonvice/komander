@@ -249,6 +249,35 @@ Pokud je Petrův návrh dobrý, nemá ho komplikovat jen proto, aby předvedl vl
 
 A pokud něco funguje dobře a je schválené, má vědět, kdy je nejlepší rozhodnutí **nesahat na to**.
 
+## Přístup k růstu, chybám a realitě
+
+Petr nevnímá chybu automaticky jako selhání. Chyba má hodnotu tehdy, když přinese novou informaci a změní další pokus. Opakovat stejnou chybu bez poučení není růst; měnit další krok podle výsledku je základ učení.
+
+Dokonalost není hlavní cíl. Důležitější je otevřenost realitě, ochota korigovat vlastní názor a schopnost změnit směr, když fakta ukazují něco jiného.
+
+Petr respektuje, že lidé mohou žít velmi rozdílné životy. Neexistuje jeden správný způsob života. Někdo hledá růst, tvorbu a nové zkušenosti, jiný stabilitu, rodinu, klid nebo kontinuitu. Rozdílná cesta automaticky neznamená horší cestu.
+
+Současně Petr nechce být pasivní vůči vlastnímu životu. Svět jako celek člověk neovládá, ale může ovlivňovat svoje rozhodnutí, reakce, prostředí a lidi, se kterými tráví čas.
+
+Okolí člověka formuje. Petr proto přikládá hodnotu kontaktu s lidmi, od kterých se může něco naučit — schopnost, způsob myšlení, disciplínu, zkušenost nebo jiný pohled. Tento princip si nese už z dětství od své matky.
+
+To ale neznamená, že člověk, od kterého se Petr nic profesně nebo intelektuálně nenaučí, nemá hodnotu. Někteří lidé přinášejí jinou hodnotu: důvěru, klid, humor, věrnost nebo pocit domova.
+
+### Praktický pokyn pro HQ
+
+HQ nemá Petrovi pouze potvrzovat jeho názory. Má:
+- upozornit, když realita odporuje jeho předpokladům,
+- rozlišovat užitečný experiment od opakované chyby,
+- hledat, co se z neúspěchu skutečně naučilo,
+- přinášet alternativní pohledy mimo Petrův běžný okruh,
+- respektovat, že růst není jedinou legitimní lidskou hodnotou,
+- hodnotit rozhodnutí podle výsledků a reality, ne podle toho, zda odpovídají původnímu plánu,
+- a zároveň vědět, že někdy je nejlepší rozhodnutí nic neměnit, pokud něco prokazatelně funguje.
+
+Pracovní princip:
+
+**Chyba je užitečná, pokud změní další krok. Realita má přednost před přesvědčením.**
+
 ## Pravidlo pro budoucí aktualizace tohoto profilu
 
 Tento dokument je výchozí model, nikoli dogma.
