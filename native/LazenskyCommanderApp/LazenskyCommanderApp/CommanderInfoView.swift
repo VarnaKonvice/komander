@@ -189,11 +189,11 @@ private struct CommanderUserGuideView: View {
         ) {
           VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
             guideStep("1", "Přijměte rozpis", "Commander načte váš konkrétní pobyt a uloží poslední platnou verzi i pro použití bez internetu.")
-            guideStep("2", "Povolte alarmy", "Bez oprávnění k alarmům vás aplikace nemůže spolehlivě upozornit, kdy máte vyrazit.")
+            guideStep("2", "Povolte alarmy", "Na podporovaném iOS je to jediné oprávnění, které Commander potřebuje pro základní používání a spolehlivé upozornění na odchod.")
             guideStep("3", "Používejte Dnes, Týden a Pobyt", "Dnes ukazuje nejbližší události, Týden další dny a Pobyt celý časový plán.")
             guideStep("4", "Nastavte předstih", "Alarm může zazvonit před začátkem procedury tak, abyste měli čas dojít na místo.")
             guideStep("5", "Přijímejte změny", "Novější verze stejného rozpisu nahradí starší a Commander přepočítá alarmy.")
-            guideStep("6", "Kalendář je volitelný", "Celý pobyt lze exportovat do kalendářového souboru .ics.")
+            guideStep("6", "Kalendář je volitelný", "V Nastavení můžete zapnout přidávání a aktualizaci celého pobytu v Apple Kalendáři. Oprávnění se vyžádá až při zapnutí. Export .ics zůstává k dispozici.")
           }
         }
 

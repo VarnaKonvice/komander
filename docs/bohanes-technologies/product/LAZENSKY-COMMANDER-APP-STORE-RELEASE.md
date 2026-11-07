@@ -8,6 +8,8 @@
 - Apple Standard EULA lze použít bez vlastní EULA.
 - Privacy Policy URL je pro App Store povinná a odkaz musí být snadno dostupný také v aplikaci.
 - App Store Connect musí pravdivě popsat skutečné zpracování dat aplikací i použitými SDK.
+- Minimum aplikace je iOS 16.1; AlarmKit je funkční až od iOS 26.1. Starší podporovaný iOS používá Commander bez systémových Commander alarmů.
+- První spuštění nesmí samo vyžádat Kalendář ani běžná oznámení. Přístup k Apple Kalendáři se žádá až po ručním zapnutí této volitelné funkce v Nastavení.
 - Před vydáním doplnit ověřené identifikační údaje provozovatele a podporu.
 
 Oficiální zdroje:

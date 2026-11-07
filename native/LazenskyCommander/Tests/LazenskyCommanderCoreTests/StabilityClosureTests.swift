@@ -170,7 +170,7 @@ import Testing
   #expect(app.contains("source: request.source"))
   #expect(app.contains("synchronizeWithRecovery(maxAttempts: 2, automatic: true, source: source)"))
   #expect(app.contains("recovery.recordAlarmVerification(succeeded: result.alarmSummary.succeeded)"))
-  #expect(app.contains("eventNotifications.reconcile(snapshot: result.watchSnapshot"))
+  #expect(app.contains("eventNotifications.reconcile(\n            snapshot: result.watchSnapshot"))
   #expect(app.contains("includeDeparture: !result.alarmSummary.succeeded"))
   #expect(!app.contains("fallbackNotifications.clear()"))
   #expect(app.contains("if recovery.shouldRetry"))

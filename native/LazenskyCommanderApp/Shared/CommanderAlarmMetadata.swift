@@ -1,9 +1,8 @@
 import ActivityKit
-import AlarmKit
 import Foundation
 import LazenskyCommanderCore
 
-struct CommanderAlarmMetadata: AlarmMetadata, Codable, Hashable, Sendable {
+struct CommanderAlarmMetadata: Codable, Hashable, Sendable {
   let stableId: String
   let scheduleVersion: Int
   let projectionRevision: Int?

@@ -124,7 +124,7 @@ import Testing
   #expect(!widget.contains("LazenskyCommanderAlarmLiveActivity"))
   #expect(widget.components(separatedBy: "ActivityConfiguration(for:").count - 1 == 1)
   #expect(widget.contains("ActivityConfiguration(for: CommanderProcedureLiveActivityAttributes.self)"))
-  #expect(widget.contains(".supplementalActivityFamilies([.small])"))
+  #expect(!widget.contains(".supplementalActivityFamilies([.small])"))
 }
 
 private func regressionDate(_ time: String) throws -> Date {

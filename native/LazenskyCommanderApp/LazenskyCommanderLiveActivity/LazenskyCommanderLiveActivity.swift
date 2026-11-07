@@ -110,7 +110,6 @@ struct LazenskyCommanderProcedureLiveActivity: Widget {
       .contentMargins(.horizontal, 4, for: .compactLeading)
       .contentMargins(.horizontal, 3, for: .compactTrailing)
     }
-    .supplementalActivityFamilies([.small])
   }
 }
 
@@ -260,15 +259,9 @@ private struct CommanderProcedureIslandBottom: View {
 
 private struct CommanderProcedureActivityContent: View {
   let context: ActivityViewContext<CommanderProcedureLiveActivityAttributes>
-  @Environment(\.activityFamily) private var activityFamily
 
-  @ViewBuilder
   var body: some View {
-    if activityFamily == .small {
-      CommanderProcedureWatchLiveActivityView(context: context)
-    } else {
-      CommanderProcedureLockScreenView(context: context)
-    }
+    CommanderProcedureLockScreenView(context: context)
   }
 }
 
@@ -928,18 +921,5 @@ private enum CommanderActivityPreviewFixtures {
   )
 
 }
-
-#Preview("Lock Screen - Prave probiha procedura", as: .content, using: CommanderActivityPreviewFixtures.procedureAttributes) {
-  LazenskyCommanderProcedureLiveActivity()
-} contentStates: {
-  CommanderActivityPreviewFixtures.current
-}
-
-#Preview("Lock Screen - Prave probiha jidlo", as: .content, using: CommanderActivityPreviewFixtures.mealAttributes) {
-  LazenskyCommanderProcedureLiveActivity()
-} contentStates: {
-  CommanderActivityPreviewFixtures.current
-}
-
 
 #endif

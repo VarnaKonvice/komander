@@ -109,11 +109,11 @@ struct CommanderAppTabs: View {
     .task {
       await renewal.refresh()
     }
-    .onChange(of: scenePhase) { _, phase in
+    .onChange(of: scenePhase) { phase in
       guard phase == .active else { return }
       Task { await renewal.refresh() }
     }
-    .onChange(of: model.todayRouteRevision) { _, _ in
+    .onChange(of: model.todayRouteRevision) { _ in
       selectedTab = 0
       isScheduleAuditPresented = false
     }

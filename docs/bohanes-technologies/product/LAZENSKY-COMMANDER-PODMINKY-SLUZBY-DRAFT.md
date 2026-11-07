@@ -36,6 +36,8 @@ Funkce alarmů závisí na podporované verzi operačního systému, oprávněn�
 
 Commander uchovává poslední platný rozpis pro použití bez připojení. Přijetí nových změn rozpisu však může vyžadovat datové připojení.
 
+Volitelná integrace s kalendářem není podmínkou používání služby. Přístup ke kalendáři se vyžádá až tehdy, když ji uživatel ručně zapne v Nastavení; ruční export .ics zůstává samostatnou možností.
+
 ## 6. Odpovědnost uživatele
 
 Uživatel má zkontrolovat, že převzal správný pobyt, a při zjevné nesrovnalosti rozpis nepoužívat jako jediný zdroj informace.

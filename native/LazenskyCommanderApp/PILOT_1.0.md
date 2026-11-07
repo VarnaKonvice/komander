@@ -42,6 +42,13 @@ Prohledána také dostupná historie všech refs podle názvů souborů a změn 
 
 Historický princip výběru JSON souboru je převeden do nativního file importeru. Starý formát `stay/items` se automaticky nepřekládá a nepřebírá se jeho volná normalizace bez stabilních identifikátorů.
 
+## Kompatibilita iOS a první spuštění
+
+- Aplikace má minimum iOS **16.1**; iPhone widgetové rozšíření minimum iOS **16.2**.
+- Na iOS 26.1+ používá Commander AlarmKit. Na starším podporovaném iOS funguje celý rozpis bez AlarmKitu.
+- Při prvním používání se Commander nesnaží vyžádat Kalendář ani běžná oznámení začátku. Základní onboarding řeší pouze systémové alarmy tam, kde je AlarmKit podporovaný.
+- Kalendářové oprávnění se vyžádá až po ručním zapnutí v Nastavení.
+
 ## Import
 
 `Nastavení → Pokročilé → Import a kalendář → Vybrat JSON soubor`.
@@ -52,15 +59,15 @@ Historický princip výběru JSON souboru je převeden do nativního file import
 - Vstup `.imported(Schedule)` běží stejnou serializovanou cestou `CommanderScheduleSyncCoordinator` jako síťový vstup: tentýž snapshot store, verze, AlarmSyncService a následné iPhone widgety/oznámení/ActivityKit reconciliation.
 - Shodný soubor lze načíst opakovaně. Starší verze a rozdílný obsah se stejnou verzí se odmítnou bez změny uloženého rozpisu a alarmů. Verze se uměle nepřepisuje.
 - Nevzniká druhý soubor rozpisu ani lokální importní režim. Po restartu se čte stejný offline snapshot. Běžná synchronizace dál přijímá novější kanonické verze a starší feed nemůže import přepsat.
-- Lokální předstihy zůstávají uložené. Pokud platforma odmítne alarmy/oznámení, platný rozpis zůstane přijatý a UI výslovně ohlásí potřebu kontroly; neoprávněně nehlásí ověřené alarmy.
+- Lokální předstihy zůstávají uložené. Nepovolená volitelná oznámení začátku rozpis nezneplatní a Commander si jejich oprávnění při prvním spuštění sám nevyžádá. AlarmKit zůstává samostatnou primární alarmovou vrstvou.
 
 ## Kalendář
 
-Na stejné obrazovce tlačítko `Exportovat pobyt (.ics)` otevře standardní ukládání do Souborů.
+Kalendář je ve výchozím stavu vypnutý a při prvním spuštění nevyžaduje žádné oprávnění. V `Nastavení → Kalendář` lze zapnout `Přidávat pobyt do Apple Kalendáře`. Teprve při zapnutí si Commander vyžádá přístup a potom přidává nebo aktualizuje celý aktuální pobyt podle stabilních ID bez vytváření duplicit. Vypnutí další synchronizaci zastaví, ale již zapsané položky samo nemaže.
 
-`ScheduleCalendarExport` vychází z historického webového `exportWeek`: názvy, místa, časy, kategorie a odchod v popisu. Exportuje všechny události aktuálního pobytu dohromady, včetně minulých. Používá současnou `CommanderScheduleProjection` a stejné lokální předstihy jako alarmy.
+Ruční tlačítko `Exportovat pobyt (.ics)` zůstává v `Nastavení → Pokročilé → Import a kalendář`. `ScheduleCalendarExport` exportuje všechny události pobytu dohromady a používá stejnou `CommanderScheduleProjection` a lokální předstihy jako alarmy.
 
-ICS obsahuje `Europe/Prague`, VTIMEZONE s CET/CEST, UTC DTSTAMP, stabilní UID odvozené ze stableId, CRLF, escapování a zalamování nejvýše po 75 UTF-8 bytech. Čas odchodu zahrnuje datum, takže je jednoznačný i při odchodu předchozí den. Kalendář je jednorázový export, ne živé předplatné a nemění synchronizaci Google Calendar.
+ICS obsahuje `Europe/Prague`, VTIMEZONE s CET/CEST, UTC DTSTAMP, stabilní UID odvozené ze stableId, CRLF, escapování a UTF-8 folding. Přímá synchronizace Apple Kalendáře ani .ics export nejsou podmínkou pro základní používání Commanderu.
 
 ## Ověření
 
@@ -73,17 +80,17 @@ ICS obsahuje `Europe/Prague`, VTIMEZONE s CET/CEST, UTC DTSTAMP, stabilní UID o
 
 ### Omezení Live Activity
 
-Již výchozí `aacec35` obsahuje `CommanderMVPPolicy.createsLiveActivities = false`. Pilot tuto politiku nemění. Existující renderer Live Activity/Dynamic Island, koordinátor, AlarmKit a rozšíření se dál kompilují. Samostatné procedurové Live Activity ale touto přípravou nejsou zapnuté. Build a jednotkové testy nejsou důkazem jejich živého průběhu na zamčeném fyzickém telefonu.
+`CommanderMVPPolicy.createsLiveActivities = false` zůstává v platnosti. Běžný PILOT 1 používá no-op koordinátor a nevytváří samostatné procedurové Live Activity ani Dynamic Island. Historická ActivityKit implementace zůstává pouze pro oddělený physical-acceptance target; widgetové rozšíření se dál sestavuje kvůli Home Screen widgetům.
 
 ## Kontrola Filipem
 
-1. Na fyzickém iPhonu: start, povolení alarmů/oznámení, Dnes/Týden/Pobyt, návrat z pozadí a režim offline.
+1. Na fyzickém iPhonu: start, povolení pouze systémových alarmů, Dnes/Týden/Pobyt, návrat z pozadí a režim offline. První spuštění nesmí samo vyžádat Kalendář ani běžná oznámení.
 2. Import validního kanonického souboru s novější verzí; před potvrzením ověřit termín a obsah pobytu. Zkontrolovat procedury i jídla, změny alarmů, widgety a zachované předstihy. Znovu otevřít aplikaci offline.
 3. Zrušení pickeru/potvrzení, poškozený JSON, starší verze a rozdílný obsah se stejnou verzí musí zachovat poslední platný stav. PDF/fotografie nemají být nabízené jako podporovaný import.
-4. Export celého pobytu otevřít v Apple Kalendáři. Porovnat počet událostí, začátky/konce, místa a odchody, včetně přechodu přes půlnoc a CET/CEST. Import do skutečné kalendářové aplikace zatím nebyl ručně ověřen.
+4. V Nastavení zapnout Apple Kalendář, povolit jej až na vyžádání a ověřit vytvoření i následnou aktualizaci pobytu bez duplicit. Samostatně ověřit také ruční export .ics.
 5. Přidat malé/střední widgety vedle ikony; porovnat modré pozadí a akcenty jídel/procedur. Prověřit obsah po importu a změně předstihů.
 6. Nastavení: čitelnost nové obrazovky, dialog a ukládání souboru, patička s logem a 1.0/build 12, větší systémové písmo.
 7. Instalace pilotu nesmí nabídnout instalaci Watch aplikace. iPhone nesmí čekat na spárované nebo dostupné hodinky.
 8. Zvlášť posoudit výchozí MVP politiku samostatných Live Activity; jejich opětovné zapnutí vyžaduje fyzický test souběhu s AlarmKitem.
 
-Fyzický telefon, produkční alarmy a osobní kalendář nebyly při této přípravě měněny. Podepsaný distribuční build a ruční průchod novým file pickerem/exportérem zůstávají ke kontrole.
+Fyzický telefon, produkční alarmy ani osobní kalendář nebyly při této přípravě měněny. Podepsaná instalace, skutečné zazvonění AlarmKitu a ruční průchod volitelnou synchronizací Apple Kalendáře zůstávají ke kontrole.

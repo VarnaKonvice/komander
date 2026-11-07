@@ -65,7 +65,7 @@ struct CommanderWeekView: View {
           subtitle: "Přehled procedur a aktivit",
           schedule: model.latestSchedule
         )
-        ScrollView {
+        ScrollView(.vertical, showsIndicators: true) {
           LazyVStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.medium) {
           if let days, !days.isEmpty {
             ForEach(days, id: \.date) { day in
@@ -124,7 +124,7 @@ struct CommanderWeekView: View {
       .background(CommanderDepthBackground().ignoresSafeArea())
       .toolbar(.hidden, for: .navigationBar)
       .onAppear { focusToday(today, in: days, using: proxy) }
-      .onChange(of: days?.map(\.date)) { _, _ in
+      .onChange(of: days?.map(\.date)) { _ in
         // The first appearance can precede schedule loading.
         focusToday(today, in: days, using: proxy)
       }

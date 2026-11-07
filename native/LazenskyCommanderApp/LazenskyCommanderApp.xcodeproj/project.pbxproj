@@ -1193,7 +1193,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = LazenskyCommanderApp/Info.plist;
 				CODE_SIGN_ENTITLEMENTS = Shared/CommanderSnapshot.entitlements;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.varnakonvice.lazenskycommander;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1216,7 +1216,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = LazenskyCommanderApp/Info.plist;
 				CODE_SIGN_ENTITLEMENTS = Shared/CommanderSnapshot.entitlements;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.1;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.varnakonvice.lazenskycommander;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1238,7 +1238,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = LazenskyCommanderLiveActivity/Info.plist;
 				CODE_SIGN_ENTITLEMENTS = Shared/CommanderSnapshot.entitlements;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1268,7 +1268,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = LazenskyCommanderLiveActivity/Info.plist;
 				CODE_SIGN_ENTITLEMENTS = Shared/CommanderSnapshot.entitlements;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1398,6 +1398,7 @@
 				DEVELOPMENT_TEAM = "2CCL69T42P";
 				MARKETING_VERSION = "1.0";
 				INFOPLIST_FILE = "PhysicalAcceptance/Info.plist";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "COMMANDER_PHYSICAL_LIVE_ACTIVITY $(inherited)";
 				TARGETED_DEVICE_FAMILY = "1";
 				GENERATE_INFOPLIST_FILE = "NO";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -1419,6 +1420,7 @@
 				DEVELOPMENT_TEAM = "2CCL69T42P";
 				MARKETING_VERSION = "1.0";
 				INFOPLIST_FILE = "PhysicalAcceptance/Info.plist";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "COMMANDER_PHYSICAL_LIVE_ACTIVITY $(inherited)";
 				TARGETED_DEVICE_FAMILY = "1";
 				GENERATE_INFOPLIST_FILE = "NO";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

@@ -22,6 +22,7 @@ struct CommanderSystemStatusView: View {
   }
 
   private var alarmState: String {
+    guard model.supportsAlarmKit else { return "Nepodporováno na tomto iOS" }
     guard let summary = model.summary else { return model.recoveryStatus }
     if summary.succeeded, summary.readbackCoverage.isComplete {
       return "v\(summary.scheduleVersion ?? 0) · ověřeno"
@@ -84,7 +85,8 @@ struct CommanderSystemStatusView: View {
 
       Section("Oprávnění alarmů") {
         Text(alarmAccessText)
-        if model.accessStatus.contains("not been requested") || model.accessStatus.contains("denied") {
+        if model.supportsAlarmKit,
+           model.accessStatus.contains("not been requested") || model.accessStatus.contains("denied") {
           Button("Povolit alarmy") { model.requestAuthorization() }
         }
       }

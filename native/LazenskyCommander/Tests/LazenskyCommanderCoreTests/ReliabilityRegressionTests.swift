@@ -183,7 +183,7 @@ private actor ReliabilityAlarmAdapter: AlarmAdapting {
   #expect(widget.contains("CommanderPhoneWidgetCache.make(dataset: .production)?.load()"))
   #expect(!widget.contains("snapshotLoader.load()"))
   #expect(!widget.contains("URLSessionScheduleService"))
-  #expect(widget.contains("CommanderRectangularLockWidget(state: state)\n          .containerBackground(.clear, for: .widget)"))
+  #expect(widget.contains("CommanderRectangularLockWidget(state: state)\n          .commanderWidgetContainerBackground(.clear)"))
 }
 
 @Test func failedOwnershipWriteCannotAuthorizeScheduling() async throws {

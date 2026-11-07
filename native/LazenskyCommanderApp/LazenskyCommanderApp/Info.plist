@@ -26,6 +26,10 @@
 	<string>$(LC_BUILD_COMMIT)</string>
 	<key>NSAlarmKitUsageDescription</key>
 	<string>Lázeňský Commander používá alarmy, aby vás včas upozornil, kdy máte vyrazit na proceduru nebo jídlo.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Po zapnutí v Nastavení může Lázeňský Commander přidávat a aktualizovat váš lázeňský pobyt v Apple Kalendáři.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Po zapnutí v Nastavení může Lázeňský Commander přidávat a aktualizovat váš lázeňský pobyt v Apple Kalendáři.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>UILaunchScreen</key>

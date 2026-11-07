@@ -113,6 +113,37 @@ struct CommanderSettingsView: View {
       CommanderScheduleSettingsCard(model: model)
 
       CommanderSectionCard(
+        title: "Kalendář",
+        symbol: "calendar.badge.plus",
+        accent: CommanderDesignTokens.Colors.locationBlue
+      ) {
+        Toggle(isOn: Binding(
+          get: { model.calendarSyncEnabled },
+          set: { model.setCalendarSyncEnabled($0) }
+        )) {
+          VStack(alignment: .leading, spacing: 3) {
+            Text("Přidávat pobyt do Apple Kalendáře")
+              .commanderFont(.eventTitle)
+              .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+            Text("Volitelné. Oprávnění se vyžádá až po zapnutí.")
+              .commanderFont(.subtitle)
+              .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          }
+        }
+        .tint(CommanderDesignTokens.Colors.locationBlue)
+
+        Text(model.calendarStatus)
+          .commanderFont(.subtitle)
+          .foregroundStyle(model.calendarSyncEnabled
+            ? CommanderDesignTokens.Colors.mealGreen
+            : CommanderDesignTokens.Colors.textSecondary)
+
+        Text("Vypnutím se už zapsané položky z Kalendáře nemažou. Export .ics zůstává dostupný v Pokročilé.")
+          .commanderFont(.subtitle)
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+      }
+
+      CommanderSectionCard(
         title: "Pokročilé",
         symbol: "wrench.and.screwdriver.fill",
         accent: CommanderDesignTokens.Colors.textSecondary
@@ -277,7 +308,12 @@ struct CommanderScheduleAuditView: View {
     let title: String
     let detail: String
 
-    if let coverage, coverage.isComplete {
+    if !model.supportsAlarmKit {
+      color = CommanderDesignTokens.Colors.locationBlue
+      symbol = "iphone"
+      title = "Rozpis funguje bez systémových alarmů"
+      detail = "Na tomto iOS nejsou alarmy Commanderu dostupné. Dnes, Týden, Pobyt, offline rozpis, import, kalendář a ostatní funkce zůstávají dostupné."
+    } else if let coverage, coverage.isComplete {
       color = CommanderDesignTokens.Colors.mealGreen
       symbol = "alarm.fill"
       if coverage.desiredAlarmCount == 0 {
@@ -303,7 +339,7 @@ struct CommanderScheduleAuditView: View {
     }
 
     return CommanderSectionCard(
-      title: "AlarmKit",
+      title: model.supportsAlarmKit ? "AlarmKit" : "Kompatibilita",
       symbol: symbol,
       accent: color
     ) {

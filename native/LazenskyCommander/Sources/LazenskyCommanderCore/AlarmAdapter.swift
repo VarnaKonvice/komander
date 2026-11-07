@@ -56,6 +56,10 @@ public protocol AlarmAdapting: Sendable {
   func existingPlatformFixedAlertDates() async throws -> [String: Date]?
   func existingPlatformFixedAlertDates(for platformAlarmIDs: Set<String>) async throws -> [String: Date]?
   func existingPlatformTimingObservations(for platformAlarmIDs: Set<String>) async throws -> [String: PlatformAlarmTimingObservation]?
+
+  /// Returns canonical event IDs currently owned by the platform alarm implementation.
+  /// nil means the adapter cannot prove that mapping.
+  func existingEventStableIDs() async throws -> Set<String>?
 }
 
 public extension AlarmAdapting {
@@ -84,6 +88,8 @@ public extension AlarmAdapting {
     guard let dates = try await existingPlatformFixedAlertDates(for: platformAlarmIDs) else { return nil }
     return dates.mapValues { PlatformAlarmTimingObservation(effectiveAlertDate: $0) }
   }
+
+  func existingEventStableIDs() async throws -> Set<String>? { nil }
 }
 
 public enum PlatformAlarmIdentifier {

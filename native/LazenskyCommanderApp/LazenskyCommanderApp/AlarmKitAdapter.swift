@@ -5,6 +5,9 @@ import Foundation
 import SwiftUI
 import LazenskyCommanderCore
 
+@available(iOS 26.1, *)
+extension CommanderAlarmMetadata: AlarmMetadata {}
+
 enum AlarmKitAdapterError: LocalizedError {
   case invalidPlatformAlarmID(String)
   case invalidLeaveAt(String)
@@ -21,6 +24,7 @@ enum AlarmKitAdapterError: LocalizedError {
   }
 }
 
+@available(iOS 26.1, *)
 struct CommanderAlarmStopIntent: LiveActivityIntent {
   static let title: LocalizedStringResource = "Potvrdit odchod"
   static let description = IntentDescription("Zastaví systémový AlarmKit alarm. Commander Live Activity je připravená předem.")
@@ -130,6 +134,7 @@ struct CommanderAlarmStopIntent: LiveActivityIntent {
   }
 }
 
+@available(iOS 26.1, *)
 actor AlarmKitAdapter: AlarmAdapting {
   private static let e2eOwnershipKey = "lazensky.commander.alarmkitOwned.e2e.v1"
   private let channel: ScheduleChannel

@@ -5,7 +5,7 @@ let package = Package(
   name: "LazenskyCommander",
   // macOS hosts the Swift Testing suite and CoreCheck; no macOS application is shipped.
   // Declare its runtime contract instead of inheriting SwiftPM's legacy default.
-  platforms: [.macOS(.v13), .iOS(.v26), .watchOS(.v26)],
+  platforms: [.macOS(.v13), .iOS(.v16), .watchOS(.v26)],
   products: [
     .library(name: "LazenskyCommanderCore", targets: ["LazenskyCommanderCore"]),
     .executable(name: "LazenskyCommanderCoreCheck", targets: ["LazenskyCommanderCoreCheck"])

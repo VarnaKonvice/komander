@@ -1,3 +1,4 @@
+#if COMMANDER_PHYSICAL_LIVE_ACTIVITY
 import ActivityKit
 import Foundation
 import LazenskyCommanderCore
@@ -493,3 +494,47 @@ actor CommanderProcedureLiveActivityCoordinator {
     return lhs.event.stableId < rhs.event.stableId
   }
 }
+
+#else
+import Foundation
+import LazenskyCommanderCore
+
+actor CommanderProcedureLiveActivityCoordinator {
+  static let maximumActiveActivities = 0
+  static let maximumScheduledActivities = 0
+  static let maximumActiveLifetime: TimeInterval = 0
+  static let contextLeadTime: TimeInterval = 0
+  static let maximumIdleGap: TimeInterval = 0
+  static let silentAlertSoundName = "CommanderSilentAlert.wav"
+
+  private(set) var issue: String?
+
+  init(
+    enabled: Bool = false,
+    contextLeadTime: TimeInterval = 0,
+    maximumIdleGap: TimeInterval = 0,
+    maximumScheduledActivities: Int = 0,
+    maximumActiveLifetime: TimeInterval = 0
+  ) {}
+
+  func activityState(schedule: Schedule, projectionRevision: Int) -> String { "disabled" }
+  func hasOngoingActivities() -> Bool { false }
+  func retireActivitiesForMVP() async {}
+
+  func reconcile(
+    schedule: Schedule,
+    overrides: LeadTimeOverrides? = nil,
+    projectionRevision: Int,
+    now: Date = Date()
+  ) async {
+    issue = nil
+  }
+
+  func preparedStableIDs(
+    schedule: Schedule,
+    overrides: LeadTimeOverrides? = nil,
+    projectionRevision: Int,
+    now: Date = Date()
+  ) -> Set<String> { [] }
+}
+#endif

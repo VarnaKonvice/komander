@@ -3,6 +3,17 @@ import LazenskyCommanderCore
 import SwiftUI
 import WidgetKit
 
+private extension View {
+  @ViewBuilder
+  func commanderWidgetContainerBackground<S: ShapeStyle>(_ style: S) -> some View {
+    if #available(iOSApplicationExtension 17.0, *) {
+      self.containerBackground(style, for: .widget)
+    } else {
+      self.background(style)
+    }
+  }
+}
+
 struct CommanderHomeWidgetEntry: TimelineEntry {
   let date: Date
   let snapshot: WatchScheduleSnapshot?
@@ -232,7 +243,7 @@ private struct CommanderHomeWidgetView: View {
         CommanderCircularLockWidget(state: state)
       case .accessoryRectangular:
         CommanderRectangularLockWidget(state: state)
-          .containerBackground(.clear, for: .widget)
+          .commanderWidgetContainerBackground(.clear)
       default:
         CommanderSmallHomeWidget(state: state)
       }
@@ -305,7 +316,7 @@ private struct CommanderSmallHomeWidget: View {
       }
     }
     .padding(11)
-    .containerBackground(CommanderWidgetTokens.backgroundGradient, for: .widget)
+    .commanderWidgetContainerBackground(CommanderWidgetTokens.backgroundGradient)
   }
 }
 
@@ -399,7 +410,7 @@ private struct CommanderMediumHomeWidget: View {
     .padding(.horizontal, 10)
     .padding(.top, 3)
     .padding(.bottom, 6)
-    .containerBackground(CommanderWidgetTokens.backgroundGradient, for: .widget)
+    .commanderWidgetContainerBackground(CommanderWidgetTokens.backgroundGradient)
     .widgetURL(CommanderNavigation.todayURL)
   }
 
@@ -533,7 +544,7 @@ private struct CommanderInlineLockWidget: View {
           .lineLimit(1)
       }
     }
-    .containerBackground(.clear, for: .widget)
+    .commanderWidgetContainerBackground(.clear)
   }
 
   private func inlineText(_ event: ScheduleEvent) -> String {
@@ -594,7 +605,7 @@ private struct CommanderCircularLockWidget: View {
       }
     }
     .widgetLabel(circularLabel)
-    .containerBackground(.clear, for: .widget)
+    .commanderWidgetContainerBackground(.clear)
   }
 
   private var accent: Color {
@@ -757,7 +768,7 @@ private struct CommanderDayOverviewWidgetView: View {
     .padding(.horizontal, 10)
     .padding(.top, 5)
     .padding(.bottom, 10)
-    .containerBackground(CommanderWidgetTokens.backgroundGradient, for: .widget)
+    .commanderWidgetContainerBackground(CommanderWidgetTokens.backgroundGradient)
     .widgetURL(CommanderNavigation.todayURL)
   }
 

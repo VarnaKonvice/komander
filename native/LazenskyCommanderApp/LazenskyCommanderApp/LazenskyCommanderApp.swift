@@ -1,8 +1,122 @@
+import EventKit
 import Foundation
 import SwiftUI
 import LazenskyCommanderCore
 import UserNotifications
 import WidgetKit
+
+private struct CommanderLegacyAlarmAdapter: AlarmAdapting {
+  private static let message = "Alarmy vyžadují iOS 26.1 nebo novější. Rozpis můžete používat bez alarmů."
+
+  func availability() async -> AlarmKitAvailability { .unavailable(Self.message) }
+  func authorizationStatus() async -> AlarmAuthorizationStatus { .denied }
+  func requestAuthorization() async throws { throw AlarmAdapterError.unavailable(Self.message) }
+  func schedule(_ alarm: NativeAlarm, replacing platformAlarmID: String?) async throws -> String {
+    throw AlarmAdapterError.unavailable(Self.message)
+  }
+  func cancel(platformAlarmID: String) async throws {}
+  func existingPlatformAlarmIDs() async throws -> Set<String>? { [] }
+  func existingPlatformAlertingAlarmIDs() async throws -> Set<String> { [] }
+  func existingPlatformFixedAlertDates() async throws -> [String: Date]? { [:] }
+  func existingPlatformFixedAlertDates(for platformAlarmIDs: Set<String>) async throws -> [String: Date]? { [:] }
+  func existingPlatformTimingObservations(for platformAlarmIDs: Set<String>) async throws -> [String: PlatformAlarmTimingObservation]? { [:] }
+  func existingEventStableIDs() async throws -> Set<String>? { [] }
+}
+
+@MainActor
+private final class CommanderCalendarIntegration {
+  private let store = EKEventStore()
+  private let defaults = UserDefaults.standard
+  private let enabledKey = "lazensky.commander.calendarSync.enabled.v1"
+
+  var isEnabled: Bool { defaults.bool(forKey: enabledKey) }
+
+  func setEnabled(_ enabled: Bool) {
+    defaults.set(enabled, forKey: enabledKey)
+  }
+
+  func requestFullAccess() async throws -> Bool {
+    if hasFullAccess { return true }
+    if #available(iOS 17.0, *) {
+      return try await store.requestFullAccessToEvents()
+    }
+    return try await withCheckedThrowingContinuation { continuation in
+      store.requestAccess(to: .event) { granted, error in
+        if let error { continuation.resume(throwing: error) }
+        else { continuation.resume(returning: granted) }
+      }
+    }
+  }
+
+  func synchronize(schedule: Schedule, overrides: LeadTimeOverrides) throws {
+    guard hasFullAccess else {
+      throw NSError(domain: "CommanderCalendar", code: 1,
+        userInfo: [NSLocalizedDescriptionKey: "Apple Kalendář nemá povolený přístup."])
+    }
+    let projection = try CommanderScheduleProjection(schedule: schedule, overrides: overrides)
+    guard let first = projection.events.first, let last = projection.events.last else { return }
+
+    let start = first.startAt.addingTimeInterval(-24 * 60 * 60)
+    let end = last.endAt.addingTimeInterval(24 * 60 * 60)
+    let existing = store.events(matching: store.predicateForEvents(withStart: start, end: end, calendars: nil))
+      .filter { $0.url?.scheme == "lazenskycommander" && $0.url?.host == "calendar" }
+
+    var existingByMarker = Dictionary(grouping: existing) { $0.url?.absoluteString ?? "" }
+    var desiredMarkers = Set<String>()
+
+    for item in projection.events {
+      let marker = markerURL(for: item.event.stableId)
+      desiredMarkers.insert(marker.absoluteString)
+      let event: EKEvent
+      if let current = existingByMarker[marker.absoluteString]?.first {
+        event = current
+        for duplicate in existingByMarker[marker.absoluteString]?.dropFirst() ?? [] {
+          try store.remove(duplicate, span: .thisEvent, commit: false)
+        }
+      } else {
+        event = EKEvent(eventStore: store)
+        event.calendar = store.defaultCalendarForNewEvents
+      }
+
+      event.title = item.event.title
+      event.startDate = item.startAt
+      event.endDate = item.endAt
+      event.timeZone = TimeZone(identifier: "Europe/Prague")
+      event.location = item.event.location
+      event.notes = "Lázeňský Commander\nOdejít nejpozději: \(Self.localDate.string(from: item.leaveAt))"
+      event.url = marker
+      try store.save(event, span: .thisEvent, commit: false)
+      existingByMarker.removeValue(forKey: marker.absoluteString)
+    }
+
+    for stale in existing where !desiredMarkers.contains(stale.url?.absoluteString ?? "") {
+      try store.remove(stale, span: .thisEvent, commit: false)
+    }
+    try store.commit()
+  }
+
+  private var hasFullAccess: Bool {
+    let status = EKEventStore.authorizationStatus(for: .event)
+    if #available(iOS 17.0, *) {
+      return status == .fullAccess
+    }
+    return status == .authorized
+  }
+
+  private func markerURL(for stableID: String) -> URL {
+    let identity = Data(stableID.utf8).map { String(format: "%02x", $0) }.joined()
+    return URL(string: "lazenskycommander://calendar/\(identity)")!
+  }
+
+  private static let localDate: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "cs_CZ")
+    formatter.timeZone = TimeZone(identifier: "Europe/Prague")
+    formatter.dateFormat = "d. M. yyyy HH:mm"
+    return formatter
+  }()
+}
 
 private enum CommanderDesignPreview {
   static let enabled: Bool = {
@@ -44,10 +158,12 @@ final class CommanderViewModel: ObservableObject {
   @Published private(set) var leadTimeOverrides = LeadTimeOverrides()
   @Published private(set) var leadTimeProjectionRevision = 0
   @Published private(set) var scheduleAuditAcknowledgements: [CommanderScheduleAuditAcknowledgement] = []
+  @Published private(set) var calendarSyncEnabled = false
+  @Published private(set) var calendarStatus = "Vypnuto"
 
   @Published private(set) var phoneWidgetIssue: String?
   private var phoneWidgetCache: FileWatchScheduleCache?
-  private let adapter: AlarmKitAdapter
+  private let adapter: any AlarmAdapting
   private let procedureActivities: CommanderProcedureLiveActivityCoordinator
   private let service: AlarmSyncService
   private let scheduleSync: CommanderScheduleSyncCoordinator
@@ -55,6 +171,7 @@ final class CommanderViewModel: ObservableObject {
   private var acceptedSnapshot: WatchScheduleSnapshot?
   private let leadTimePreferences: LeadTimePreferencesStore
   private let scheduleAuditReviewStore: ScheduleAuditReviewStore
+  private let calendarIntegration: CommanderCalendarIntegration
   private let channel: ScheduleChannel
   private var lastAutomaticAttempt: Date?
   private var delayedRecoveryTask: Task<Void, Never>?
@@ -72,7 +189,13 @@ final class CommanderViewModel: ObservableObject {
   init(clock: @escaping @Sendable () -> Date = { Date() }) {
     self.clock = clock
     let configuration = AppConfiguration()
-    let adapter = AlarmKitAdapter(channel: configuration.channel)
+    let calendarIntegration = CommanderCalendarIntegration()
+    let adapter: any AlarmAdapting
+    if #available(iOS 26.1, *) {
+      adapter = AlarmKitAdapter(channel: configuration.channel)
+    } else {
+      adapter = CommanderLegacyAlarmAdapter()
+    }
     let procedureActivities = CommanderProcedureLiveActivityCoordinator(
       enabled: CommanderMVPPolicy.createsLiveActivities && configuration.channel == .production && !CommanderDesignPreview.enabled
     )
@@ -112,11 +235,15 @@ final class CommanderViewModel: ObservableObject {
     self.service = service
     self.leadTimePreferences = leadTimePreferences
     self.scheduleAuditReviewStore = scheduleAuditReviewStore
+    self.calendarIntegration = calendarIntegration
     self.channel = configuration.channel
     self.suppressAutomaticForegroundUntil = clock().addingTimeInterval(Self.launchForegroundGraceInterval)
     self.leadTimeOverrides = CommanderDesignPreview.enabled ? LeadTimeOverrides() : savedPreferences.overrides
     self.leadTimeProjectionRevision = CommanderDesignPreview.enabled ? 0 : savedPreferences.revision
     self.scheduleAuditAcknowledgements = CommanderDesignPreview.enabled ? [] : scheduleAuditReviewStore.load()
+    let calendarEnabled = !CommanderDesignPreview.enabled && calendarIntegration.isEnabled
+    self.calendarSyncEnabled = calendarEnabled
+    self.calendarStatus = calendarEnabled ? "Zapnuto · čeká na synchronizaci" : "Vypnuto"
     scheduleSync = CommanderScheduleSyncCoordinator(
       scheduleService: scheduleService,
       alarmSyncService: service,
@@ -126,6 +253,61 @@ final class CommanderViewModel: ObservableObject {
     )
     if let initialSchedule {
       self.latestSchedule = initialSchedule
+    }
+  }
+
+  var supportsAlarmKit: Bool {
+    if #available(iOS 26.1, *) { return true }
+    return false
+  }
+
+  func setCalendarSyncEnabled(_ enabled: Bool) {
+    guard !CommanderDesignPreview.enabled else { return }
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      if !enabled {
+        self.calendarIntegration.setEnabled(false)
+        self.calendarSyncEnabled = false
+        self.calendarStatus = "Vypnuto · existující položky v Kalendáři zůstávají"
+        return
+      }
+
+      self.calendarSyncEnabled = true
+      self.calendarStatus = "Čekám na povolení Apple Kalendáře"
+      do {
+        guard try await self.calendarIntegration.requestFullAccess() else {
+          self.calendarIntegration.setEnabled(false)
+          self.calendarSyncEnabled = false
+          self.calendarStatus = "Vypnuto · přístup ke Kalendáři nebyl povolen"
+          return
+        }
+        self.calendarIntegration.setEnabled(true)
+        self.calendarSyncEnabled = true
+        if let schedule = self.latestSchedule {
+          await self.syncCalendarIfEnabled(schedule: schedule, overrides: self.leadTimeOverrides)
+        } else {
+          self.calendarStatus = "Zapnuto · čeká na rozpis"
+        }
+      } catch {
+        self.calendarIntegration.setEnabled(false)
+        self.calendarSyncEnabled = false
+        self.calendarStatus = "Vypnuto · \(error.localizedDescription)"
+      }
+    }
+  }
+
+  private func syncCalendarIfEnabled(schedule: Schedule, overrides: LeadTimeOverrides) async {
+    guard calendarIntegration.isEnabled else {
+      calendarSyncEnabled = false
+      calendarStatus = "Vypnuto"
+      return
+    }
+    calendarSyncEnabled = true
+    do {
+      try calendarIntegration.synchronize(schedule: schedule, overrides: overrides)
+      calendarStatus = "Zapnuto · celý pobyt je synchronizovaný"
+    } catch {
+      calendarStatus = "Zapnuto · synchronizace se nepodařila: \(error.localizedDescription)"
     }
   }
 
@@ -376,6 +558,9 @@ final class CommanderViewModel: ObservableObject {
     if cachedSchedule != latestSchedule {
       latestSchedule = cachedSchedule
     }
+    if let cachedSchedule {
+      await syncCalendarIfEnabled(schedule: cachedSchedule, overrides: leadTimeOverrides)
+    }
     recordAcceptanceProgress(
       "bootstrap-cache-loaded",
       message: latestSchedule == nil ? "cache=empty" : "cache=present"
@@ -454,6 +639,13 @@ final class CommanderViewModel: ObservableObject {
   func requestAuthorization() {
     if CommanderDesignPreview.enabled {
       accessStatus = "Designový náhled – alarmy jsou vypnuté"
+      return
+    }
+    guard supportsAlarmKit else {
+      accessStatus = "Alarmy vyžadují iOS 26.1 nebo novější. Rozpis funguje bez alarmů."
+      requiresUserAction = false
+      userActionMessage = nil
+      errorMessage = nil
       return
     }
     Task {
@@ -711,6 +903,7 @@ final class CommanderViewModel: ObservableObject {
         acceptedSnapshot = result.watchSnapshot
         latestSchedule = result.schedule
         summary = result.alarmSummary
+        await syncCalendarIfEnabled(schedule: result.schedule, overrides: projectionOverrides)
         await reloadHomeWidgets()
         await procedureActivities.reconcile(
           schedule: result.schedule,
@@ -719,39 +912,49 @@ final class CommanderViewModel: ObservableObject {
           now: clock()
         )
         liveActivityIssue = await procedureActivities.issue
+
+        if !supportsAlarmKit {
+          recovery.recordAlarmVerification(succeeded: false)
+          notificationsVerified = true
+          requiresUserAction = false
+          userActionMessage = nil
+          errorMessage = nil
+          fallbackStatus = "Režim bez AlarmKitu"
+          recoveryStatus = source == .cached
+            ? "Rozpis načten z telefonu · alarmy vyžadují iOS 26.1+"
+            : "Rozpis načten · alarmy vyžadují iOS 26.1+"
+          await refreshAccess()
+          return
+        }
+
         recovery.recordAlarmVerification(succeeded: result.alarmSummary.succeeded)
 
-        var notificationIssue: String?
         notificationsVerified = false
         do {
           // A partial AlarmKit failure can leave valid alarms armed. Never add a
           // departure fallback for an existing alarm, or when absence is unproven.
           let existingAlarmEvents = result.alarmSummary.succeeded ? Set<String>() :
             (try? await adapter.existingEventStableIDs())
-          try await eventNotifications.reconcile(snapshot: result.watchSnapshot,
+          let eventNotificationsActive = try await eventNotifications.reconcile(
+            snapshot: result.watchSnapshot,
             dataset: CommanderRuntimeDataset.current, channel: channel.rawValue,
             includeDeparture: !result.alarmSummary.succeeded && existingAlarmEvents != nil, now: clock(),
             departureExclusions: existingAlarmEvents ?? Set(result.schedule.events.map(\.stableId)))
           notificationsVerified = true
-          fallbackStatus = result.alarmSummary.succeeded ? "Začátky událostí ověřeny" :
-            existingAlarmEvents == nil ? "Začátky ověřeny; odchod nelze ověřit" : "Záloha odchodu a začátky ověřeny"
+          if eventNotificationsActive {
+            fallbackStatus = result.alarmSummary.succeeded ? "Začátky událostí ověřeny" :
+              existingAlarmEvents == nil ? "Začátky ověřeny; odchod nelze ověřit" : "Záloha odchodu a začátky ověřeny"
+          } else {
+            fallbackStatus = "Volitelná oznámení začátku nejsou povolena"
+          }
         } catch {
-          notificationIssue = error.localizedDescription
-          fallbackStatus = "Oznámení nejsou ověřena"
-          requiresUserAction = true
-          userActionMessage = "Zkontroluj povolení oznámení pro Lázeňský Commander."
+          // Event-start notifications are optional and must never add another
+          // first-run permission or turn a valid AlarmKit schedule into an error.
+          notificationsVerified = true
+          fallbackStatus = "Volitelná oznámení začátku nejsou ověřena"
         }
 
         if result.alarmSummary.succeeded {
-          if let notificationIssue {
-            requiresUserAction = true
-            userActionMessage = "Zkontroluj povolení oznámení pro Lázeňský Commander."
-            errorMessage = notificationIssue
-            recoveryStatus = "AlarmKit ověřen; oznámení začátku vyžadují kontrolu"
-            recovery.requestRetry()
-            break
-          }
-
           requiresUserAction = false
           userActionMessage = nil
           errorMessage = nil
@@ -834,7 +1037,7 @@ private final class IPhoneEventNotificationService {
 
   func reconcile(snapshot: WatchScheduleSnapshot, dataset: CommanderScheduleDataset,
                  channel: String, includeDeparture: Bool, now: Date,
-                 departureExclusions: Set<String> = []) async throws {
+                 departureExclusions: Set<String> = []) async throws -> Bool {
     // Validate before removing anything, even when permission has been revoked.
     _ = try CommanderNotificationContract.desired(snapshot: snapshot, dataset: dataset,
       channel: channel, includeDeparture: includeDeparture, now: now, departureExclusions: departureExclusions)
@@ -893,18 +1096,19 @@ private final class IPhoneEventNotificationService {
         throw NSError(domain: "CommanderNotifications", code: 3,
           userInfo: [NSLocalizedDescriptionKey: "Pro oznámení začátků nezbývá místo v systémové frontě."])
       }
-      return
+      return true
     }
     let settings = await center.notificationSettings()
-    let permitted: Bool
     switch settings.authorizationStatus {
-    case .authorized, .provisional, .ephemeral: permitted = true
-    case .notDetermined: permitted = try await center.requestAuthorization(options: [.alert, .sound])
-    default: permitted = false
-    }
-    guard permitted else {
-      throw NSError(domain: "CommanderNotifications", code: 1,
-        userInfo: [NSLocalizedDescriptionKey: "Oznámení začátku událostí nejsou povolena."])
+    case .authorized, .provisional, .ephemeral:
+      break
+    case .notDetermined, .denied:
+      // Standard event notifications are optional. Never add a second
+      // permission prompt during first-run setup; AlarmKit is the only
+      // permission Commander asks the user to handle initially.
+      return false
+    @unknown default:
+      return false
     }
     for item in desired where upserts.contains(item.identifier) || !pending.contains(where: { matches($0, item) }) {
       let content = UNMutableNotificationContent()
@@ -928,6 +1132,7 @@ private final class IPhoneEventNotificationService {
       throw NSError(domain: "CommanderNotifications", code: 2,
         userInfo: [NSLocalizedDescriptionKey: "Naplánovaná oznámení neodpovídají rozpisu; kontrola se zopakuje."])
     }
+    return true
   }
 
   private func matches(_ request: UNNotificationRequest, _ item: CommanderScheduledNotification) -> Bool {
@@ -1043,7 +1248,7 @@ struct LazenskyCommanderApp: App {
             }
           }
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase) { phase in
           guard phase == .active, CommanderAcceptanceLaunchMode.current != .readback else { return }
           Task { await model.handleForeground() }
         }
