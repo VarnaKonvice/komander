@@ -5,17 +5,17 @@
 
 ## Základní princip
 
-Cena Lázeňského Commanderu se má odvíjet od délky jednoho lázeňského pobytu. Nemá smysl účtovat plnou cenu krátkodobému hostovi na víkend nebo několik dní.
+Cena Lázeňského Commanderu se při první aktivaci odvíjí od počtu dní, které v daném pobytu ještě zbývají. Nemá smysl účtovat plnou cenu klientovi, který Commander aktivuje až v závěru pobytu.
 
 Produkt se nemá cenit po jednotlivých dnech. Použijí se jednoduchá pásma, která jsou snadno pochopitelná pro klienta i lázně.
 
-Cena je za aktivaci jednoho pobytu, nikoli měsíční předplatné.
+Cena je za aktivaci jednoho pobytu, nikoli měsíční předplatné. Rozhodující je počet zbývajících dní v okamžiku první aktivace, ne původní délka pobytu.
 
 ## Cena při přímé úhradě klientem
 
 Veřejný ceník je zjednodušen na dvě snadno pochopitelná pásma:
 
-| Délka pobytu | Cena včetně DPH |
+| Zbývající délka pobytu při aktivaci | Cena včetně DPH |
 |---|---:|
 | 1–15 dní | 129 Kč |
 | 16–35 dní | 299 Kč |
@@ -32,7 +32,7 @@ Důvod zjednodušení: dvě pásma jsou pro klienta okamžitě pochopitelná a n
 
 Pokud aktivaci hradí lázeňské zařízení za svého klienta, použije se jednodušší partnerská řada:
 
-| Délka pobytu | Partnerská cena včetně DPH |
+| Zbývající délka pobytu při aktivaci | Partnerská cena včetně DPH |
 |---|---:|
 | 1–10 dní | 99 Kč |
 | 11–20 dní | 149 Kč |
@@ -73,10 +73,10 @@ Hlavní web nemá působit jako složitý tarifní ceník.
 
 Preferovaný způsob:
 
-**Cena podle délky pobytu**
+**Cena podle zbývající délky pobytu při aktivaci**
 
-- **1–15 dní: 129 Kč**
-- **16–35 dní: 299 Kč**
+- **zbývá 1–15 dní: 129 Kč**
+- **zbývá 16–35 dní: 299 Kč**
 
 Doplnit krátké vysvětlení: **jednorázová aktivace konkrétního pobytu, nejde o měsíční předplatné.**
 
@@ -95,7 +95,7 @@ Cenová politika má splnit čtyři cíle:
 1. krátkodobý host nemá pocit, že platí cenu určenou pro měsíční lázeňský pobyt,
 2. standardní 16–35denní lázeňský pobyt zůstává hlavním obchodním modelem,
 3. lázně mají motivaci aktivaci klientovi samy uhradit nebo ji zahrnout do pobytu,
-4. ceník zůstává jednoduchý a nevyžaduje přesný denní přepočet.
+4. klient ani lázně neplatí plnou sazbu za část pobytu, která už před aktivací uplynula.
 
 ## Co zatím nedělat
 

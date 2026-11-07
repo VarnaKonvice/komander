@@ -1,7 +1,18 @@
 # iPhone Pilot 1.0
 
 Připraveno 4. 11. 2026 na větvi `lc/iphone-pilot-1.0` od `main @ aacec354cdfe9d42804379153664ead7c28f2e26`.
-Verze iPhone aplikace a jejího rozšíření: **1.0 (12)**. Změny jsou necommitnuté, bez pushe a bez merge.
+Verze iPhone aplikace a jejího rozšíření: **1.0 (12)**. Pracovní stav PILOT 1 byl 6. 11. 2026 uložen v commitu `6dd7599` a zveřejněn na stejnojmenné větvi.
+
+## Schválený produktový směr před převodem do C#/.NET
+
+PILOT 1 zůstává technickým základem pro další implementaci. Schválený zákaznický tok B2B/B2C, billingový okamžik, párování pobytu, QR fallback a pravidla ochrany dat jsou popsány v:
+
+- `docs/bohanes-technologies/product/LAZENSKY-COMMANDER-ZAKAZNICKY-TOK-V1.md`
+- `docs/bohanes-technologies/product/LAZENSKY-COMMANDER-UZIVATELSKY-NAVOD.md`
+- `docs/bohanes-technologies/product/LAZENSKY-COMMANDER-PODMINKY-SLUZBY-DRAFT.md`
+- `docs/bohanes-technologies/product/LAZENSKY-COMMANDER-APP-STORE-RELEASE.md`
+
+Tyto dokumenty jsou pro Filipův převod požadavkem na cílové chování. B2B/B2C backend, SMS, QR ověření, fotografie/PDF, billing a platby zatím nejsou vydávány za hotové funkce PILOT 1.
 
 ## Rozsah
 
