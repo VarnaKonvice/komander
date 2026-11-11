@@ -2367,7 +2367,142 @@ header .desktop-contact{display:inline-flex!important;align-items:center!importa
   .social-placeholder small{grid-column:2!important;grid-row:2!important;padding-left:0!important}
   .future-card .future-visual{min-height:245px;padding:16px}
 }
-</style></head>
+</style>
+<style id="petr-review-final-20261111">
+/* Header: exact equal action geometry on desktop. */
+.header-login,header .desktop-contact{
+  width:128px!important;min-width:128px!important;max-width:128px!important;
+  height:46px!important;min-height:46px!important;max-height:46px!important;padding:0 10px!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  border-radius:12px!important;font-size:14px!important;line-height:1!important;
+  box-sizing:border-box!important;
+}
+header .nav>.desktop-contact{
+  height:46px!important;min-height:46px!important;max-height:46px!important;
+  padding:0 10px!important;
+}
+
+/* Hero actions use the same two-column geometry as the platform tiles below. */
+.hero-actions{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;max-width:440px!important;width:100%!important;
+}
+.hero-actions .cta{
+  width:100%!important;min-width:0!important;min-height:84px!important;
+  padding:14px 16px!important;border-radius:18px!important;
+  font-size:17px!important;line-height:1.3!important;
+}
+.hero-actions .cta.secondary{background:#FFFFFFC9!important}
+
+/* Product menu is a desktop hover menu; click remains available for touch/keyboard. */
+.product-nav-menu{z-index:90}
+.product-platform-menu{z-index:120}
+
+/* One Commander palette only: deep background + panel blue + cyan accent. */
+#commander .screens-content-panel{
+  background:#102884!important;border-color:#3154B3!important;
+}
+#commander .screens-content-panel .screen-card{
+  background:#1743A5!important;border-color:#3D64C2!important;box-shadow:none!important;
+}
+#commander .screens-content-panel .screen-visual{
+  background:#102884!important;border:1px solid #3154B3!important;
+}
+#commander .screens-content-panel .procedures-block{
+  background:#102884!important;border-color:#3154B3!important;
+}
+#commander .procedure-group-panel{
+  background:transparent!important;border:0!important;padding:0!important;
+}
+#commander .procedure-group-panel .proc{
+  background:#1743A5!important;border-color:#3D64C2!important;box-shadow:none!important;
+}
+#commander .screens-content-panel .group-panel-title h3,
+#commander .screens-content-panel .screen-card h3,
+#commander .screens-content-panel .procedures-heading h3{color:#fff!important}
+#commander .screens-content-panel .screen-card p,
+#commander .screens-content-panel .procedures-heading p{color:#F2F6FF!important}
+
+/* How it works: same two Commander blues and identical emblem frame for all 5 steps. */
+#jak-funguje .how-content-panel{
+  background:#102884!important;border-color:#3154B3!important;
+}
+#jak-funguje .how-content-panel .group-panel-title h3{color:#fff!important}
+#jak-funguje .flow-step,
+#jak-funguje .flow-step:nth-child(n){
+  background:#1743A5!important;border-color:#3D64C2!important;box-shadow:none!important;
+}
+#jak-funguje .flow-emblem{
+  width:72px!important;height:72px!important;border-radius:18px!important;
+  background:#102884!important;border:1px solid #65E5FF80!important;box-shadow:none!important;
+  overflow:hidden;
+}
+#jak-funguje .flow-emblem .native-symbol{width:58px!important;height:58px!important}
+#jak-funguje .flow-phone-emblem{display:grid!important;place-items:center!important}
+#jak-funguje .flow-phone{
+  width:31px!important;height:62px!important;padding:0!important;margin:0!important;
+  border-radius:7px!important;background:transparent!important;box-shadow:none!important;
+}
+#jak-funguje .flow-phone img{
+  width:100%!important;height:100%!important;object-fit:cover!important;
+  object-position:top center!important;border-radius:6px!important;
+}
+#jak-funguje .flow-step h3{color:#fff!important}
+#jak-funguje .flow-step p{color:#F2F6FF!important}
+#jak-funguje .flow-step:not(:last-child):after{color:#65E5FF!important}
+
+/* Alarm section belongs to the same Commander system. */
+#alarmy .alarm-content-panel{
+  background:#102884!important;border-color:#3154B3!important;
+}
+#alarmy .alarm-content-panel .group-panel-title h3{color:#fff!important}
+#alarmy .alarm-block{
+  background:#1743A5!important;border-color:#3D64C2!important;
+  color:#fff!important;box-shadow:none!important;
+}
+#alarmy .alarm-block h3,
+#alarmy .alarm-caption b{color:#fff!important}
+#alarmy .alarm-block p,
+#alarmy .alarm-caption p{color:#F2F6FF!important}
+#alarmy .alarm-visual-slot{
+  background:#102884!important;border:1px solid #3154B3!important;
+  border-radius:16px!important;padding:12px!important;
+}
+#alarmy .alarm-time-card{
+  background:#102884!important;border-color:#65E5FF66!important;
+  box-shadow:none!important;
+}
+#alarmy .alarm-explanation{
+  background:#1743A5!important;border-color:#3D64C2!important;color:#fff!important;
+}
+#alarmy .alarm-explanation b{color:#fff!important}
+#alarmy .alarm-explanation p{color:#F2F6FF!important}
+
+/* Local internal launcher. */
+.login-form[hidden],.internal-launcher[hidden]{display:none!important}
+.login-dialog{width:min(92vw,620px)!important}
+.login-form .login-submit{width:100%;border:0}
+.login-hint{padding:10px 12px;border-radius:10px;background:#F3F7FA}
+.login-state{min-height:22px;color:#8C2B22!important;font-weight:700}
+.internal-launcher{padding:24px}
+.internal-launcher-head{display:grid;gap:3px;margin-bottom:18px}
+.internal-launcher-head b{font-size:21px;color:#0B3B5B}
+.internal-launcher-head span{font-size:15px;color:#526A7D}
+.internal-launcher-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.internal-app-card{display:flex;align-items:center;gap:13px;min-height:108px;padding:17px;border:1px solid #B8C9D5;border-radius:16px;background:#F7FAFC;color:#173554}
+.internal-app-card:hover{border-color:#126B77;box-shadow:0 0 0 2px #126B7726}
+.internal-app-card>span:last-child{display:grid;gap:3px}
+.internal-app-card b{font-size:18px;color:#0B3B5B}
+.internal-app-card small{font-size:13px;line-height:1.35;color:#526A7D}
+.internal-app-icon{display:grid;place-items:center;flex:0 0 52px;width:52px;height:52px;border-radius:15px;background:#0B3B5B;color:#fff;font-size:15px;font-weight:900;letter-spacing:.03em}
+.internal-app-card.hq .internal-app-icon{background:#126B77}
+.internal-warning{margin:16px 0 0;font-size:13px;color:#6E7F8D}
+@media(max-width:760px){
+  .hero-actions .cta{min-height:76px!important}
+  .internal-launcher-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
 <body>
 <a class="skip-link" href="#main">Přeskočit na obsah</a>
 <header><div class="wrap nav"><a class="nav-brand" href="#domu" aria-label="Bohanes Technologies – domů"><img class="nav-symbol brand-symbol" src="/bohanes-symbol.svg" alt=""><span class="brand-lockup"><strong>BOHANES <em>TECHNOLOGIES</em></strong><small>Technologie pro skutečný pobyt</small></span></a><button class="menu-toggle" type="button" aria-controls="navlinks" aria-expanded="false">Menu</button><nav class="navlinks" id="navlinks" aria-label="Hlavní navigace">
@@ -2402,7 +2537,7 @@ header .desktop-contact{display:inline-flex!important;align-items:center!importa
 <section id="commander"><div class="wrap section-tile screens-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Lázeňský Commander</div><div class="commander-platform-switch"><a class="is-active" href="#commander">Apple</a><button type="button" data-platform-open>Android</button></div><h2>Užitečné obrazovky.</h2></div><p class="lead">Denní program, celý týden i nastavení předstihu. Skutečné obrazovky aplikace si můžete otevřít v čitelném detailu.</p></div><div class="subsection-panel screens-content-panel"><div class="group-panel-title"><h3>Přehled obrazovek</h3></div><div class="screen-grid"><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-today.png" alt="Dnes"></button></div><h3>Dnes</h3><p>Co vás čeká právě dnes, nejbližší procedura a kdy máte vyrazit.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-week.png" alt="Týden"></button></div><h3>Týden</h3><p>Celý týdenní rozpis po jednotlivých dnech a počet procedur.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-stay.png" alt="Pobyt"></button></div><h3>Pobyt</h3><p>Souhrn pobytu, průběh, počet procedur a přehled terapií.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-info.png" alt="Info"></button></div><h3>Info</h3><p>Důležité údaje o pobytu, lázních a klientovi na jednom místě.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-settings.png" alt="Nastavení"></button></div><h3>Nastavení</h3><p>Předstihy odchodu, kontrola rozpisu a další volby aplikace.</p></article></div><div class="procedures-block"><div class="procedures-heading"><h3>Procedury</h3><p>Stejné barvy a symboly vás provázejí celým Commanderem.</p></div><div class="procedure-group-panel"><div class="procedure-badges"><div class="proc"><img src="/procedure-icons/rehab.png" alt=""><b>Rehabilitace a pohyb</b></div><div class="proc"><img src="/procedure-icons/electro.png" alt=""><b>Elektroléčba</b></div><div class="proc"><img src="/procedure-icons/bath.png" alt=""><b>Vodoléčba</b></div><div class="proc"><img src="/procedure-icons/massage.png" alt=""><b>Masáže</b></div><div class="proc"><img src="/procedure-icons/wrap.png" alt=""><b>Teplo a zábaly</b></div></div></div></div></div></div></div></section>
 
 <section class="features-area" id="funkce" aria-labelledby="features-title"><div class="wrap features-intro"><div class="kicker">Jeden produkt. Propojené funkce.</div><h2 id="features-title">Funkce Lázeňského Commanderu</h2><p>Od převodu rozpisu přes včasné upozornění až po program mimo aplikaci.</p></div>
-<section id="jak-funguje"><div class="wrap section-tile native-tile how-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Jak to funguje</div><h2>Z procedurového rozpisu až k upozornění.</h2></div><p class="lead">Jedna cesta. Stejný program v rozpisu, telefonu i včasném upozornění.</p></div><div class="subsection-panel how-content-panel"><div class="group-panel-title"><h3>Cesta od rozpisu k upozornění</h3></div><div class="product-flow"><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""></div></div><h3>Procedurový rozpis</h3><p>Časy, procedury a místa z vašeho rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-convert.png" alt=""></div></div><h3>Digitální převod</h3><p>Údaje se převedou do jednotného rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""></div></div><h3>Kontrola a aktivace</h3><p>Před použitím se rozpis zkontroluje.</p></article><article class="flow-step"><div class="flow-visual"><button class="image-button flow-phone" type="button" data-enlarge aria-label="Zvětšit: Nativní denní přehled Commanderu"><img src="/screens/commander-today.png" alt="Nativní denní přehled Commanderu"></button></div><h3>Commander v telefonu</h3><p>Dnes, Týden a Pobyt na jednom místě.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-bell.png" alt=""></div></div><h3>Čas vyrazit</h3><p>iPhone upozorní v nastaveném čase odchodu.</p></article></div></div></div></div></section>
+<section id="jak-funguje"><div class="wrap section-tile native-tile how-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Jak to funguje</div><h2>Z procedurového rozpisu až k upozornění.</h2></div><p class="lead">Jedna cesta. Stejný program v rozpisu, telefonu i včasném upozornění.</p></div><div class="subsection-panel how-content-panel"><div class="group-panel-title"><h3>Cesta od rozpisu k upozornění</h3></div><div class="product-flow"><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""></div></div><h3>Procedurový rozpis</h3><p>Časy, procedury a místa z vašeho rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-convert.png" alt=""></div></div><h3>Digitální převod</h3><p>Údaje se převedou do jednotného rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""></div></div><h3>Kontrola a aktivace</h3><p>Před použitím se rozpis zkontroluje.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem flow-phone-emblem"><button class="image-button flow-phone" type="button" data-enlarge aria-label="Zvětšit: Nativní denní přehled Commanderu"><img src="/screens/commander-today.png" alt="Nativní denní přehled Commanderu"></button></div></div><h3>Commander v telefonu</h3><p>Dnes, Týden a Pobyt na jednom místě.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-bell.png" alt=""></div></div><h3>Čas vyrazit</h3><p>iPhone upozorní v nastaveném čase odchodu.</p></article></div></div></div></div></section>
 
 <section id="alarmy"><div class="wrap section-tile alarm-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Alarmy a upozornění</div><h2>Commander hlídá čas odchodu.</h2></div><p class="lead">Commander určí čas. Systémový alarm iPhonu upozorní, že už máte vyrazit.</p></div><div class="subsection-panel alarm-content-panel"><div class="group-panel-title"><h3>Od nastavení předstihu k alarmu</h3></div><div class="alarm-sequence"><article class="alarm-block"><h3><span class="alarm-symbol"><img src="/native-ui/symbol-clock.png" alt=""></span>Nastavení předstihu</h3><div class="alarm-visual-slot"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit: Skutečné nastavení předstihu v aplikaci Commander"><img src="/screens/commander-settings.png" alt="Skutečné nastavení předstihu v aplikaci Commander"></button></div><div class="alarm-caption"><b>Čas, který potřebujete na cestu</b><p>Nastavíte předstih odchodu. Commander jej hlídá pro konkrétní proceduru nebo jídlo.</p></div></article><article class="alarm-block"><h3><span class="alarm-symbol"><img src="/native-ui/symbol-bell.png" alt=""></span>Systém iOS / alarm</h3><div class="alarm-visual-slot"><div class="alarm-time-card"><span class="alarm-time-label">Čas vyrazit</span><strong>08:55</strong><span class="alarm-time-event">LTV · začátek 09:15</span><span class="alarm-time-lead">Předstih 20 min</span></div></div><div class="alarm-caption"><b>AlarmKit upozorní v čase odchodu</b><p><strong>AlarmKit vyžaduje iOS 26.1 nebo novější.</strong> Nový systémový snímek doplníme až z ověřeného denního fyzického testu. Starý večerní snímek sem nepatří.</p></div></article><article class="alarm-block"><h3><span class="alarm-symbol is-brand"><img src="/native-ui/commander-mark.png" alt="Logo Commanderu"></span>Commander</h3><div class="alarm-visual-slot"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit: Běžný přehled otevřeného Commanderu, nikoliv vyzvánějící alarm"><img src="/screens/commander-today.png" alt="Běžný přehled otevřeného Commanderu, nikoliv vyzvánějící alarm"></button></div><div class="alarm-caption"><b>Program v otevřené aplikaci</b><p>Skutečný denní přehled a časový kontext procedury. Nejde o obrazovku vyzvánění.</p></div></article></div><div class="alarm-explanation"><b>Systémový alarm a otevřená aplikace</b><p>Vyzvánění zajišťuje iOS. Commander zobrazuje denní program a jeho časový kontext.</p><p class="section-note">Časová logika je sjednocená s demonstračním rozpisem: LTV 09:15, odchod 08:55, předstih 20 minut.</p></div></div></div></div></section>
 
@@ -2423,7 +2558,24 @@ header .desktop-contact{display:inline-flex!important;align-items:center!importa
 <footer><div class="wrap"><div class="footer-main footer-main-refined"><div class="footer-company footer-company-refined"><div class="footer-brand-lockup" aria-label="Bohanes Technologies"><img class="brand-symbol" src="/bohanes-symbol-transparent.svg" alt=""><span class="brand-lockup"><strong>BOHANES <em>TECHNOLOGIES</em></strong><small>Technologie pro skutečný pobyt</small></span></div><p class="footer-brand-message">Digitální nástroje pro přehlednější pobyt, <br>jednodušší orientaci a včasné informace.</p></div><nav class="footer-column footer-company-nav" aria-label="Bohanes Technologies v zápatí"><h3>Bohanes Technologies</h3><a href="#domu">Domů</a><a href="#o-nas">O nás</a><a href="#pripravujeme">Co chystáme</a><a href="#pro-lazne">Pro lázně</a><a href="#kontakt">Kontakt</a></nav><nav class="footer-column footer-product-nav" aria-label="Produkt v zápatí"><h3>Lázeňský Commander</h3><a href="#commander">Apple / iPhone</a><button class="footer-android-link" type="button" data-platform-open>Android · připravujeme</button></nav></div><div class="footer-copyright">© 2026 Bohanes Technologies</div></div></footer>
 
 <dialog class="platform-dialog" id="platformDialog" aria-labelledby="platformDialogTitle"><div class="dialog-head"><div><span class="dialog-kicker">Lázeňský Commander</span><h3 id="platformDialogTitle">Vyberte platformu</h3></div><button type="button" class="dialog-close" data-dialog-close>Zavřít</button></div><div class="platform-dialog-grid"><a href="#commander" class="platform-dialog-card" data-platform-apple><span class="platform-dialog-icon apple"></span><span><b>Apple</b><small>iPhone · aktuálně dostupná platforma</small></span></a><div class="platform-dialog-card is-muted"><span class="platform-dialog-icon android"><svg viewBox="0 0 36 28" aria-hidden="true"><path d="M8 7 4 1M28 7l4-6"/><path d="M1 26a17 20 0 0 1 34 0Z"/><circle cx="10" cy="17" r="1.8"/><circle cx="26" cy="17" r="1.8"/></svg></span><span><b>Android</b><small>Připravujeme</small></span></div></div></dialog>
-<dialog class="login-dialog" id="loginDialog" aria-labelledby="loginDialogTitle"><div class="dialog-head"><div><span class="dialog-kicker">Bohanes HQ</span><h3 id="loginDialogTitle">Přihlášení</h3></div><button type="button" class="dialog-close" data-dialog-close>Zavřít</button></div><form class="login-form"><label>E-mail<input type="email" autocomplete="username" placeholder="vas@email.cz"></label><label>Heslo<input type="password" autocomplete="current-password" placeholder="••••••••"></label><button type="button" class="cta" disabled>Přihlášení připravujeme</button><p>Přihlášení do Bohanes HQ připravujeme. Zatím není aktivní.</p></form></dialog>
+<dialog class="login-dialog" id="loginDialog" aria-labelledby="loginDialogTitle">
+<div class="dialog-head"><div><span class="dialog-kicker">Bohanes Technologies</span><h3 id="loginDialogTitle">Přihlášení</h3></div><button type="button" class="dialog-close" data-dialog-close>Zavřít</button></div>
+<form class="login-form" id="loginForm">
+<label>E-mail<input id="loginEmail" type="email" autocomplete="username" placeholder="vas@email.cz" required></label>
+<label>Heslo<input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••" required></label>
+<button type="submit" class="cta login-submit">Přihlásit</button>
+<p class="login-hint">Lokální review: použij libovolný platný e-mail a heslo <b>1234</b>.</p>
+<p class="login-state" id="loginState" role="status"></p>
+</form>
+<div class="internal-launcher" id="internalLauncher" hidden>
+<div class="internal-launcher-head"><b>Interní prostředí Bohanes Technologies</b><span>Vyberte, kam chcete vstoupit.</span></div>
+<div class="internal-launcher-grid">
+<a class="internal-app-card crm" href="https://bohanes-technologies-crm-petbohanes-8088.vercel.app/" target="_blank" rel="noopener"><span class="internal-app-icon">CRM</span><span><b>Obchodní CRM</b><small>Lázně, kontakty, mapa a obchodní případy</small></span></a>
+<a class="internal-app-card hq" href="/hq/"><span class="internal-app-icon">HQ</span><span><b>Bohanes HQ</b><small>Centrální pracovní a AI prostředí</small></span></a>
+</div>
+<p class="internal-warning">Toto je pouze lokální vývojový vstup. Není určen jako skutečné zabezpečení veřejného webu.</p>
+</div>
+</dialog>
 <dialog class="lightbox" id="imageDialog" aria-labelledby="imageTitle"><div class="lightbox-top"><h3 id="imageTitle">Obrazovka Commanderu</h3><button class="lightbox-close" type="button">Zavřít</button></div><img id="imageDetail" alt=""><div id="calendarDetail" class="calendar-detail" hidden></div><p id="originalImageRow"><a class="full-size" id="originalImage" target="_blank" rel="noopener">Otevřít obrázek v původní velikosti</a></p></dialog>
 <script>
 if('scrollRestoration' in history)history.scrollRestoration='manual';
@@ -2474,10 +2626,37 @@ const platformDialog=document.getElementById('platformDialog');
 document.querySelectorAll('[data-platform-open]').forEach(button=>button.addEventListener('click',()=>{button.closest('details')?.removeAttribute('open');platformDialog.showModal()}));
 document.querySelector('[data-platform-apple]')?.addEventListener('click',()=>platformDialog.close());
 const loginDialog=document.getElementById('loginDialog');
-document.querySelectorAll('[data-login-open]').forEach(button=>button.addEventListener('click',()=>loginDialog.showModal()));
+const loginForm=document.getElementById('loginForm');
+const internalLauncher=document.getElementById('internalLauncher');
+const loginState=document.getElementById('loginState');
+const localReview=['127.0.0.1','localhost'].includes(location.hostname);
+function showInternalLauncher(){
+  loginForm.hidden=true;
+  internalLauncher.hidden=false;
+  sessionStorage.setItem('bohanesLocalReviewLogin','1');
+}
+document.querySelectorAll('[data-login-open]').forEach(button=>button.addEventListener('click',()=>{
+  if(localReview&&sessionStorage.getItem('bohanesLocalReviewLogin')==='1')showInternalLauncher();
+  loginDialog.showModal();
+}));
+loginForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  if(!localReview){loginState.textContent='Jednoduchý vývojový vstup je povolen pouze v lokálním náhledu.';return}
+  const email=document.getElementById('loginEmail');
+  const password=document.getElementById('loginPassword');
+  if(!email.checkValidity()||!email.value.trim()){loginState.textContent='Zadejte platný e-mail.';email.focus();return}
+  if(password.value!=='1234'){loginState.textContent='Pro lokální náhled použijte heslo 1234.';password.focus();return}
+  loginState.textContent='';
+  showInternalLauncher();
+});
 document.querySelectorAll('[data-dialog-close]').forEach(button=>button.addEventListener('click',()=>button.closest('dialog')?.close()));
 [platformDialog,loginDialog].forEach(d=>d?.addEventListener('click',e=>{if(e.target===d)d.close()}));
 document.querySelectorAll('.product-nav-menu a').forEach(a=>a.addEventListener('click',()=>a.closest('details')?.removeAttribute('open')));
+const productMenu=document.querySelector('.product-nav-menu');
+let productMenuTimer=null;
+const hoverPointer=matchMedia('(hover:hover) and (pointer:fine)');
+productMenu?.addEventListener('mouseenter',()=>{if(!hoverPointer.matches)return;clearTimeout(productMenuTimer);productMenu.open=true});
+productMenu?.addEventListener('mouseleave',()=>{if(!hoverPointer.matches)return;clearTimeout(productMenuTimer);productMenuTimer=setTimeout(()=>{if(!productMenu.matches(':hover'))productMenu.open=false},180)});
 document.addEventListener('click',e=>{document.querySelectorAll('.product-nav-menu[open]').forEach(menu=>{if(!menu.contains(e.target))menu.removeAttribute('open')})});
 document.getElementById('contactForm').addEventListener('submit',e=>{e.preventDefault();document.getElementById('formStatus').textContent='Odesílání připravujeme. Zpráva nebyla odeslána.'});
 const dialog=document.getElementById('imageDialog');
