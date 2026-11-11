@@ -2388,8 +2388,8 @@ header .nav>.desktop-contact{
   gap:12px!important;max-width:440px!important;width:100%!important;
 }
 .hero-actions .cta{
-  width:100%!important;min-width:0!important;min-height:84px!important;
-  padding:14px 16px!important;border-radius:18px!important;
+  width:100%!important;min-width:0!important;min-height:68px!important;height:68px!important;
+  padding:10px 16px!important;border-radius:16px!important;
   font-size:17px!important;line-height:1.3!important;
 }
 .hero-actions .cta.secondary{background:#FFFFFFC9!important}
@@ -2403,10 +2403,12 @@ header .nav>.desktop-contact{
   background:#102884!important;border-color:#3154B3!important;
 }
 #commander .screens-content-panel .screen-card{
-  background:#1743A5!important;border-color:#3D64C2!important;box-shadow:none!important;
+  background:linear-gradient(145deg,#1E447E 0%,#16274E 52%,#0E1530 100%)!important;
+  border-color:#36DFFF57!important;
+  box-shadow:inset 0 1px 0 #36DFFF0D!important;
 }
 #commander .screens-content-panel .screen-visual{
-  background:#102884!important;border:1px solid #3154B3!important;
+  background:#0E1530!important;border:1px solid #36DFFF35!important;
 }
 #commander .screens-content-panel .procedures-block{
   background:#102884!important;border-color:#3154B3!important;
@@ -2415,7 +2417,8 @@ header .nav>.desktop-contact{
   background:transparent!important;border:0!important;padding:0!important;
 }
 #commander .procedure-group-panel .proc{
-  background:#1743A5!important;border-color:#3D64C2!important;box-shadow:none!important;
+  background:linear-gradient(145deg,#1E447E 0%,#16274E 52%,#0E1530 100%)!important;
+  border-color:#36DFFF57!important;box-shadow:none!important;
 }
 #commander .screens-content-panel .group-panel-title h3,
 #commander .screens-content-panel .screen-card h3,
@@ -2430,22 +2433,18 @@ header .nav>.desktop-contact{
 #jak-funguje .how-content-panel .group-panel-title h3{color:#fff!important}
 #jak-funguje .flow-step,
 #jak-funguje .flow-step:nth-child(n){
-  background:#1743A5!important;border-color:#3D64C2!important;box-shadow:none!important;
+  background:linear-gradient(145deg,#1E447E 0%,#16274E 52%,#0E1530 100%)!important;
+  border-color:#36DFFF57!important;box-shadow:none!important;
 }
 #jak-funguje .flow-emblem{
   width:72px!important;height:72px!important;border-radius:18px!important;
-  background:#102884!important;border:1px solid #65E5FF80!important;box-shadow:none!important;
+  background:#0E1530!important;border:1px solid #36DFFF66!important;box-shadow:none!important;
   overflow:hidden;
 }
 #jak-funguje .flow-emblem .native-symbol{width:58px!important;height:58px!important}
-#jak-funguje .flow-phone-emblem{display:grid!important;place-items:center!important}
-#jak-funguje .flow-phone{
-  width:31px!important;height:62px!important;padding:0!important;margin:0!important;
-  border-radius:7px!important;background:transparent!important;box-shadow:none!important;
-}
-#jak-funguje .flow-phone img{
-  width:100%!important;height:100%!important;object-fit:cover!important;
-  object-position:top center!important;border-radius:6px!important;
+#jak-funguje .flow-commander-emblem{display:grid!important;place-items:center!important}
+#jak-funguje .flow-commander-mark{
+  width:58px!important;height:58px!important;object-fit:contain!important;
 }
 #jak-funguje .flow-step h3{color:#fff!important}
 #jak-funguje .flow-step p{color:#F2F6FF!important}
@@ -2457,23 +2456,33 @@ header .nav>.desktop-contact{
 }
 #alarmy .alarm-content-panel .group-panel-title h3{color:#fff!important}
 #alarmy .alarm-block{
-  background:#1743A5!important;border-color:#3D64C2!important;
-  color:#fff!important;box-shadow:none!important;
+  background:linear-gradient(145deg,#1E447E 0%,#16274E 52%,#0E1530 100%)!important;
+  border-color:#36DFFF57!important;color:#fff!important;box-shadow:none!important;
 }
 #alarmy .alarm-block h3,
 #alarmy .alarm-caption b{color:#fff!important}
 #alarmy .alarm-block p,
 #alarmy .alarm-caption p{color:#F2F6FF!important}
 #alarmy .alarm-visual-slot{
-  background:#102884!important;border:1px solid #3154B3!important;
-  border-radius:16px!important;padding:12px!important;
+  height:390px!important;min-height:390px!important;
+  display:grid!important;place-items:center!important;
+  background:#0E1530!important;border:1px solid #36DFFF35!important;
+  border-radius:16px!important;padding:14px!important;overflow:hidden!important;
+}
+#alarmy .alarm-visual-slot>.image-button{
+  width:auto!important;height:100%!important;max-width:210px!important;margin:auto!important;
+}
+#alarmy .alarm-visual-slot>.image-button img{
+  width:auto!important;height:100%!important;max-height:362px!important;object-fit:contain!important;margin:auto!important;
 }
 #alarmy .alarm-time-card{
-  background:#102884!important;border-color:#65E5FF66!important;
-  box-shadow:none!important;
+  width:min(100%,210px)!important;height:362px!important;min-height:362px!important;
+  background:linear-gradient(180deg,#090B12 0%,#111827 100%)!important;
+  border-color:#2A3345!important;box-shadow:inset 0 0 0 1px #FFFFFF10!important;
 }
 #alarmy .alarm-explanation{
-  background:#1743A5!important;border-color:#3D64C2!important;color:#fff!important;
+  background:linear-gradient(145deg,#1E447E 0%,#16274E 52%,#0E1530 100%)!important;
+  border-color:#36DFFF40!important;color:#fff!important;
 }
 #alarmy .alarm-explanation b{color:#fff!important}
 #alarmy .alarm-explanation p{color:#F2F6FF!important}
@@ -2497,9 +2506,13 @@ header .nav>.desktop-contact{
 .internal-app-icon{display:grid;place-items:center;flex:0 0 52px;width:52px;height:52px;border-radius:15px;background:#0B3B5B;color:#fff;font-size:15px;font-weight:900;letter-spacing:.03em}
 .internal-app-card.hq .internal-app-icon{background:#126B77}
 .internal-warning{margin:16px 0 0;font-size:13px;color:#6E7F8D}
+@media(max-width:1339px){
+  .header-login,header .nav>.desktop-contact{display:none!important}
+}
 @media(max-width:760px){
-  .hero-actions .cta{min-height:76px!important}
+  .hero-actions .cta{min-height:68px!important;height:68px!important}
   .internal-launcher-grid{grid-template-columns:1fr}
+  .hero-actions{grid-template-columns:1fr 1fr!important;max-width:100%!important}
 }
 </style>
 </head>
@@ -2537,7 +2550,7 @@ header .nav>.desktop-contact{
 <section id="commander"><div class="wrap section-tile screens-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Lázeňský Commander</div><div class="commander-platform-switch"><a class="is-active" href="#commander">Apple</a><button type="button" data-platform-open>Android</button></div><h2>Užitečné obrazovky.</h2></div><p class="lead">Denní program, celý týden i nastavení předstihu. Skutečné obrazovky aplikace si můžete otevřít v čitelném detailu.</p></div><div class="subsection-panel screens-content-panel"><div class="group-panel-title"><h3>Přehled obrazovek</h3></div><div class="screen-grid"><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-today.png" alt="Dnes"></button></div><h3>Dnes</h3><p>Co vás čeká právě dnes, nejbližší procedura a kdy máte vyrazit.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-week.png" alt="Týden"></button></div><h3>Týden</h3><p>Celý týdenní rozpis po jednotlivých dnech a počet procedur.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-stay.png" alt="Pobyt"></button></div><h3>Pobyt</h3><p>Souhrn pobytu, průběh, počet procedur a přehled terapií.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-info.png" alt="Info"></button></div><h3>Info</h3><p>Důležité údaje o pobytu, lázních a klientovi na jednom místě.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-settings.png" alt="Nastavení"></button></div><h3>Nastavení</h3><p>Předstihy odchodu, kontrola rozpisu a další volby aplikace.</p></article></div><div class="procedures-block"><div class="procedures-heading"><h3>Procedury</h3><p>Stejné barvy a symboly vás provázejí celým Commanderem.</p></div><div class="procedure-group-panel"><div class="procedure-badges"><div class="proc"><img src="/procedure-icons/rehab.png" alt=""><b>Rehabilitace a pohyb</b></div><div class="proc"><img src="/procedure-icons/electro.png" alt=""><b>Elektroléčba</b></div><div class="proc"><img src="/procedure-icons/bath.png" alt=""><b>Vodoléčba</b></div><div class="proc"><img src="/procedure-icons/massage.png" alt=""><b>Masáže</b></div><div class="proc"><img src="/procedure-icons/wrap.png" alt=""><b>Teplo a zábaly</b></div></div></div></div></div></div></div></section>
 
 <section class="features-area" id="funkce" aria-labelledby="features-title"><div class="wrap features-intro"><div class="kicker">Jeden produkt. Propojené funkce.</div><h2 id="features-title">Funkce Lázeňského Commanderu</h2><p>Od převodu rozpisu přes včasné upozornění až po program mimo aplikaci.</p></div>
-<section id="jak-funguje"><div class="wrap section-tile native-tile how-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Jak to funguje</div><h2>Z procedurového rozpisu až k upozornění.</h2></div><p class="lead">Jedna cesta. Stejný program v rozpisu, telefonu i včasném upozornění.</p></div><div class="subsection-panel how-content-panel"><div class="group-panel-title"><h3>Cesta od rozpisu k upozornění</h3></div><div class="product-flow"><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""></div></div><h3>Procedurový rozpis</h3><p>Časy, procedury a místa z vašeho rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-convert.png" alt=""></div></div><h3>Digitální převod</h3><p>Údaje se převedou do jednotného rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""></div></div><h3>Kontrola a aktivace</h3><p>Před použitím se rozpis zkontroluje.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem flow-phone-emblem"><button class="image-button flow-phone" type="button" data-enlarge aria-label="Zvětšit: Nativní denní přehled Commanderu"><img src="/screens/commander-today.png" alt="Nativní denní přehled Commanderu"></button></div></div><h3>Commander v telefonu</h3><p>Dnes, Týden a Pobyt na jednom místě.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-bell.png" alt=""></div></div><h3>Čas vyrazit</h3><p>iPhone upozorní v nastaveném čase odchodu.</p></article></div></div></div></div></section>
+<section id="jak-funguje"><div class="wrap section-tile native-tile how-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Jak to funguje</div><h2>Z procedurového rozpisu až k upozornění.</h2></div><p class="lead">Jedna cesta. Stejný program v rozpisu, telefonu i včasném upozornění.</p></div><div class="subsection-panel how-content-panel"><div class="group-panel-title"><h3>Cesta od rozpisu k upozornění</h3></div><div class="product-flow"><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""></div></div><h3>Procedurový rozpis</h3><p>Časy, procedury a místa z vašeho rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-convert.png" alt=""></div></div><h3>Digitální převod</h3><p>Údaje se převedou do jednotného rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""></div></div><h3>Kontrola a aktivace</h3><p>Před použitím se rozpis zkontroluje.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem flow-commander-emblem"><img class="flow-commander-mark" src="/native-ui/commander-mark.png" alt="Logo Lázeňského Commanderu"></div></div><h3>Commander v telefonu</h3><p>Dnes, Týden a Pobyt na jednom místě.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-bell.png" alt=""></div></div><h3>Čas vyrazit</h3><p>iPhone upozorní v nastaveném čase odchodu.</p></article></div></div></div></div></section>
 
 <section id="alarmy"><div class="wrap section-tile alarm-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Alarmy a upozornění</div><h2>Commander hlídá čas odchodu.</h2></div><p class="lead">Commander určí čas. Systémový alarm iPhonu upozorní, že už máte vyrazit.</p></div><div class="subsection-panel alarm-content-panel"><div class="group-panel-title"><h3>Od nastavení předstihu k alarmu</h3></div><div class="alarm-sequence"><article class="alarm-block"><h3><span class="alarm-symbol"><img src="/native-ui/symbol-clock.png" alt=""></span>Nastavení předstihu</h3><div class="alarm-visual-slot"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit: Skutečné nastavení předstihu v aplikaci Commander"><img src="/screens/commander-settings.png" alt="Skutečné nastavení předstihu v aplikaci Commander"></button></div><div class="alarm-caption"><b>Čas, který potřebujete na cestu</b><p>Nastavíte předstih odchodu. Commander jej hlídá pro konkrétní proceduru nebo jídlo.</p></div></article><article class="alarm-block"><h3><span class="alarm-symbol"><img src="/native-ui/symbol-bell.png" alt=""></span>Systém iOS / alarm</h3><div class="alarm-visual-slot"><div class="alarm-time-card"><span class="alarm-time-label">Čas vyrazit</span><strong>08:55</strong><span class="alarm-time-event">LTV · začátek 09:15</span><span class="alarm-time-lead">Předstih 20 min</span></div></div><div class="alarm-caption"><b>AlarmKit upozorní v čase odchodu</b><p><strong>AlarmKit vyžaduje iOS 26.1 nebo novější.</strong> Nový systémový snímek doplníme až z ověřeného denního fyzického testu. Starý večerní snímek sem nepatří.</p></div></article><article class="alarm-block"><h3><span class="alarm-symbol is-brand"><img src="/native-ui/commander-mark.png" alt="Logo Commanderu"></span>Commander</h3><div class="alarm-visual-slot"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit: Běžný přehled otevřeného Commanderu, nikoliv vyzvánějící alarm"><img src="/screens/commander-today.png" alt="Běžný přehled otevřeného Commanderu, nikoliv vyzvánějící alarm"></button></div><div class="alarm-caption"><b>Program v otevřené aplikaci</b><p>Skutečný denní přehled a časový kontext procedury. Nejde o obrazovku vyzvánění.</p></div></article></div><div class="alarm-explanation"><b>Systémový alarm a otevřená aplikace</b><p>Vyzvánění zajišťuje iOS. Commander zobrazuje denní program a jeho časový kontext.</p><p class="section-note">Časová logika je sjednocená s demonstračním rozpisem: LTV 09:15, odchod 08:55, předstih 20 minut.</p></div></div></div></div></section>
 
