@@ -37,12 +37,13 @@ acts=re.sub(r'    let (display|preview) = CommanderProcedureDisplay.resolve\(\n.
 acts=acts.replace('CommanderSystemCountdown(target: target)', 'Text(commanderWebDemoCountdown(target))')
 acts='''private let commanderWebDemoNow = Date(timeIntervalSince1970: 1790148300)
 private func commanderWebDemoCountdown(_ target: Date) -> String {
-  let seconds = max(0, Int(target.timeIntervalSince(commanderWebDemoNow).rounded()))
-  return String(format: "%d:%02d", seconds / 60, seconds % 60)
+  let minutes = max(0, Int(ceil(target.timeIntervalSince(commanderWebDemoNow) / 60)))
+  return "\(minutes) min"
 }
 ''' + acts
 watch=(native/'LazenskyCommanderWatchApp/WatchCommanderView.swift').read_text()
 watch=block(watch,'private struct WatchCommanderStateView').replace('ScrollView(.vertical) {','VStack(spacing: 0) {').replace('.defaultScrollAnchor(.top)','').replace('.contentMargins(.top, 0, for: .scrollContent)','').replace('.scrollIndicators(.hidden)','')
+watch=watch.replace('timing.countdownText(at: liveState.now)', 'timing.target.map { "\\(max(0, Int(ceil($0.timeIntervalSince(liveState.now) / 60)))) min" }')
 watchassets=(native/'LazenskyCommanderWatchApp/WatchVisualAssets.swift').read_text()
 fixture='''
 struct WatchCommanderModel { let cacheError: String? = nil; let transportError: String? = nil; let notificationError: String? = nil }
