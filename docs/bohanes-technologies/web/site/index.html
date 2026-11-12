@@ -2515,6 +2515,301 @@ header .nav>.desktop-contact{
   .hero-actions{grid-template-columns:1fr 1fr!important;max-width:100%!important}
 }
 </style>
+
+<style id="commander-native-shell-20261112">
+:root{
+  --cmd-wall-1:#285DD7;
+  --cmd-wall-2:#1542BA;
+  --cmd-wall-3:#102884;
+  --cmd-card-1:#1E447E;
+  --cmd-card-2:#16274E;
+  --cmd-card-3:#0E1530;
+  --cmd-stroke:#36DFFF;
+  --cmd-text:#FFFFFF;
+  --cmd-text-2:#F2F6FF;
+  --cmd-cyan:#65E5FF;
+}
+
+/* Header product control: clearly a pill, with an obvious disclosure control. */
+.product-nav-menu>summary{
+  display:flex!important;align-items:center!important;gap:8px!important;
+  padding:9px 10px 9px 13px!important;
+  border:1px solid #B7D3D5!important;
+  border-radius:999px!important;
+  background:#EDF8F7!important;
+  color:#075F68!important;
+  font-weight:750!important;
+  box-shadow:inset 0 1px 0 #FFFFFFB8!important;
+}
+.product-nav-menu>summary:after{
+  content:'⌄'!important;
+  display:grid!important;place-items:center!important;
+  width:22px!important;height:22px!important;margin-left:1px!important;
+  border-radius:999px!important;
+  background:#0B3B5B!important;color:#fff!important;
+  font-size:14px!important;font-weight:900!important;line-height:1!important;
+}
+.product-nav-menu[open]>summary,
+.product-nav-menu>summary:hover{
+  background:#DFF3F1!important;border-color:#78B8B8!important;
+  box-shadow:0 0 0 2px #126B7715,inset 0 1px 0 #FFFFFFCC!important;
+}
+
+/* About: the treatment schedule remains a paper document, just gently toned. */
+#o-nas .story-document{
+  background:#F2F4F6!important;
+  border-color:#C9D1D8!important;
+  box-shadow:0 8px 20px #0B29450A!important;
+}
+#o-nas .story-line{
+  background:#F9FAFB!important;
+  border-color:#D9DFE4!important;
+}
+#o-nas .story-document{color:#173554!important}
+#o-nas .story-document-title{color:#173554!important}
+#o-nas .story-line{color:#173554!important}
+#o-nas .story-line small{color:#64748B!important}
+#o-nas .story-line time{color:#126B77!important}
+
+
+/* One native Commander shell used across the whole product presentation. */
+#commander>.section-tile,
+#jak-funguje>.section-tile,
+#alarmy>.section-tile,
+#kalendar>.section-tile,
+#instalace>.section-tile,
+#pripravujeme>.section-tile,
+#funkce>.features-intro{
+  position:relative!important;
+  overflow:hidden!important;
+  background:
+    radial-gradient(circle at 12% 8%,#36DFFF16 0 7%,transparent 28%),
+    radial-gradient(circle at 88% 14%,#C77DFF12 0 8%,transparent 31%),
+    linear-gradient(145deg,var(--cmd-wall-1) 0%,var(--cmd-wall-2) 36%,var(--cmd-wall-3) 100%)!important;
+  border:1px solid #36DFFF42!important;
+  box-shadow:inset 0 1px 0 #FFFFFF12,0 18px 46px #0B29451C!important;
+  color:var(--cmd-text)!important;
+}
+#commander>.section-tile:before,
+#jak-funguje>.section-tile:before,
+#alarmy>.section-tile:before,
+#kalendar>.section-tile:before,
+#instalace>.section-tile:before,
+#pripravujeme>.section-tile:before,
+#funkce>.features-intro:before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(115deg,#FFFFFF08,transparent 32%,transparent 70%,#36DFFF08);
+}
+#commander .section-heading,
+#jak-funguje .section-heading,
+#alarmy .section-heading,
+#kalendar .section-heading,
+#instalace .section-heading,
+#pripravujeme .section-heading,
+#funkce>.features-intro{
+  position:relative;z-index:1;
+}
+#commander .section-heading h2,
+#jak-funguje .section-heading h2,
+#alarmy .section-heading h2,
+#kalendar .section-heading h2,
+#instalace .section-heading h2,
+#pripravujeme .section-heading h2,
+#funkce>.features-intro h2{
+  color:#fff!important;
+  text-shadow:0 1px 0 #00000018!important;
+}
+#commander .section-heading .lead,
+#jak-funguje .section-heading .lead,
+#alarmy .section-heading .lead,
+#kalendar .section-heading .lead,
+#instalace .section-heading .lead,
+#pripravujeme .section-heading .lead,
+#funkce>.features-intro p{
+  color:var(--cmd-text-2)!important;
+}
+#commander .kicker,
+#jak-funguje .kicker,
+#alarmy .kicker,
+#kalendar .kicker,
+#instalace .kicker,
+#pripravujeme .kicker,
+#funkce>.features-intro .kicker{
+  color:var(--cmd-cyan)!important;
+}
+
+/* Inner product containers are glass/depth, not another bright blue slab. */
+#commander .screens-content-panel,
+#jak-funguje .how-content-panel,
+#alarmy .alarm-content-panel,
+#kalendar .calendar-content-panel,
+#instalace .install-content-panel,
+#pripravujeme .future-content-panel{
+  position:relative!important;z-index:1!important;
+  background:#0E153052!important;
+  border:1px solid #FFFFFF18!important;
+  box-shadow:inset 0 1px 0 #FFFFFF0D!important;
+  backdrop-filter:blur(2px)!important;
+}
+#commander .group-panel-title h3,
+#jak-funguje .group-panel-title h3,
+#alarmy .group-panel-title h3,
+#kalendar .group-panel-title h3,
+#instalace .group-panel-title h3,
+#pripravujeme .group-panel-title h3{
+  color:#fff!important;
+}
+#kalendar .group-panel-title p,
+#instalace .group-panel-title p,
+#pripravujeme .group-panel-title p{
+  color:var(--cmd-text-2)!important;
+}
+
+/* Exact native card face from CommanderCardSurface (.card / .depthCard). */
+#commander .screen-card,
+#commander .proc,
+#jak-funguje .flow-step,
+#alarmy .alarm-block,
+#kalendar .widget-summary-panel,
+#kalendar .calendar-platform,
+#kalendar .calendar-ics-strip,
+#instalace .qr-card,
+#instalace .public-price-card,
+#pripravujeme .future-card{
+  background:linear-gradient(145deg,var(--cmd-card-1) 0%,var(--cmd-card-2) 50%,var(--cmd-card-3) 100%)!important;
+  border:1px solid #36DFFF57!important;
+  box-shadow:inset 0 1px 0 #FFFFFF0A,0 9px 22px #07112C20!important;
+  color:#fff!important;
+}
+
+/* Screen cards: screenshots sit in the same dark inset used by the app. */
+#commander .screen-visual,
+#alarmy .alarm-visual-slot,
+#pripravujeme .future-visual{
+  background:#0E1530!important;
+  border:1px solid #36DFFF35!important;
+  box-shadow:inset 0 1px 0 #FFFFFF08!important;
+}
+#commander .screen-card h3,
+#commander .screen-card p,
+#commander .procedures-heading h3,
+#commander .procedures-heading p,
+#commander .proc b{
+  color:#fff!important;
+}
+#commander .screen-card p,
+#commander .procedures-heading p{
+  color:var(--cmd-text-2)!important;
+}
+#commander .procedures-block{
+  background:#0E15304A!important;
+  border:1px solid #FFFFFF16!important;
+}
+
+/* Flow: same card face; icons are the only strong accents. */
+#jak-funguje .flow-emblem{
+  background:#0E1530!important;
+  border:1px solid #36DFFF66!important;
+}
+#jak-funguje .flow-step h3{color:#fff!important}
+#jak-funguje .flow-step p{color:var(--cmd-text-2)!important}
+#jak-funguje .flow-step:not(:last-child):after{color:var(--cmd-cyan)!important}
+
+/* Alarm: keep the iOS alarm itself black/system-like, only its carrier card is Commander. */
+#alarmy .alarm-time-card{
+  background:linear-gradient(180deg,#090B12 0%,#111827 100%)!important;
+  border-color:#39445A!important;
+  box-shadow:inset 0 0 0 1px #FFFFFF10!important;
+}
+#alarmy .alarm-block h3,
+#alarmy .alarm-caption b{color:#fff!important}
+#alarmy .alarm-block p,
+#alarmy .alarm-caption p{color:var(--cmd-text-2)!important}
+#alarmy .alarm-explanation{
+  background:#0E15306B!important;border-color:#36DFFF35!important;color:#fff!important;
+}
+#alarmy .alarm-explanation b{color:#fff!important}
+#alarmy .alarm-explanation p{color:var(--cmd-text-2)!important}
+
+/* Calendar/widgets: make the whole block look native while calendar previews stay readable. */
+#kalendar .widget-copy h3,
+#kalendar .calendar-platform h3,
+#kalendar .calendar-ics-strip b{color:#fff!important}
+#kalendar .calendar-platform>p,
+#kalendar .calendar-platform .visual-note,
+#kalendar .calendar-ics-strip span{color:var(--cmd-text-2)!important}
+#kalendar .calendar-preview{
+  background:#F3F5F7!important;
+  border-color:#D3DBE3!important;
+  box-shadow:none!important;
+}
+#kalendar .calendar-preview *{text-shadow:none!important}
+#kalendar .status{
+  background:#0E1530!important;border:1px solid #36DFFF35!important;color:#EAFBFF!important;
+}
+
+/* Installation: native shell, but QR fields keep high contrast. */
+#instalace .qr-card h3,
+#instalace .qr-card b,
+#instalace .qr-card span,
+#instalace .public-price-card strong,
+#instalace .public-price-card small,
+#instalace .public-price-card span{color:#fff!important}
+#instalace .qr-note,
+#instalace .public-price-note{color:var(--cmd-text-2)!important}
+#instalace .qr-art{
+  background:#F4F6F8!important;border:1px solid #D5DDE4!important;
+}
+html body #instalace .subsection-panel .qrs .qr-card{
+  background:linear-gradient(145deg,var(--cmd-card-1) 0%,var(--cmd-card-2) 50%,var(--cmd-card-3) 100%)!important;
+  border:1px solid #36DFFF57!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px 0 #FFFFFF0A,0 9px 22px #07112C20!important;
+}
+html body #instalace .subsection-panel .qrs .qr-card-head,
+html body #instalace .subsection-panel .qrs .qr-card>b{color:#fff!important}
+html body #instalace .subsection-panel .qrs .qr-card>span,
+html body #instalace .subsection-panel .qrs .qr-note{color:var(--cmd-text-2)!important}
+html body #instalace .subsection-panel .qrs .qr-art{
+  background:#F4F6F8!important;border:1px solid #D5DDE4!important;
+}
+
+
+/* Future: same native card surface, no separate Bohanes visual language. */
+#pripravujeme .future-card h3{color:#fff!important}
+#pripravujeme .future-card p,
+#pripravujeme .future-native-note{color:var(--cmd-text-2)!important}
+#pripravujeme .status{
+  background:#0E1530!important;border:1px solid #36DFFF35!important;color:#EAFBFF!important;
+}
+#pripravujeme .status.ready{
+  background:#123C40!important;border-color:#2EE6C466!important;color:#DFFFF8!important;
+}
+
+/* Platform selector inside Commander follows the product palette. */
+#commander .commander-platform-switch a,
+#commander .commander-platform-switch button{
+  border-color:#36DFFF55!important;background:#0E1530A8!important;color:#EAFBFF!important;
+}
+#commander .commander-platform-switch .is-active{
+  background:#FFFFFF!important;color:#102884!important;border-color:#FFFFFF!important;
+}
+
+/* Keep mobile readable and avoid a wall of saturated color. */
+@media(max-width:760px){
+  #commander>.section-tile,
+  #jak-funguje>.section-tile,
+  #alarmy>.section-tile,
+  #kalendar>.section-tile,
+  #instalace>.section-tile,
+  #pripravujeme>.section-tile,
+  #funkce>.features-intro{
+    background:
+      radial-gradient(circle at 18% 4%,#36DFFF12 0 6%,transparent 24%),
+      linear-gradient(155deg,#214FB0 0%,#1542BA 30%,#102884 100%)!important;
+  }
+}
+</style>
 </head>
 <body>
 <a class="skip-link" href="#main">Přeskočit na obsah</a>
