@@ -1464,37 +1464,6 @@ header:after{
 }
 
 </style>
-<style id="future-master-card">
-
-/* Co chystame: one clear Commander mother tile */
-#pripravujeme{
-  padding:42px 0!important;
-  background:#EEF4F9!important;
-}
-#pripravujeme .future-tile{
-  background:linear-gradient(145deg,#E7EEF8 0%,#DCE7F4 100%)!important;
-  border:1px solid #A8BCD2!important;
-  border-radius:28px!important;
-  box-shadow:none!important;
-}
-#pripravujeme .future-tile>.pad{
-  padding:42px!important;
-}
-#pripravujeme .future-tile .section-heading{
-  padding-bottom:26px;
-  border-bottom:1px solid rgba(49,91,138,.18);
-}
-#pripravujeme .future-grid{
-  margin-top:30px;
-}
-@media(max-width:760px){
-  #pripravujeme{padding:24px 0!important}
-  #pripravujeme .future-tile{border-radius:22px!important}
-  #pripravujeme .future-tile>.pad{padding:22px!important}
-  #pripravujeme .future-grid{margin-top:22px}
-}
-
-</style>
 
 
 
@@ -1596,81 +1565,6 @@ header:after{
 </style>
 
 
-<style id="final-closeout-panels">
-/* Commander – dokončená hierarchie dlaždic: sekce -> mateřská dlaždice -> poddlaždice */
-#commander .section-heading{margin-bottom:0!important}
-
-.screens-content-panel{
-  margin-top:28px;
-  padding:28px;
-  background:linear-gradient(145deg,#C8DAEA 0%,#B9CFE2 100%);
-  border:1px solid #8FAAC3;
-  border-radius:22px;
-}
-.screens-content-panel .screen-grid{margin:0!important}
-
-/* Dnes / Týden / Pobyt / Info / Nastavení: žádná čistě bílá plocha */
-.screens-content-panel .screen-card{
-  background:linear-gradient(145deg,#E1EAF4 0%,#D5E2EE 100%)!important;
-  border-color:#9DB4C8!important;
-  box-shadow:0 6px 18px rgba(16,40,74,.07)!important;
-}
-.screens-content-panel .screen-card h3{color:#173554!important}
-.screens-content-panel .screen-card p{color:#49627C!important}
-
-/* Procedury jsou podsekce uvnitř stejné mateřské dlaždice */
-.screens-content-panel .procedures-block{
-  margin-top:28px!important;
-  padding:22px!important;
-  background:linear-gradient(145deg,#254D7D 0%,#1C3F6B 100%)!important;
-  border-color:#5279A1!important;
-  border-radius:18px!important;
-}
-.screens-content-panel .procedures-heading{margin-bottom:18px!important}
-
-/* Vlastní poddlaždice, která drží všech pět kategorií pohromadě */
-.procedure-group-panel{
-  padding:14px;
-  background:#102A4B99;
-  border:1px solid #5A7EA5;
-  border-radius:16px;
-}
-.procedure-group-panel .procedure-badges{margin:0!important}
-.procedure-group-panel .proc{
-  background:linear-gradient(145deg,#163964 0%,#112E54 100%)!important;
-  border-color:#486D97!important;
-}
-
-/* Alarmy: poddlaždice zřetelně Commander-modré, nikoli bílé */
-.features-area .alarm-content-panel{
-  background:linear-gradient(145deg,#ABC3DA 0%,#9FBBD4 100%)!important;
-  border-color:#819EB9!important;
-}
-.features-area .alarm-block{
-  background:linear-gradient(145deg,#CEDDEA 0%,#C0D3E4 100%)!important;
-  border-color:#8FA9C1!important;
-  box-shadow:0 6px 18px rgba(16,40,74,.07)!important;
-}
-.features-area .alarm-explanation{
-  background:linear-gradient(145deg,#C7D8E7 0%,#B8CCDF 100%)!important;
-  border-color:#8DA6BE!important;
-}
-.features-area .alarm-block,
-.features-area .alarm-explanation{color:#173554!important}
-.features-area .alarm-block p,
-.features-area .alarm-explanation p,
-.features-area .alarm-caption p{color:#49627C!important}
-
-@media(max-width:760px){
-  .screens-content-panel{
-    margin-top:20px;
-    padding:16px;
-    border-radius:18px;
-  }
-  .screens-content-panel .procedures-block{margin-top:20px!important;padding:16px!important}
-  .procedure-group-panel{padding:12px}
-}
-</style>
 
 <style id="final-spacing-consistency">
 /* Posledni sjednoceni vnoreneho dlazdicoveho systemu */
@@ -1686,39 +1580,6 @@ header:after{
 #commander .procedure-group-panel .proc{
   background:linear-gradient(145deg,#163964 0%,#112E54 100%)!important;
   border-color:#54779E!important;
-}
-</style>
-<style id="installation-approved-palette">
-/* Instalace a aktivace — pouze schválená paleta Commanderu:
-   #214B8A, #1E447E, #1743A5 a zesvětlení přes #F2F6FF. */
-#instalace .install-content-panel{
-  background:linear-gradient(
-    145deg,
-    color-mix(in srgb,#214B8A 32%,#F2F6FF),
-    color-mix(in srgb,#1743A5 26%,#F2F6FF)
-  )!important;
-  border-color:color-mix(in srgb,#214B8A 52%,#F2F6FF)!important;
-}
-#instalace .install-content-panel .qr-card,
-#instalace .install-content-panel .install-iphone,
-#instalace .install-content-panel .install-android,
-#instalace .install-content-panel .install-activation{
-  background:linear-gradient(
-    145deg,
-    color-mix(in srgb,#214B8A 19%,#F2F6FF),
-    color-mix(in srgb,#1743A5 13%,#F2F6FF)
-  )!important;
-  border-color:color-mix(in srgb,#214B8A 42%,#F2F6FF)!important;
-  box-shadow:0 7px 20px rgba(16,40,132,.08)!important;
-}
-#instalace .qr-art,
-#instalace .qr-art:after{
-  background:#F2F6FF!important;
-}
-#instalace .price{
-  background:linear-gradient(135deg,#214B8A 0%,#1E447E 100%)!important;
-  border:1px solid color-mix(in srgb,#65E5FF 32%,#214B8A)!important;
-  box-shadow:0 8px 22px rgba(16,40,132,.14)!important;
 }
 </style>
 <style id="final-copy-centering">
@@ -2777,6 +2638,235 @@ header .nav>.desktop-contact{
   #funkce>.features-intro h2{font-size:27px!important}
 }
 </style>
+
+<style id="commander-final-calm-20261112">
+:root{
+  --cmd-shell:#102445;
+  --cmd-tile:#122B50;
+  --cmd-card:#111F3F;
+  --cmd-card-2:#14284B;
+  --cmd-line:#486797;
+  --cmd-line-soft:#36577F;
+  --cmd-text:#FFFFFF;
+  --cmd-muted:#D4E2F8;
+  --cmd-accent:#65E5FF;
+}
+
+/* One visual grammar: shell -> section tile -> content card -> control. */
+.commander-master-shell{
+  background:linear-gradient(145deg,#1E447E 0%,#16274E 50%,#0E1530 100%)!important;
+  border-color:#365D8A!important;
+  box-shadow:0 14px 34px rgba(9,24,49,.12)!important;
+}
+.commander-master-shell .section-tile,
+.commander-master-shell .features-intro{
+  background:var(--cmd-shell)!important;
+  border:1px solid var(--cmd-line)!important;
+  border-radius:22px!important;
+  box-shadow:none!important;
+}
+.commander-master-shell .section-tile>.pad{padding:30px!important}
+
+/* Uniform cards across the whole product. */
+#commander .screen-card,
+#commander .procedures-block,
+#jak-funguje .flow-step,
+#alarmy .alarm-block,
+#alarmy .alarm-explanation,
+#kalendar .widget-summary-panel,
+#kalendar .calendar-platform,
+#kalendar .calendar-ics-strip,
+#instalace .qr-card,
+#instalace .public-price-card,
+#pripravujeme .future-card{
+  background:var(--cmd-card)!important;
+  border:1px solid var(--cmd-line)!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+  color:var(--cmd-text)!important;
+}
+
+/* Inner preview wells use one darker inset tone. */
+#commander .screen-visual,
+#jak-funguje .flow-emblem,
+#alarmy .alarm-visual-slot,
+#pripravujeme .future-visual{
+  background:#0C1832!important;
+  border:1px solid var(--cmd-line-soft)!important;
+  box-shadow:none!important;
+}
+
+/* Text hierarchy — consistent everywhere. */
+.commander-master-shell h2,
+.commander-master-shell h3,
+.commander-master-shell .group-panel-title h3,
+.commander-master-shell .screen-card h3,
+.commander-master-shell .future-card h3,
+.commander-master-shell .alarm-caption b{
+  color:var(--cmd-text)!important;
+}
+.commander-master-shell .lead,
+.commander-master-shell p,
+.commander-master-shell .visual-note,
+.commander-master-shell .future-native-note,
+.commander-master-shell .qr-note,
+.commander-master-shell .calendar-platform>p,
+.commander-master-shell .calendar-platform .visual-note{
+  color:var(--cmd-muted)!important;
+}
+.commander-master-shell .kicker{color:var(--cmd-accent)!important}
+
+/* Installation: cards are Commander-dark; only QR itself remains paper-light. */
+html body #instalace .install-content-panel,
+html body #instalace .install-content-panel .qrs{
+  background:transparent!important;
+}
+html body #instalace .install-content-panel .qr-card,
+html body #instalace .install-content-panel .install-iphone,
+html body #instalace .install-content-panel .install-android,
+html body #instalace .install-content-panel .install-activation{
+  background:var(--cmd-card)!important;
+  border:1px solid var(--cmd-line)!important;
+  box-shadow:none!important;
+  color:#fff!important;
+}
+html body #instalace .install-content-panel .qr-card-head,
+html body #instalace .install-content-panel .qr-card>b{
+  color:#fff!important;
+}
+html body #instalace .install-content-panel .qr-card>span,
+html body #instalace .install-content-panel .qr-note{
+  color:var(--cmd-muted)!important;
+}
+html body #instalace .qr-art,
+html body #instalace .qr-art:after{
+  background:#F2F6FF!important;
+}
+
+/* Future: never fall back to a pale Bohanes tile inside Commander. */
+html body #pripravujeme{
+  background:transparent!important;
+  padding:0!important;
+}
+html body #pripravujeme .future-tile{
+  background:var(--cmd-shell)!important;
+  border:1px solid var(--cmd-line)!important;
+  border-radius:22px!important;
+  box-shadow:none!important;
+}
+html body #pripravujeme .future-tile>.pad{padding:30px!important}
+html body #pripravujeme .future-tile .section-heading{
+  padding-bottom:0!important;
+  border-bottom:0!important;
+}
+
+/* Procedures: one aligned strip, no extra bright slab. */
+#commander .procedures-block{
+  padding:20px!important;
+  margin-top:22px!important;
+}
+#commander .procedure-group-panel{
+  background:transparent!important;border:0!important;padding:0!important;
+}
+#commander .proc{
+  background:var(--cmd-card-2)!important;
+  border:1px solid var(--cmd-line)!important;
+  border-radius:12px!important;
+  min-height:66px!important;
+}
+
+/* Consistent small controls / buttons inside the product. */
+#commander .commander-platform-switch a,
+#commander .commander-platform-switch button,
+.commander-master-shell .status{
+  min-height:36px!important;
+  border-radius:9px!important;
+  border:1px solid var(--cmd-line)!important;
+  background:#0E1934!important;
+  color:#EAF3FF!important;
+  box-shadow:none!important;
+}
+#commander .commander-platform-switch .is-active{
+  background:#F7FAFF!important;
+  color:#102884!important;
+  border-color:#F7FAFF!important;
+}
+
+/* Calendar paper and QR paper are the only intentionally light surfaces. */
+#kalendar .calendar-preview{
+  background:#F4F6F8!important;
+  border:1px solid #D3DBE3!important;
+  color:#173554!important;
+}
+
+/* Price row: same card language, not a separate style. */
+#instalace .public-pricing{
+  margin-top:22px!important;
+}
+#instalace .public-price-card{
+  min-height:92px!important;
+  display:grid!important;
+  grid-template-columns:1fr auto!important;
+  grid-template-rows:auto auto!important;
+  align-items:center!important;
+  gap:2px 18px!important;
+  padding:18px 20px!important;
+}
+#instalace .public-price-card small{grid-column:1;color:#fff!important;font-weight:700}
+#instalace .public-price-card strong{grid-column:2;grid-row:1/3;color:#fff!important}
+#instalace .public-price-card span{grid-column:1;color:var(--cmd-muted)!important}
+
+/* Same vertical rhythm everywhere. */
+.commander-master-shell{gap:20px!important}
+.commander-master-shell .section-heading{margin-bottom:22px!important}
+.commander-master-shell .group-panel-title{margin-bottom:16px!important}
+#jak-funguje .product-flow,
+#alarmy .alarm-sequence,
+#kalendar .calendar-platforms,
+#instalace .qrs,
+#pripravujeme .future-grid{gap:18px!important}
+
+/* Desktop cards aligned to equal heights where appropriate. */
+@media(min-width:1280px){
+  #commander .screen-card{min-height:560px!important}
+  #pripravujeme .future-card{height:100%!important}
+  #instalace .qr-card{min-height:390px!important}
+}
+
+/* Procedures: final specificity over older legacy Commander rules. */
+html body .commander-master-shell #commander .procedures-block{
+  background:var(--cmd-card)!important;
+  border:1px solid var(--cmd-line)!important;
+  box-shadow:none!important;
+}
+html body .commander-master-shell #commander .procedure-group-panel .proc{
+  background:var(--cmd-card-2)!important;
+  border:1px solid var(--cmd-line)!important;
+  box-shadow:none!important;
+}
+
+/* Mobile: same system, no pale fallbacks, no horizontal overflow. */
+@media(max-width:760px){
+  .commander-master-shell{
+    width:calc(100% - 20px)!important;
+    padding:12px!important;
+    gap:14px!important;
+    border-radius:20px!important;
+  }
+  .commander-master-shell .section-tile,
+  .commander-master-shell .features-intro{
+    border-radius:17px!important;
+  }
+  .commander-master-shell .section-tile>.pad,
+  html body #pripravujeme .future-tile>.pad{padding:18px!important}
+  #instalace .qrs,
+  #pripravujeme .future-grid,
+  #kalendar .calendar-platforms{
+    grid-template-columns:1fr!important;
+  }
+  #instalace .qr-card{min-height:0!important}
+}
+</style>
 </head>
 <body>
 <a class="skip-link" href="#main">Přeskočit na obsah</a>
@@ -2825,7 +2915,9 @@ header .nav>.desktop-contact{
 <section id="pripravujeme"><div class="wrap section-tile future-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Co chystáme</div><h2>Stejný Commander.<br>Na dalších obrazovkách.</h2></div><p class="lead">Nativní podoba produktu už existuje i mimo hlavní aplikaci. U každé funkce rozlišujeme její současný stav.</p></div><div class="subsection-panel future-content-panel"><div class="group-panel-title"><h3>Připravované funkce</h3></div><div class="future-grid"><article class="future-card"><div class="future-visual"><button class="image-button watch-shell" type="button" data-enlarge aria-label="Zvětšit: Nativní náhled obrazovky aplikace Commander pro Apple Watch"><img src="/native-ui/watch.png" alt="Nativní náhled obrazovky aplikace Commander pro Apple Watch"></button></div><span class="status">Nativní aplikace existuje</span><h3>Apple Watch</h3><p>Procedura, čas odchodu a místo přímo na zápěstí. Samostatné alarmy hodinek zatím nejsou zapnuté.</p><span class="future-native-note">Náhled skutečné komponenty Watch aplikace.</span></article><article class="future-card"><div class="future-visual"><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní vývojový náhled Live Activity Commanderu"><img src="/native-ui/live-activity.png" alt="Nativní vývojový náhled Live Activity Commanderu"></button></div><span class="status">Připravujeme · nyní vypnuté</span><h3>Live Activity</h3><p>Aktuální procedura a časový kontext na zamčené obrazovce. V aktuální verzi je tato funkce vypnutá.</p><span class="future-native-note">Čistý export z nativního rendereru Live Activity.</span></article><article class="future-card"><div class="future-visual"><button class="image-button island-compact" type="button" data-enlarge aria-label="Zvětšit: Náhled kompaktního Dynamic Islandu sestavený z nativních komponent"><img src="/native-ui/dynamic-island-compact.png" alt="Náhled kompaktního Dynamic Islandu sestavený z nativních komponent"></button><button class="image-button island-expanded" type="button" data-enlarge aria-label="Zvětšit: Náhled rozbaleného Dynamic Islandu sestavený z nativních komponent"><img src="/native-ui/dynamic-island.png" alt="Náhled rozbaleného Dynamic Islandu sestavený z nativních komponent"></button></div><span class="status">Připravujeme · nyní vypnuté</span><h3>Dynamic Island</h3><p>Krátký i rozbalený přehled nejbližší procedury. Je součástí implementace Live Activity.</p><span class="future-native-note">Produktový náhled z nativních komponent, nikoliv systémový screenshot.</span></article><article class="future-card"><div class="future-visual"><div class="future-widget-pair"><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní widget přehledu dne"><img src="/native-ui/widget-day.png" alt="Nativní widget přehledu dne"></button><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní widget nejbližší procedury"><img src="/native-ui/widget-small.png" alt="Nativní widget nejbližší procedury"></button></div><div class="calendar-connection"><img class="native-symbol" src="/native-ui/symbol-calendar.png" alt="Apple Kalendář"><span aria-hidden="true">✓</span></div></div><span class="status ready">Widgety a Apple Kalendář existují</span><h3>Widgety a kalendář pobytu</h3><p>Widgety i volitelná synchronizace s Apple Kalendářem jsou implementované. Export .ics zůstává dostupný v Pokročilé.</p><span class="future-native-note">Skutečné widgety a implementované propojení s Apple Kalendářem.</span></article></div></div></div></div></section>
 
 
-</div>\n\n<section id="pro-lazne"><div class="wrap section-tile native-tile pilot-tile"><div class="pad"><div class="pilot-grid"><div><div class="kicker">Pro lázně</div><h2>Pilot nejdřív.<br>Rozšíření až podle výsledku.</h2><p class="lead">Commander lze ověřit na malé skupině klientů, jednom lázeňském domě nebo jednom typu pobytu. Další rozvoj vychází ze skutečného používání a zpětné vazby.</p><div class="pilot-action"><a class="cta" href="#kontakt">Domluvit pilot</a></div></div><div class="pilot-visual"><div class="story-brand"><img class="product-mark" src="/native-ui/commander-mark.png" alt="Logo Lázeňského Commanderu"><div><b>Lázeňský Commander</b><span>Skutečný pobyt. Konkrétní zkušenost.</span></div></div><div class="pilot-stages"><div class="pilot-stage"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""><span><b>Vybraná skupina klientů</b>Jasný rozsah a společné podklady.</span></div><div class="pilot-stage"><img class="native-symbol" src="/native-ui/symbol-bell.png" alt=""><span><b>Program v telefonu</b>Ověření přehledů a upozornění v praxi.</span></div><div class="pilot-stage"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""><span><b>Společné vyhodnocení</b>Zkušenosti klientů a další postup.</span></div></div></div></div></div></div></section>
+</div>
+
+<section id="pro-lazne"><div class="wrap section-tile native-tile pilot-tile"><div class="pad"><div class="pilot-grid"><div><div class="kicker">Pro lázně</div><h2>Pilot nejdřív.<br>Rozšíření až podle výsledku.</h2><p class="lead">Commander lze ověřit na malé skupině klientů, jednom lázeňském domě nebo jednom typu pobytu. Další rozvoj vychází ze skutečného používání a zpětné vazby.</p><div class="pilot-action"><a class="cta" href="#kontakt">Domluvit pilot</a></div></div><div class="pilot-visual"><div class="story-brand"><img class="product-mark" src="/native-ui/commander-mark.png" alt="Logo Lázeňského Commanderu"><div><b>Lázeňský Commander</b><span>Skutečný pobyt. Konkrétní zkušenost.</span></div></div><div class="pilot-stages"><div class="pilot-stage"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""><span><b>Vybraná skupina klientů</b>Jasný rozsah a společné podklady.</span></div><div class="pilot-stage"><img class="native-symbol" src="/native-ui/symbol-bell.png" alt=""><span><b>Program v telefonu</b>Ověření přehledů a upozornění v praxi.</span></div><div class="pilot-stage"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""><span><b>Společné vyhodnocení</b>Zkušenosti klientů a další postup.</span></div></div></div></div></div></div></section>
 
 <section id="kontakt"><div class="wrap section-tile company-contact"><div class="pad"><div class="contact-grid"><div class="contact-copy"><div class="company-identity"><div class="company-brand-lockup" aria-label="Bohanes Technologies"><img class="brand-symbol" src="/bohanes-symbol.svg" alt=""><span class="brand-lockup"><strong>BOHANES <em>TECHNOLOGIES</em></strong><small>Technologie pro skutečný pobyt</small></span></div><p class="company-founder"><strong>Petr Bohanes</strong><span>Zakladatel</span></p></div><div class="contact-links"><div class="contact-link"><b>E-mail</b><span>Finální adresa čeká na ověření.</span></div><div class="contact-link"><b>Telefon</b><span>Finální číslo čeká na ověření.</span></div></div><div class="social-placeholders" aria-label="Připravované kontaktní kanály"><div class="social-placeholder" title="WhatsApp – připravujeme"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a8.5 8.5 0 0 0-7.4 12.7L3.5 20.5l4.9-1.2A8.5 8.5 0 1 0 12 3z"/><path d="M8.4 8.1c.2-.4.4-.4.7-.4h.5c.2 0 .4.1.5.4l.8 1.9c.1.3.1.5-.1.7l-.7.8c-.2.2-.1.4 0 .6.7 1.2 1.7 2.1 3 2.7.2.1.4.1.6-.1l.9-1.1c.2-.2.4-.3.7-.2l1.9.9c.3.1.4.3.4.5 0 .4-.2 1.6-1 2.2-.7.6-1.7.8-2.7.5-1.2-.3-2.8-1-4.6-2.6-1.5-1.3-2.5-3-2.8-4.2-.3-1.1 0-2 .4-2.6z"/></svg><span>WhatsApp</span><small>Připravujeme</small></div><div class="social-placeholder" title="YouTube – připravujeme"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="m10 9 5 3-5 3z"/></svg><span>YouTube</span><small>Připravujeme</small></div><div class="social-placeholder" title="LinkedIn – připravujeme"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9" width="4" height="11"/><circle cx="5" cy="5.5" r="2"/><path d="M11 20V9h4v1.7c.8-1.2 2-2 3.8-2 2.5 0 3.2 1.7 3.2 4.3v7h-4v-6c0-1.3-.3-2.2-1.5-2.2S15 12.7 15 14v6z"/></svg><span>LinkedIn</span><small>Připravujeme</small></div></div><p class="contact-note">Kontaktní údaje a veřejné profily doplníme před veřejným spuštěním.</p></div><form class="contact-form" id="contactForm" aria-describedby="formStatus"><h3>Napište nám zprávu</h3><div><label for="contactName">Jméno</label><input id="contactName" name="name" autocomplete="name" placeholder="Vaše jméno"></div><div><label for="contactOrganization">Organizace / lázeňské zařízení</label><input id="contactOrganization" name="organization" autocomplete="organization" placeholder="Název organizace nebo lázní"></div><div><label for="contactEmail">E-mail</label><input id="contactEmail" name="email" type="email" autocomplete="email" placeholder="vas@email.cz"></div><div><label for="contactPhone">Telefon</label><input id="contactPhone" name="phone" type="tel" autocomplete="tel" placeholder="+420 …"></div><div><label for="contactMessage">Zpráva</label><textarea id="contactMessage" name="message" placeholder="Co byste s námi chtěli probrat?"></textarea></div><p class="form-state" id="formStatus" role="status">Odesílání připravujeme. Formulář zatím zprávu nikam neodesílá.</p><button class="cta" type="submit" disabled>Odesílání připravujeme</button></form></div></div></div></section>
 </main>
