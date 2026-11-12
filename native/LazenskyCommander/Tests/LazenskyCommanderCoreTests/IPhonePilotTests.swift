@@ -21,6 +21,9 @@ private func pilotSchedule(version: Int = 2, title: String = "Koupel", date: Str
   #expect(throws: (any Error).self) {
     try ScheduleFileImport.decode(Data(repeating: 32, count: ScheduleFileImport.maximumByteCount + 1))
   }
+  #expect(throws: ScheduleValidationError.self) {
+    try ScheduleFileImport.decode(JSONEncoder().encode(pilotSchedule(title: "AlarmKit fyzický test")))
+  }
 }
 
 @Test func pilotImportUsesCanonicalStoreAndAlarmPathWithoutNetworkOrWatch() async throws {
@@ -86,6 +89,22 @@ private func pilotSchedule(version: Int = 2, title: String = "Koupel", date: Str
   #expect(text.contains("CATEGORIES:Jídla") && text.contains("CATEGORIES:Procedury"))
   #expect(text.contains("BEGIN:VTIMEZONE") && text.contains("TZID:Europe/Prague"))
   #expect(text.hasSuffix("END:VCALENDAR\r\n"))
+}
+
+@Test func pilotCalendarMarksVisitsSeparatelyFromTherapies() throws {
+  let visit = ScheduleEvent(
+    stableId: "visit", date: "2026-10-25", start: "07:30", end: "09:00",
+    title: "Lékařská vizita", location: "Ordinace", kind: .procedure,
+    procedureType: "Vizita", mealType: nil, leadTimeMinutes: 5
+  )
+  let base = pilotSchedule()
+  let schedule = Schedule(
+    schemaVersion: base.schemaVersion, scheduleVersion: base.scheduleVersion,
+    updatedAt: base.updatedAt, stay: base.stay, events: base.events + [visit], settings: base.settings
+  )
+  let text = try ScheduleCalendarExport.make(schedule: schedule)
+  #expect(text.contains("CATEGORIES:Vizity"))
+  #expect(text.contains("SUMMARY:Lékařská vizita"))
 }
 
 @Test func pilotCalendarEscapesInjectionAndFoldsUTF8WithoutSplittingCharacters() throws {

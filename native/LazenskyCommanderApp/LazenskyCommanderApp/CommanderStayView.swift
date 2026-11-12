@@ -16,6 +16,9 @@ struct CommanderStayView: View {
           if let stay = try? CommanderStayPresentation.make(schedule: schedule, now: context.date) {
             CommanderStayOverviewCard(stay: stay)
             CommanderProcedureOverviewCard(stay: stay)
+            if !stay.visits.isEmpty {
+              CommanderVisitOverviewCard(stay: stay)
+            }
 
           } else {
             CommanderStayUnavailableCard(message: "Souhrn pobytu nelze zobrazit")
@@ -176,6 +179,69 @@ private struct CommanderProcedureOverviewCard: View {
   private var procedureFraction: Double {
     guard stay.totalProcedures > 0 else { return 0 }
     return Double(stay.completedProcedures) / Double(stay.totalProcedures)
+  }
+}
+
+private struct CommanderVisitOverviewCard: View {
+  let stay: CommanderStayPresentation
+
+  var body: some View {
+    CommanderSectionCard(
+      title: "Vizity",
+      symbol: "stethoscope",
+      accent: Color(commanderHex: CommanderBrandAssets.Colors.timeGold)
+    ) {
+      VStack(spacing: CommanderDesignTokens.Spacing.eventRows) {
+        ForEach(stay.visits, id: \.event.stableId) { visit in
+          CommanderVisitRow(visit: visit)
+        }
+      }
+    }
+  }
+}
+
+private struct CommanderVisitRow: View {
+  let visit: CommanderVisitSummary
+
+  var body: some View {
+    HStack(alignment: .top, spacing: CommanderDesignTokens.Spacing.small) {
+      CommanderSymbolBadge(
+        symbol: "stethoscope",
+        color: Color(commanderHex: CommanderBrandAssets.Colors.timeGold),
+        size: CommanderDesignTokens.Size.rowMetricBadge
+      )
+      VStack(alignment: .leading, spacing: 4) {
+        Text(visit.event.title)
+          .commanderFont(.metric)
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .fixedSize(horizontal: false, vertical: true)
+        Text("\(CommanderDateText.weekdayDate(visit.startAt)) · \(timeRange)")
+          .commanderFont(.subtitle)
+          .monospacedDigit()
+          .foregroundStyle(Color(commanderHex: CommanderBrandAssets.Colors.timeGold))
+          .fixedSize(horizontal: false, vertical: true)
+        if !visit.event.location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+          Label(visit.event.location, systemImage: "mappin.circle.fill")
+            .commanderFont(.label)
+            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+      }
+      Spacer(minLength: CommanderDesignTokens.Spacing.small)
+      Text(visit.completed ? "Proběhlo" : "Čeká")
+        .commanderFont(.label)
+        .foregroundStyle(visit.completed ? CommanderDesignTokens.Colors.mealGreen : Color(commanderHex: CommanderBrandAssets.Colors.timeGold))
+    }
+    .padding(CommanderDesignTokens.Spacing.small)
+    .frame(maxWidth: .infinity, minHeight: 60, alignment: .leading)
+    .commanderCard(accent: Color(commanderHex: CommanderBrandAssets.Colors.timeGold), surface: .depthInset)
+    .accessibilityElement(children: .combine)
+  }
+
+  private var timeRange: String {
+    let start = visit.startAt.formatted(date: .omitted, time: .shortened)
+    let end = visit.endAt.formatted(date: .omitted, time: .shortened)
+    return "\(start)–\(end)"
   }
 }
 

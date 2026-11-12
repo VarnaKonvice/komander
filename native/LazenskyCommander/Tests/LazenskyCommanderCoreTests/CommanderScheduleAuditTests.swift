@@ -46,6 +46,21 @@ struct CommanderScheduleAuditTests {
     #expect(!report.issues.contains { $0.code == "sunday-meals-review" })
   }
 
+  @Test func visitDoesNotCountAsProcedureForOperationalExpectations() {
+    let events = [
+      meal(id: "sun.breakfast", date: "2026-09-06", start: "07:30", end: "08:00", title: "Snídaně"),
+      meal(id: "sun.lunch", date: "2026-09-06", start: "12:00", end: "12:40", title: "Oběd"),
+      meal(id: "sun.dinner", date: "2026-09-06", start: "17:30", end: "18:00", title: "Večeře"),
+      makeEvent(id: "sun.visit", date: "2026-09-06", start: "08:30", end: "09:30", title: "Lékařská vizita")
+    ]
+    let report = CommanderScheduleAudit.run(
+      schedule(from: "2026-09-06", to: "2026-09-06", events: events),
+      policy: .petrSpaOperational
+    )
+    #expect(report.procedureCount == 0)
+    #expect(!report.issues.contains { $0.code == "sunday-procedure-review" })
+  }
+
   @Test func saturdayBelowThreeProceduresIsReviewWarningNotBlockingError() {
     let events = [
       makeEvent(id: "sat.a", date: "2026-09-05", start: "09:00", end: "09:20", title: "Masáž"),
@@ -56,6 +71,7 @@ struct CommanderScheduleAuditTests {
       policy: .petrSpaOperational
     )
     #expect(report.issues.contains { $0.code == "low-procedure-count-review" && $0.severity == .warning })
+    #expect(report.issues.first { $0.code == "low-procedure-count-review" }?.message.contains("2 procedury") == true)
     #expect(!report.hasErrors)
   }
 

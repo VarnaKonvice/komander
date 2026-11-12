@@ -33,7 +33,7 @@ public struct CommanderPhoneWidgetPresentation: Sendable {
     case .dayDone, .noSchedule: nextRelevantTodayStart = nil
     }
     let today = projection.events(on: date)
-    let procedures = today.filter { $0.event.kind == .procedure }
+    let procedures = today.filter { CommanderEventSemantics.isTherapy($0.event) }
     remainingProcedureCount = procedures.filter { $0.endAt > date }.count
     finalProcedureEnd = procedures.map(\.endAt).max()
     dinnerStart = today.filter {

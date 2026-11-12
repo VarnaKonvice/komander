@@ -63,15 +63,24 @@ public struct CommanderProcedureSummary: Equatable, Sendable {
   public let representativeEvent: ScheduleEvent
 }
 
+public struct CommanderVisitSummary: Equatable, Sendable {
+  public let event: ScheduleEvent
+  public let startAt: Date
+  public let endAt: Date
+  public let completed: Bool
+}
+
 public struct CommanderStayPresentation: Equatable, Sendable {
   public let period: CommanderStayPeriod?
   public let completedProcedures: Int
   public let totalProcedures: Int
   public let procedures: [CommanderProcedureSummary]
+  public let visits: [CommanderVisitSummary]
 
   public static func make(schedule: Schedule, now: Date) throws -> Self {
     try NativeAlarmContract.validate(schedule)
-    let procedures = schedule.events.filter { $0.kind == .procedure }
+    let procedures = schedule.events.filter { CommanderEventSemantics.isTherapy($0) }
+    let visitEvents = schedule.events.filter { CommanderEventSemantics.isVisit($0) }
     // Schedule has no attendance records: completion means the scheduled end has passed.
     let completedIDs = Set(try procedures.filter {
       try NativeAlarmContract.dateTime(date: $0.date, time: $0.end) <= now
@@ -92,6 +101,14 @@ public struct CommanderStayPresentation: Equatable, Sendable {
           total: events.count,
           representativeEvent: events[0]
         )
+      },
+      visits: try visitEvents.map { event in
+        let startAt = try NativeAlarmContract.dateTime(date: event.date, time: event.start)
+        let endAt = try NativeAlarmContract.dateTime(date: event.date, time: event.end)
+        return CommanderVisitSummary(event: event, startAt: startAt, endAt: endAt, completed: endAt <= now)
+      }.sorted {
+        if $0.startAt != $1.startAt { return $0.startAt < $1.startAt }
+        return $0.event.stableId < $1.event.stableId
       }
     )
   }

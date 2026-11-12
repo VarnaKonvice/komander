@@ -438,7 +438,7 @@ struct CommanderScheduleAuditView: View {
           .frame(width: 24)
         VStack(alignment: .leading, spacing: 3) {
           if let date = issue.date {
-            Text(CommanderDateText.numericDate(isoDate: date) ?? date)
+            Text(CommanderDateText.weekdayDate(isoDate: date) ?? date)
               .commanderFont(.label)
               .foregroundStyle(color)
           }
@@ -688,7 +688,7 @@ private struct CommanderLeadTimeSettingsView: View {
 
   private var procedureCategories: [LeadTimeCategory] {
     let present = Set((model.latestSchedule?.events ?? []).compactMap { event -> LeadTimeCategory? in
-      guard event.kind == .procedure else { return nil }
+      guard CommanderEventSemantics.isTherapy(event) else { return nil }
       return category(for: event)
     })
     return LeadTimeCategory.allCases.filter { $0 != .meal && present.contains($0) }
@@ -715,6 +715,7 @@ private struct CommanderLeadTimeSettingsView: View {
   }
 
   private func eventCategoryRank(_ event: ScheduleEvent) -> Int {
+    if CommanderEventSemantics.isVisit(event) { return 7 }
     if event.kind == .meal { return 5 }
     switch CommanderProcedureCategory.classify(event.procedureType ?? event.title) {
     case .rehabilitation: return 0
@@ -1122,7 +1123,7 @@ private struct CommanderLeadTimeSettingsView: View {
 
     guard let schedule = model.latestSchedule else { return model.defaultLeadTimeMinutes }
     let values = Set(schedule.events.compactMap { event -> Int? in
-      guard event.kind == .procedure,
+      guard CommanderEventSemantics.isTherapy(event),
             CommanderProcedureCategory.classify(event.procedureType ?? event.title) == coreCategory
       else { return nil }
 

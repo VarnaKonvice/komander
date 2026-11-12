@@ -9,6 +9,15 @@ public enum CommanderDateText {
     format(date, pattern: "d. M. yyyy")
   }
 
+  public static func weekdayDate(_ date: Date) -> String {
+    capitalize(format(date, pattern: "EEEE d. M. yyyy"))
+  }
+
+  public static func weekdayDate(isoDate: String) -> String? {
+    guard let date = try? NativeAlarmContract.dateTime(date: isoDate, time: "00:00") else { return nil }
+    return weekdayDate(date)
+  }
+
   public static func numericDate(isoDate: String) -> String? {
     guard let date = try? NativeAlarmContract.dateTime(date: isoDate, time: "00:00") else { return nil }
     return numericDate(date)

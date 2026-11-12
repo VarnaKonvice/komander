@@ -18,6 +18,45 @@ public struct ScheduleEvent: Codable, Equatable, Sendable {
   public let leadTimeMinutes: Int?
 }
 
+public enum CommanderEventSemantics {
+  public static func isVisit(_ event: ScheduleEvent) -> Bool {
+    guard event.kind == .procedure else { return false }
+    let value = [event.procedureType, event.title]
+      .compactMap { $0 }
+      .map(normalized)
+      .joined(separator: " ")
+    return [
+      "vizita",
+      "lekarska kontrola",
+      "lekarska prohlidka",
+      "kontrola u lekare",
+      "prohlidka u lekare",
+      "doctor visit"
+    ].contains { value.contains($0) }
+  }
+
+  public static func isTherapy(_ event: ScheduleEvent) -> Bool {
+    event.kind == .procedure && !isVisit(event)
+  }
+
+  public static func isSystemOnlyTestArtifact(_ event: ScheduleEvent) -> Bool {
+    normalized(event.title).contains("alarmkit")
+  }
+
+  public static func calendarCategory(_ event: ScheduleEvent) -> String {
+    if event.kind == .meal { return "Jídla" }
+    if isVisit(event) { return "Vizity" }
+    return "Procedury"
+  }
+
+  private static func normalized(_ value: String) -> String {
+    value
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+      .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "cs_CZ"))
+      .lowercased(with: Locale(identifier: "cs_CZ"))
+  }
+}
+
 public struct ScheduleSettings: Codable, Equatable, Sendable {
   public let defaultLeadTimeMinutes: Int
   public let procedureTypeOverrides: [String: Int]
@@ -150,6 +189,7 @@ public enum ScheduleValidationError: LocalizedError, Equatable {
   case invalidTime(String)
   case invalidEventRange(String)
   case invalidLeadTime(String)
+  case systemOnlyEvent(String)
 
   public var errorDescription: String? {
     switch self {
@@ -162,6 +202,7 @@ public enum ScheduleValidationError: LocalizedError, Equatable {
     case .invalidTime(let value): return "Invalid time: \(value)."
     case .invalidEventRange(let stableId): return "Event ends before it starts: \(stableId)."
     case .invalidLeadTime(let field): return "Invalid lead time: \(field)."
+    case .systemOnlyEvent(let stableId): return "Interní testovací událost nesmí být součástí klientského rozpisu: \(stableId)."
     }
   }
 }

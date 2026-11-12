@@ -97,6 +97,27 @@ import Testing
   #expect(atEnd.completedProcedures == 2)
 }
 
+@Test func visitsRemainTimedButAreExcludedFromTherapyCountsAndShownSeparately() throws {
+  let schedule = overviewSchedule(stay: ["dateFrom": "2026-08-20", "dateTo": "2026-08-20"], events: [
+    overviewEvent("therapy", start: "08:00", end: "08:20", title: "Koupel", type: "Koupel"),
+    overviewEvent("visit", start: "08:30", end: "09:30", title: "Lékařská vizita", type: "Vizita"),
+    overviewEvent("dinner", start: "17:30", end: "18:00", title: "Večeře", kind: .meal, type: "Večeře")
+  ])
+  let now = try overviewNow("2026-08-20T08:40:00")
+  let week = try CommanderWeekPresentation.make(schedule: schedule, now: now)
+  #expect(week[0].overview.procedureCount == 1)
+  #expect(week[0].overview.procedureEndAt == (try overviewNow("2026-08-20T08:20:00")))
+
+  let stay = try CommanderStayPresentation.make(schedule: schedule, now: now)
+  #expect(stay.totalProcedures == 1)
+  #expect(stay.procedures.map(\.name) == ["Koupel"])
+  #expect(stay.visits.count == 1)
+  #expect(stay.visits[0].event.stableId == "visit")
+  #expect(stay.visits[0].startAt == (try overviewNow("2026-08-20T08:30:00")))
+  #expect(stay.visits[0].endAt == (try overviewNow("2026-08-20T09:30:00")))
+  #expect(!stay.visits[0].completed)
+}
+
 @Test func stayPeriodIsInclusiveAndDoesNotInventCurrentDayOutsideStay() throws {
   let schedule = overviewSchedule(stay: ["dateFrom": "2026-08-20", "dateTo": "2026-08-22"])
   let cases: [(String, CommanderStayPhase, Int?)] = [
@@ -156,7 +177,9 @@ import Testing
   #expect(CommanderDateText.shortDay(date) == "Po 31. 8.")
   #expect(CommanderDateText.numericDate(date) == "31. 8. 2026")
   #expect(CommanderDateText.numericDate(isoDate: "2026-08-15") == "15. 8. 2026")
+  #expect(CommanderDateText.weekdayDate(isoDate: "2026-10-04") == "Neděle 4. 10. 2026")
   #expect(CommanderDateText.numericDate(isoDate: "2026-02-30") == nil)
+  #expect(CommanderDateText.weekdayDate(isoDate: "2026-02-30") == nil)
 }
 
 @Test func emptyScheduleHasNoWeekEventsOrProcedures() throws {

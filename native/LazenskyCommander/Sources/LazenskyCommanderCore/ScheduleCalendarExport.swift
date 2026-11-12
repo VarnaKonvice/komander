@@ -28,7 +28,7 @@ public enum ScheduleCalendarExport {
         "DTEND;TZID=Europe/Prague:\(local.string(from: item.endAt))",
         "SUMMARY:\(escape(item.event.title))", "LOCATION:\(escape(item.event.location))",
         "DESCRIPTION:\(escape("Lázeňský Commander\nOdejít nejpozději: " + leave))",
-        "CATEGORIES:\(item.event.kind == .meal ? "Jídla" : "Procedury")", "END:VEVENT"
+        "CATEGORIES:\(CommanderEventSemantics.calendarCategory(item.event))", "END:VEVENT"
       ]
     }
     lines.append("END:VCALENDAR")
