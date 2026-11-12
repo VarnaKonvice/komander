@@ -49,6 +49,9 @@ Veřejný katalog byl znovu porovnán s aktuálními oficiálními kontaktními 
 - `docs/bohanes-technologies/crm/assets/symbol-navy.svg` – tmavá varianta symbolu,
 - `docs/bohanes-technologies/crm/assets/favicon-final.svg` – finální favicon.
 
+## Karlovy Vary — více provozovatelů
+Záznam Karlovy Vary vědomě reprezentuje více nezávislých lázeňských provozovatelů. Hlavní rychlý telefon a e-mail v CRM patří Alžbětiným lázním (Lázně V., a.s.), protože jejich web a fotografie jsou použité jako primární reprezentativní položka. Pole IČO zůstává bez jediné hodnoty, protože pro celé město neexistuje jedno společné IČO; ověřená IČO jednotlivých provozovatelů jsou uvedena v poznámce a kontaktech.
+
 ## Další fáze
 Další práce má navazovat doplňováním obsahu do stávající struktury CRM:
 - kontaktní osoby,

@@ -118,8 +118,8 @@ Nemažou se bez samostatné kontroly.
 - [x] začlenit schválený web do `main`
 - [x] přenést HQ profil do `main`
 - [x] zařadit staré větve jako historické/referenční
-- [ ] vytvořit aktuální soukromou CRM zálohu z prohlížeče, kde jsou skutečné obchodní úpravy
-- [ ] doplnit poslední chybějící veřejné údaje Karlovy Vary a znovu spustit CRM test
+- [x] vytvořit aktuální soukromou CRM zálohu z Chrome do iCloud Drive (`Documents/Bohanes Technologies/CRM Backups`); 36 záznamů, 163 lokálních kontaktů, SHA-256 evidován při exportu
+- [x] Karlovy Vary znovu prověřeny: hlavní telefon/e-mail patří Alžbětiným lázním; jedno IČO záměrně není uvedeno, protože záznam reprezentuje více nezávislých provozovatelů; CRM test znovu PASS
 
 ### Gate B — uzavření iPhone PILOT 1
 - [x] Swift 318/318 testů
