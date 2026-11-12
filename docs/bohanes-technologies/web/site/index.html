@@ -4320,6 +4320,33 @@ html body .commander-master-shell #instalace .public-price-note{
 }
 </style>
 
+
+<style id="ios-standalone-safe-area-20261112">
+@media (max-width: 932px) and (orientation: landscape){
+  body{
+    padding-left:env(safe-area-inset-left)!important;
+    padding-right:env(safe-area-inset-right)!important;
+  }
+  header{
+    left:0;
+    right:0;
+  }
+  header .wrap.nav{
+    padding-left:calc(14px + env(safe-area-inset-left))!important;
+    padding-right:calc(14px + env(safe-area-inset-right))!important;
+  }
+  .mobile-bottom-nav{
+    left:env(safe-area-inset-left)!important;
+    right:env(safe-area-inset-right)!important;
+    width:auto!important;
+    max-width:none!important;
+  }
+  .wrap{
+    width:min(1360px,calc(100% - 32px))!important;
+  }
+}
+</style>
+
 </head>
 <body>
 <a class="skip-link" href="#main">Přeskočit na obsah</a>
@@ -4396,7 +4423,7 @@ html body .commander-master-shell #instalace .public-price-note{
 <div class="internal-launcher" id="internalLauncher" hidden>
 <div class="internal-launcher-head"><b>Interní prostředí Bohanes Technologies</b><span>Vyberte, kam chcete vstoupit.</span></div>
 <div class="internal-launcher-grid">
-<a class="internal-app-card crm" href="https://bohanes-technologies-crm.vercel.app/" target="_blank" rel="noopener"><span class="internal-app-icon">CRM</span><span><b>Obchodní CRM</b><small>Lázně, kontakty, mapa a obchodní případy</small></span></a>
+<a class="internal-app-card crm" href="/crm/"><span class="internal-app-icon">CRM</span><span><b>Obchodní CRM</b><small>Lázně, kontakty, mapa a obchodní případy</small></span></a>
 <a class="internal-app-card hq" href="/hq/"><span class="internal-app-icon">HQ</span><span><b>Bohanes HQ</b><small>Centrální pracovní a AI prostředí</small></span></a>
 </div>
 <p class="internal-warning">Toto je pouze lokální vývojový vstup. Není určen jako skutečné zabezpečení veřejného webu.</p>
