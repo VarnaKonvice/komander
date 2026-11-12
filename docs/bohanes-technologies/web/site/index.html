@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#F1F5FA"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Bohanes Technologies">
 <meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="theme-color" content="#0B3B5B">
 <title>Bohanes Technologies · Lázeňský Commander</title>
 <link rel="icon" href="/favicon-bohanes-transparent-v2.svg?v=2" type="image/svg+xml">
@@ -2640,233 +2643,1683 @@ header .nav>.desktop-contact{
 </style>
 
 <style id="commander-final-calm-20261112">
+/*
+  SOURCE OF TRUTH: Domů + Pro lázně.
+  Commander používá stejnou šířku 1360 px, radius 28 px, gradient var(--native),
+  stejné vnitřní panely a stejný rytmus. Žádný samostatný velký shell.
+*/
 :root{
-  --cmd-shell:#102445;
-  --cmd-tile:#122B50;
-  --cmd-card:#111F3F;
-  --cmd-card-2:#14284B;
+  --cmd-native:var(--native);
+  --cmd-inner:#0E153070;
+  --cmd-inner-strong:#0E1530A0;
   --cmd-line:#486797;
-  --cmd-line-soft:#36577F;
+  --cmd-line-soft:#47729F;
   --cmd-text:#FFFFFF;
-  --cmd-muted:#D4E2F8;
-  --cmd-accent:#65E5FF;
+  --cmd-muted:#DEE9FF;
+  --cmd-cyan:#65E5FF;
 }
 
-/* One visual grammar: shell -> section tile -> content card -> control. */
+/* Zrušení rozhozeného master shellu: hlavní sekce se znovu řídí stejnou mřížkou jako Pro lázně. */
 .commander-master-shell{
-  background:linear-gradient(145deg,#1E447E 0%,#16274E 50%,#0E1530 100%)!important;
-  border-color:#365D8A!important;
-  box-shadow:0 14px 34px rgba(9,24,49,.12)!important;
-}
-.commander-master-shell .section-tile,
-.commander-master-shell .features-intro{
-  background:var(--cmd-shell)!important;
-  border:1px solid var(--cmd-line)!important;
-  border-radius:22px!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+  display:block!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
   box-shadow:none!important;
 }
-.commander-master-shell .section-tile>.pad{padding:30px!important}
+.commander-master-shell>section,
+.commander-master-shell>.features-area{
+  width:100%!important;
+  margin:0!important;
+  padding:26px 0!important;
+  background:transparent!important;
+  border:0!important;
+}
+.commander-master-shell .wrap{
+  width:min(1360px,calc(100% - 56px))!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
 
-/* Uniform cards across the whole product. */
-#commander .screen-card,
-#commander .procedures-block,
-#jak-funguje .flow-step,
-#alarmy .alarm-block,
-#alarmy .alarm-explanation,
-#kalendar .widget-summary-panel,
-#kalendar .calendar-platform,
-#kalendar .calendar-ics-strip,
-#instalace .qr-card,
-#instalace .public-price-card,
-#pripravujeme .future-card{
-  background:var(--cmd-card)!important;
-  border:1px solid var(--cmd-line)!important;
-  border-radius:18px!important;
+/* Všechny hlavní Commander sekce = přesný jazyk Pro lázně. */
+.commander-master-shell .section-tile{
+  background:var(--cmd-native)!important;
+  border:1px solid #2B5484!important;
+  border-radius:28px!important;
   box-shadow:none!important;
-  color:var(--cmd-text)!important;
+  color:#fff!important;
+  overflow:hidden!important;
 }
-
-/* Inner preview wells use one darker inset tone. */
-#commander .screen-visual,
-#jak-funguje .flow-emblem,
-#alarmy .alarm-visual-slot,
-#pripravujeme .future-visual{
-  background:#0C1832!important;
-  border:1px solid var(--cmd-line-soft)!important;
-  box-shadow:none!important;
+.commander-master-shell .section-tile>.pad{
+  padding:42px!important;
 }
-
-/* Text hierarchy — consistent everywhere. */
-.commander-master-shell h2,
-.commander-master-shell h3,
-.commander-master-shell .group-panel-title h3,
-.commander-master-shell .screen-card h3,
-.commander-master-shell .future-card h3,
-.commander-master-shell .alarm-caption b{
-  color:var(--cmd-text)!important;
+.commander-master-shell .section-heading{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:32px!important;
+  align-items:end!important;
+  margin-bottom:30px!important;
 }
-.commander-master-shell .lead,
+.commander-master-shell .section-heading h2,
+.commander-master-shell h3{color:var(--cmd-text)!important}
+.commander-master-shell .section-heading .lead,
 .commander-master-shell p,
 .commander-master-shell .visual-note,
 .commander-master-shell .future-native-note,
-.commander-master-shell .qr-note,
-.commander-master-shell .calendar-platform>p,
-.commander-master-shell .calendar-platform .visual-note{
-  color:var(--cmd-muted)!important;
-}
-.commander-master-shell .kicker{color:var(--cmd-accent)!important}
+.commander-master-shell .qr-note{color:var(--cmd-muted)!important}
+.commander-master-shell .kicker{color:var(--cmd-cyan)!important}
 
-/* Installation: cards are Commander-dark; only QR itself remains paper-light. */
-html body #instalace .install-content-panel,
-html body #instalace .install-content-panel .qrs{
+/* Redundantní mezidlaždice nic nesděluje a rozbíjela rytmus. */
+#funkce.features-area{
+  padding:0!important;
   background:transparent!important;
+  border:0!important;
 }
-html body #instalace .install-content-panel .qr-card,
-html body #instalace .install-content-panel .install-iphone,
-html body #instalace .install-content-panel .install-android,
-html body #instalace .install-content-panel .install-activation{
-  background:var(--cmd-card)!important;
+#funkce>.features-intro{display:none!important}
+#funkce>section{padding:26px 0!important;margin:0!important}
+html body .commander-master-shell #funkce.features-area>section>.wrap{
+  width:min(1360px,calc(100% - 56px))!important;
+  max-width:1360px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+html body .commander-master-shell #funkce.features-area>section .section-tile{
+  border-radius:28px!important;
+}
+
+/* Obsahové panely = pravá karta v Pro lázně. */
+#commander .screens-content-panel,
+#jak-funguje .how-content-panel,
+#alarmy .alarm-content-panel,
+#kalendar .calendar-content-panel,
+#instalace .install-content-panel,
+#pripravujeme .future-content-panel{
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  padding:0!important;
+}
+.commander-master-shell .group-panel-title{margin:0 0 18px!important}
+.commander-master-shell .group-panel-title h3{margin:0!important}
+
+/* Užitečné obrazovky: přesně pět stejně velkých karet a jedna linie. */
+#commander .screen-grid{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:16px!important;
+  align-items:stretch!important;
+  margin:0!important;
+}
+html body .commander-master-shell #commander .screen-card{
+  min-width:0!important;
+  height:100%!important;
+  min-height:554px!important;
+  padding:20px!important;
+  display:grid!important;
+  grid-template-rows:352px auto 1fr!important;
+  background:var(--cmd-inner)!important;
   border:1px solid var(--cmd-line)!important;
+  border-radius:22px!important;
   box-shadow:none!important;
   color:#fff!important;
 }
-html body #instalace .install-content-panel .qr-card-head,
-html body #instalace .install-content-panel .qr-card>b{
-  color:#fff!important;
+html body .commander-master-shell #commander .screen-visual{
+  height:352px!important;
+  min-height:352px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:8px 0 0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
 }
-html body #instalace .install-content-panel .qr-card>span,
-html body #instalace .install-content-panel .qr-note{
-  color:var(--cmd-muted)!important;
+#commander .screen-visual .image-button,
+#commander .screen-visual img{
+  width:auto!important;
+  max-width:100%!important;
+  max-height:340px!important;
+  margin:auto!important;
 }
-html body #instalace .qr-art,
-html body #instalace .qr-art:after{
-  background:#F2F6FF!important;
+#commander .screen-card h3{
+  margin:18px 0 8px!important;
+  font-size:23px!important;
+  line-height:1.25!important;
+  text-align:center!important;
+}
+#commander .screen-card p{
+  margin:0!important;
+  font-size:17px!important;
+  line-height:1.5!important;
+  text-align:center!important;
 }
 
-/* Future: never fall back to a pale Bohanes tile inside Commander. */
-html body #pripravujeme{
-  background:transparent!important;
-  padding:0!important;
-}
-html body #pripravujeme .future-tile{
-  background:var(--cmd-shell)!important;
+/* Procedury: jedna rodičovská dlaždice, pět rovných dětí + jemný světelný průjezd. */
+html body .commander-master-shell #commander .procedures-block{
+  position:relative!important;
+  overflow:hidden!important;
+  margin-top:24px!important;
+  padding:24px!important;
+  background:var(--cmd-inner)!important;
   border:1px solid var(--cmd-line)!important;
   border-radius:22px!important;
   box-shadow:none!important;
 }
-html body #pripravujeme .future-tile>.pad{padding:30px!important}
-html body #pripravujeme .future-tile .section-heading{
-  padding-bottom:0!important;
-  border-bottom:0!important;
+#commander .procedures-block::before{
+  content:''!important;
+  position:absolute!important;
+  top:0!important;
+  left:-35%!important;
+  width:35%!important;
+  height:2px!important;
+  background:linear-gradient(90deg,transparent,rgba(101,229,255,.9),transparent)!important;
+  animation:commander-edge-pass 6s linear infinite!important;
+  pointer-events:none!important;
 }
-
-/* Procedures: one aligned strip, no extra bright slab. */
-#commander .procedures-block{
-  padding:20px!important;
-  margin-top:22px!important;
+@keyframes commander-edge-pass{
+  0%{left:-35%}
+  55%,100%{left:100%}
 }
+#commander .procedures-heading{
+  display:flex!important;
+  align-items:baseline!important;
+  gap:18px!important;
+  margin:0 0 18px!important;
+}
+#commander .procedures-heading h3{margin:0!important}
+#commander .procedures-heading p{margin:0!important}
 #commander .procedure-group-panel{
-  background:transparent!important;border:0!important;padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  padding:0!important;
 }
-#commander .proc{
-  background:var(--cmd-card-2)!important;
+#commander .procedure-badges{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:12px!important;
+}
+html body .commander-master-shell #commander .procedure-group-panel .proc{
+  min-height:70px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:10px!important;
+  padding:12px 14px!important;
+  background:var(--cmd-inner-strong)!important;
+  border:1px solid var(--cmd-line-soft)!important;
+  border-radius:14px!important;
+  box-shadow:none!important;
+}
+#commander .proc img{width:40px!important;height:40px!important;flex:0 0 40px!important}
+#commander .proc b{font-size:16px!important;line-height:1.35!important;color:#fff!important}
+
+/* Jak to funguje: jedna vnitřní plocha jako Pro lázně, ne dalších pět dlaždic. */
+#jak-funguje .product-flow{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:24px!important;
+  margin:0!important;
+  padding:26px 20px!important;
+  background:var(--cmd-inner)!important;
   border:1px solid var(--cmd-line)!important;
-  border-radius:12px!important;
-  min-height:66px!important;
+  border-radius:22px!important;
+}
+#jak-funguje .product-flow:before{
+  content:''!important;
+  position:absolute!important;
+  top:111px!important;
+  left:10%!important;
+  right:10%!important;
+  height:2px!important;
+  background:#77BEDC!important;
+}
+html body .commander-master-shell #jak-funguje .flow-step,
+html body .commander-master-shell #jak-funguje .flow-step:nth-child(n){
+  z-index:1!important;
+  min-width:0!important;
+  padding:0 8px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  text-align:center!important;
+}
+#jak-funguje .flow-visual{
+  height:170px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:transparent!important;
+  border:0!important;
+  margin-bottom:18px!important;
+}
+html body .commander-master-shell #jak-funguje .flow-emblem{
+  width:84px!important;
+  height:84px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:24px!important;
+  background:#315C8B!important;
+  border:1px solid #82B3D1!important;
+  box-shadow:0 0 0 8px #315B8A!important;
+}
+#jak-funguje .flow-step:not(:last-child):after{
+  content:'→'!important;
+  position:absolute!important;
+  right:-27px!important;
+  top:73px!important;
+  color:#A8E4F5!important;
+  background:#2E5889!important;
+  font-size:27px!important;
+  padding:0 2px!important;
+}
+#jak-funguje .flow-step h3{font-size:22px!important;margin:0 0 10px!important}
+#jak-funguje .flow-step p{font-size:17px!important;line-height:1.5!important;margin:0!important}
+
+/* Alarmy: jedna rodičovská plocha, tři stejně široké kroky. */
+#alarmy .alarm-content-panel{
+  padding:28px!important;
+  background:var(--cmd-inner)!important;
+  border:1px solid var(--cmd-line)!important;
+  border-radius:22px!important;
+}
+#alarmy .alarm-sequence{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:20px!important;
+}
+html body .commander-master-shell #alarmy .alarm-block{
+  min-width:0!important;
+  padding:0 18px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+#alarmy .alarm-block:not(:last-child){border-right:1px solid #64739366!important}
+#alarmy .alarm-block h3{margin:0 0 16px!important}
+html body .commander-master-shell #alarmy .alarm-visual-slot{
+  min-height:390px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:20px!important;
+  background:var(--cmd-inner-strong)!important;
+  border:1px solid var(--cmd-line-soft)!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+}
+#alarmy .alarm-visual-slot>.image-button img{max-height:350px!important;width:auto!important;margin:auto!important}
+#alarmy .alarm-time-card{
+  background:linear-gradient(180deg,#090B12,#111827)!important;
+  border:2px solid #2A3345!important;
+  box-shadow:inset 0 0 0 1px #FFFFFF10!important;
+}
+#alarmy .alarm-caption{padding-top:18px!important}
+#alarmy .alarm-explanation{
+  margin-top:22px!important;
+  padding:18px 20px!important;
+  background:var(--cmd-inner-strong)!important;
+  border:1px solid var(--cmd-line-soft)!important;
+  border-radius:16px!important;
+  box-shadow:none!important;
 }
 
-/* Consistent small controls / buttons inside the product. */
+/* Kalendář a widgety: stejná tmavá hierarchie. Žádná velká bílá plocha. */
+#kalendar .widget-summary-panel{
+  padding:28px!important;
+  background:var(--cmd-inner)!important;
+  border:1px solid var(--cmd-line)!important;
+  border-radius:22px!important;
+  box-shadow:none!important;
+}
+#kalendar .calendar-platforms{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:22px!important;
+  margin-top:24px!important;
+}
+html body .commander-master-shell #kalendar .calendar-platform{
+  padding:26px!important;
+  background:var(--cmd-inner)!important;
+  border:1px solid var(--cmd-line)!important;
+  border-radius:22px!important;
+  box-shadow:none!important;
+}
+#kalendar .calendar-platform:hover,
+#kalendar .calendar-platform:focus-within{
+  border-color:#65E5FF!important;
+  box-shadow:0 0 0 2px #65E5FF35!important;
+}
+#kalendar .calendar-preview{
+  padding:16px!important;
+  margin-bottom:18px!important;
+  background:#0E1530!important;
+  border:1px solid #52658F!important;
+  border-radius:16px!important;
+  color:#E6EEFF!important;
+}
+#kalendar .calendar-days{
+  color:#C2D3ED!important;
+  border-bottom-color:#53658D!important;
+}
+#kalendar .calendar-event{color:#EAF3FF!important}
+#kalendar .calendar-ics-strip{
+  display:flex!important;
+  align-items:center!important;
+  gap:16px!important;
+  margin-top:22px!important;
+  padding:18px 20px!important;
+  background:var(--cmd-inner)!important;
+  border:1px solid var(--cmd-line)!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+}
+
+/* Instalace: stejný tmavý Commander; světlý zůstává jen samotný QR papír. */
+#instalace .qrs{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:22px!important;
+  margin-top:0!important;
+}
+html body .commander-master-shell #instalace .qr-card{
+  min-width:0!important;
+  padding:28px!important;
+  background:var(--cmd-inner)!important;
+  border:1px solid var(--cmd-line)!important;
+  border-radius:22px!important;
+  box-shadow:none!important;
+  color:#fff!important;
+}
+#instalace .qr-card-head,
+#instalace .qr-card>b{color:#fff!important}
+#instalace .qr-card>span,
+#instalace .qr-note{color:var(--cmd-muted)!important}
+#instalace .qr-art,
+#instalace .qr-art:after{background:#F2F6FF!important}
+#instalace .public-price-card{
+  background:var(--cmd-inner)!important;
+  border:1px solid var(--cmd-line)!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+}
+
+/* Co chystáme: stejně jako ostatní sekce, dvě rovné karty v řádku. */
+html body #pripravujeme .future-tile{
+  background:var(--cmd-native)!important;
+  border:1px solid #2B5484!important;
+  border-radius:28px!important;
+  box-shadow:none!important;
+}
+#pripravujeme .future-grid{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:24px!important;
+}
+html body .commander-master-shell #pripravujeme .future-card{
+  height:100%!important;
+  padding:28px!important;
+  background:var(--cmd-inner)!important;
+  border:1px solid var(--cmd-line)!important;
+  border-radius:22px!important;
+  box-shadow:none!important;
+}
+html body .commander-master-shell #pripravujeme .future-visual{
+  min-height:290px!important;
+  background:transparent!important;
+  border:0!important;
+  border-bottom:1px solid #64739366!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+
+/* Ovládací prvky. */
 #commander .commander-platform-switch a,
 #commander .commander-platform-switch button,
 .commander-master-shell .status{
   min-height:36px!important;
   border-radius:9px!important;
-  border:1px solid var(--cmd-line)!important;
-  background:#0E1934!important;
+  border:1px solid #5D78A7!important;
+  background:#0E153080!important;
   color:#EAF3FF!important;
   box-shadow:none!important;
 }
 #commander .commander-platform-switch .is-active{
-  background:#F7FAFF!important;
-  color:#102884!important;
-  border-color:#F7FAFF!important;
+  background:#D6F5FF!important;
+  color:#112942!important;
+  border-color:#D6F5FF!important;
 }
 
-/* Calendar paper and QR paper are the only intentionally light surfaces. */
-#kalendar .calendar-preview{
-  background:#F4F6F8!important;
-  border:1px solid #D3DBE3!important;
-  color:#173554!important;
+/* Desktop / tablet / mobil – stejná mřížka jako zbytek webu. */
+@media(max-width:1339px){
+  .commander-master-shell .wrap{width:calc(100% - 56px)!important}
+  #commander .screen-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #commander .procedure-badges{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }
-
-/* Price row: same card language, not a separate style. */
-#instalace .public-pricing{
-  margin-top:22px!important;
+@media(max-width:1023px){
+  .commander-master-shell .section-heading{grid-template-columns:1fr!important;gap:4px!important}
+  #jak-funguje .product-flow{grid-template-columns:1fr!important;gap:24px!important}
+  #jak-funguje .product-flow:before{
+    top:72px!important;bottom:72px!important;left:59px!important;right:auto!important;width:2px!important;height:auto!important;
+  }
+  html body .commander-master-shell #jak-funguje .flow-step{
+    display:grid!important;grid-template-columns:84px 1fr!important;grid-template-rows:auto auto!important;
+    gap:0 18px!important;text-align:left!important;padding:0!important;
+  }
+  #jak-funguje .flow-visual{grid-column:1!important;grid-row:1/3!important;height:126px!important}
+  #jak-funguje .flow-step h3{grid-column:2!important;grid-row:1!important;align-self:end!important}
+  #jak-funguje .flow-step p{grid-column:2!important;grid-row:2!important}
+  #jak-funguje .flow-step:not(:last-child):after{
+    content:'↓'!important;left:47px!important;right:auto!important;top:auto!important;bottom:-27px!important;
+  }
+  #alarmy .alarm-sequence{grid-template-columns:1fr!important}
+  #alarmy .alarm-block{padding:0!important}
+  #alarmy .alarm-block:not(:last-child){
+    border-right:0!important;border-bottom:1px solid #64739366!important;padding-bottom:24px!important;margin-bottom:4px!important
+  }
 }
-#instalace .public-price-card{
-  min-height:92px!important;
-  display:grid!important;
-  grid-template-columns:1fr auto!important;
-  grid-template-rows:auto auto!important;
-  align-items:center!important;
-  gap:2px 18px!important;
-  padding:18px 20px!important;
-}
-#instalace .public-price-card small{grid-column:1;color:#fff!important;font-weight:700}
-#instalace .public-price-card strong{grid-column:2;grid-row:1/3;color:#fff!important}
-#instalace .public-price-card span{grid-column:1;color:var(--cmd-muted)!important}
-
-/* Same vertical rhythm everywhere. */
-.commander-master-shell{gap:20px!important}
-.commander-master-shell .section-heading{margin-bottom:22px!important}
-.commander-master-shell .group-panel-title{margin-bottom:16px!important}
-#jak-funguje .product-flow,
-#alarmy .alarm-sequence,
-#kalendar .calendar-platforms,
-#instalace .qrs,
-#pripravujeme .future-grid{gap:18px!important}
-
-/* Desktop cards aligned to equal heights where appropriate. */
-@media(min-width:1280px){
-  #commander .screen-card{min-height:560px!important}
-  #pripravujeme .future-card{height:100%!important}
-  #instalace .qr-card{min-height:390px!important}
-}
-
-/* Procedures: final specificity over older legacy Commander rules. */
-html body .commander-master-shell #commander .procedures-block{
-  background:var(--cmd-card)!important;
-  border:1px solid var(--cmd-line)!important;
-  box-shadow:none!important;
-}
-html body .commander-master-shell #commander .procedure-group-panel .proc{
-  background:var(--cmd-card-2)!important;
-  border:1px solid var(--cmd-line)!important;
-  box-shadow:none!important;
-}
-
-/* Mobile: same system, no pale fallbacks, no horizontal overflow. */
 @media(max-width:760px){
-  .commander-master-shell{
-    width:calc(100% - 20px)!important;
-    padding:12px!important;
-    gap:14px!important;
-    border-radius:20px!important;
-  }
+  .commander-master-shell>section,
+  .commander-master-shell>.features-area,
+  #funkce>section{padding:20px 0!important}
+  .commander-master-shell .wrap{width:calc(100% - 36px)!important}
   .commander-master-shell .section-tile,
-  .commander-master-shell .features-intro{
-    border-radius:17px!important;
-  }
+  html body #pripravujeme .future-tile{border-radius:24px!important}
   .commander-master-shell .section-tile>.pad,
-  html body #pripravujeme .future-tile>.pad{padding:18px!important}
-  #instalace .qrs,
-  #pripravujeme .future-grid,
-  #kalendar .calendar-platforms{
-    grid-template-columns:1fr!important;
+  html body #pripravujeme .future-tile>.pad{padding:25px!important}
+  #commander .screen-grid{grid-template-columns:1fr!important}
+  html body .commander-master-shell #commander .screen-card{
+    min-height:0!important;
+    grid-template-columns:106px minmax(0,1fr)!important;
+    grid-template-rows:auto auto!important;
+    column-gap:16px!important;
+    padding:16px!important;
   }
-  #instalace .qr-card{min-height:0!important}
+  html body .commander-master-shell #commander .screen-visual{
+    grid-column:1!important;grid-row:1/3!important;
+    width:106px!important;height:220px!important;min-height:220px!important;
+  }
+  #commander .screen-visual .image-button,
+  #commander .screen-visual img{max-height:200px!important}
+  #commander .screen-card h3{grid-column:2!important;grid-row:1!important;text-align:left!important;margin:8px 0!important}
+  #commander .screen-card p{grid-column:2!important;grid-row:2!important;text-align:left!important}
+  #commander .procedures-heading{display:block!important}
+  #commander .procedures-heading h3{margin-bottom:6px!important}
+  #commander .procedure-badges{grid-template-columns:1fr 1fr!important}
+  #commander .proc:last-child{grid-column:1/-1!important}
+  #kalendar .calendar-platforms,
+  #instalace .qrs,
+  #pripravujeme .future-grid{grid-template-columns:1fr!important}
+  #alarmy .alarm-content-panel,
+  #kalendar .widget-summary-panel{padding:20px!important}
+  #alarmy .alarm-visual-slot{min-height:340px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  #commander .procedures-block::before{animation:none!important;display:none!important}
 }
 </style>
+
+<style id="commander-hierarchy-final-20261112">
+/* === DLAŽDICOVÁ HIERARCHIE: 1 Commander -> 2 oblasti -> 3 poddlaždice === */
+
+/* ÚROVEŇ 1: jediná mateřská dlaždice pro celý produkt. */
+html body .commander-master-shell{
+  width:min(1360px,calc(100% - 56px))!important;
+  max-width:1360px!important;
+  margin:42px auto!important;
+  padding:28px!important;
+  display:block!important;
+  background:var(--native)!important;
+  border:1px solid #2B5484!important;
+  border-radius:32px!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+}
+.commander-root-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  padding:2px 4px 26px;
+  margin:0 0 4px;
+  border-bottom:1px solid #64739366;
+}
+.commander-root-wordmark{
+  width:350px;
+  max-width:min(100%,350px);
+  height:auto;
+}
+html body .commander-master-shell .commander-platform-switch{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  flex:0 0 auto!important;
+}
+html body .commander-master-shell .commander-platform-switch a,
+html body .commander-master-shell .commander-platform-switch button{
+  min-height:40px!important;
+  padding:8px 14px!important;
+  border-radius:10px!important;
+  border:1px solid #5D78A7!important;
+  background:#0E153080!important;
+  color:#EAF3FF!important;
+  box-shadow:none!important;
+  font-weight:750!important;
+}
+html body .commander-master-shell .commander-platform-switch .is-active{
+  background:#D6F5FF!important;
+  color:#112942!important;
+  border-color:#D6F5FF!important;
+}
+
+/* Vše uvnitř patří do mateřské dlaždice – žádné další samostatné 1360px ostrovy. */
+html body .commander-master-shell>section,
+html body .commander-master-shell>.features-area,
+html body .commander-master-shell #funkce>section{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:22px 0 0!important;
+  background:transparent!important;
+  border:0!important;
+}
+html body .commander-master-shell #funkce{
+  padding:0!important;
+}
+html body .commander-master-shell .wrap,
+html body .commander-master-shell #funkce>section>.wrap{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+}
+
+/* Starý features-area nesmí prostřední dlaždice zužovat o 28 px. */
+html body .commander-master-shell #funkce.features-area>section>.wrap{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+}
+html body .commander-master-shell #funkce.features-area>section>.wrap.section-tile{
+  border-radius:24px!important;
+}
+
+/* ÚROVEŇ 2: Přehled, Jak to funguje, Alarmy, Kalendář, Instalace, Co chystáme. */
+html body .commander-master-shell .section-tile,
+html body .commander-master-shell #funkce>section .section-tile,
+html body .commander-master-shell #pripravujeme .future-tile{
+  width:100%!important;
+  margin:0!important;
+  background:#0E153070!important;
+  border:1px solid #486797!important;
+  border-radius:24px!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+}
+html body .commander-master-shell .section-tile>.pad,
+html body .commander-master-shell #pripravujeme .future-tile>.pad{
+  padding:30px!important;
+}
+html body .commander-master-shell .section-heading{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:30px!important;
+  align-items:end!important;
+  margin:0 0 24px!important;
+}
+html body .commander-master-shell .section-heading .kicker{
+  margin-bottom:8px!important;
+  color:#65E5FF!important;
+}
+html body .commander-master-shell .section-heading h2{
+  margin:0!important;
+  color:#fff!important;
+}
+html body .commander-master-shell .section-heading .lead{
+  margin:0!important;
+  color:#DEE9FF!important;
+}
+
+/* Přehled obrazovek je sám úroveň 2. Obsah už nepotřebuje další obal. */
+html body #commander .screens-content-panel{
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+
+/* ÚROVEŇ 3: skutečné poddlaždice pojmenované v zadání. */
+html body #jak-funguje .how-content-panel,
+html body #alarmy .alarm-content-panel,
+html body #kalendar .calendar-content-panel,
+html body #instalace .install-content-panel,
+html body #pripravujeme .future-content-panel{
+  padding:24px!important;
+  background:#0E1530A0!important;
+  border:1px solid #486797!important;
+  border-radius:20px!important;
+  box-shadow:none!important;
+}
+html body .commander-master-shell .group-panel-title{
+  margin:0 0 20px!important;
+  padding:0!important;
+}
+html body .commander-master-shell .group-panel-title h3{
+  margin:0!important;
+  font-size:24px!important;
+  line-height:1.3!important;
+  color:#fff!important;
+}
+
+/* Cesta od rozpisu je obsah poddlaždice, ne ještě jedna velká dlaždice navíc. */
+html body #jak-funguje .how-content-panel .product-flow{
+  margin:0!important;
+  padding:16px 4px 2px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+}
+
+/* Alarmy: poddlaždice Od nastavení předstihu k alarmu drží celý tok pohromadě. */
+html body #alarmy .alarm-content-panel{
+  padding:24px!important;
+}
+html body #alarmy .alarm-sequence{
+  margin:0!important;
+}
+html body #alarmy .alarm-explanation{
+  margin:22px 0 0!important;
+  background:#FFFFFF08!important;
+  border:1px solid #64739366!important;
+  border-radius:16px!important;
+}
+
+/* Kalendář: Widgety a kalendáře je rodič; souhrn widgetů už není další mateřský blok. */
+html body #kalendar .widget-summary-panel{
+  margin:0!important;
+  padding:14px 0 4px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+html body #kalendar .calendar-platforms{
+  margin-top:22px!important;
+}
+
+/* Instalace: její content panel je poddlaždice, QR karty jsou až obsah uvnitř. */
+html body #instalace .qrs{
+  margin-top:0!important;
+}
+
+/* Co chystáme: Připravované funkce je poddlaždice. */
+html body #pripravujeme .future-content-panel{
+  padding:24px!important;
+}
+
+/* Procedury zůstávají pod Přehledem obrazovek jako samostatná vnitřní dlaždice. */
+html body #commander .procedures-block{
+  margin-top:24px!important;
+}
+
+/* Rytmus mezi úrovněmi je jednotný. */
+html body .commander-master-shell>section:last-child{
+  padding-bottom:0!important;
+}
+
+/* Mobil a tablet: hierarchie zůstává stejná, pouze se skládá pod sebe. */
+@media(max-width:1023px){
+  html body .commander-master-shell .section-heading{
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+  }
+}
+@media(max-width:760px){
+  html body .commander-master-shell{
+    width:calc(100% - 36px)!important;
+    margin:28px auto!important;
+    padding:14px!important;
+    border-radius:26px!important;
+  }
+  .commander-root-head{
+    align-items:flex-start;
+    flex-direction:column;
+    gap:14px;
+    padding:4px 4px 20px;
+  }
+  .commander-root-wordmark{
+    width:290px;
+  }
+  html body .commander-master-shell>section,
+  html body .commander-master-shell>.features-area,
+  html body .commander-master-shell #funkce>section{
+    padding-top:14px!important;
+  }
+  html body .commander-master-shell .section-tile,
+  html body .commander-master-shell #funkce>section .section-tile,
+  html body .commander-master-shell #pripravujeme .future-tile{
+    border-radius:20px!important;
+  }
+  html body .commander-master-shell .section-tile>.pad,
+  html body .commander-master-shell #pripravujeme .future-tile>.pad{
+    padding:20px!important;
+  }
+  html body #jak-funguje .how-content-panel,
+  html body #alarmy .alarm-content-panel,
+  html body #kalendar .calendar-content-panel,
+  html body #instalace .install-content-panel,
+  html body #pripravujeme .future-content-panel{
+    padding:16px!important;
+    border-radius:17px!important;
+  }
+}
+</style>
+
+
+<style id="commander-final-polish-20261112">
+/* Finální dotažení pouze: Alarmy + Kalendář/widgety */
+
+/* KALENDÁŘ: jasná mateřská poddlaždice a tři čitelné vnitřní celky. */
+html body #kalendar .section-tile{
+  border-color:#5576A0!important;
+}
+html body #kalendar .calendar-content-panel{
+  padding:24px!important;
+  padding-bottom:26px!important;
+  background:#0E1530A0!important;
+  border:1px solid #5576A0!important;
+  border-radius:20px!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+html body #kalendar .calendar-content-panel>.group-panel-title{
+  margin:0 0 20px!important;
+}
+html body #kalendar .widget-summary-panel{
+  display:grid!important;
+  grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr)!important;
+  align-items:center!important;
+  gap:24px!important;
+  margin:0 0 22px!important;
+  padding:22px!important;
+  background:#0F1A3B!important;
+  border:1px solid #5576A0!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+}
+html body #kalendar .widget-summary-panel .widget-copy{
+  align-self:start!important;
+  padding-top:2px!important;
+}
+html body #kalendar .widget-summary-panel .widget-copy h3{
+  margin:0!important;
+}
+html body #kalendar .calendar-platforms{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:20px!important;
+  align-items:stretch!important;
+  margin:0 0 22px!important;
+}
+html body #kalendar .calendar-platform{
+  height:100%!important;
+  display:flex!important;
+  flex-direction:column!important;
+  padding:22px!important;
+  background:#0F1A3B!important;
+  border:1px solid #5576A0!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+}
+html body #kalendar .calendar-platform .calendar-preview{
+  margin-bottom:16px!important;
+}
+html body #kalendar .calendar-platform .visual-note{
+  margin-top:auto!important;
+  padding-top:4px!important;
+}
+html body #kalendar .calendar-ics-strip{
+  margin:0!important;
+  padding:18px 20px!important;
+  background:#0F1A3B!important;
+  border:1px solid #5576A0!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+}
+html body #kalendar .section-tile>.pad{
+  padding-bottom:30px!important;
+}
+
+/* ALARMY: tři skutečné karty stejně jako Přehled obrazovek, včetně textu. */
+html body #alarmy .alarm-content-panel{
+  padding:24px!important;
+  background:#0E1530A0!important;
+  border:1px solid #5576A0!important;
+  border-radius:20px!important;
+  box-shadow:none!important;
+}
+html body #alarmy .alarm-content-panel>.group-panel-title{
+  margin:0 0 20px!important;
+}
+html body #alarmy .alarm-sequence{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:18px!important;
+  align-items:stretch!important;
+  margin:0!important;
+}
+html body #alarmy .alarm-block{
+  position:relative!important;
+  min-width:0!important;
+  height:100%!important;
+  display:grid!important;
+  grid-template-rows:56px 350px auto!important;
+  align-content:start!important;
+  padding:18px!important;
+  background:#0F1A3B!important;
+  border:1px solid #5576A0!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+}
+html body #alarmy .alarm-block:not(:last-child){
+  border-right:1px solid #5576A0!important;
+}
+html body #alarmy .alarm-block h3{
+  min-height:56px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:21px!important;
+  line-height:1.25!important;
+}
+html body #alarmy .alarm-block h3 .alarm-symbol{
+  width:44px!important;
+  height:44px!important;
+  flex:0 0 44px!important;
+}
+html body #alarmy .alarm-block h3 .alarm-symbol img{
+  width:44px!important;
+  height:44px!important;
+  object-fit:contain!important;
+}
+html body #alarmy .alarm-visual-slot{
+  width:100%!important;
+  height:350px!important;
+  min-height:350px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:10px 8px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+}
+html body #alarmy .alarm-visual-slot>.image-button{
+  width:100%!important;
+  height:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+html body #alarmy .alarm-block:nth-child(1) .alarm-visual-slot img,
+html body #alarmy .alarm-block:nth-child(3) .alarm-visual-slot img{
+  width:auto!important;
+  height:320px!important;
+  max-width:100%!important;
+  max-height:320px!important;
+  object-fit:contain!important;
+  margin:auto!important;
+  border:0!important;
+  border-radius:18px!important;
+}
+html body #alarmy .alarm-time-card{
+  width:218px!important;
+  min-height:320px!important;
+  height:320px!important;
+  margin:auto!important;
+  padding:24px 16px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  border-radius:24px!important;
+  background:linear-gradient(180deg,#090B12,#111827)!important;
+  border:2px solid #364257!important;
+  box-shadow:inset 0 0 0 1px #FFFFFF10!important;
+}
+html body #alarmy .alarm-time-card strong{
+  font-size:58px!important;
+}
+html body #alarmy .alarm-caption{
+  padding:16px 2px 0!important;
+  align-self:start!important;
+}
+html body #alarmy .alarm-caption>b{
+  min-height:52px!important;
+  display:block!important;
+  margin:0 0 8px!important;
+  font-size:19px!important;
+  line-height:1.35!important;
+}
+html body #alarmy .alarm-caption p{
+  margin:0!important;
+  font-size:16px!important;
+  line-height:1.52!important;
+}
+html body #alarmy .alarm-block:not(:last-child):after{
+  content:'→'!important;
+  position:absolute!important;
+  z-index:4!important;
+  right:-16px!important;
+  top:34px!important;
+  width:30px!important;
+  text-align:center!important;
+  color:#65E5FF!important;
+  background:#102146!important;
+  font-size:22px!important;
+  line-height:30px!important;
+}
+html body #alarmy .alarm-explanation{
+  margin:20px 0 0!important;
+  padding:16px 18px!important;
+  background:#FFFFFF08!important;
+  border:1px solid #5576A055!important;
+  border-radius:15px!important;
+}
+
+/* Dorovnání specificity starších alarmových pravidel. */
+html body .commander-master-shell #alarmy .alarm-content-panel .alarm-block{
+  min-width:0!important;
+  height:100%!important;
+  display:grid!important;
+  grid-template-rows:56px 350px 1fr!important;
+  align-content:start!important;
+  padding:18px!important;
+  background:#0F1A3B!important;
+  border:1px solid #5576A0!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+}
+html body .commander-master-shell #alarmy .alarm-content-panel .alarm-block:not(:last-child){
+  border-right:1px solid #5576A0!important;
+}
+html body .commander-master-shell #alarmy .alarm-content-panel .alarm-visual-slot{
+  height:350px!important;
+  min-height:350px!important;
+  padding:10px 8px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+html body .commander-master-shell #alarmy .alarm-content-panel .alarm-caption{
+  padding:16px 0 0!important;
+}
+html body .commander-master-shell #alarmy .alarm-content-panel .alarm-caption>b{
+  min-height:52px!important;
+  margin:0 0 8px!important;
+}
+
+/* Dorovnání kalendářových karet, aby byly stejně čitelné jako ostatní poddlaždice. */
+html body .commander-master-shell #kalendar .calendar-content-panel .calendar-platform{
+  height:100%!important;
+  padding:22px!important;
+  background:#0F1A3B!important;
+  border:1px solid #5576A0!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+}
+
+/* Responzivní skládání bez změny hierarchie. */
+@media(max-width:1023px){
+  html body #kalendar .widget-summary-panel{
+    grid-template-columns:1fr!important;
+  }
+  html body #kalendar .calendar-platforms{
+    grid-template-columns:1fr!important;
+  }
+  html body #alarmy .alarm-sequence{
+    grid-template-columns:1fr!important;
+    gap:18px!important;
+  }
+  html body #alarmy .alarm-block{
+    grid-template-rows:auto 330px auto!important;
+  }
+  html body #alarmy .alarm-block:not(:last-child):after{
+    content:'↓'!important;
+    left:50%!important;
+    right:auto!important;
+    top:auto!important;
+    bottom:-24px!important;
+    transform:translateX(-50%)!important;
+  }
+}
+@media(max-width:760px){
+  html body #kalendar .calendar-content-panel,
+  html body #alarmy .alarm-content-panel{
+    padding:16px!important;
+  }
+  html body #kalendar .widget-summary-panel,
+  html body #kalendar .calendar-platform,
+  html body #kalendar .calendar-ics-strip{
+    padding:16px!important;
+    border-radius:15px!important;
+  }
+  html body #alarmy .alarm-block{
+    padding:16px!important;
+    grid-template-rows:auto 300px auto!important;
+  }
+  html body #alarmy .alarm-visual-slot{
+    height:300px!important;
+    min-height:300px!important;
+  }
+  html body #alarmy .alarm-block:nth-child(1) .alarm-visual-slot img,
+  html body #alarmy .alarm-block:nth-child(3) .alarm-visual-slot img{
+    height:278px!important;
+    max-height:278px!important;
+  }
+  html body #alarmy .alarm-time-card{
+    width:200px!important;
+    height:278px!important;
+    min-height:278px!important;
+  }
+}
+</style>
+
+
+<style id="calendar-hierarchy-fix-20261112">
+/* Kalendář/widgety – poslední srovnání hierarchie */
+html body #kalendar .section-tile{
+  overflow:hidden!important;
+}
+html body #kalendar .section-tile>.pad{
+  padding-bottom:36px!important;
+}
+html body #kalendar .calendar-content-panel{
+  margin:0!important;
+  padding:24px!important;
+  padding-bottom:24px!important;
+  overflow:hidden!important;
+}
+html body #kalendar .calendar-content-panel>.group-panel-title{
+  margin:0 0 18px!important;
+}
+html body #kalendar .calendar-subheading{
+  margin:0 0 12px!important;
+  padding:0 2px!important;
+}
+html body #kalendar .calendar-subheading h3{
+  margin:0!important;
+  font-size:23px!important;
+  line-height:1.3!important;
+  color:#fff!important;
+}
+html body #kalendar .widget-summary-panel{
+  display:block!important;
+  margin:0 0 22px!important;
+  padding:18px 20px!important;
+  background:#0F1A3B!important;
+  border:1px solid #5576A0!important;
+  border-radius:18px!important;
+  box-shadow:none!important;
+}
+html body #kalendar .widget-summary-panel .widget-collection{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1.7fr) minmax(0,.8fr)!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:18px!important;
+  margin:0!important;
+}
+html body #kalendar .widget-summary-panel .widget-medium{
+  width:100%!important;
+  max-width:520px!important;
+  justify-self:end!important;
+}
+html body #kalendar .widget-summary-panel .small-widgets{
+  width:100%!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:12px!important;
+  align-items:center!important;
+}
+html body #kalendar .calendar-platforms{
+  margin:0 0 22px!important;
+}
+html body #kalendar .calendar-ics-strip{
+  margin:0!important;
+}
+html body #kalendar .calendar-content-panel::after{
+  content:''!important;
+  display:block!important;
+  height:0!important;
+  clear:both!important;
+}
+
+@media(max-width:1023px){
+  html body #kalendar .widget-summary-panel .widget-collection{
+    grid-template-columns:1fr!important;
+  }
+  html body #kalendar .widget-summary-panel .widget-medium{
+    max-width:620px!important;
+    justify-self:center!important;
+  }
+  html body #kalendar .widget-summary-panel .small-widgets{
+    max-width:440px!important;
+    justify-self:center!important;
+  }
+}
+@media(max-width:760px){
+  html body #kalendar .section-tile>.pad{
+    padding-bottom:24px!important;
+  }
+  html body #kalendar .calendar-content-panel{
+    padding:16px!important;
+  }
+  html body #kalendar .calendar-subheading{
+    margin-bottom:10px!important;
+  }
+  html body #kalendar .calendar-subheading h3{
+    font-size:21px!important;
+  }
+  html body #kalendar .widget-summary-panel{
+    padding:14px!important;
+    border-radius:15px!important;
+  }
+  html body #kalendar .widget-summary-panel .small-widgets{
+    grid-template-columns:1fr 1fr!important;
+  }
+}
+</style>
+
+
+<style id="calendar-final-rhythm-20261112">
+/* Stabilita pozice při načítání obrázků / návratu do karty. */
+html{scroll-behavior:auto!important}
+html,body{overflow-anchor:none!important}
+
+/* Kalendář: vzduch mezi hlavním nadpisem a vnitřní dlaždicí. */
+html body #kalendar .section-heading{
+  margin-bottom:34px!important;
+}
+html body #kalendar .calendar-content-panel{
+  padding:26px!important;
+  padding-bottom:28px!important;
+}
+html body #kalendar .calendar-content-panel>.group-panel-title{
+  display:grid!important;
+  grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr)!important;
+  gap:30px!important;
+  align-items:start!important;
+  margin:0 0 18px!important;
+}
+html body #kalendar .calendar-title-stack{
+  display:grid!important;
+  gap:5px!important;
+}
+html body #kalendar .calendar-title-stack h3{
+  margin:0!important;
+  font-size:24px!important;
+  line-height:1.25!important;
+  color:#fff!important;
+}
+html body #kalendar .calendar-title-stack h4{
+  margin:0!important;
+  font-size:20px!important;
+  line-height:1.3!important;
+  font-weight:720!important;
+  color:#DCE8FA!important;
+}
+html body #kalendar .calendar-content-panel>.group-panel-title>p{
+  margin:1px 0 0!important;
+  font-size:17px!important;
+  line-height:1.5!important;
+  color:#DCE8FA!important;
+}
+
+/* Samostatná dlaždice obsahuje už jen widgety, bez prázdné textové poloviny. */
+html body #kalendar .widget-summary-panel{
+  margin:0 0 22px!important;
+  padding:18px 20px!important;
+}
+html body #kalendar .widget-summary-panel .widget-collection{
+  width:100%!important;
+  max-width:none!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,2fr) minmax(0,1fr)!important;
+  gap:16px!important;
+  align-items:center!important;
+  margin:0!important;
+}
+html body #kalendar .widget-summary-panel .widget-medium{
+  width:100%!important;
+  max-width:none!important;
+  justify-self:stretch!important;
+}
+html body #kalendar .widget-summary-panel .small-widgets{
+  width:100%!important;
+  max-width:none!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:12px!important;
+  margin:0!important;
+}
+html body #kalendar .widget-summary-panel .image-button img{
+  width:100%!important;
+  height:auto!important;
+}
+html body #kalendar .calendar-platforms{
+  margin-top:0!important;
+}
+html body #kalendar .calendar-ics-strip{
+  margin-bottom:0!important;
+}
+
+/* Spodní rohy musí mít vlastní vzduch před koncem rodičovské dlaždice. */
+html body #kalendar .calendar-content-panel{
+  margin-bottom:0!important;
+}
+html body #kalendar .section-tile>.pad{
+  padding-bottom:38px!important;
+}
+
+@media(max-width:1023px){
+  html body #kalendar .calendar-content-panel>.group-panel-title{
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+  }
+  html body #kalendar .widget-summary-panel .widget-collection{
+    grid-template-columns:1fr!important;
+  }
+  html body #kalendar .widget-summary-panel .widget-medium{
+    max-width:620px!important;
+    justify-self:center!important;
+  }
+  html body #kalendar .widget-summary-panel .small-widgets{
+    max-width:440px!important;
+    justify-self:center!important;
+  }
+}
+@media(max-width:760px){
+  html body #kalendar .section-heading{
+    margin-bottom:26px!important;
+  }
+  html body #kalendar .calendar-content-panel{
+    padding:16px!important;
+  }
+  html body #kalendar .calendar-title-stack h3{font-size:22px!important}
+  html body #kalendar .calendar-title-stack h4{font-size:18px!important}
+  html body #kalendar .section-tile>.pad{
+    padding-bottom:26px!important;
+  }
+}
+</style>
+
+
+<style id="calendar-widget-stack-final-20261112">
+/* Pouze poslední úprava widgetů + spodní hrany sekce Kalendář a widgety. */
+
+/* Velký widget vlevo, dva čtvercové widgety pod sebou vpravo. */
+html body #kalendar .widget-summary-panel .widget-collection{
+  display:grid!important;
+  grid-template-columns:minmax(0,4.28fr) minmax(0,1fr)!important;
+  gap:16px!important;
+  align-items:stretch!important;
+  width:100%!important;
+  max-width:none!important;
+}
+html body #kalendar .widget-summary-panel .widget-medium{
+  width:100%!important;
+  height:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+html body #kalendar .widget-summary-panel .widget-medium img{
+  width:100%!important;
+  height:auto!important;
+  object-fit:contain!important;
+}
+html body #kalendar .widget-summary-panel .small-widgets{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  grid-template-rows:1fr 1fr!important;
+  gap:16px!important;
+  width:100%!important;
+  max-width:none!important;
+  height:100%!important;
+  margin:0!important;
+  align-self:stretch!important;
+}
+html body #kalendar .widget-summary-panel .small-widgets .image-button{
+  width:100%!important;
+  height:100%!important;
+  aspect-ratio:1/1!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+html body #kalendar .widget-summary-panel .small-widgets img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+}
+
+/* Celá mateřská dlaždice Kalendář a widgety musí mít jasně viditelný spodek. */
+html body .commander-master-shell #kalendar{
+  padding-bottom:28px!important;
+}
+html body .commander-master-shell #kalendar .section-tile{
+  overflow:hidden!important;
+  border:1px solid #5B7EAA!important;
+  border-bottom:2px solid #6D91BE!important;
+  box-shadow:0 10px 24px rgba(5,19,40,.18)!important;
+}
+html body .commander-master-shell #kalendar .section-tile>.pad{
+  padding-bottom:40px!important;
+}
+html body .commander-master-shell #kalendar .calendar-content-panel{
+  margin-bottom:0!important;
+}
+html body .commander-master-shell #kalendar + section{
+  padding-top:28px!important;
+}
+
+@media(max-width:1023px){
+  html body #kalendar .widget-summary-panel .widget-collection{
+    grid-template-columns:1fr!important;
+  }
+  html body #kalendar .widget-summary-panel .widget-medium{
+    max-width:720px!important;
+    justify-self:center!important;
+  }
+  html body #kalendar .widget-summary-panel .small-widgets{
+    grid-template-columns:1fr 1fr!important;
+    grid-template-rows:auto!important;
+    max-width:520px!important;
+    justify-self:center!important;
+  }
+}
+@media(max-width:760px){
+  html body .commander-master-shell #kalendar{
+    padding-bottom:20px!important;
+  }
+  html body .commander-master-shell #kalendar .section-tile>.pad{
+    padding-bottom:28px!important;
+  }
+  html body #kalendar .widget-summary-panel .small-widgets{
+    gap:12px!important;
+  }
+}
+</style>
+
+
+<style id="commander-light-family-final-20261112">
+/* === VISUÁLNÍ RODINA PODLE "PRO LÁZNĚ" ===
+   Strukturu dlaždic neměníme. Jen světlo: vlevo světlejší, vpravo tmavší. */
+
+html body .commander-master-shell{
+  background:linear-gradient(135deg,#214A80 0%,#172E55 48%,#0C1830 100%)!important;
+  border-color:#5879A6!important;
+}
+
+/* Hlavní oblasti Commanderu – stejný světelný princip jako Pro lázně. */
+html body .commander-master-shell .section-tile,
+html body .commander-master-shell #funkce>section .section-tile,
+html body .commander-master-shell #pripravujeme .future-tile{
+  background:linear-gradient(135deg,#1E447E 0%,#16274E 52%,#0E1530 100%)!important;
+  border-color:#5277A4!important;
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.045),
+    inset -1px -1px 0 rgba(3,11,28,.30),
+    0 10px 26px rgba(5,18,40,.12)!important;
+}
+
+/* Druhá úroveň – stejný směr světla, ale o stupeň tmavší. */
+html body .commander-master-shell #jak-funguje .how-content-panel,
+html body .commander-master-shell #alarmy .alarm-content-panel,
+html body .commander-master-shell #kalendar .calendar-content-panel,
+html body .commander-master-shell #instalace .install-content-panel,
+html body .commander-master-shell #pripravujeme .future-content-panel,
+html body .commander-master-shell #commander .procedures-block{
+  background:linear-gradient(135deg,#1A3968 0%,#13284C 54%,#0C1831 100%)!important;
+  border-color:#5277A4!important;
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.035),
+    inset -1px -1px 0 rgba(3,11,28,.28)!important;
+}
+
+/* Vnitřní karty – jemnější verze světla, aby nezanikla hierarchie. */
+html body .commander-master-shell #commander .screen-card,
+html body .commander-master-shell #alarmy .alarm-block,
+html body .commander-master-shell #kalendar .widget-summary-panel,
+html body .commander-master-shell #kalendar .calendar-platform,
+html body .commander-master-shell #kalendar .calendar-ics-strip,
+html body .commander-master-shell #instalace .qr-card,
+html body .commander-master-shell #pripravujeme .future-card{
+  background:linear-gradient(135deg,#172F59 0%,#112344 56%,#0A1730 100%)!important;
+  border-color:#4E719D!important;
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.03),
+    inset -1px -1px 0 rgba(0,0,0,.18)!important;
+}
+
+/* Procedury zůstanou jasně oddělené, ale patří do stejného systému. */
+html body .commander-master-shell #commander .procedure-group-panel .proc{
+  background:linear-gradient(135deg,#17375F 0%,#102742 54%,#0A1B30 100%)!important;
+  border-color:#456C96!important;
+}
+
+/* Kalendář: spodní hrana a oba rohy musí být čitelné i proti mateřskému shellu. */
+html body .commander-master-shell #kalendar{
+  padding-bottom:34px!important;
+}
+html body .commander-master-shell #kalendar .section-tile{
+  position:relative!important;
+  overflow:hidden!important;
+  border:1px solid #6489B7!important;
+  border-bottom:2px solid #7EA5D2!important;
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.05),
+    inset 0 -2px 0 rgba(126,165,210,.46),
+    0 14px 30px rgba(5,18,40,.20)!important;
+}
+html body .commander-master-shell #kalendar .section-tile>.pad{
+  padding-bottom:44px!important;
+}
+html body .commander-master-shell #kalendar .section-tile::after{
+  content:""!important;
+  position:absolute!important;
+  left:22px!important;
+  right:22px!important;
+  bottom:12px!important;
+  height:14px!important;
+  pointer-events:none!important;
+  border-bottom:1px solid rgba(145,184,229,.58)!important;
+  border-bottom-left-radius:20px!important;
+  border-bottom-right-radius:20px!important;
+  opacity:.9!important;
+}
+
+/* Mobilní přihlášení – přímo v dolní navigaci, ne schované. */
+@media(max-width:760px){
+  .mobile-bottom-nav{
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  }
+  .mobile-bottom-nav .mobile-bottom-button{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:3px!important;
+    min-width:0!important;
+    min-height:54px!important;
+    padding:5px 2px!important;
+    margin:5px 0!important;
+    border:0!important;
+    border-radius:11px!important;
+    background:transparent!important;
+    color:#EAF4FA!important;
+    font-size:9px!important;
+    font-weight:700!important;
+    line-height:1!important;
+    text-align:center!important;
+  }
+  .mobile-bottom-nav .mobile-bottom-button svg{
+    width:21px!important;
+    height:21px!important;
+    fill:none!important;
+    stroke:currentColor!important;
+    stroke-width:1.8!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+  }
+  .mobile-bottom-nav .mobile-login-bottom:focus-visible{
+    outline:2px solid #65E5FF!important;
+    outline-offset:-2px!important;
+  }
+
+  /* Stejný světelný směr i na mobilu, pouze bez těžkých stínů. */
+  html body .commander-master-shell .section-tile,
+  html body .commander-master-shell #funkce>section .section-tile,
+  html body .commander-master-shell #pripravujeme .future-tile{
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.035)!important;
+  }
+  html body .commander-master-shell #kalendar{
+    padding-bottom:24px!important;
+  }
+  html body .commander-master-shell #kalendar .section-tile>.pad{
+    padding-bottom:30px!important;
+  }
+  html body .commander-master-shell #kalendar .section-tile::after{
+    left:14px!important;
+    right:14px!important;
+    bottom:8px!important;
+    height:10px!important;
+  }
+
+  /* Login/launcher na telefonu: CRM a HQ pod sebou, pohodlně klikatelné. */
+  .login-dialog{
+    width:calc(100vw - 24px)!important;
+    max-width:calc(100vw - 24px)!important;
+    max-height:calc(100dvh - 24px)!important;
+    overflow:auto!important;
+  }
+  .internal-launcher{
+    padding:18px!important;
+  }
+  .internal-launcher-grid{
+    grid-template-columns:1fr!important;
+    gap:12px!important;
+  }
+  .internal-app-card{
+    min-height:92px!important;
+    padding:15px!important;
+  }
+}
+</style>
+
+
+<style id="commander-effect-finishing-20261112">
+/* Poslední dotažení světla: Alarmy + ceny + čistá spodní hrana Kalendáře. */
+
+/* Kalendář: odstranit pomocnou druhou linku. Zůstává jediný skutečný obrys dlaždice. */
+html body .commander-master-shell #kalendar .section-tile::after{
+  content:none!important;
+  display:none!important;
+}
+html body .commander-master-shell #kalendar .section-tile{
+  border:1px solid #6489B7!important;
+  border-bottom:2px solid #8DB4DF!important;
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.05),
+    inset 0 -1px 0 rgba(141,180,223,.30),
+    0 13px 28px rgba(5,18,40,.18)!important;
+}
+html body .commander-master-shell #kalendar .section-tile>.pad{
+  padding-bottom:36px!important;
+}
+html body .commander-master-shell #kalendar .calendar-content-panel{
+  margin-bottom:0!important;
+}
+
+/* Alarmy: tři hlavní karty mají jasný stejný levopravý světelný pass. */
+html body .commander-master-shell #alarmy .alarm-content-panel .alarm-block{
+  background:
+    radial-gradient(120% 105% at 0% 0%,rgba(100,157,220,.20) 0%,rgba(100,157,220,.08) 30%,rgba(100,157,220,0) 58%),
+    linear-gradient(135deg,#1B3D70 0%,#132A50 54%,#0A1730 100%)!important;
+  border:1px solid #557DAA!important;
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.045),
+    inset -1px -1px 0 rgba(0,0,0,.20),
+    0 8px 18px rgba(4,15,34,.13)!important;
+}
+html body .commander-master-shell #alarmy .alarm-content-panel .alarm-block:nth-child(2){
+  background:
+    radial-gradient(120% 105% at 0% 0%,rgba(94,148,212,.18) 0%,rgba(94,148,212,.07) 30%,rgba(94,148,212,0) 58%),
+    linear-gradient(135deg,#193866 0%,#12274A 54%,#09162D 100%)!important;
+}
+html body .commander-master-shell #alarmy .alarm-content-panel .alarm-block h3{
+  color:#fff!important;
+}
+html body .commander-master-shell #alarmy .alarm-content-panel .alarm-caption p{
+  color:#DCE8FA!important;
+}
+
+/* Ceny 129 / 299: stejné světlo jako Commander, ne plochá stará karta. */
+html body .commander-master-shell #instalace .public-pricing{
+  gap:16px!important;
+}
+html body .commander-master-shell #instalace .public-price-card{
+  position:relative!important;
+  overflow:hidden!important;
+  background:
+    radial-gradient(120% 110% at 0% 0%,rgba(101,165,224,.22) 0%,rgba(101,165,224,.09) 32%,rgba(101,165,224,0) 62%),
+    linear-gradient(135deg,#1C4175 0%,#142B51 56%,#0B1831 100%)!important;
+  border:1px solid #5C82AF!important;
+  border-radius:18px!important;
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.045),
+    inset -1px -1px 0 rgba(0,0,0,.18),
+    0 8px 18px rgba(4,15,34,.13)!important;
+  color:#fff!important;
+}
+html body .commander-master-shell #instalace .public-price-card small{
+  color:#CFE1F8!important;
+}
+html body .commander-master-shell #instalace .public-price-card strong{
+  color:#fff!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.05)!important;
+}
+html body .commander-master-shell #instalace .public-price-card span{
+  color:#DCE8FA!important;
+}
+html body .commander-master-shell #instalace .public-price-note{
+  color:#DCE8FA!important;
+}
+
+/* Na telefonu zůstává stejný efekt, jen bez těžkého stínu. */
+@media(max-width:760px){
+  html body .commander-master-shell #alarmy .alarm-content-panel .alarm-block,
+  html body .commander-master-shell #instalace .public-price-card{
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.04)!important;
+  }
+  html body .commander-master-shell #kalendar .section-tile{
+    border-bottom-width:2px!important;
+    box-shadow:inset 1px 1px 0 rgba(255,255,255,.04)!important;
+  }
+}
+</style>
+
 </head>
 <body>
 <a class="skip-link" href="#main">Přeskočit na obsah</a>
@@ -2888,6 +4341,7 @@ html body .commander-master-shell #commander .procedure-group-panel .proc{
 <button type="button" class="mobile-bottom-button" data-platform-open><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18.5h4"/></svg><span>Commander</span></button>
 <a href="#pro-lazne" data-section="pro-lazne"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V8l8-5 8 5v13M8 21v-5h8v5M8 10h2M14 10h2"/></svg><span>Pro lázně</span></a>
 <a href="#kontakt" data-mobile-contact><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="m4 7 8 6 8-6"/></svg><span>Kontakt</span></a>
+<button type="button" class="mobile-bottom-button mobile-login-bottom" data-login-open aria-label="Přihlášení do interního prostředí"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.2-4.3 3.8-6.5 8-6.5s6.8 2.2 8 6.5"/></svg><span>Přihlášení</span></button>
 </nav>
 
 <main id="main">
@@ -2899,20 +4353,25 @@ html body .commander-master-shell #commander .procedure-group-panel .proc{
 
 <section id="o-nas"><div class="wrap section-tile about-tile"><div class="pad"><div class="about-grid"><div class="about-copy"><div class="kicker">O nás</div><h2>Proč vznikl Lázeňský Commander?</h2><p class="lead">Léčebný průkaz obsahuje všechno. Jen v něm musíte pokaždé znovu hledat.</p><p>Lázeňský Commander vznikl z jednoduché potřeby: podívat se na telefon a hned vědět, co mě čeká, kde to je a kdy mám vyrazit.</p><p>Časy, názvy procedur, patra a místnosti. Během pobytu potřebujete hlavně vědět, co je právě teď, co přijde potom a kdy už máte vyrazit.</p><p>Commander vznikl ze skutečné zkušenosti z lázní. Papírovému rozpisu dává přehlednou podobu v telefonu a pomáhá hlídat čas odchodu.</p></div><div class="story-visual"><div class="story-brand"><img class="product-mark" src="/native-ui/commander-mark.png" alt="Logo Lázeňského Commanderu"><div><b>Lázeňský Commander</b><span>Z rozpisu do přehledného dne.</span></div></div><div class="story-document"><div class="story-document-title"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""><span>Léčebný rozpis</span></div><div class="story-line"><time>09:15</time><span>LTV<br><small>Tělocvična</small></span></div><div class="story-line"><time>10:15</time><span>Ultrazvuk<br><small>Elektroléčba</small></span></div></div><div class="story-arrow" aria-hidden="true">↓</div><div class="story-answer"><img src="/procedure-icons/rehab.png" alt=""><div><span class="eyebrow">Co je teď · co bude dál</span><b>Čas, procedura a místo</b><span>V jednom denním přehledu.</span></div><img class="native-symbol" src="/native-ui/symbol-clock.png" alt=""></div><p class="visual-note">Ukázka údajů z demonstračního rozpisu Commanderu.</p></div></div></div></div></section>
 
-<div class="commander-master-shell">\n<section id="commander"><div class="wrap section-tile screens-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Lázeňský Commander</div><div class="commander-platform-switch"><a class="is-active" href="#commander">Apple</a><button type="button" data-platform-open>Android</button></div><h2>Užitečné obrazovky.</h2></div><p class="lead">Denní program, celý týden i nastavení předstihu. Skutečné obrazovky aplikace si můžete otevřít v čitelném detailu.</p></div><div class="subsection-panel screens-content-panel"><div class="group-panel-title"><h3>Přehled obrazovek</h3></div><div class="screen-grid"><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-today.png" alt="Dnes"></button></div><h3>Dnes</h3><p>Co vás čeká právě dnes, nejbližší procedura a kdy máte vyrazit.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-week.png" alt="Týden"></button></div><h3>Týden</h3><p>Celý týdenní rozpis po jednotlivých dnech a počet procedur.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-stay.png" alt="Pobyt"></button></div><h3>Pobyt</h3><p>Souhrn pobytu, průběh, počet procedur a přehled terapií.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-info.png" alt="Info"></button></div><h3>Info</h3><p>Důležité údaje o pobytu, lázních a klientovi na jednom místě.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-settings.png" alt="Nastavení"></button></div><h3>Nastavení</h3><p>Předstihy odchodu, kontrola rozpisu a další volby aplikace.</p></article></div><div class="procedures-block"><div class="procedures-heading"><h3>Procedury</h3><p>Stejné barvy a symboly vás provázejí celým Commanderem.</p></div><div class="procedure-group-panel"><div class="procedure-badges"><div class="proc"><img src="/procedure-icons/rehab.png" alt=""><b>Rehabilitace a pohyb</b></div><div class="proc"><img src="/procedure-icons/electro.png" alt=""><b>Elektroléčba</b></div><div class="proc"><img src="/procedure-icons/bath.png" alt=""><b>Vodoléčba</b></div><div class="proc"><img src="/procedure-icons/massage.png" alt=""><b>Masáže</b></div><div class="proc"><img src="/procedure-icons/wrap.png" alt=""><b>Teplo a zábaly</b></div></div></div></div></div></div></div></section>
+<div class="commander-master-shell">
+<div class="commander-root-head" aria-label="Lázeňský Commander – platformy">
+  <img class="commander-root-wordmark" src="/native-ui/commander-wordmark.png" alt="Lázeňský Commander">
+  <div class="commander-platform-switch"><a class="is-active" href="#commander">Apple</a><button type="button" data-platform-open>Android</button></div>
+</div>
+<section id="commander"><div class="wrap section-tile screens-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Aplikace</div><h2>Přehled obrazovek.</h2></div><p class="lead">Denní program, celý týden i nastavení předstihu. Skutečné obrazovky aplikace si můžete otevřít v čitelném detailu.</p></div><div class="subsection-panel screens-content-panel"><div class="screen-grid"><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-today.png" alt="Dnes"></button></div><h3>Dnes</h3><p>Co vás čeká právě dnes, nejbližší procedura a kdy máte vyrazit.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-week.png" alt="Týden"></button></div><h3>Týden</h3><p>Celý týdenní rozpis po jednotlivých dnech a počet procedur.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-stay.png" alt="Pobyt"></button></div><h3>Pobyt</h3><p>Souhrn pobytu, průběh, počet procedur a přehled terapií.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-info.png" alt="Info"></button></div><h3>Info</h3><p>Důležité údaje o pobytu, lázních a klientovi na jednom místě.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-settings.png" alt="Nastavení"></button></div><h3>Nastavení</h3><p>Předstihy odchodu, kontrola rozpisu a další volby aplikace.</p></article></div><div class="procedures-block"><div class="procedures-heading"><h3>Procedury</h3><p>Stejné barvy a symboly vás provázejí celým Commanderem.</p></div><div class="procedure-group-panel"><div class="procedure-badges"><div class="proc"><img src="/procedure-icons/rehab.png" alt=""><b>Rehabilitace a pohyb</b></div><div class="proc"><img src="/procedure-icons/electro.png" alt=""><b>Elektroléčba</b></div><div class="proc"><img src="/procedure-icons/bath.png" alt=""><b>Vodoléčba</b></div><div class="proc"><img src="/procedure-icons/massage.png" alt=""><b>Masáže</b></div><div class="proc"><img src="/procedure-icons/wrap.png" alt=""><b>Teplo a zábaly</b></div></div></div></div></div></div></div></section>
 
 <section class="features-area" id="funkce" aria-labelledby="features-title"><div class="wrap features-intro"><div class="kicker">Jeden produkt. Propojené funkce.</div><h2 id="features-title">Funkce Lázeňského Commanderu</h2><p>Od převodu rozpisu přes včasné upozornění až po program mimo aplikaci.</p></div>
-<section id="jak-funguje"><div class="wrap section-tile native-tile how-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Jak to funguje</div><h2>Z procedurového rozpisu až k upozornění.</h2></div><p class="lead">Jedna cesta. Stejný program v rozpisu, telefonu i včasném upozornění.</p></div><div class="subsection-panel how-content-panel"><div class="group-panel-title"><h3>Cesta od rozpisu k upozornění</h3></div><div class="product-flow"><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""></div></div><h3>Procedurový rozpis</h3><p>Časy, procedury a místa z vašeho rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-convert.png" alt=""></div></div><h3>Digitální převod</h3><p>Údaje se převedou do jednotného rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""></div></div><h3>Kontrola a aktivace</h3><p>Před použitím se rozpis zkontroluje.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem flow-commander-emblem"><img class="flow-commander-mark" src="/native-ui/commander-mark.png" alt="Logo Lázeňského Commanderu"></div></div><h3>Commander v telefonu</h3><p>Dnes, Týden a Pobyt na jednom místě.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-bell.png" alt=""></div></div><h3>Čas vyrazit</h3><p>iPhone upozorní v nastaveném čase odchodu.</p></article></div></div></div></div></section>
+<section id="jak-funguje"><div class="wrap section-tile native-tile how-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Funkce</div><h2>Jak to funguje.</h2></div><p class="lead">Jedna cesta. Stejný program v rozpisu, telefonu i včasném upozornění.</p></div><div class="subsection-panel how-content-panel"><div class="group-panel-title"><h3>Cesta od rozpisu k upozornění</h3></div><div class="product-flow"><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""></div></div><h3>Procedurový rozpis</h3><p>Časy, procedury a místa z vašeho rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-convert.png" alt=""></div></div><h3>Digitální převod</h3><p>Údaje se převedou do jednotného rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""></div></div><h3>Kontrola a aktivace</h3><p>Před použitím se rozpis zkontroluje.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem flow-commander-emblem"><img class="flow-commander-mark" src="/native-ui/commander-mark.png" alt="Logo Lázeňského Commanderu"></div></div><h3>Commander v telefonu</h3><p>Dnes, Týden a Pobyt na jednom místě.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-bell.png" alt=""></div></div><h3>Čas vyrazit</h3><p>iPhone upozorní v nastaveném čase odchodu.</p></article></div></div></div></div></section>
 
-<section id="alarmy"><div class="wrap section-tile alarm-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Alarmy a upozornění</div><h2>Commander hlídá čas odchodu.</h2></div><p class="lead">Commander určí čas. Systémový alarm iPhonu upozorní, že už máte vyrazit.</p></div><div class="subsection-panel alarm-content-panel"><div class="group-panel-title"><h3>Od nastavení předstihu k alarmu</h3></div><div class="alarm-sequence"><article class="alarm-block"><h3><span class="alarm-symbol"><img src="/native-ui/symbol-clock.png" alt=""></span>Nastavení předstihu</h3><div class="alarm-visual-slot"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit: Skutečné nastavení předstihu v aplikaci Commander"><img src="/screens/commander-settings.png" alt="Skutečné nastavení předstihu v aplikaci Commander"></button></div><div class="alarm-caption"><b>Čas, který potřebujete na cestu</b><p>Nastavíte předstih odchodu. Commander jej hlídá pro konkrétní proceduru nebo jídlo.</p></div></article><article class="alarm-block"><h3><span class="alarm-symbol"><img src="/native-ui/symbol-bell.png" alt=""></span>Systém iOS / alarm</h3><div class="alarm-visual-slot"><div class="alarm-time-card"><span class="alarm-time-label">Čas vyrazit</span><strong>08:55</strong><span class="alarm-time-event">LTV · začátek 09:15</span><span class="alarm-time-lead">Předstih 20 min</span></div></div><div class="alarm-caption"><b>AlarmKit upozorní v čase odchodu</b><p><strong>AlarmKit vyžaduje iOS 26.1 nebo novější.</strong> Nový systémový snímek doplníme až z ověřeného denního fyzického testu. Starý večerní snímek sem nepatří.</p></div></article><article class="alarm-block"><h3><span class="alarm-symbol is-brand"><img src="/native-ui/commander-mark.png" alt="Logo Commanderu"></span>Commander</h3><div class="alarm-visual-slot"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit: Běžný přehled otevřeného Commanderu, nikoliv vyzvánějící alarm"><img src="/screens/commander-today.png" alt="Běžný přehled otevřeného Commanderu, nikoliv vyzvánějící alarm"></button></div><div class="alarm-caption"><b>Program v otevřené aplikaci</b><p>Skutečný denní přehled a časový kontext procedury. Nejde o obrazovku vyzvánění.</p></div></article></div><div class="alarm-explanation"><b>Systémový alarm a otevřená aplikace</b><p>Vyzvánění zajišťuje iOS. Commander zobrazuje denní program a jeho časový kontext.</p><p class="section-note">Časová logika je sjednocená s demonstračním rozpisem: LTV 09:15, odchod 08:55, předstih 20 minut.</p></div></div></div></div></section>
+<section id="alarmy"><div class="wrap section-tile alarm-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Čas odchodu</div><h2>Alarmy a upozornění.</h2></div><p class="lead">Commander určí čas. Systémový alarm iPhonu upozorní, že už máte vyrazit.</p></div><div class="subsection-panel alarm-content-panel"><div class="group-panel-title"><h3>Od nastavení předstihu k alarmu</h3></div><div class="alarm-sequence"><article class="alarm-block"><h3><span class="alarm-symbol"><img src="/native-ui/symbol-clock.png" alt=""></span>Nastavení předstihu</h3><div class="alarm-visual-slot"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit: Skutečné nastavení předstihu v aplikaci Commander"><img src="/screens/commander-settings.png" alt="Skutečné nastavení předstihu v aplikaci Commander"></button></div><div class="alarm-caption"><b>Čas, který potřebujete na cestu</b><p>Nastavíte předstih odchodu. Commander jej hlídá pro konkrétní proceduru nebo jídlo.</p></div></article><article class="alarm-block"><h3><span class="alarm-symbol"><img src="/native-ui/symbol-bell.png" alt=""></span>Systém iOS / alarm</h3><div class="alarm-visual-slot"><div class="alarm-time-card"><span class="alarm-time-label">Čas vyrazit</span><strong>08:55</strong><span class="alarm-time-event">LTV · začátek 09:15</span><span class="alarm-time-lead">Předstih 20 min</span></div></div><div class="alarm-caption"><b>AlarmKit upozorní v čase odchodu</b><p><strong>AlarmKit vyžaduje iOS 26.1 nebo novější.</strong> Nový systémový snímek doplníme až z ověřeného denního fyzického testu. Starý večerní snímek sem nepatří.</p></div></article><article class="alarm-block"><h3><span class="alarm-symbol is-brand"><img src="/native-ui/commander-mark.png" alt="Logo Commanderu"></span>Commander</h3><div class="alarm-visual-slot"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit: Běžný přehled otevřeného Commanderu, nikoliv vyzvánějící alarm"><img src="/screens/commander-today.png" alt="Běžný přehled otevřeného Commanderu, nikoliv vyzvánějící alarm"></button></div><div class="alarm-caption"><b>Program v otevřené aplikaci</b><p>Skutečný denní přehled a časový kontext procedury. Nejde o obrazovku vyzvánění.</p></div></article></div><div class="alarm-explanation"><b>Systémový alarm a otevřená aplikace</b><p>Vyzvánění zajišťuje iOS. Commander zobrazuje denní program a jeho časový kontext.</p><p class="section-note">Časová logika je sjednocená s demonstračním rozpisem: LTV 09:15, odchod 08:55, předstih 20 minut.</p></div></div></div></div></section>
 
-<section id="kalendar"><div class="wrap section-tile native-tile calendar-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Kalendář a widgety</div><h2>Program i mimo aplikaci.</h2></div><p class="lead">Podlouhlý widget, přehled dne i nejbližší procedura. Stejný Commander přímo na ploše iPhonu.</p></div><div class="subsection-panel calendar-content-panel"><div class="group-panel-title"><h3>Widgety a kalendáře</h3><p>Widget ukazuje proceduru, místo a časový kontext. Malý přehled doplňuje počet zbývajících procedur a konec programu.</p></div><div class="widget-showcase widget-summary-panel"><div class="widget-copy"><h3>Teď, potom a zbytek dne.</h3></div><div class="widget-collection"><button class="image-button widget-medium" type="button" data-enlarge aria-label="Zvětšit: Nativní podlouhlý widget Commanderu"><img src="/native-ui/widget-medium.png" alt="Nativní podlouhlý widget Commanderu"></button><div class="small-widgets"><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní malý widget nejbližší procedury"><img src="/native-ui/widget-small.png" alt="Nativní malý widget nejbližší procedury"></button><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní malý widget přehledu dne"><img src="/native-ui/widget-day.png" alt="Nativní malý widget přehledu dne"></button></div></div></div><div class="calendar-platforms"><article class="calendar-platform"><div class="calendar-platform-head"><div class="calendar-app-symbol apple-calendar-symbol"><img class="native-symbol" src="/native-ui/symbol-calendar.png" alt=""></div><div><h3>Apple Kalendář</h3><span class="status ready">Synchronizace implementována</span></div><button class="calendar-zoom" type="button" data-enlarge-calendar aria-label="Zvětšit náhled Apple Kalendáře"></button></div><div class="calendar-preview apple-preview" role="button" tabindex="0" aria-label="Zvětšit náhled Apple Kalendáře"><div class="calendar-days"><span>Po</span><span>Út</span><span>St</span><span>Čt</span><span>Pá</span></div><div class="calendar-events"><div class="calendar-event rehab"><time>09:15</time><span>LTV</span></div><div class="calendar-event electro"><time>10:15</time><span>Ultrazvuk</span></div></div></div><p>Volitelná synchronizace zapíše rozpis pobytu do Apple Kalendáře. Oprávnění se vyžádá až po zapnutí v Nastavení.</p><span class="visual-note">Implementováno v nativním iPhone projektu přes EventKit.</span></article><article class="calendar-platform"><div class="calendar-platform-head"><img class="calendar-app-symbol" src="/native-ui/google-calendar.png" alt="Google Kalendář"><div><h3>Google Kalendář</h3><span class="status ready">Přes export .ics</span></div><button class="calendar-zoom" type="button" data-enlarge-calendar aria-label="Zvětšit náhled Google Kalendáře"></button></div><div class="calendar-preview google-preview" role="button" tabindex="0" aria-label="Zvětšit náhled Google Kalendáře"><div class="calendar-days"><span>Po</span><span>Út</span><span>St</span><span>Čt</span><span>Pá</span></div><div class="calendar-events"><div class="calendar-event rehab"><time>09:15</time><span>LTV</span></div><div class="calendar-event electro"><time>10:15</time><span>Ultrazvuk</span></div></div></div><p>Commander připraví soubor .ics, který lze otevřít nebo importovat do Google Kalendáře.</p><span class="visual-note">Nejde o přímou synchronizaci s Google účtem.</span></article></div><div class="calendar-ics-strip"><span class="calendar-ics-icon"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""></span><div><b>Export .ics</b><span>Jedním souborem přenesete rozpis do Google Kalendáře nebo jiného kompatibilního kalendáře. Export je dostupný v části Pokročilé.</span></div></div></div></div></div></section>
+<section id="kalendar" style="padding-bottom:34px !important"><div class="wrap section-tile native-tile calendar-tile" style="border:1px solid #6489B7 !important;border-bottom:2px solid #8DB4DF !important;box-shadow:inset 1px 1px 0 rgba(255,255,255,.05),inset 0 -2px 0 rgba(141,180,223,.52),0 14px 30px rgba(5,18,40,.20) !important"><div class="pad"><div class="section-heading"><div><div class="kicker">Mimo aplikaci</div><h2>Kalendář a widgety.</h2></div><p class="lead">Podlouhlý widget, přehled dne i nejbližší procedura. Stejný Commander přímo na ploše iPhonu.</p></div><div class="subsection-panel calendar-content-panel"><div class="group-panel-title"><div class="calendar-title-stack"><h3>Widgety a kalendáře</h3><h4>Teď, potom a zbytek dne.</h4></div><p>Widget ukazuje proceduru, místo a časový kontext. Malý přehled doplňuje počet zbývajících procedur a konec programu.</p></div><div class="widget-showcase widget-summary-panel"><div class="widget-collection"><button class="image-button widget-medium" type="button" data-enlarge aria-label="Zvětšit: Nativní podlouhlý widget Commanderu"><img src="/native-ui/widget-medium.png" alt="Nativní podlouhlý widget Commanderu"></button><div class="small-widgets"><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní malý widget nejbližší procedury"><img src="/native-ui/widget-small.png" alt="Nativní malý widget nejbližší procedury"></button><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní malý widget přehledu dne"><img src="/native-ui/widget-day.png" alt="Nativní malý widget přehledu dne"></button></div></div></div><div class="calendar-platforms"><article class="calendar-platform"><div class="calendar-platform-head"><div class="calendar-app-symbol apple-calendar-symbol"><img class="native-symbol" src="/native-ui/symbol-calendar.png" alt=""></div><div><h3>Apple Kalendář</h3><span class="status ready">Synchronizace implementována</span></div><button class="calendar-zoom" type="button" data-enlarge-calendar aria-label="Zvětšit náhled Apple Kalendáře"></button></div><div class="calendar-preview apple-preview" role="button" tabindex="0" aria-label="Zvětšit náhled Apple Kalendáře"><div class="calendar-days"><span>Po</span><span>Út</span><span>St</span><span>Čt</span><span>Pá</span></div><div class="calendar-events"><div class="calendar-event rehab"><time>09:15</time><span>LTV</span></div><div class="calendar-event electro"><time>10:15</time><span>Ultrazvuk</span></div></div></div><p>Volitelná synchronizace zapíše rozpis pobytu do Apple Kalendáře. Oprávnění se vyžádá až po zapnutí v Nastavení.</p><span class="visual-note">Implementováno v nativním iPhone projektu přes EventKit.</span></article><article class="calendar-platform"><div class="calendar-platform-head"><img class="calendar-app-symbol" src="/native-ui/google-calendar.png" alt="Google Kalendář"><div><h3>Google Kalendář</h3><span class="status ready">Přes export .ics</span></div><button class="calendar-zoom" type="button" data-enlarge-calendar aria-label="Zvětšit náhled Google Kalendáře"></button></div><div class="calendar-preview google-preview" role="button" tabindex="0" aria-label="Zvětšit náhled Google Kalendáře"><div class="calendar-days"><span>Po</span><span>Út</span><span>St</span><span>Čt</span><span>Pá</span></div><div class="calendar-events"><div class="calendar-event rehab"><time>09:15</time><span>LTV</span></div><div class="calendar-event electro"><time>10:15</time><span>Ultrazvuk</span></div></div></div><p>Commander připraví soubor .ics, který lze otevřít nebo importovat do Google Kalendáře.</p><span class="visual-note">Nejde o přímou synchronizaci s Google účtem.</span></article></div><div class="calendar-ics-strip"><span class="calendar-ics-icon"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""></span><div><b>Export .ics</b><span>Jedním souborem přenesete rozpis do Google Kalendáře nebo jiného kompatibilního kalendáře. Export je dostupný v části Pokročilé.</span></div></div></div></div></div></section>
 
 </section>
 
-<section id="instalace"><div class="wrap section-tile install-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Instalace a aktivace</div><h2>Telefon, aplikace, váš pobyt.</h2></div><p class="lead">Instalační a aktivační adresy doplníme před spuštěním. Zatím zde vidíte jejich označená návrhová místa.</p></div><div class="subsection-panel install-content-panel"><div class="group-panel-title"><h3>Instalace a aktivace</h3></div><div class="qrs"><article class="qr-card install-iphone"><div class="qr-card-head"><span class="qr-platform-icon"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M19.7 14.5c0-3 2.5-4.4 2.6-4.5-1.4-2.1-3.6-2.4-4.4-2.4-1.9-.2-3.7 1.1-4.7 1.1-1 0-2.5-1.1-4.1-1.1-2.1 0-4.1 1.3-5.2 3.2-2.2 3.9-.6 9.6 1.6 12.7 1.1 1.5 2.3 3.1 3.9 3 1.6-.1 2.2-1 4.1-1s2.4 1 4.1 1c1.7 0 2.8-1.5 3.8-3 1.3-1.8 1.8-3.6 1.8-3.7-.1 0-3.5-1.4-3.5-5.3zM16.6 5.5c.9-1.1 1.5-2.7 1.3-4.2-1.3.1-2.9.9-3.9 2-.8.9-1.6 2.5-1.4 4 1.5.1 3-.8 4-1.8z"/></svg></span><span>iPhone</span></div><div class="qr-art" role="img" aria-label="Pouze grafický návrh budoucího QR kódu; nelze skenovat"><svg viewBox="0 0 29 29" aria-hidden="true"><rect x="9" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="2" width="1" height="1" fill="#6E56CF"/><rect x="19" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="3" width="1" height="1" fill="#6E56CF"/><rect x="10" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="3" width="1" height="1" fill="#136C78"/><rect x="13" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="3" width="1" height="1" fill="#6E56CF"/><rect x="19" y="3" width="1" height="1" fill="#6E56CF"/><rect x="10" y="4" width="1" height="1" fill="#6E56CF"/><rect x="12" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="4" width="1" height="1" fill="#136C78"/><rect x="15" y="4" width="1" height="1" fill="#6E56CF"/><rect x="18" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="5" width="1" height="1" fill="#136C78"/><rect x="18" y="5" width="1" height="1" fill="#6E56CF"/><rect x="19" y="5" width="1" height="1" fill="#136C78"/><rect x="11" y="6" width="1" height="1" fill="#6E56CF"/><rect x="12" y="6" width="1" height="1" fill="#136C78"/><rect x="13" y="6" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="6" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="6" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="7" width="1" height="1" fill="#6E56CF"/><rect x="13" y="8" width="1" height="1" fill="#6E56CF"/><rect x="16" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="8" width="1" height="1" fill="#136C78"/><rect x="18" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="13" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="9" width="1" height="1" fill="#6E56CF"/><rect x="16" y="9" width="1" height="1" fill="#136C78"/><rect x="17" y="9" width="1" height="1" fill="#136C78"/><rect x="22" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="9" width="1" height="1" fill="#136C78"/><rect x="26" y="9" width="1" height="1" fill="#136C78"/><rect x="3" y="10" width="1" height="1" fill="#136C78"/><rect x="6" y="10" width="1" height="1" fill="#136C78"/><rect x="7" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="10" width="1" height="1" fill="#136C78"/><rect x="9" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="10" width="1" height="1" fill="#136C78"/><rect x="22" y="10" width="1" height="1" fill="#136C78"/><rect x="23" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="11" width="1" height="1" fill="#136C78"/><rect x="5" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="7" y="11" width="1" height="1" fill="#6E56CF"/><rect x="19" y="11" width="1" height="1" fill="#136C78"/><rect x="21" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="12" width="1" height="1" fill="#6E56CF"/><rect x="19" y="12" width="1" height="1" fill="#6E56CF"/><rect x="20" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="12" width="1" height="1" fill="#6E56CF"/><rect x="23" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="12" width="1" height="1" fill="#6E56CF"/><rect x="2" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="7" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="13" width="1" height="1" fill="#6E56CF"/><rect x="21" y="13" width="1" height="1" fill="#6E56CF"/><rect x="23" y="13" width="1" height="1" fill="#6E56CF"/><rect x="26" y="13" width="1" height="1" fill="#136C78"/><rect x="2" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="14" width="1" height="1" fill="#136C78"/><rect x="4" y="14" width="1" height="1" fill="#6E56CF"/><rect x="6" y="14" width="1" height="1" fill="#6E56CF"/><rect x="7" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="14" width="1" height="1" fill="#6E56CF"/><rect x="21" y="14" width="1" height="1" fill="#6E56CF"/><rect x="22" y="14" width="1" height="1" fill="#136C78"/><rect x="23" y="14" width="1" height="1" fill="#136C78"/><rect x="25" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="15" width="1" height="1" fill="#6E56CF"/><rect x="4" y="15" width="1" height="1" fill="#136C78"/><rect x="5" y="15" width="1" height="1" fill="#6E56CF"/><rect x="19" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="26" y="15" width="1" height="1" fill="#6E56CF"/><rect x="2" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="16" width="1" height="1" fill="#6E56CF"/><rect x="5" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="16" width="1" height="1" fill="#136C78"/><rect x="9" y="16" width="1" height="1" fill="#136C78"/><rect x="21" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="16" width="1" height="1" fill="#136C78"/><rect x="6" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="17" width="1" height="1" fill="#6E56CF"/><rect x="26" y="17" width="1" height="1" fill="#6E56CF"/><rect x="2" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="18" width="1" height="1" fill="#136C78"/><rect x="22" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="26" y="18" width="1" height="1" fill="#136C78"/><rect x="2" y="19" width="1" height="1" fill="#136C78"/><rect x="5" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="6" y="19" width="1" height="1" fill="#6E56CF"/><rect x="7" y="19" width="1" height="1" fill="#136C78"/><rect x="8" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="19" width="1" height="1" fill="#136C78"/><rect x="14" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="19" width="1" height="1" fill="#136C78"/><rect x="19" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="20" width="1" height="1" fill="#136C78"/><rect x="14" y="20" width="1" height="1" fill="#136C78"/><rect x="18" y="20" width="1" height="1" fill="#6E56CF"/><rect x="19" y="20" width="1" height="1" fill="#6E56CF"/><rect x="22" y="20" width="1" height="1" fill="#6E56CF"/><rect x="9" y="21" width="1" height="1" fill="#6E56CF"/><rect x="13" y="21" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="21" width="1" height="1" fill="#6E56CF"/><rect x="17" y="21" width="1" height="1" fill="#6E56CF"/><rect x="18" y="21" width="1" height="1" fill="#6E56CF"/><rect x="20" y="21" width="1" height="1" fill="#6E56CF"/><rect x="22" y="21" width="1" height="1" fill="#136C78"/><rect x="23" y="21" width="1" height="1" fill="#136C78"/><rect x="9" y="22" width="1" height="1" fill="#6E56CF"/><rect x="10" y="22" width="1" height="1" fill="#6E56CF"/><rect x="12" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="22" width="1" height="1" fill="#6E56CF"/><rect x="17" y="22" width="1" height="1" fill="#136C78"/><rect x="18" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="22" width="1" height="1" fill="#136C78"/><rect x="23" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="22" width="1" height="1" fill="#6E56CF"/><rect x="26" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="13" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="23" width="1" height="1" fill="#136C78"/><rect x="18" y="23" width="1" height="1" fill="#136C78"/><rect x="21" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="24" width="1" height="1" fill="#6E56CF"/><rect x="26" y="24" width="1" height="1" fill="#136C78"/><rect x="9" y="25" width="1" height="1" fill="#136C78"/><rect x="12" y="25" width="1" height="1" fill="#6E56CF"/><rect x="14" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="25" width="1" height="1" fill="#6E56CF"/><rect x="19" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="25" width="1" height="1" fill="#136C78"/><rect x="26" y="25" width="1" height="1" fill="#136C78"/><rect x="11" y="26" width="1" height="1" fill="#136C78"/><rect x="12" y="26" width="1" height="1" fill="#6E56CF"/><rect x="20" y="26" width="1" height="1" fill="#6E56CF"/><rect x="23" y="26" width="1" height="1" fill="#136C78"/><rect x="2" y="2" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="3" y="3" width="5" height="5" fill="#F0F7FA"/><rect x="4" y="4" width="3" height="3" rx=".3" fill="#136C78"/><rect x="20" y="2" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="21" y="3" width="5" height="5" fill="#F0F7FA"/><rect x="22" y="4" width="3" height="3" rx=".3" fill="#136C78"/><rect x="2" y="20" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="3" y="21" width="5" height="5" fill="#F0F7FA"/><rect x="4" y="22" width="3" height="3" rx=".3" fill="#136C78"/></svg></div><b>iPhone</b><span>iOS 16.1+</span><p class="qr-note">Připravujeme / nelze skenovat</p></article><article class="qr-card install-android"><div class="qr-card-head"><span class="android-mark"><svg viewBox="0 0 36 28" aria-hidden="true"><path d="M8 7 4 1M28 7l4-6" stroke="#23864A" stroke-width="2" stroke-linecap="round"/><path d="M1 26a17 20 0 0 1 34 0Z" fill="#3DDC84"/><circle cx="10" cy="17" r="1.8" fill="#183B2A"/><circle cx="26" cy="17" r="1.8" fill="#183B2A"/></svg></span><span>Android</span></div><div class="qr-art" role="img" aria-label="Pouze grafický návrh budoucího QR kódu; nelze skenovat"><svg viewBox="0 0 29 29" aria-hidden="true"><rect x="9" y="2" width="1" height="1" fill="#6E56CF"/><rect x="12" y="2" width="1" height="1" fill="#6E56CF"/><rect x="13" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="2" width="1" height="1" fill="#6E56CF"/><rect x="19" y="2" width="1" height="1" fill="#136C78"/><rect x="10" y="3" width="1" height="1" fill="#136C78"/><rect x="11" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="3" width="1" height="1" fill="#136C78"/><rect x="14" y="3" width="1" height="1" fill="#136C78"/><rect x="17" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="3" width="1" height="1" fill="#6E56CF"/><rect x="11" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="13" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="5" width="1" height="1" fill="#6E56CF"/><rect x="17" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="6" width="1" height="1" fill="#136C78"/><rect x="13" y="6" width="1" height="1" fill="#6E56CF"/><rect x="14" y="6" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="7" width="1" height="1" fill="#6E56CF"/><rect x="18" y="7" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="7" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="8" width="1" height="1" fill="#6E56CF"/><rect x="13" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="8" width="1" height="1" fill="#136C78"/><rect x="15" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="8" width="1" height="1" fill="#6E56CF"/><rect x="17" y="8" width="1" height="1" fill="#6E56CF"/><rect x="2" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="7" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="9" width="1" height="1" fill="#6E56CF"/><rect x="17" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="9" width="1" height="1" fill="#136C78"/><rect x="24" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="10" width="1" height="1" fill="#6E56CF"/><rect x="8" y="10" width="1" height="1" fill="#136C78"/><rect x="9" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="26" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="11" width="1" height="1" fill="#136C78"/><rect x="5" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="11" width="1" height="1" fill="#136C78"/><rect x="2" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="12" width="1" height="1" fill="#6E56CF"/><rect x="5" y="12" width="1" height="1" fill="#136C78"/><rect x="7" y="12" width="1" height="1" fill="#6E56CF"/><rect x="9" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="12" width="1" height="1" fill="#6E56CF"/><rect x="23" y="12" width="1" height="1" fill="#6E56CF"/><rect x="24" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="12" width="1" height="1" fill="#6E56CF"/><rect x="26" y="12" width="1" height="1" fill="#6E56CF"/><rect x="6" y="13" width="1" height="1" fill="#136C78"/><rect x="7" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="13" width="1" height="1" fill="#6E56CF"/><rect x="9" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="13" width="1" height="1" fill="#6E56CF"/><rect x="26" y="13" width="1" height="1" fill="#6E56CF"/><rect x="3" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="6" y="14" width="1" height="1" fill="#6E56CF"/><rect x="7" y="14" width="1" height="1" fill="#6E56CF"/><rect x="8" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="14" width="1" height="1" fill="#6E56CF"/><rect x="25" y="14" width="1" height="1" fill="#6E56CF"/><rect x="26" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="15" width="1" height="1" fill="#6E56CF"/><rect x="4" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="15" width="1" height="1" fill="#136C78"/><rect x="6" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="7" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="15" width="1" height="1" fill="#6E56CF"/><rect x="9" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="15" width="1" height="1" fill="#136C78"/><rect x="2" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="6" y="16" width="1" height="1" fill="#6E56CF"/><rect x="7" y="16" width="1" height="1" fill="#6E56CF"/><rect x="21" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="26" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="17" width="1" height="1" fill="#6E56CF"/><rect x="5" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="7" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="17" width="1" height="1" fill="#136C78"/><rect x="22" y="17" width="1" height="1" fill="#136C78"/><rect x="26" y="17" width="1" height="1" fill="#136C78"/><rect x="5" y="18" width="1" height="1" fill="#6E56CF"/><rect x="7" y="18" width="1" height="1" fill="#136C78"/><rect x="8" y="18" width="1" height="1" fill="#6E56CF"/><rect x="19" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="18" width="1" height="1" fill="#136C78"/><rect x="21" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="18" width="1" height="1" fill="#6E56CF"/><rect x="2" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="19" width="1" height="1" fill="#136C78"/><rect x="9" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="19" width="1" height="1" fill="#136C78"/><rect x="13" y="19" width="1" height="1" fill="#6E56CF"/><rect x="17" y="19" width="1" height="1" fill="#136C78"/><rect x="18" y="19" width="1" height="1" fill="#6E56CF"/><rect x="20" y="19" width="1" height="1" fill="#6E56CF"/><rect x="22" y="19" width="1" height="1" fill="#6E56CF"/><rect x="23" y="19" width="1" height="1" fill="#6E56CF"/><rect x="24" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="19" width="1" height="1" fill="#6E56CF"/><rect x="26" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="20" width="1" height="1" fill="#136C78"/><rect x="10" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="20" width="1" height="1" fill="#6E56CF"/><rect x="13" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="20" width="1" height="1" fill="#6E56CF"/><rect x="15" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="20" width="1" height="1" fill="#136C78"/><rect x="9" y="21" width="1" height="1" fill="#136C78"/><rect x="15" y="21" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="21" width="1" height="1" fill="#6E56CF"/><rect x="17" y="21" width="1" height="1" fill="#136C78"/><rect x="22" y="21" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="21" width="1" height="1" fill="#136C78"/><rect x="24" y="21" width="1" height="1" fill="#6E56CF"/><rect x="25" y="21" width="1" height="1" fill="#136C78"/><rect x="9" y="22" width="1" height="1" fill="#6E56CF"/><rect x="10" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="22" width="1" height="1" fill="#136C78"/><rect x="13" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="22" width="1" height="1" fill="#6E56CF"/><rect x="16" y="22" width="1" height="1" fill="#6E56CF"/><rect x="18" y="22" width="1" height="1" fill="#6E56CF"/><rect x="21" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="26" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="23" width="1" height="1" fill="#6E56CF"/><rect x="16" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="23" width="1" height="1" fill="#136C78"/><rect x="23" y="23" width="1" height="1" fill="#136C78"/><rect x="24" y="23" width="1" height="1" fill="#6E56CF"/><rect x="26" y="23" width="1" height="1" fill="#6E56CF"/><rect x="10" y="24" width="1" height="1" fill="#136C78"/><rect x="13" y="24" width="1" height="1" fill="#6E56CF"/><rect x="14" y="24" width="1" height="1" fill="#136C78"/><rect x="15" y="24" width="1" height="1" fill="#6E56CF"/><rect x="16" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="24" width="1" height="1" fill="#136C78"/><rect x="21" y="24" width="1" height="1" fill="#136C78"/><rect x="22" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="24" width="1" height="1" fill="#136C78"/><rect x="25" y="24" width="1" height="1" fill="#136C78"/><rect x="26" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="25" width="1" height="1" fill="#136C78"/><rect x="13" y="25" width="1" height="1" fill="#136C78"/><rect x="16" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="25" width="1" height="1" fill="#136C78"/><rect x="22" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="25" width="1" height="1" fill="#6E56CF"/><rect x="26" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="26" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="26" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="26" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="26" width="1" height="1" fill="#6E56CF"/><rect x="20" y="26" width="1" height="1" fill="#136C78"/><rect x="21" y="26" width="1" height="1" fill="#136C78"/><rect x="23" y="26" width="1" height="1" fill="#136C78"/><rect x="2" y="2" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="3" y="3" width="5" height="5" fill="#F0F7FA"/><rect x="4" y="4" width="3" height="3" rx=".3" fill="#136C78"/><rect x="20" y="2" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="21" y="3" width="5" height="5" fill="#F0F7FA"/><rect x="22" y="4" width="3" height="3" rx=".3" fill="#136C78"/><rect x="2" y="20" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="3" y="21" width="5" height="5" fill="#F0F7FA"/><rect x="4" y="22" width="3" height="3" rx=".3" fill="#136C78"/></svg></div><b>Android</b><span>Připravujeme · verzi systému doplníme</span><p class="qr-note">Připravujeme / nelze skenovat</p></article><article class="qr-card install-activation"><div class="qr-card-head"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""><span>Aktivace pobytu</span></div><div class="qr-art" role="img" aria-label="Pouze grafický návrh budoucího QR kódu; nelze skenovat"><svg viewBox="0 0 29 29" aria-hidden="true"><rect x="9" y="2" width="1" height="1" fill="#6E56CF"/><rect x="10" y="2" width="1" height="1" fill="#136C78"/><rect x="13" y="2" width="1" height="1" fill="#6E56CF"/><rect x="14" y="2" width="1" height="1" fill="#136C78"/><rect x="17" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="13" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="13" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="4" width="1" height="1" fill="#6E56CF"/><rect x="18" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="5" width="1" height="1" fill="#6E56CF"/><rect x="14" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="5" width="1" height="1" fill="#6E56CF"/><rect x="18" y="5" width="1" height="1" fill="#6E56CF"/><rect x="19" y="5" width="1" height="1" fill="#136C78"/><rect x="11" y="6" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="6" width="1" height="1" fill="#136C78"/><rect x="15" y="6" width="1" height="1" fill="#6E56CF"/><rect x="17" y="6" width="1" height="1" fill="#6E56CF"/><rect x="18" y="6" width="1" height="1" fill="#6E56CF"/><rect x="19" y="6" width="1" height="1" fill="#136C78"/><rect x="12" y="7" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="7" width="1" height="1" fill="#6E56CF"/><rect x="16" y="7" width="1" height="1" fill="#6E56CF"/><rect x="17" y="7" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="7" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="8" width="1" height="1" fill="#136C78"/><rect x="11" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="13" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="8" width="1" height="1" fill="#136C78"/><rect x="15" y="8" width="1" height="1" fill="#6E56CF"/><rect x="16" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="9" width="1" height="1" fill="#6E56CF"/><rect x="14" y="9" width="1" height="1" fill="#6E56CF"/><rect x="16" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="9" width="1" height="1" fill="#6E56CF"/><rect x="21" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="10" width="1" height="1" fill="#136C78"/><rect x="6" y="10" width="1" height="1" fill="#136C78"/><rect x="9" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="10" width="1" height="1" fill="#6E56CF"/><rect x="24" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="10" width="1" height="1" fill="#136C78"/><rect x="26" y="10" width="1" height="1" fill="#136C78"/><rect x="3" y="11" width="1" height="1" fill="#136C78"/><rect x="4" y="11" width="1" height="1" fill="#136C78"/><rect x="6" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="11" width="1" height="1" fill="#6E56CF"/><rect x="22" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="12" width="1" height="1" fill="#6E56CF"/><rect x="5" y="12" width="1" height="1" fill="#6E56CF"/><rect x="6" y="12" width="1" height="1" fill="#6E56CF"/><rect x="19" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="12" width="1" height="1" fill="#6E56CF"/><rect x="25" y="12" width="1" height="1" fill="#136C78"/><rect x="2" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="13" width="1" height="1" fill="#6E56CF"/><rect x="9" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="13" width="1" height="1" fill="#136C78"/><rect x="26" y="13" width="1" height="1" fill="#136C78"/><rect x="2" y="14" width="1" height="1" fill="#6E56CF"/><rect x="3" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="14" width="1" height="1" fill="#6E56CF"/><rect x="6" y="14" width="1" height="1" fill="#6E56CF"/><rect x="8" y="14" width="1" height="1" fill="#136C78"/><rect x="19" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="14" width="1" height="1" fill="#6E56CF"/><rect x="21" y="14" width="1" height="1" fill="#136C78"/><rect x="25" y="14" width="1" height="1" fill="#136C78"/><rect x="19" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="7" y="16" width="1" height="1" fill="#136C78"/><rect x="9" y="16" width="1" height="1" fill="#6E56CF"/><rect x="19" y="16" width="1" height="1" fill="#136C78"/><rect x="20" y="16" width="1" height="1" fill="#6E56CF"/><rect x="22" y="16" width="1" height="1" fill="#6E56CF"/><rect x="24" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="17" width="1" height="1" fill="#136C78"/><rect x="3" y="17" width="1" height="1" fill="#6E56CF"/><rect x="4" y="17" width="1" height="1" fill="#6E56CF"/><rect x="7" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="17" width="1" height="1" fill="#6E56CF"/><rect x="20" y="17" width="1" height="1" fill="#136C78"/><rect x="21" y="17" width="1" height="1" fill="#136C78"/><rect x="22" y="17" width="1" height="1" fill="#6E56CF"/><rect x="23" y="17" width="1" height="1" fill="#6E56CF"/><rect x="24" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="18" width="1" height="1" fill="#136C78"/><rect x="26" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="19" width="1" height="1" fill="#6E56CF"/><rect x="3" y="19" width="1" height="1" fill="#6E56CF"/><rect x="4" y="19" width="1" height="1" fill="#6E56CF"/><rect x="7" y="19" width="1" height="1" fill="#136C78"/><rect x="9" y="19" width="1" height="1" fill="#6E56CF"/><rect x="10" y="19" width="1" height="1" fill="#6E56CF"/><rect x="11" y="19" width="1" height="1" fill="#6E56CF"/><rect x="12" y="19" width="1" height="1" fill="#6E56CF"/><rect x="13" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="20" width="1" height="1" fill="#6E56CF"/><rect x="14" y="20" width="1" height="1" fill="#6E56CF"/><rect x="20" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="20" width="1" height="1" fill="#6E56CF"/><rect x="9" y="21" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="21" width="1" height="1" fill="#6E56CF"/><rect x="13" y="21" width="1" height="1" fill="#136C78"/><rect x="15" y="21" width="1" height="1" fill="#6E56CF"/><rect x="16" y="21" width="1" height="1" fill="#136C78"/><rect x="17" y="21" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="21" width="1" height="1" fill="#6E56CF"/><rect x="21" y="21" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="21" width="1" height="1" fill="#136C78"/><rect x="25" y="21" width="1" height="1" fill="#6E56CF"/><rect x="26" y="21" width="1" height="1" fill="#136C78"/><rect x="15" y="22" width="1" height="1" fill="#136C78"/><rect x="16" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="22" width="1" height="1" fill="#136C78"/><rect x="24" y="22" width="1" height="1" fill="#136C78"/><rect x="25" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="23" width="1" height="1" fill="#6E56CF"/><rect x="13" y="23" width="1" height="1" fill="#6E56CF"/><rect x="20" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="23" width="1" height="1" fill="#136C78"/><rect x="9" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="24" width="1" height="1" fill="#136C78"/><rect x="13" y="24" width="1" height="1" fill="#136C78"/><rect x="14" y="24" width="1" height="1" fill="#6E56CF"/><rect x="17" y="24" width="1" height="1" fill="#136C78"/><rect x="18" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="24" width="1" height="1" fill="#136C78"/><rect x="23" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="25" width="1" height="1" fill="#6E56CF"/><rect x="12" y="25" width="1" height="1" fill="#136C78"/><rect x="13" y="25" width="1" height="1" fill="#6E56CF"/><rect x="14" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="25" width="1" height="1" fill="#136C78"/><rect x="19" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="25" width="1" height="1" fill="#136C78"/><rect x="26" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="26" width="1" height="1" fill="#6E56CF"/><rect x="14" y="26" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="26" width="1" height="1" fill="#6E56CF"/><rect x="19" y="26" width="1" height="1" fill="#6E56CF"/><rect x="20" y="26" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="26" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="26" width="1" height="1" fill="#136C78"/><rect x="26" y="26" width="1" height="1" fill="#6E56CF"/><rect x="2" y="2" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="3" y="3" width="5" height="5" fill="#F0F7FA"/><rect x="4" y="4" width="3" height="3" rx=".3" fill="#136C78"/><rect x="20" y="2" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="21" y="3" width="5" height="5" fill="#F0F7FA"/><rect x="22" y="4" width="3" height="3" rx=".3" fill="#136C78"/><rect x="2" y="20" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="3" y="21" width="5" height="5" fill="#F0F7FA"/><rect x="4" y="22" width="3" height="3" rx=".3" fill="#136C78"/></svg></div><b>Aktivace pobytu</b><span>Propojení s konkrétním pobytem</span><p class="qr-note">Připravujeme / nelze skenovat</p></article></div><div class="public-pricing" aria-label="Cena Lázeňského Commanderu podle délky pobytu"><div class="public-price-card"><small>Krátký pobyt · 1–15 dní</small><strong>129 Kč</strong><span>včetně DPH za celý pobyt</span></div><div class="public-price-card"><small>Standardní pobyt · 16–35 dní</small><strong>299 Kč</strong><span>včetně DPH za celý pobyt</span></div><p class="public-price-note">Jednorázová aktivace konkrétního pobytu. Nejde o měsíční předplatné.</p></div></div></div></div></section>
+<section id="instalace"><div class="wrap section-tile install-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Pobyt</div><h2>Instalace a aktivace.</h2></div><p class="lead">Instalační a aktivační adresy doplníme před spuštěním. Zatím zde vidíte jejich označená návrhová místa.</p></div><div class="subsection-panel install-content-panel"><div class="group-panel-title"><h3>Instalace a aktivace</h3></div><div class="qrs"><article class="qr-card install-iphone"><div class="qr-card-head"><span class="qr-platform-icon"><svg viewBox="0 0 24 28" aria-hidden="true"><path d="M19.7 14.5c0-3 2.5-4.4 2.6-4.5-1.4-2.1-3.6-2.4-4.4-2.4-1.9-.2-3.7 1.1-4.7 1.1-1 0-2.5-1.1-4.1-1.1-2.1 0-4.1 1.3-5.2 3.2-2.2 3.9-.6 9.6 1.6 12.7 1.1 1.5 2.3 3.1 3.9 3 1.6-.1 2.2-1 4.1-1s2.4 1 4.1 1c1.7 0 2.8-1.5 3.8-3 1.3-1.8 1.8-3.6 1.8-3.7-.1 0-3.5-1.4-3.5-5.3zM16.6 5.5c.9-1.1 1.5-2.7 1.3-4.2-1.3.1-2.9.9-3.9 2-.8.9-1.6 2.5-1.4 4 1.5.1 3-.8 4-1.8z"/></svg></span><span>iPhone</span></div><div class="qr-art" role="img" aria-label="Pouze grafický návrh budoucího QR kódu; nelze skenovat"><svg viewBox="0 0 29 29" aria-hidden="true"><rect x="9" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="2" width="1" height="1" fill="#6E56CF"/><rect x="19" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="3" width="1" height="1" fill="#6E56CF"/><rect x="10" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="3" width="1" height="1" fill="#136C78"/><rect x="13" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="3" width="1" height="1" fill="#6E56CF"/><rect x="19" y="3" width="1" height="1" fill="#6E56CF"/><rect x="10" y="4" width="1" height="1" fill="#6E56CF"/><rect x="12" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="4" width="1" height="1" fill="#136C78"/><rect x="15" y="4" width="1" height="1" fill="#6E56CF"/><rect x="18" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="5" width="1" height="1" fill="#136C78"/><rect x="18" y="5" width="1" height="1" fill="#6E56CF"/><rect x="19" y="5" width="1" height="1" fill="#136C78"/><rect x="11" y="6" width="1" height="1" fill="#6E56CF"/><rect x="12" y="6" width="1" height="1" fill="#136C78"/><rect x="13" y="6" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="6" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="6" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="7" width="1" height="1" fill="#6E56CF"/><rect x="13" y="8" width="1" height="1" fill="#6E56CF"/><rect x="16" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="8" width="1" height="1" fill="#136C78"/><rect x="18" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="13" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="9" width="1" height="1" fill="#6E56CF"/><rect x="16" y="9" width="1" height="1" fill="#136C78"/><rect x="17" y="9" width="1" height="1" fill="#136C78"/><rect x="22" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="9" width="1" height="1" fill="#136C78"/><rect x="26" y="9" width="1" height="1" fill="#136C78"/><rect x="3" y="10" width="1" height="1" fill="#136C78"/><rect x="6" y="10" width="1" height="1" fill="#136C78"/><rect x="7" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="10" width="1" height="1" fill="#136C78"/><rect x="9" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="10" width="1" height="1" fill="#136C78"/><rect x="22" y="10" width="1" height="1" fill="#136C78"/><rect x="23" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="11" width="1" height="1" fill="#136C78"/><rect x="5" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="7" y="11" width="1" height="1" fill="#6E56CF"/><rect x="19" y="11" width="1" height="1" fill="#136C78"/><rect x="21" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="12" width="1" height="1" fill="#6E56CF"/><rect x="19" y="12" width="1" height="1" fill="#6E56CF"/><rect x="20" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="12" width="1" height="1" fill="#6E56CF"/><rect x="23" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="12" width="1" height="1" fill="#6E56CF"/><rect x="2" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="7" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="13" width="1" height="1" fill="#6E56CF"/><rect x="21" y="13" width="1" height="1" fill="#6E56CF"/><rect x="23" y="13" width="1" height="1" fill="#6E56CF"/><rect x="26" y="13" width="1" height="1" fill="#136C78"/><rect x="2" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="14" width="1" height="1" fill="#136C78"/><rect x="4" y="14" width="1" height="1" fill="#6E56CF"/><rect x="6" y="14" width="1" height="1" fill="#6E56CF"/><rect x="7" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="14" width="1" height="1" fill="#6E56CF"/><rect x="21" y="14" width="1" height="1" fill="#6E56CF"/><rect x="22" y="14" width="1" height="1" fill="#136C78"/><rect x="23" y="14" width="1" height="1" fill="#136C78"/><rect x="25" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="15" width="1" height="1" fill="#6E56CF"/><rect x="4" y="15" width="1" height="1" fill="#136C78"/><rect x="5" y="15" width="1" height="1" fill="#6E56CF"/><rect x="19" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="26" y="15" width="1" height="1" fill="#6E56CF"/><rect x="2" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="16" width="1" height="1" fill="#6E56CF"/><rect x="5" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="16" width="1" height="1" fill="#136C78"/><rect x="9" y="16" width="1" height="1" fill="#136C78"/><rect x="21" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="16" width="1" height="1" fill="#136C78"/><rect x="6" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="17" width="1" height="1" fill="#6E56CF"/><rect x="26" y="17" width="1" height="1" fill="#6E56CF"/><rect x="2" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="18" width="1" height="1" fill="#136C78"/><rect x="22" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="26" y="18" width="1" height="1" fill="#136C78"/><rect x="2" y="19" width="1" height="1" fill="#136C78"/><rect x="5" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="6" y="19" width="1" height="1" fill="#6E56CF"/><rect x="7" y="19" width="1" height="1" fill="#136C78"/><rect x="8" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="19" width="1" height="1" fill="#136C78"/><rect x="14" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="19" width="1" height="1" fill="#136C78"/><rect x="19" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="20" width="1" height="1" fill="#136C78"/><rect x="14" y="20" width="1" height="1" fill="#136C78"/><rect x="18" y="20" width="1" height="1" fill="#6E56CF"/><rect x="19" y="20" width="1" height="1" fill="#6E56CF"/><rect x="22" y="20" width="1" height="1" fill="#6E56CF"/><rect x="9" y="21" width="1" height="1" fill="#6E56CF"/><rect x="13" y="21" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="21" width="1" height="1" fill="#6E56CF"/><rect x="17" y="21" width="1" height="1" fill="#6E56CF"/><rect x="18" y="21" width="1" height="1" fill="#6E56CF"/><rect x="20" y="21" width="1" height="1" fill="#6E56CF"/><rect x="22" y="21" width="1" height="1" fill="#136C78"/><rect x="23" y="21" width="1" height="1" fill="#136C78"/><rect x="9" y="22" width="1" height="1" fill="#6E56CF"/><rect x="10" y="22" width="1" height="1" fill="#6E56CF"/><rect x="12" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="22" width="1" height="1" fill="#6E56CF"/><rect x="17" y="22" width="1" height="1" fill="#136C78"/><rect x="18" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="22" width="1" height="1" fill="#136C78"/><rect x="23" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="22" width="1" height="1" fill="#6E56CF"/><rect x="26" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="13" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="23" width="1" height="1" fill="#136C78"/><rect x="18" y="23" width="1" height="1" fill="#136C78"/><rect x="21" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="24" width="1" height="1" fill="#6E56CF"/><rect x="26" y="24" width="1" height="1" fill="#136C78"/><rect x="9" y="25" width="1" height="1" fill="#136C78"/><rect x="12" y="25" width="1" height="1" fill="#6E56CF"/><rect x="14" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="25" width="1" height="1" fill="#6E56CF"/><rect x="19" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="25" width="1" height="1" fill="#136C78"/><rect x="26" y="25" width="1" height="1" fill="#136C78"/><rect x="11" y="26" width="1" height="1" fill="#136C78"/><rect x="12" y="26" width="1" height="1" fill="#6E56CF"/><rect x="20" y="26" width="1" height="1" fill="#6E56CF"/><rect x="23" y="26" width="1" height="1" fill="#136C78"/><rect x="2" y="2" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="3" y="3" width="5" height="5" fill="#F0F7FA"/><rect x="4" y="4" width="3" height="3" rx=".3" fill="#136C78"/><rect x="20" y="2" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="21" y="3" width="5" height="5" fill="#F0F7FA"/><rect x="22" y="4" width="3" height="3" rx=".3" fill="#136C78"/><rect x="2" y="20" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="3" y="21" width="5" height="5" fill="#F0F7FA"/><rect x="4" y="22" width="3" height="3" rx=".3" fill="#136C78"/></svg></div><b>iPhone</b><span>iOS 16.1+</span><p class="qr-note">Připravujeme / nelze skenovat</p></article><article class="qr-card install-android"><div class="qr-card-head"><span class="android-mark"><svg viewBox="0 0 36 28" aria-hidden="true"><path d="M8 7 4 1M28 7l4-6" stroke="#23864A" stroke-width="2" stroke-linecap="round"/><path d="M1 26a17 20 0 0 1 34 0Z" fill="#3DDC84"/><circle cx="10" cy="17" r="1.8" fill="#183B2A"/><circle cx="26" cy="17" r="1.8" fill="#183B2A"/></svg></span><span>Android</span></div><div class="qr-art" role="img" aria-label="Pouze grafický návrh budoucího QR kódu; nelze skenovat"><svg viewBox="0 0 29 29" aria-hidden="true"><rect x="9" y="2" width="1" height="1" fill="#6E56CF"/><rect x="12" y="2" width="1" height="1" fill="#6E56CF"/><rect x="13" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="2" width="1" height="1" fill="#6E56CF"/><rect x="19" y="2" width="1" height="1" fill="#136C78"/><rect x="10" y="3" width="1" height="1" fill="#136C78"/><rect x="11" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="3" width="1" height="1" fill="#136C78"/><rect x="14" y="3" width="1" height="1" fill="#136C78"/><rect x="17" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="3" width="1" height="1" fill="#6E56CF"/><rect x="11" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="13" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="5" width="1" height="1" fill="#6E56CF"/><rect x="17" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="6" width="1" height="1" fill="#136C78"/><rect x="13" y="6" width="1" height="1" fill="#6E56CF"/><rect x="14" y="6" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="7" width="1" height="1" fill="#6E56CF"/><rect x="18" y="7" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="7" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="8" width="1" height="1" fill="#6E56CF"/><rect x="13" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="8" width="1" height="1" fill="#136C78"/><rect x="15" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="8" width="1" height="1" fill="#6E56CF"/><rect x="17" y="8" width="1" height="1" fill="#6E56CF"/><rect x="2" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="7" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="9" width="1" height="1" fill="#6E56CF"/><rect x="17" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="9" width="1" height="1" fill="#136C78"/><rect x="24" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="10" width="1" height="1" fill="#6E56CF"/><rect x="8" y="10" width="1" height="1" fill="#136C78"/><rect x="9" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="26" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="11" width="1" height="1" fill="#136C78"/><rect x="5" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="11" width="1" height="1" fill="#136C78"/><rect x="2" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="12" width="1" height="1" fill="#6E56CF"/><rect x="5" y="12" width="1" height="1" fill="#136C78"/><rect x="7" y="12" width="1" height="1" fill="#6E56CF"/><rect x="9" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="12" width="1" height="1" fill="#6E56CF"/><rect x="23" y="12" width="1" height="1" fill="#6E56CF"/><rect x="24" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="12" width="1" height="1" fill="#6E56CF"/><rect x="26" y="12" width="1" height="1" fill="#6E56CF"/><rect x="6" y="13" width="1" height="1" fill="#136C78"/><rect x="7" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="13" width="1" height="1" fill="#6E56CF"/><rect x="9" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="13" width="1" height="1" fill="#6E56CF"/><rect x="26" y="13" width="1" height="1" fill="#6E56CF"/><rect x="3" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="6" y="14" width="1" height="1" fill="#6E56CF"/><rect x="7" y="14" width="1" height="1" fill="#6E56CF"/><rect x="8" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="14" width="1" height="1" fill="#6E56CF"/><rect x="25" y="14" width="1" height="1" fill="#6E56CF"/><rect x="26" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="15" width="1" height="1" fill="#6E56CF"/><rect x="4" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="15" width="1" height="1" fill="#136C78"/><rect x="6" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="7" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="15" width="1" height="1" fill="#6E56CF"/><rect x="9" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="15" width="1" height="1" fill="#136C78"/><rect x="2" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="6" y="16" width="1" height="1" fill="#6E56CF"/><rect x="7" y="16" width="1" height="1" fill="#6E56CF"/><rect x="21" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="26" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="17" width="1" height="1" fill="#6E56CF"/><rect x="5" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="7" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="17" width="1" height="1" fill="#136C78"/><rect x="22" y="17" width="1" height="1" fill="#136C78"/><rect x="26" y="17" width="1" height="1" fill="#136C78"/><rect x="5" y="18" width="1" height="1" fill="#6E56CF"/><rect x="7" y="18" width="1" height="1" fill="#136C78"/><rect x="8" y="18" width="1" height="1" fill="#6E56CF"/><rect x="19" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="18" width="1" height="1" fill="#136C78"/><rect x="21" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="18" width="1" height="1" fill="#6E56CF"/><rect x="2" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="19" width="1" height="1" fill="#136C78"/><rect x="9" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="19" width="1" height="1" fill="#136C78"/><rect x="13" y="19" width="1" height="1" fill="#6E56CF"/><rect x="17" y="19" width="1" height="1" fill="#136C78"/><rect x="18" y="19" width="1" height="1" fill="#6E56CF"/><rect x="20" y="19" width="1" height="1" fill="#6E56CF"/><rect x="22" y="19" width="1" height="1" fill="#6E56CF"/><rect x="23" y="19" width="1" height="1" fill="#6E56CF"/><rect x="24" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="19" width="1" height="1" fill="#6E56CF"/><rect x="26" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="20" width="1" height="1" fill="#136C78"/><rect x="10" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="20" width="1" height="1" fill="#6E56CF"/><rect x="13" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="20" width="1" height="1" fill="#6E56CF"/><rect x="15" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="20" width="1" height="1" fill="#136C78"/><rect x="9" y="21" width="1" height="1" fill="#136C78"/><rect x="15" y="21" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="21" width="1" height="1" fill="#6E56CF"/><rect x="17" y="21" width="1" height="1" fill="#136C78"/><rect x="22" y="21" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="21" width="1" height="1" fill="#136C78"/><rect x="24" y="21" width="1" height="1" fill="#6E56CF"/><rect x="25" y="21" width="1" height="1" fill="#136C78"/><rect x="9" y="22" width="1" height="1" fill="#6E56CF"/><rect x="10" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="22" width="1" height="1" fill="#136C78"/><rect x="13" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="22" width="1" height="1" fill="#6E56CF"/><rect x="16" y="22" width="1" height="1" fill="#6E56CF"/><rect x="18" y="22" width="1" height="1" fill="#6E56CF"/><rect x="21" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="26" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="23" width="1" height="1" fill="#6E56CF"/><rect x="16" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="23" width="1" height="1" fill="#136C78"/><rect x="23" y="23" width="1" height="1" fill="#136C78"/><rect x="24" y="23" width="1" height="1" fill="#6E56CF"/><rect x="26" y="23" width="1" height="1" fill="#6E56CF"/><rect x="10" y="24" width="1" height="1" fill="#136C78"/><rect x="13" y="24" width="1" height="1" fill="#6E56CF"/><rect x="14" y="24" width="1" height="1" fill="#136C78"/><rect x="15" y="24" width="1" height="1" fill="#6E56CF"/><rect x="16" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="24" width="1" height="1" fill="#136C78"/><rect x="21" y="24" width="1" height="1" fill="#136C78"/><rect x="22" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="24" width="1" height="1" fill="#136C78"/><rect x="25" y="24" width="1" height="1" fill="#136C78"/><rect x="26" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="25" width="1" height="1" fill="#136C78"/><rect x="13" y="25" width="1" height="1" fill="#136C78"/><rect x="16" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="25" width="1" height="1" fill="#136C78"/><rect x="22" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="25" width="1" height="1" fill="#6E56CF"/><rect x="26" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="26" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="26" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="26" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="26" width="1" height="1" fill="#6E56CF"/><rect x="20" y="26" width="1" height="1" fill="#136C78"/><rect x="21" y="26" width="1" height="1" fill="#136C78"/><rect x="23" y="26" width="1" height="1" fill="#136C78"/><rect x="2" y="2" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="3" y="3" width="5" height="5" fill="#F0F7FA"/><rect x="4" y="4" width="3" height="3" rx=".3" fill="#136C78"/><rect x="20" y="2" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="21" y="3" width="5" height="5" fill="#F0F7FA"/><rect x="22" y="4" width="3" height="3" rx=".3" fill="#136C78"/><rect x="2" y="20" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="3" y="21" width="5" height="5" fill="#F0F7FA"/><rect x="4" y="22" width="3" height="3" rx=".3" fill="#136C78"/></svg></div><b>Android</b><span>Připravujeme · verzi systému doplníme</span><p class="qr-note">Připravujeme / nelze skenovat</p></article><article class="qr-card install-activation"><div class="qr-card-head"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""><span>Aktivace pobytu</span></div><div class="qr-art" role="img" aria-label="Pouze grafický návrh budoucího QR kódu; nelze skenovat"><svg viewBox="0 0 29 29" aria-hidden="true"><rect x="9" y="2" width="1" height="1" fill="#6E56CF"/><rect x="10" y="2" width="1" height="1" fill="#136C78"/><rect x="13" y="2" width="1" height="1" fill="#6E56CF"/><rect x="14" y="2" width="1" height="1" fill="#136C78"/><rect x="17" y="2" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="13" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="3" width="1" height="1" fill="#0B3B5B"/><rect x="13" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="4" width="1" height="1" fill="#6E56CF"/><rect x="18" y="4" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="5" width="1" height="1" fill="#6E56CF"/><rect x="14" y="5" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="5" width="1" height="1" fill="#6E56CF"/><rect x="18" y="5" width="1" height="1" fill="#6E56CF"/><rect x="19" y="5" width="1" height="1" fill="#136C78"/><rect x="11" y="6" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="6" width="1" height="1" fill="#136C78"/><rect x="15" y="6" width="1" height="1" fill="#6E56CF"/><rect x="17" y="6" width="1" height="1" fill="#6E56CF"/><rect x="18" y="6" width="1" height="1" fill="#6E56CF"/><rect x="19" y="6" width="1" height="1" fill="#136C78"/><rect x="12" y="7" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="7" width="1" height="1" fill="#6E56CF"/><rect x="16" y="7" width="1" height="1" fill="#6E56CF"/><rect x="17" y="7" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="7" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="8" width="1" height="1" fill="#136C78"/><rect x="11" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="13" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="8" width="1" height="1" fill="#136C78"/><rect x="15" y="8" width="1" height="1" fill="#6E56CF"/><rect x="16" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="8" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="9" width="1" height="1" fill="#6E56CF"/><rect x="14" y="9" width="1" height="1" fill="#6E56CF"/><rect x="16" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="17" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="9" width="1" height="1" fill="#6E56CF"/><rect x="21" y="9" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="10" width="1" height="1" fill="#136C78"/><rect x="6" y="10" width="1" height="1" fill="#136C78"/><rect x="9" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="10" width="1" height="1" fill="#6E56CF"/><rect x="24" y="10" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="10" width="1" height="1" fill="#136C78"/><rect x="26" y="10" width="1" height="1" fill="#136C78"/><rect x="3" y="11" width="1" height="1" fill="#136C78"/><rect x="4" y="11" width="1" height="1" fill="#136C78"/><rect x="6" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="11" width="1" height="1" fill="#6E56CF"/><rect x="22" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="11" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="12" width="1" height="1" fill="#6E56CF"/><rect x="5" y="12" width="1" height="1" fill="#6E56CF"/><rect x="6" y="12" width="1" height="1" fill="#6E56CF"/><rect x="19" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="12" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="12" width="1" height="1" fill="#6E56CF"/><rect x="25" y="12" width="1" height="1" fill="#136C78"/><rect x="2" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="13" width="1" height="1" fill="#6E56CF"/><rect x="9" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="13" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="13" width="1" height="1" fill="#136C78"/><rect x="26" y="13" width="1" height="1" fill="#136C78"/><rect x="2" y="14" width="1" height="1" fill="#6E56CF"/><rect x="3" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="14" width="1" height="1" fill="#6E56CF"/><rect x="6" y="14" width="1" height="1" fill="#6E56CF"/><rect x="8" y="14" width="1" height="1" fill="#136C78"/><rect x="19" y="14" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="14" width="1" height="1" fill="#6E56CF"/><rect x="21" y="14" width="1" height="1" fill="#136C78"/><rect x="25" y="14" width="1" height="1" fill="#136C78"/><rect x="19" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="15" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="7" y="16" width="1" height="1" fill="#136C78"/><rect x="9" y="16" width="1" height="1" fill="#6E56CF"/><rect x="19" y="16" width="1" height="1" fill="#136C78"/><rect x="20" y="16" width="1" height="1" fill="#6E56CF"/><rect x="22" y="16" width="1" height="1" fill="#6E56CF"/><rect x="24" y="16" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="17" width="1" height="1" fill="#136C78"/><rect x="3" y="17" width="1" height="1" fill="#6E56CF"/><rect x="4" y="17" width="1" height="1" fill="#6E56CF"/><rect x="7" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="17" width="1" height="1" fill="#6E56CF"/><rect x="20" y="17" width="1" height="1" fill="#136C78"/><rect x="21" y="17" width="1" height="1" fill="#136C78"/><rect x="22" y="17" width="1" height="1" fill="#6E56CF"/><rect x="23" y="17" width="1" height="1" fill="#6E56CF"/><rect x="24" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="17" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="3" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="4" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="5" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="8" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="23" y="18" width="1" height="1" fill="#136C78"/><rect x="26" y="18" width="1" height="1" fill="#0B3B5B"/><rect x="2" y="19" width="1" height="1" fill="#6E56CF"/><rect x="3" y="19" width="1" height="1" fill="#6E56CF"/><rect x="4" y="19" width="1" height="1" fill="#6E56CF"/><rect x="7" y="19" width="1" height="1" fill="#136C78"/><rect x="9" y="19" width="1" height="1" fill="#6E56CF"/><rect x="10" y="19" width="1" height="1" fill="#6E56CF"/><rect x="11" y="19" width="1" height="1" fill="#6E56CF"/><rect x="12" y="19" width="1" height="1" fill="#6E56CF"/><rect x="13" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="14" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="19" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="19" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="20" width="1" height="1" fill="#6E56CF"/><rect x="14" y="20" width="1" height="1" fill="#6E56CF"/><rect x="20" y="20" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="20" width="1" height="1" fill="#6E56CF"/><rect x="9" y="21" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="21" width="1" height="1" fill="#6E56CF"/><rect x="13" y="21" width="1" height="1" fill="#136C78"/><rect x="15" y="21" width="1" height="1" fill="#6E56CF"/><rect x="16" y="21" width="1" height="1" fill="#136C78"/><rect x="17" y="21" width="1" height="1" fill="#0B3B5B"/><rect x="18" y="21" width="1" height="1" fill="#6E56CF"/><rect x="21" y="21" width="1" height="1" fill="#0B3B5B"/><rect x="24" y="21" width="1" height="1" fill="#136C78"/><rect x="25" y="21" width="1" height="1" fill="#6E56CF"/><rect x="26" y="21" width="1" height="1" fill="#136C78"/><rect x="15" y="22" width="1" height="1" fill="#136C78"/><rect x="16" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="22" width="1" height="1" fill="#136C78"/><rect x="24" y="22" width="1" height="1" fill="#136C78"/><rect x="25" y="22" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="23" width="1" height="1" fill="#6E56CF"/><rect x="13" y="23" width="1" height="1" fill="#6E56CF"/><rect x="20" y="23" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="23" width="1" height="1" fill="#136C78"/><rect x="9" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="10" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="11" y="24" width="1" height="1" fill="#136C78"/><rect x="13" y="24" width="1" height="1" fill="#136C78"/><rect x="14" y="24" width="1" height="1" fill="#6E56CF"/><rect x="17" y="24" width="1" height="1" fill="#136C78"/><rect x="18" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="24" width="1" height="1" fill="#136C78"/><rect x="23" y="24" width="1" height="1" fill="#0B3B5B"/><rect x="9" y="25" width="1" height="1" fill="#6E56CF"/><rect x="12" y="25" width="1" height="1" fill="#136C78"/><rect x="13" y="25" width="1" height="1" fill="#6E56CF"/><rect x="14" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="16" y="25" width="1" height="1" fill="#136C78"/><rect x="19" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="20" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="25" y="25" width="1" height="1" fill="#136C78"/><rect x="26" y="25" width="1" height="1" fill="#0B3B5B"/><rect x="12" y="26" width="1" height="1" fill="#6E56CF"/><rect x="14" y="26" width="1" height="1" fill="#0B3B5B"/><rect x="15" y="26" width="1" height="1" fill="#6E56CF"/><rect x="19" y="26" width="1" height="1" fill="#6E56CF"/><rect x="20" y="26" width="1" height="1" fill="#0B3B5B"/><rect x="21" y="26" width="1" height="1" fill="#0B3B5B"/><rect x="22" y="26" width="1" height="1" fill="#136C78"/><rect x="26" y="26" width="1" height="1" fill="#6E56CF"/><rect x="2" y="2" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="3" y="3" width="5" height="5" fill="#F0F7FA"/><rect x="4" y="4" width="3" height="3" rx=".3" fill="#136C78"/><rect x="20" y="2" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="21" y="3" width="5" height="5" fill="#F0F7FA"/><rect x="22" y="4" width="3" height="3" rx=".3" fill="#136C78"/><rect x="2" y="20" width="7" height="7" rx=".5" fill="#0B3B5B"/><rect x="3" y="21" width="5" height="5" fill="#F0F7FA"/><rect x="4" y="22" width="3" height="3" rx=".3" fill="#136C78"/></svg></div><b>Aktivace pobytu</b><span>Propojení s konkrétním pobytem</span><p class="qr-note">Připravujeme / nelze skenovat</p></article></div><div class="public-pricing" aria-label="Cena Lázeňského Commanderu podle délky pobytu"><div class="public-price-card"><small>Krátký pobyt · 1–15 dní</small><strong>129 Kč</strong><span>včetně DPH za celý pobyt</span></div><div class="public-price-card"><small>Standardní pobyt · 16–35 dní</small><strong>299 Kč</strong><span>včetně DPH za celý pobyt</span></div><p class="public-price-note">Jednorázová aktivace konkrétního pobytu. Nejde o měsíční předplatné.</p></div></div></div></div></section>
 
-<section id="pripravujeme"><div class="wrap section-tile future-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Co chystáme</div><h2>Stejný Commander.<br>Na dalších obrazovkách.</h2></div><p class="lead">Nativní podoba produktu už existuje i mimo hlavní aplikaci. U každé funkce rozlišujeme její současný stav.</p></div><div class="subsection-panel future-content-panel"><div class="group-panel-title"><h3>Připravované funkce</h3></div><div class="future-grid"><article class="future-card"><div class="future-visual"><button class="image-button watch-shell" type="button" data-enlarge aria-label="Zvětšit: Nativní náhled obrazovky aplikace Commander pro Apple Watch"><img src="/native-ui/watch.png" alt="Nativní náhled obrazovky aplikace Commander pro Apple Watch"></button></div><span class="status">Nativní aplikace existuje</span><h3>Apple Watch</h3><p>Procedura, čas odchodu a místo přímo na zápěstí. Samostatné alarmy hodinek zatím nejsou zapnuté.</p><span class="future-native-note">Náhled skutečné komponenty Watch aplikace.</span></article><article class="future-card"><div class="future-visual"><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní vývojový náhled Live Activity Commanderu"><img src="/native-ui/live-activity.png" alt="Nativní vývojový náhled Live Activity Commanderu"></button></div><span class="status">Připravujeme · nyní vypnuté</span><h3>Live Activity</h3><p>Aktuální procedura a časový kontext na zamčené obrazovce. V aktuální verzi je tato funkce vypnutá.</p><span class="future-native-note">Čistý export z nativního rendereru Live Activity.</span></article><article class="future-card"><div class="future-visual"><button class="image-button island-compact" type="button" data-enlarge aria-label="Zvětšit: Náhled kompaktního Dynamic Islandu sestavený z nativních komponent"><img src="/native-ui/dynamic-island-compact.png" alt="Náhled kompaktního Dynamic Islandu sestavený z nativních komponent"></button><button class="image-button island-expanded" type="button" data-enlarge aria-label="Zvětšit: Náhled rozbaleného Dynamic Islandu sestavený z nativních komponent"><img src="/native-ui/dynamic-island.png" alt="Náhled rozbaleného Dynamic Islandu sestavený z nativních komponent"></button></div><span class="status">Připravujeme · nyní vypnuté</span><h3>Dynamic Island</h3><p>Krátký i rozbalený přehled nejbližší procedury. Je součástí implementace Live Activity.</p><span class="future-native-note">Produktový náhled z nativních komponent, nikoliv systémový screenshot.</span></article><article class="future-card"><div class="future-visual"><div class="future-widget-pair"><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní widget přehledu dne"><img src="/native-ui/widget-day.png" alt="Nativní widget přehledu dne"></button><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní widget nejbližší procedury"><img src="/native-ui/widget-small.png" alt="Nativní widget nejbližší procedury"></button></div><div class="calendar-connection"><img class="native-symbol" src="/native-ui/symbol-calendar.png" alt="Apple Kalendář"><span aria-hidden="true">✓</span></div></div><span class="status ready">Widgety a Apple Kalendář existují</span><h3>Widgety a kalendář pobytu</h3><p>Widgety i volitelná synchronizace s Apple Kalendářem jsou implementované. Export .ics zůstává dostupný v Pokročilé.</p><span class="future-native-note">Skutečné widgety a implementované propojení s Apple Kalendářem.</span></article></div></div></div></div></section>
+<section id="pripravujeme"><div class="wrap section-tile future-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Rozšíření</div><h2>Co chystáme.</h2></div><p class="lead">Nativní podoba produktu už existuje i mimo hlavní aplikaci. U každé funkce rozlišujeme její současný stav.</p></div><div class="subsection-panel future-content-panel"><div class="group-panel-title"><h3>Připravované funkce</h3></div><div class="future-grid"><article class="future-card"><div class="future-visual"><button class="image-button watch-shell" type="button" data-enlarge aria-label="Zvětšit: Nativní náhled obrazovky aplikace Commander pro Apple Watch"><img src="/native-ui/watch.png" alt="Nativní náhled obrazovky aplikace Commander pro Apple Watch"></button></div><span class="status">Nativní aplikace existuje</span><h3>Apple Watch</h3><p>Procedura, čas odchodu a místo přímo na zápěstí. Samostatné alarmy hodinek zatím nejsou zapnuté.</p><span class="future-native-note">Náhled skutečné komponenty Watch aplikace.</span></article><article class="future-card"><div class="future-visual"><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní vývojový náhled Live Activity Commanderu"><img src="/native-ui/live-activity.png" alt="Nativní vývojový náhled Live Activity Commanderu"></button></div><span class="status">Připravujeme · nyní vypnuté</span><h3>Live Activity</h3><p>Aktuální procedura a časový kontext na zamčené obrazovce. V aktuální verzi je tato funkce vypnutá.</p><span class="future-native-note">Čistý export z nativního rendereru Live Activity.</span></article><article class="future-card"><div class="future-visual"><button class="image-button island-compact" type="button" data-enlarge aria-label="Zvětšit: Náhled kompaktního Dynamic Islandu sestavený z nativních komponent"><img src="/native-ui/dynamic-island-compact.png" alt="Náhled kompaktního Dynamic Islandu sestavený z nativních komponent"></button><button class="image-button island-expanded" type="button" data-enlarge aria-label="Zvětšit: Náhled rozbaleného Dynamic Islandu sestavený z nativních komponent"><img src="/native-ui/dynamic-island.png" alt="Náhled rozbaleného Dynamic Islandu sestavený z nativních komponent"></button></div><span class="status">Připravujeme · nyní vypnuté</span><h3>Dynamic Island</h3><p>Krátký i rozbalený přehled nejbližší procedury. Je součástí implementace Live Activity.</p><span class="future-native-note">Produktový náhled z nativních komponent, nikoliv systémový screenshot.</span></article><article class="future-card"><div class="future-visual"><div class="future-widget-pair"><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní widget přehledu dne"><img src="/native-ui/widget-day.png" alt="Nativní widget přehledu dne"></button><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní widget nejbližší procedury"><img src="/native-ui/widget-small.png" alt="Nativní widget nejbližší procedury"></button></div><div class="calendar-connection"><img class="native-symbol" src="/native-ui/symbol-calendar.png" alt="Apple Kalendář"><span aria-hidden="true">✓</span></div></div><span class="status ready">Widgety a Apple Kalendář existují</span><h3>Widgety a kalendář pobytu</h3><p>Widgety i volitelná synchronizace s Apple Kalendářem jsou implementované. Export .ics zůstává dostupný v Pokročilé.</p><span class="future-native-note">Skutečné widgety a implementované propojení s Apple Kalendářem.</span></article></div></div></div></div></section>
 
 
 </div>
@@ -2959,20 +4418,28 @@ if(navEntry&&navEntry.type==='reload'){
 }
 const links=[...document.querySelectorAll('[data-section]')];
 const sections=links.map(a=>document.getElementById(a.dataset.section)).filter(Boolean);
-function syncNav(){
+function syncNav(updateHash=true){
   const y=scrollY+document.querySelector('header').offsetHeight+30;
   let current='domu',nearest=-Infinity;
   [...sections,document.getElementById('kontakt')].filter(Boolean).forEach(section=>{
     const top=section.getBoundingClientRect().top+scrollY;
     if(top<=y&&top>=nearest){current=section.id;nearest=top;}
   });
+  const commanderShell=document.querySelector('.commander-master-shell');
+  if(commanderShell){
+    const shellTop=commanderShell.getBoundingClientRect().top+scrollY;
+    const shellBottom=shellTop+commanderShell.offsetHeight;
+    if(y>=shellTop&&y<shellBottom)current='commander';
+  }
   links.forEach(a=>{const active=a.dataset.section===current;a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current');});
+  const expectedHash='#'+current;
+  if(updateHash&&location.hash!==expectedHash)history.replaceState(null,'',location.pathname+location.search+expectedHash);
   const contact=document.querySelector('header a[href="#kontakt"]');
   if(current==='kontakt')contact.setAttribute('aria-current','location');else contact.removeAttribute('aria-current');
   const mobileContact=document.querySelector('[data-mobile-contact]');
   if(mobileContact){mobileContact.classList.toggle('active',current==='kontakt');if(current==='kontakt')mobileContact.setAttribute('aria-current','location');else mobileContact.removeAttribute('aria-current')}
 }
-addEventListener('scroll',syncNav,{passive:true});addEventListener('resize',syncNav);syncNav();
+addEventListener('scroll',()=>syncNav(true),{passive:true});addEventListener('resize',()=>syncNav(false));syncNav(false);
 const menu=document.querySelector('.menu-toggle');
 const nav=document.getElementById('navlinks');
 function closeMenu(){menu.setAttribute('aria-expanded','false');nav.classList.remove('is-open')}
