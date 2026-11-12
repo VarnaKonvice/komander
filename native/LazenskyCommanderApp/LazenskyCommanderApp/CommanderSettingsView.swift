@@ -152,8 +152,8 @@ struct CommanderSettingsView: View {
           CommanderScheduleFilesView(model: model)
         } label: {
           CommanderNavigationRow(
-            title: "Import a kalendář",
-            subtitle: "Načíst rozpis nebo exportovat celý pobyt",
+            title: "Pobyt a kalendář",
+            subtitle: "Načíst nový rozpis nebo pracovat s kalendářem",
             symbol: "doc.badge.arrow.up",
             accent: CommanderDesignTokens.Colors.locationBlue
           )
