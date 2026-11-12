@@ -97,7 +97,7 @@ public struct CommanderDashboardPresentation: Equatable, Sendable {
     } ?? []
     let stayPeriod = CommanderStayPresentation.period(stay: schedule.stay, now: now)
     let nextProcedure = stayPeriod?.phase != .finished
-      ? projection?.events.first { $0.event.kind == .procedure && $0.startAt > now }?.dashboardEvent(at: now)
+      ? projection?.events.first { CommanderEventSemantics.isTherapy($0.event) && $0.startAt > now }?.dashboardEvent(at: now)
       : nil
 
     return CommanderDashboardPresentation(

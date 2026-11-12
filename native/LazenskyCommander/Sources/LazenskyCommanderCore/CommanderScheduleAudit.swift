@@ -224,7 +224,7 @@ public enum CommanderScheduleAudit {
       stayTo: stayTo,
       stayDayCount: stayRange.map { inclusiveDayCount(from: $0.from, to: $0.to) },
       eventCount: schedule.events.count,
-      procedureCount: schedule.events.filter { $0.kind == .procedure }.count,
+      procedureCount: schedule.events.filter { CommanderEventSemantics.isTherapy($0) }.count,
       mealCount: schedule.events.filter { $0.kind == .meal }.count,
       issues: issues.sorted {
         ($0.date ?? "", $0.severity.rawValue, $0.code, $0.stableId ?? "") <
@@ -291,7 +291,7 @@ public enum CommanderScheduleAudit {
     while day <= range.to {
       let date = formatDate(day)
       let dayEvents = eventsByDate[date] ?? []
-      let procedureCount = dayEvents.filter { $0.kind == .procedure }.count
+      let procedureCount = dayEvents.filter { CommanderEventSemantics.isTherapy($0) }.count
       let weekday = calendar.component(.weekday, from: day)
 
       if weekday == 1 {
@@ -324,13 +324,21 @@ public enum CommanderScheduleAudit {
         issues.append(.init(
           severity: .warning,
           code: "low-procedure-count-review",
-          message: "Den má jen \(procedureCount) procedur, provozní očekávání je alespoň \(minimum); ověřit proti papíru nebo lékařské změně.",
+          message: "Den má jen \(procedureCount) \(procedureWord(procedureCount)), provozní očekávání je alespoň \(minimum); ověřit proti papíru nebo lékařské změně.",
           date: date
         ))
       }
 
       guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
       day = next
+    }
+  }
+
+  private static func procedureWord(_ count: Int) -> String {
+    switch count {
+    case 1: return "proceduru"
+    case 2...4: return "procedury"
+    default: return "procedur"
     }
   }
 

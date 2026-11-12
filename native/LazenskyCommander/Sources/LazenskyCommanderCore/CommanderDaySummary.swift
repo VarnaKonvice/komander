@@ -21,7 +21,7 @@ public struct CommanderDaySummary: Equatable, Sendable {
   }
 
   static func make(timeline: [CommanderDashboardEvent], now: Date) -> Self {
-    let procedures = timeline.filter { $0.event.kind == .procedure }
+    let procedures = timeline.filter { CommanderEventSemantics.isTherapy($0.event) }
     let lastProcedureEnd = procedures.map(\.endAt).max()
     let dinner = timeline.first { isDinner($0.event) }
     let dinnerIsAhead = dinner.map { now < $0.startAt } ?? false

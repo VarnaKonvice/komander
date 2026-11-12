@@ -22,6 +22,9 @@ public enum NativeAlarmContract {
     for (name, value) in schedule.settings.mealOverrides { try validateLeadTime(value, field: "settings.mealOverrides.\(name)") }
     var stableIds = Set<String>()
     for event in schedule.events {
+      if CommanderEventSemantics.isSystemOnlyTestArtifact(event) {
+        throw ScheduleValidationError.systemOnlyEvent(event.stableId)
+      }
       for (name, value) in [("stableId", event.stableId), ("title", event.title), ("location", event.location)] where value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
         throw ScheduleValidationError.missingField("events[].\(name)")
       }
