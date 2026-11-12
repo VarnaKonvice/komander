@@ -131,13 +131,13 @@ Nemažou se bez samostatné kontroly.
 - [ ] Apple Kalendář pouze po ručním zapnutí + kontrola bez duplicit
 - [ ] `.ics` export do Files/Kalendáře
 - [ ] zapsat výsledky fyzické akceptace proti konkrétní verzi telefonu/OS/build
-- [ ] Apple Developer Program / TestFlight pro stabilní pilot
+- [ ] Apple Developer Program / TestFlight pro stabilní pilot — Studio má zatím jen Apple Development + 7denní lokální provisioning; Apple Distribution identita není k dispozici
 
 ### Gate C — .NET review
-- [ ] obnovit reprodukovatelný .NET 10 / MAUI toolchain
-- [ ] aktualizovat `.tools/swift-reference` na `91d2d71`
-- [ ] znovu spustit C# testy a iOS build
-- [ ] Filipova technická review
+- [x] reprodukovatelný .NET 10 / MAUI toolchain obnoven: SDK 10.0.403, MAUI 10.0.110, iOS workload 27.2
+- [x] lokální read-only `.tools/swift-reference` aktualizován na `91d2d71`
+- [x] C# testy a iOS build znovu ověřeny 12. 11. 2026: 108/108 PASS, Simulator build 0 warnings / 0 errors, bundle verifier PASS
+- [ ] Filipova technická review — připraven draft PR `VarnaKonvice/lazensky-commander-dotnet#1`
 - [ ] teprve potom integrační větev pro iOS review + Android
 
 ## 7. Pravidlo další práce
