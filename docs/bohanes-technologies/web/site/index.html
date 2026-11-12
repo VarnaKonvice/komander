@@ -4396,7 +4396,7 @@ html body .commander-master-shell #instalace .public-price-note{
 <div class="internal-launcher" id="internalLauncher" hidden>
 <div class="internal-launcher-head"><b>Interní prostředí Bohanes Technologies</b><span>Vyberte, kam chcete vstoupit.</span></div>
 <div class="internal-launcher-grid">
-<a class="internal-app-card crm" href="https://bohanes-technologies-crm-petbohanes-8088.vercel.app/" target="_blank" rel="noopener"><span class="internal-app-icon">CRM</span><span><b>Obchodní CRM</b><small>Lázně, kontakty, mapa a obchodní případy</small></span></a>
+<a class="internal-app-card crm" href="https://bohanes-technologies-crm.vercel.app/" target="_blank" rel="noopener"><span class="internal-app-icon">CRM</span><span><b>Obchodní CRM</b><small>Lázně, kontakty, mapa a obchodní případy</small></span></a>
 <a class="internal-app-card hq" href="/hq/"><span class="internal-app-icon">HQ</span><span><b>Bohanes HQ</b><small>Centrální pracovní a AI prostředí</small></span></a>
 </div>
 <p class="internal-warning">Toto je pouze lokální vývojový vstup. Není určen jako skutečné zabezpečení veřejného webu.</p>
@@ -4467,7 +4467,8 @@ const localHost=location.hostname.toLowerCase();
 const shareParams=new URLSearchParams(location.search);
 if(shareParams.has('_vercel_share'))sessionStorage.setItem('bohanesSharedReview','1');
 const sharedReview=sessionStorage.getItem('bohanesSharedReview')==='1';
-const localReview=['127.0.0.1','localhost','192.168.50.205','petr--mac-studio.local'].includes(localHost)||sharedReview;
+const protectedVercelReview=localHost.endsWith('.vercel.app')&&localHost.startsWith('bohanes-technologies-');
+const localReview=['127.0.0.1','localhost','192.168.50.205','petr--mac-studio.local'].includes(localHost)||sharedReview||protectedVercelReview;
 function showInternalLauncher(){
   loginForm.hidden=true;
   internalLauncher.hidden=false;
