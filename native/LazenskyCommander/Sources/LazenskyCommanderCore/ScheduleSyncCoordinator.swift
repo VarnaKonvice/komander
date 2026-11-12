@@ -64,6 +64,16 @@ public struct CommanderScheduleSyncCoordinator: Sendable {
     return schedule
   }
 
+  /// Fetches and validates the remote schedule without accepting it into the
+  /// local snapshot or touching alarms, widgets, notifications, or calendar.
+  /// Used by the client-facing approval gate for a new/updated stay schedule.
+  public func fetchRemoteCandidate() async throws -> Schedule {
+    let incoming = try await scheduleService.fetchSchedule()
+    guard dataset?.accepts(incoming) != false else { throw CocoaError(.coderReadCorrupt) }
+    try NativeAlarmContract.validateCanonical(incoming)
+    return incoming
+  }
+
   public func synchronize(
     source: CommanderScheduleSource = .remote,
     overrides: LeadTimeOverrides? = nil,

@@ -160,6 +160,10 @@ final class CommanderViewModel: ObservableObject {
   @Published private(set) var scheduleAuditAcknowledgements: [CommanderScheduleAuditAcknowledgement] = []
   @Published private(set) var calendarSyncEnabled = false
   @Published private(set) var calendarStatus = "Vypnuto"
+  @Published private(set) var pendingSchedule: Schedule?
+  @Published private(set) var scheduleApprovalError: String?
+  @Published private(set) var alarmOfferPresented = false
+  @Published private(set) var calendarOfferPresented = false
 
   @Published private(set) var phoneWidgetIssue: String?
   private var phoneWidgetCache: FileWatchScheduleCache?
@@ -183,6 +187,7 @@ final class CommanderViewModel: ObservableObject {
   private static let automaticForegroundRefreshInterval: TimeInterval = 5 * 60
   private static let launchForegroundGraceInterval: TimeInterval = 8
   private static let spaLeadTimePresetKey = "lazensky.commander.leadTimePreset.20-vizita5.v1"
+  private let pendingScheduleKey: String
 
   private let clock: @Sendable () -> Date
 
@@ -217,6 +222,7 @@ final class CommanderViewModel: ObservableObject {
     )
     let savedPreferences = leadTimePreferences.load()
     let scheduleSnapshotKey = "lazensky.commander.scheduleSnapshot.\(namespace).v1"
+    let pendingScheduleKey = "lazensky.commander.pendingSchedule.\(namespace).v1"
     let initialSchedule: Schedule? = {
       guard !CommanderDesignPreview.enabled,
             let data = UserDefaults.standard.data(forKey: scheduleSnapshotKey),
@@ -237,6 +243,7 @@ final class CommanderViewModel: ObservableObject {
     self.scheduleAuditReviewStore = scheduleAuditReviewStore
     self.calendarIntegration = calendarIntegration
     self.channel = configuration.channel
+    self.pendingScheduleKey = pendingScheduleKey
     self.suppressAutomaticForegroundUntil = clock().addingTimeInterval(Self.launchForegroundGraceInterval)
     self.leadTimeOverrides = CommanderDesignPreview.enabled ? LeadTimeOverrides() : savedPreferences.overrides
     self.leadTimeProjectionRevision = CommanderDesignPreview.enabled ? 0 : savedPreferences.revision
@@ -253,6 +260,15 @@ final class CommanderViewModel: ObservableObject {
     )
     if let initialSchedule {
       self.latestSchedule = initialSchedule
+    }
+    if !CommanderDesignPreview.enabled,
+       let data = UserDefaults.standard.data(forKey: pendingScheduleKey),
+       let pending = try? JSONDecoder().decode(Schedule.self, from: data),
+       (try? NativeAlarmContract.validateCanonical(pending)) != nil,
+       initialSchedule == nil || pending.scheduleVersion > initialSchedule!.scheduleVersion {
+      self.pendingSchedule = pending
+    } else {
+      UserDefaults.standard.removeObject(forKey: pendingScheduleKey)
     }
   }
 
@@ -590,13 +606,23 @@ final class CommanderViewModel: ObservableObject {
     await refreshAccess()
     recordAcceptanceProgress("bootstrap-access-ready", message: accessStatus)
 
-    // One canonical remote reconciliation is enough for a normal launch. The
-    // previously scheduled alarms remain owned by AlarmKit while this runs.
+    // First discover a newer remote schedule without publishing it. A client
+    // must explicitly accept a new/updated stay before it can touch alarms,
+    // widgets, notifications or Apple Calendar. Existing accepted schedules
+    // continue to receive their normal cached maintenance while approval waits.
     recordAcceptanceProgress("bootstrap-before-remote-sync")
-    await synchronizeWithRecovery(maxAttempts: 2, automatic: true)
+    await discoverPendingSchedule()
+    if pendingSchedule == nil {
+      await synchronizeWithRecovery(
+        maxAttempts: 2, automatic: true,
+        source: latestSchedule == nil ? .remote : .cached
+      )
+    } else if latestSchedule != nil {
+      await synchronizeWithRecovery(maxAttempts: 1, automatic: true, source: .cached)
+    }
     recordAcceptanceProgress(
       "bootstrap-complete",
-      message: "alarms=\(summary?.desiredAlarmCount ?? -1); succeeded=\(summary?.succeeded ?? false)"
+      message: "pending=\(pendingSchedule?.scheduleVersion ?? -1); alarms=\(summary?.desiredAlarmCount ?? -1); succeeded=\(summary?.succeeded ?? false)"
     )
   }
 
@@ -610,7 +636,15 @@ final class CommanderViewModel: ObservableObject {
        clock().timeIntervalSince(lastAutomaticAttempt) < Self.automaticForegroundRefreshInterval {
       return
     }
-    await synchronizeWithRecovery(maxAttempts: 1, automatic: true)
+    await discoverPendingSchedule()
+    if pendingSchedule == nil {
+      await synchronizeWithRecovery(
+        maxAttempts: 1, automatic: true,
+        source: latestSchedule == nil ? .remote : .cached
+      )
+    } else if latestSchedule != nil {
+      await synchronizeWithRecovery(maxAttempts: 1, automatic: true, source: .cached)
+    }
   }
 
   private func reconcileProcedureActivitiesFromLatestSchedule() async {
@@ -630,6 +664,89 @@ final class CommanderViewModel: ObservableObject {
       defaultActionIdentifier: UNNotificationDefaultActionIdentifier, category: category,
       payload: payload, dataset: CommanderRuntimeDataset.current) else { return }
     todayRouteRevision += 1
+  }
+
+  private func persistPendingSchedule(_ schedule: Schedule?) {
+    if let schedule, let data = try? JSONEncoder().encode(schedule) {
+      UserDefaults.standard.set(data, forKey: pendingScheduleKey)
+    } else {
+      UserDefaults.standard.removeObject(forKey: pendingScheduleKey)
+    }
+  }
+
+  private func discoverPendingSchedule() async {
+    guard pendingSchedule == nil else { return }
+    do {
+      let candidate = try await scheduleSync.fetchRemoteCandidate()
+      let currentVersion = latestSchedule?.scheduleVersion ?? Int.min
+      guard candidate.scheduleVersion > currentVersion else { return }
+      _ = try CommanderScheduleProjection(schedule: candidate, overrides: leadTimeOverrides)
+      pendingSchedule = candidate
+      persistPendingSchedule(candidate)
+      scheduleApprovalError = nil
+    } catch {
+      // A discovery failure must never break a previously accepted offline stay.
+      if latestSchedule == nil {
+        scheduleApprovalError = "Nový rozpis se zatím nepodařilo načíst: \(error.localizedDescription)"
+      }
+    }
+  }
+
+  func acceptPendingSchedule() {
+    guard let schedule = pendingSchedule, !isSynchronizing else { return }
+    scheduleApprovalError = nil
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      do {
+        try await self.importSchedule(schedule)
+        self.pendingSchedule = nil
+        self.persistPendingSchedule(nil)
+        await self.refreshAccess()
+        let alarmNeedsChoice = self.supportsAlarmKit &&
+          (self.accessStatus.contains("not been requested") || self.accessStatus.contains("denied"))
+        if alarmNeedsChoice {
+          self.alarmOfferPresented = true
+        } else if !self.calendarIntegration.isEnabled {
+          self.calendarOfferPresented = true
+        }
+      } catch {
+        self.scheduleApprovalError = error.localizedDescription
+      }
+    }
+  }
+
+  func postponePendingSchedule() {
+    // Keep the candidate persisted so it is offered again on the next launch.
+    scheduleApprovalError = nil
+  }
+
+  func respondToAlarmOffer(enable: Bool) {
+    alarmOfferPresented = false
+    guard enable else {
+      if !calendarIntegration.isEnabled { calendarOfferPresented = true }
+      return
+    }
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      do {
+        try await self.adapter.requestAuthorization()
+        self.requiresUserAction = false
+        self.userActionMessage = nil
+        self.errorMessage = nil
+        await self.synchronizeWithRecovery(maxAttempts: 3, automatic: false, source: .cached)
+      } catch {
+        self.requiresUserAction = true
+        self.userActionMessage = "Povol alarmy, aby tě Commander mohl spolehlivě upozornit na odchod."
+        self.errorMessage = error.localizedDescription
+      }
+      await self.refreshAccess()
+      if !self.calendarIntegration.isEnabled { self.calendarOfferPresented = true }
+    }
+  }
+
+  func respondToCalendarOffer(enable: Bool) {
+    calendarOfferPresented = false
+    if enable { setCalendarSyncEnabled(true) }
   }
 
   func refreshAccess() async {
