@@ -40,11 +40,24 @@ struct CommanderAppTabs: View {
     if CommanderApprovedVisualProof.mode != nil {
       CommanderApprovedVisualProof()
     } else {
-      appContent
+      clientEntryContent
     }
 #else
-    appContent
+    clientEntryContent
 #endif
+  }
+
+  @ViewBuilder
+  private var clientEntryContent: some View {
+    if let pending = model.pendingSchedule {
+      CommanderScheduleApprovalView(model: model, schedule: pending)
+    } else if model.alarmOfferPresented {
+      CommanderAlarmOfferView(model: model)
+    } else if model.calendarOfferPresented {
+      CommanderCalendarOfferView(model: model)
+    } else {
+      appContent
+    }
   }
 
 
@@ -263,4 +276,208 @@ enum CommanderScheduleDateStyle {
     date: .numeric, time: .shortened,
     locale: Locale(identifier: "cs_CZ"), timeZone: TimeZone(identifier: "Europe/Prague")!
   )
+}
+import LazenskyCommanderCore
+import SwiftUI
+
+struct CommanderScheduleApprovalView: View {
+  @ObservedObject var model: CommanderViewModel
+  let schedule: Schedule
+
+  private var therapyCount: Int {
+    schedule.events.filter { CommanderEventSemantics.isTherapy($0) }.count
+  }
+
+  private var mealCount: Int {
+    schedule.events.filter { $0.kind == .meal }.count
+  }
+
+  private var spaName: String {
+    schedule.stay["spa"] ?? "Lázeňský pobyt"
+  }
+
+  private var stayDates: String {
+    let from = schedule.stay["dateFrom"].flatMap(CommanderDateText.weekdayDate(isoDate:))
+      ?? schedule.events.first.flatMap { CommanderDateText.weekdayDate(isoDate: $0.date) }
+      ?? "—"
+    guard let rawTo = schedule.stay["dateTo"],
+          let to = CommanderDateText.weekdayDate(isoDate: rawTo), to != from else { return from }
+    return "\(from) – \(to)"
+  }
+
+  var body: some View {
+    ZStack {
+      CommanderDepthBackground().ignoresSafeArea()
+      ScrollView {
+        VStack(spacing: 18) {
+          CommanderPageHeader(title: "Nový rozpis", subtitle: "Připraven k potvrzení")
+
+          VStack(spacing: 10) {
+            CommanderSymbolBadge(
+              symbol: "calendar.badge.checkmark",
+              color: CommanderDesignTokens.Colors.locationBlue,
+              size: 76
+            )
+            Text("Rozpis procedur je připraven")
+              .font(.system(size: 30, weight: .bold))
+              .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+              .multilineTextAlignment(.center)
+            Text("Než se aktivují alarmy, widgety a kalendář, zkontroluj základní údaje a rozpis potvrď.")
+              .commanderFont(.subtitle)
+              .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+              .multilineTextAlignment(.center)
+          }
+          .padding(.top, 8)
+
+          VStack(alignment: .leading, spacing: 13) {
+            approvalRow(symbol: "building.2.fill", title: "Lázně", value: spaName)
+            approvalRow(symbol: "calendar", title: "Termín", value: stayDates)
+            approvalRow(symbol: "cross.case.fill", title: "Terapie", value: "\(therapyCount)")
+            approvalRow(symbol: "fork.knife", title: "Jídla", value: "\(mealCount)")
+            approvalRow(symbol: "list.bullet.rectangle", title: "Celkem položek", value: "\(schedule.events.count)")
+          }
+          .padding(16)
+          .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthCard)
+
+          if let error = model.scheduleApprovalError {
+            Text(error)
+              .commanderFont(.subtitle)
+              .foregroundStyle(CommanderDesignTokens.Colors.amber)
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .padding(14)
+              .commanderCard(accent: CommanderDesignTokens.Colors.amber, surface: .depthInset)
+          }
+
+          Button {
+            model.acceptPendingSchedule()
+          } label: {
+            Label(model.isSynchronizing ? "Aktivuji rozpis…" : "Přijmout a aktivovat rozpis", systemImage: "checkmark.circle.fill")
+              .font(.system(size: 18, weight: .bold))
+              .frame(maxWidth: .infinity, minHeight: 56)
+          }
+          .buttonStyle(.borderedProminent)
+          .tint(CommanderDashboardPalette.commanderPurpleLight)
+          .disabled(model.isSynchronizing)
+
+          Text("Potvrzením se teprve vytvoří upozornění na odchod a aktualizují widgety. Apple Kalendář se nabídne v následujícím kroku, pokud ještě není povolený.")
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+            .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, CommanderDesignTokens.Spacing.page)
+        .padding(.vertical, 18)
+      }
+    }
+    .accessibilityIdentifier("schedule-approval")
+  }
+
+  private func approvalRow(symbol: String, title: String, value: String) -> some View {
+    HStack(alignment: .top, spacing: 12) {
+      Image(systemName: symbol)
+        .font(.system(size: 19, weight: .semibold))
+        .foregroundStyle(CommanderDesignTokens.Colors.locationBlue)
+        .frame(width: 28)
+      VStack(alignment: .leading, spacing: 2) {
+        Text(title)
+          .font(.system(size: 12, weight: .semibold))
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        Text(value)
+          .font(.system(size: 17, weight: .bold))
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+      Spacer(minLength: 0)
+    }
+  }
+}
+
+
+struct CommanderAlarmOfferView: View {
+  @ObservedObject var model: CommanderViewModel
+
+  var body: some View {
+    ZStack {
+      CommanderDepthBackground().ignoresSafeArea()
+      VStack(spacing: 20) {
+        Spacer()
+        CommanderSymbolBadge(
+          symbol: "alarm.waves.left.and.right.fill",
+          color: CommanderDesignTokens.Colors.amber,
+          size: 84
+        )
+        Text("Povolit upozornění na odchod?")
+          .font(.system(size: 30, weight: .bold))
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .multilineTextAlignment(.center)
+        Text("Commander používá systémové alarmy, aby tě upozornil v nastaveném předstihu před procedurou nebo jídlem. Po volbě Povolit zobrazí iPhone vlastní systémové potvrzení.")
+          .commanderFont(.subtitle)
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          .multilineTextAlignment(.center)
+
+        Button {
+          model.respondToAlarmOffer(enable: true)
+        } label: {
+          Label("Povolit alarmy", systemImage: "alarm.fill")
+            .font(.system(size: 18, weight: .bold))
+            .frame(maxWidth: .infinity, minHeight: 56)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(CommanderDesignTokens.Colors.amber)
+
+        Button("Teď ne") {
+          model.respondToAlarmOffer(enable: false)
+        }
+        .font(.system(size: 16, weight: .semibold))
+        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        Spacer()
+      }
+      .padding(.horizontal, 28)
+    }
+    .accessibilityIdentifier("alarm-offer")
+  }
+}
+
+struct CommanderCalendarOfferView: View {
+  @ObservedObject var model: CommanderViewModel
+
+  var body: some View {
+    ZStack {
+      CommanderDepthBackground().ignoresSafeArea()
+      VStack(spacing: 20) {
+        Spacer()
+        CommanderSymbolBadge(
+          symbol: "calendar.badge.plus",
+          color: CommanderDesignTokens.Colors.locationBlue,
+          size: 84
+        )
+        Text("Přidat pobyt do Apple Kalendáře?")
+          .font(.system(size: 30, weight: .bold))
+          .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+          .multilineTextAlignment(.center)
+        Text("Commander může vložit celý potvrzený rozpis do Apple Kalendáře a při změně ho aktualizovat. Oprávnění vyžádá iPhone až po volbě Povolit.")
+          .commanderFont(.subtitle)
+          .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+          .multilineTextAlignment(.center)
+
+        Button {
+          model.respondToCalendarOffer(enable: true)
+        } label: {
+          Label("Povolit Apple Kalendář", systemImage: "calendar.badge.checkmark")
+            .font(.system(size: 18, weight: .bold))
+            .frame(maxWidth: .infinity, minHeight: 56)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(CommanderDesignTokens.Colors.locationBlue)
+
+        Button("Teď ne") {
+          model.respondToCalendarOffer(enable: false)
+        }
+        .font(.system(size: 16, weight: .semibold))
+        .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+        Spacer()
+      }
+      .padding(.horizontal, 28)
+    }
+    .accessibilityIdentifier("calendar-offer")
+  }
 }
