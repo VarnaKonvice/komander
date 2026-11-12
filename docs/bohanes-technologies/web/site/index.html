@@ -4464,7 +4464,10 @@ const loginForm=document.getElementById('loginForm');
 const internalLauncher=document.getElementById('internalLauncher');
 const loginState=document.getElementById('loginState');
 const localHost=location.hostname.toLowerCase();
-const localReview=['127.0.0.1','localhost','192.168.50.205','petr--mac-studio.local'].includes(localHost);
+const shareParams=new URLSearchParams(location.search);
+if(shareParams.has('_vercel_share'))sessionStorage.setItem('bohanesSharedReview','1');
+const sharedReview=sessionStorage.getItem('bohanesSharedReview')==='1';
+const localReview=['127.0.0.1','localhost','192.168.50.205','petr--mac-studio.local'].includes(localHost)||sharedReview;
 function showInternalLauncher(){
   loginForm.hidden=true;
   internalLauncher.hidden=false;
