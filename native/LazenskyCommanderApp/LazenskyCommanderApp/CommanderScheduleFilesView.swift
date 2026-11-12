@@ -17,12 +17,12 @@ struct CommanderScheduleFilesView: View {
 
   var body: some View {
     Form {
-      Section("Import rozpisu") {
-        Text("Vyber kanonický JSON rozpis Commanderu. Import nahradí celý uložený pobyt a přepočítá alarmy, oznámení a widgety. Tvoje lokální předstihy zůstanou zachované.")
-        Text("Fotografie a PDF procedurových formulářů nejsou podporované. Změněný rozpis musí mít vyšší verzi než uložený.")
+      Section("Načíst rozpis") {
+        Text("Vyber připravený soubor s rozpisem pobytu. Nový rozpis nahradí současný pobyt a přepočítá upozornění, widgety a časy odchodu. Tvoje nastavené předstihy zůstanou zachované.")
+        Text("Fotografie a PDF procedurových formulářů zatím tato ruční cesta nepodporuje. Novější rozpis stejného pobytu může nahradit ten současný.")
           .font(.footnote)
           .foregroundStyle(.secondary)
-        Button("Vybrat JSON soubor", systemImage: "square.and.arrow.down") {
+        Button("Vybrat soubor s rozpisem", systemImage: "square.and.arrow.down") {
           showsImporter = true
         }
         .disabled(busy)
@@ -47,7 +47,7 @@ struct CommanderScheduleFilesView: View {
         }
       }
     }
-    .navigationTitle("Import a kalendář")
+    .navigationTitle("Pobyt a kalendář")
     .navigationBarTitleDisplayMode(.inline)
     .fileImporter(isPresented: $showsImporter, allowedContentTypes: [.json]) { result in
       do {
@@ -62,11 +62,11 @@ struct CommanderScheduleFilesView: View {
         showsConfirmation = true
       } catch CocoaError.userCancelled {
       } catch {
-        message = "Import se nepodařil. Vyber platný kanonický JSON rozpis. \(error.localizedDescription)"
+        message = "Rozpis se nepodařilo načíst. Vyber platný soubor s rozpisem pobytu. \(error.localizedDescription)"
       }
     }
     .confirmationDialog("Nahradit aktuální rozpis?", isPresented: $showsConfirmation, titleVisibility: .visible) {
-      Button("Importovat celý pobyt") {
+      Button("Přijmout nový rozpis") {
         guard let schedule = candidate else { return }
         candidate = nil
         importing = true
@@ -80,7 +80,7 @@ struct CommanderScheduleFilesView: View {
               message = "Rozpis byl přijat. Alarmy nebo oznámení ještě vyžadují kontrolu: \(model.errorMessage ?? model.recoveryStatus)"
             }
           } catch {
-            message = "Import se nepodařil: \(error.localizedDescription)"
+            message = "Rozpis se nepodařilo přijmout: \(error.localizedDescription)"
           }
         }
       }
