@@ -2430,287 +2430,288 @@ header .nav>.desktop-contact{
 </style>
 
 
-<style id="commander-approved-web-shell-20261112">
-/* Product control in Bohanes header: rectangular product tile, simple disclosure. */
+
+<style id="commander-tile-system-20261112">
+/* Header product control stays simple and rectangular. */
 .product-nav-menu>summary{
-  display:flex!important;
-  align-items:center!important;
-  gap:7px!important;
-  min-height:42px!important;
-  padding:8px 11px!important;
-  border:1px solid #B8CDD7!important;
-  border-radius:10px!important;
-  background:#F4F8FA!important;
-  color:#0B3B5B!important;
-  font-weight:750!important;
-  box-shadow:none!important;
+  display:flex!important;align-items:center!important;gap:7px!important;
+  min-height:42px!important;padding:8px 11px!important;
+  border:1px solid #B8CDD7!important;border-radius:10px!important;
+  background:#F4F8FA!important;color:#0B3B5B!important;
+  font-weight:750!important;box-shadow:none!important;
 }
 .product-nav-menu>summary:after{
-  content:'▾'!important;
-  display:inline!important;
-  width:auto!important;height:auto!important;
-  margin-left:2px!important;
-  border:0!important;border-radius:0!important;
-  background:transparent!important;
-  color:#0B3B5B!important;
-  font-size:14px!important;
-  line-height:1!important;
-  transform:translateY(-1px);
+  content:'▾'!important;margin-left:2px!important;color:#0B3B5B!important;
+  font-size:14px!important;font-weight:900!important;line-height:1!important;
 }
-.product-nav-menu[open]>summary,
-.product-nav-menu>summary:hover{
-  background:#E9F3F4!important;
-  border-color:#86AFB8!important;
+.product-nav-menu[open]>summary,.product-nav-menu>summary:hover{
+  background:#E9F3F4!important;border-color:#86AFB8!important;
 }
 .product-nav-menu[open]>summary:after{content:'▴'!important}
 
-/* About belongs to Bohanes Technologies: white card + lightly toned paper schedule. */
-#o-nas>.section-tile{
-  background:#fff!important;color:#112942!important;border-color:#CCD8E7!important;
-  box-shadow:none!important;
-}
-#o-nas .story-document{
-  background:#F2F4F6!important;border-color:#C9D1D8!important;color:#173554!important;
-}
-#o-nas .story-document-title,
-#o-nas .story-line{color:#173554!important}
+/* Bohanes section remains light. */
+#o-nas>.section-tile{background:#fff!important;color:#112942!important;border-color:#CCD8E7!important;box-shadow:none!important}
+#o-nas .story-document{background:#F2F4F6!important;border-color:#C9D1D8!important;color:#173554!important}
+#o-nas .story-document-title,#o-nas .story-line{color:#173554!important}
 #o-nas .story-line small{color:#64748B!important}
 #o-nas .story-line time{color:#126B77!important}
 
-/* The Commander product family uses only the already approved Pro lázně surface. */
-#commander>.section-tile,
-#jak-funguje>.section-tile,
-#alarmy>.section-tile,
-#kalendar>.section-tile,
-#instalace>.section-tile,
-#pripravujeme>.section-tile{
-  background:var(--native)!important;
-  border:1px solid #2B5484!important;
+/* ONE master tile for the whole Commander product. */
+.commander-master-shell{
+  width:min(1440px,calc(100% - 56px));
+  margin:42px auto 48px;
+  padding:28px;
+  display:grid;
+  gap:24px;
+  border:1px solid #2B5484;
+  border-radius:30px;
+  background:var(--native);
+  box-shadow:0 16px 38px #0B294514;
+}
+.commander-master-shell>section,
+.commander-master-shell>.features-area{
+  width:100%!important;
+  margin:0!important;
+  padding:0!important;
+  background:transparent!important;
+  border:0!important;
+}
+.commander-master-shell .wrap{
+  width:100%!important;
+  margin:0!important;
+}
+
+/* Each major product area is one evenly aligned inner tile. */
+.commander-master-shell .section-tile,
+.commander-master-shell .features-intro{
+  width:100%!important;
+  margin:0!important;
+  background:#0E153070!important;
+  border:1px solid #486797!important;
+  border-radius:24px!important;
   box-shadow:none!important;
   color:#fff!important;
 }
+.commander-master-shell .section-tile>.pad{
+  padding:30px!important;
+}
+.commander-master-shell .section-heading{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(320px,.8fr)!important;
+  gap:28px!important;
+  align-items:end!important;
+  margin-bottom:24px!important;
+}
+.commander-master-shell .section-heading h2,
+.commander-master-shell .features-intro h2{color:#fff!important}
+.commander-master-shell .section-heading .lead,
+.commander-master-shell .features-intro p{color:#DCE7F7!important}
+.commander-master-shell .kicker{color:#65E5FF!important}
 
-/* Same heading treatment as Pro lázně. */
-#commander .section-heading h2,
-#jak-funguje .section-heading h2,
-#alarmy .section-heading h2,
-#kalendar .section-heading h2,
-#instalace .section-heading h2,
-#pripravujeme .section-heading h2{color:#fff!important}
-#commander .section-heading .lead,
-#jak-funguje .section-heading .lead,
-#alarmy .section-heading .lead,
-#kalendar .section-heading .lead,
-#instalace .section-heading .lead,
-#pripravujeme .section-heading .lead{color:#DEE9FF!important}
-#commander .kicker,
-#jak-funguje .kicker,
-#alarmy .kicker,
-#kalendar .kicker,
-#instalace .kicker,
-#pripravujeme .kicker{color:#65E5FF!important}
+/* Commander main tile: calm geometry, equal cards, one rhythm. */
+#commander .screens-content-panel{
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  padding:0!important;
+  box-shadow:none!important;
+}
+#commander .group-panel-title{
+  margin:0 0 18px!important;
+}
+#commander .group-panel-title h3{
+  color:#fff!important;
+  font-size:24px!important;
+  line-height:1.2!important;
+}
+#commander .screen-grid{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:16px!important;
+  align-items:stretch!important;
+  margin:0!important;
+}
+#commander .screen-card{
+  min-height:570px!important;
+  height:100%!important;
+  display:grid!important;
+  grid-template-rows:370px auto 1fr!important;
+  gap:0!important;
+  padding:18px!important;
+  background:#0E153070!important;
+  border:1px solid #486797!important;
+  border-radius:20px!important;
+  box-shadow:none!important;
+  color:#fff!important;
+}
+#commander .screen-visual{
+  height:370px!important;
+  min-height:370px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:10px!important;
+  background:#141C3E!important;
+  border:1px solid #395D8E!important;
+  border-radius:16px!important;
+}
+#commander .screen-visual .image-button,
+#commander .screen-visual img{
+  max-height:350px!important;
+  width:auto!important;
+  margin:auto!important;
+}
+#commander .screen-card h3{
+  margin:18px 0 10px!important;
+  color:#fff!important;
+  font-size:23px!important;
+  text-align:center!important;
+}
+#commander .screen-card p{
+  margin:0!important;
+  color:#D4E2F8!important;
+  font-size:17px!important;
+  line-height:1.5!important;
+  text-align:center!important;
+}
 
-/* One internal surface only, copied from Pro lázně pilot-visual. */
-#commander .screens-content-panel,
+/* Procedures are their own nested tile, aligned to the exact same edges. */
+#commander .procedures-block{
+  margin-top:24px!important;
+  padding:22px!important;
+  background:#0A1330A8!important;
+  border:1px solid #486797!important;
+  border-radius:20px!important;
+  box-shadow:none!important;
+}
+#commander .procedures-heading{
+  display:flex!important;
+  align-items:baseline!important;
+  justify-content:flex-start!important;
+  gap:18px!important;
+  margin:0 0 18px!important;
+}
+#commander .procedures-heading h3{margin:0!important;color:#fff!important;font-size:24px!important}
+#commander .procedures-heading p{margin:0!important;color:#D4E2F8!important;font-size:17px!important}
+#commander .procedure-group-panel{padding:0!important;background:transparent!important;border:0!important}
+#commander .procedure-badges{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:14px!important;
+  margin:0!important;
+}
+#commander .proc{
+  min-height:72px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+  padding:12px 14px!important;
+  background:#0E153070!important;
+  border:1px solid #486797!important;
+  border-radius:14px!important;
+  box-shadow:none!important;
+  color:#fff!important;
+}
+#commander .proc img{width:40px!important;height:40px!important;flex:0 0 40px!important}
+#commander .proc b{font-size:15.5px!important;line-height:1.3!important;color:#fff!important}
+
+/* Product functions banner is a full-width horizontal tile inside the same master tile. */
+#funkce.features-area{
+  display:grid!important;
+  gap:24px!important;
+}
+#funkce>.features-intro{
+  min-height:156px!important;
+  padding:26px 30px!important;
+  display:grid!important;
+  grid-template-columns:minmax(320px,.75fr) minmax(0,1.25fr)!important;
+  grid-template-rows:auto auto!important;
+  column-gap:40px!important;
+  row-gap:8px!important;
+  align-content:center!important;
+  background:#0A1330A8!important;
+  border:1px solid #486797!important;
+  border-radius:22px!important;
+}
+#funkce>.features-intro .kicker{grid-column:1;grid-row:1;margin:0!important;color:#65E5FF!important}
+#funkce>.features-intro h2{grid-column:1;grid-row:2;margin:0!important;font-size:31px!important;line-height:1.15!important;color:#fff!important}
+#funkce>.features-intro p{grid-column:2;grid-row:1/3;align-self:center;margin:0!important;font-size:18px!important;line-height:1.55!important;color:#DCE7F7!important}
+#funkce>section{padding:0!important;margin:0!important}
+
+/* Same interior surface system across the rest of the product. */
 #jak-funguje .how-content-panel,
 #alarmy .alarm-content-panel,
 #kalendar .calendar-content-panel,
 #instalace .install-content-panel,
 #pripravujeme .future-content-panel{
-  background:#0E153070!important;
-  border:1px solid #486797!important;
-  border-radius:22px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
   box-shadow:none!important;
-  color:#fff!important;
+  padding:0!important;
 }
-#commander .group-panel-title h3,
+#jak-funguje .group-panel-title,
+#alarmy .group-panel-title,
+#kalendar .group-panel-title,
+#instalace .group-panel-title,
+#pripravujeme .group-panel-title{
+  margin:0 0 18px!important;
+}
 #jak-funguje .group-panel-title h3,
 #alarmy .group-panel-title h3,
 #kalendar .group-panel-title h3,
 #instalace .group-panel-title h3,
 #pripravujeme .group-panel-title h3{color:#fff!important}
-#kalendar .group-panel-title p,
-#instalace .group-panel-title p,
-#pripravujeme .group-panel-title p{color:#D4E2F8!important}
 
-/* Useful screens: quiet cards, no extra gradients or bright blue slabs. */
-#commander .screen-card{
-  background:#0E153070!important;
-  border:1px solid #486797!important;
-  box-shadow:none!important;
-}
-#commander .screen-visual{
-  background:#0E1530A8!important;
-  border:1px solid #395D8E!important;
-}
-#commander .screen-card h3{color:#fff!important}
-#commander .screen-card p{color:#D4E2F8!important}
-#commander .procedures-block{
-  background:transparent!important;
-  border:0!important;
-  padding-left:0!important;padding-right:0!important;
-}
-#commander .procedure-group-panel{
-  background:transparent!important;border:0!important;padding:0!important;
-}
-#commander .proc{
-  background:#0E153070!important;
-  border:1px solid #486797!important;
-  box-shadow:none!important;
-  color:#fff!important;
-}
-#commander .procedures-heading h3,
-#commander .procedures-heading p,
-#commander .proc b{color:#fff!important}
-#commander .procedures-heading p{color:#D4E2F8!important}
-
-/* Product functions separator = a wide horizontal strip, not another square tile. */
-#funkce.features-area{
-  padding:24px 0 0!important;
-}
-#funkce>.features-intro{
-  width:min(1360px,calc(100% - 56px))!important;
-  margin:0 auto!important;
-  padding:22px 28px!important;
-  display:grid!important;
-  grid-template-columns:minmax(220px,.7fr) minmax(0,1.3fr)!important;
-  gap:10px 34px!important;
-  align-items:center!important;
-  background:var(--native)!important;
-  border:1px solid #2B5484!important;
-  border-radius:22px!important;
-  box-shadow:none!important;
-  color:#fff!important;
-}
-#funkce>.features-intro .kicker{
-  grid-column:1;grid-row:1;
-  margin:0!important;color:#65E5FF!important;
-}
-#funkce>.features-intro h2{
-  grid-column:1;grid-row:2;
-  margin:0!important;color:#fff!important;
-  font-size:30px!important;
-}
-#funkce>.features-intro p{
-  grid-column:2;grid-row:1/3;
-  margin:0!important;color:#DEE9FF!important;
-  font-size:18px!important;
-}
-
-/* How it works: same calm surface and one simple icon field per step. */
+/* Calm inner cards: same shade and edge everywhere. */
 #jak-funguje .flow-step,
-#jak-funguje .flow-step:nth-child(n){
-  background:#0E153070!important;
-  border:1px solid #486797!important;
-  box-shadow:none!important;
-}
-#jak-funguje .flow-emblem{
-  background:#141C3E!important;
-  border:1px solid #5E7CA9!important;
-  box-shadow:none!important;
-}
-#jak-funguje .flow-step h3{color:#fff!important}
-#jak-funguje .flow-step p{color:#D4E2F8!important}
-#jak-funguje .flow-step:not(:last-child):after{color:#65E5FF!important}
-
-/* Alarm: Commander carrier surface, system alarm stays black. */
-#alarmy .alarm-block{
-  background:#0E153070!important;
-  border:1px solid #486797!important;
-  box-shadow:none!important;
-}
-#alarmy .alarm-visual-slot{
-  background:#141C3E!important;
-  border:1px solid #395D8E!important;
-  box-shadow:none!important;
-}
-#alarmy .alarm-time-card{
-  background:#090B12!important;
-  border-color:#39445A!important;
-  box-shadow:inset 0 0 0 1px #FFFFFF10!important;
-}
-#alarmy .alarm-block h3,
-#alarmy .alarm-caption b{color:#fff!important}
-#alarmy .alarm-block p,
-#alarmy .alarm-caption p{color:#D4E2F8!important}
-#alarmy .alarm-explanation{
-  background:#0E153070!important;
-  border:1px solid #486797!important;
-  color:#fff!important;
-  box-shadow:none!important;
-}
-#alarmy .alarm-explanation b{color:#fff!important}
-#alarmy .alarm-explanation p{color:#D4E2F8!important}
-
-/* Calendar/widgets: Commander wrapper, readable calendar paper. */
+#alarmy .alarm-block,
+#alarmy .alarm-explanation,
 #kalendar .widget-summary-panel,
 #kalendar .calendar-platform,
-#kalendar .calendar-ics-strip{
-  background:#0E153070!important;
-  border:1px solid #486797!important;
-  box-shadow:none!important;
-  color:#fff!important;
-}
-#kalendar .widget-copy h3,
-#kalendar .calendar-platform h3,
-#kalendar .calendar-ics-strip b{color:#fff!important}
-#kalendar .calendar-platform>p,
-#kalendar .calendar-platform .visual-note,
-#kalendar .calendar-ics-strip span{color:#D4E2F8!important}
-#kalendar .calendar-preview{
-  background:#F3F5F7!important;
-  border:1px solid #D3DBE3!important;
-  box-shadow:none!important;
-}
-#kalendar .status{
-  background:#141C3E!important;
-  color:#DCE8FA!important;
-}
-
-/* Installation uses the same approved Pro lázně shell. */
+#kalendar .calendar-ics-strip,
 #instalace .qr-card,
-#instalace .public-price-card{
-  background:#0E153070!important;
-  border:1px solid #486797!important;
-  box-shadow:none!important;
-  color:#fff!important;
-}
-#instalace .qr-card-head,
-#instalace .qr-card>b,
-#instalace .qr-card>span,
-#instalace .qr-note,
-#instalace .public-price-card small,
-#instalace .public-price-card strong,
-#instalace .public-price-card span{color:#fff!important}
-#instalace .qr-card>span,
-#instalace .qr-note{color:#D4E2F8!important}
-#instalace .qr-art{
-  background:#F0F7FA!important;
-  border:1px solid #D5DDE4!important;
-}
-
-/* Future features = same cards as Pro lázně, not a second design system. */
+#instalace .public-price-card,
 #pripravujeme .future-card{
   background:#0E153070!important;
   border:1px solid #486797!important;
   box-shadow:none!important;
   color:#fff!important;
 }
+#jak-funguje .flow-emblem,
+#alarmy .alarm-visual-slot,
 #pripravujeme .future-visual{
   background:#141C3E!important;
   border:1px solid #395D8E!important;
   box-shadow:none!important;
 }
+#jak-funguje .flow-step h3,
+#alarmy .alarm-block h3,
+#alarmy .alarm-caption b,
+#kalendar .widget-copy h3,
+#kalendar .calendar-platform h3,
+#kalendar .calendar-ics-strip b,
+#instalace .qr-card-head,
+#instalace .qr-card>b,
 #pripravujeme .future-card h3{color:#fff!important}
+#jak-funguje .flow-step p,
+#alarmy .alarm-block p,
+#alarmy .alarm-caption p,
+#alarmy .alarm-explanation p,
+#kalendar .calendar-platform>p,
+#kalendar .calendar-platform .visual-note,
+#kalendar .calendar-ics-strip span,
+#instalace .qr-card>span,
+#instalace .qr-note,
 #pripravujeme .future-card p,
 #pripravujeme .future-native-note{color:#D4E2F8!important}
-#pripravujeme .status{
-  background:#141C3E!important;
-  color:#DCE8FA!important;
-}
-#pripravujeme .status.ready{color:#A2F2DF!important}
+#alarmy .alarm-time-card{background:#090B12!important;border-color:#39445A!important}
+#kalendar .calendar-preview,
+#instalace .qr-art{background:#F3F5F7!important;border-color:#D3DBE3!important}
+#kalendar .status,
+#pripravujeme .status{background:#141C3E!important;color:#DCE8FA!important}
 
-/* Commander Apple/Android selector = same rectangular logic as header. */
+/* Platform toggle aligns to the same rectangular tile logic. */
 #commander .commander-platform-switch a,
 #commander .commander-platform-switch button{
   border-radius:8px!important;
@@ -2719,44 +2720,61 @@ header .nav>.desktop-contact{
   color:#DDE9FF!important;
 }
 #commander .commander-platform-switch .is-active{
-  background:#F7FAFF!important;
-  color:#102884!important;
-  border-color:#F7FAFF!important;
+  background:#F7FAFF!important;color:#102884!important;border-color:#F7FAFF!important;
 }
 
-/* Final specificity: erase four remaining legacy surfaces so the product really matches Pro lázně. */
-html body #commander .screens-content-panel .screen-card,
-html body #commander .screens-content-panel .proc,
-html body #kalendar .calendar-content-panel .calendar-platform,
-html body #instalace .install-content-panel .qr-card{
-  background:#0E153070!important;
-  border:1px solid #486797!important;
-  box-shadow:none!important;
+/* Mobile/tablet: keep the same hierarchy, only reflow columns. */
+@media(max-width:1279px){
+  .commander-master-shell{width:min(1180px,calc(100% - 40px));padding:22px;gap:20px}
+  #commander .screen-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  #commander .procedure-badges{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 }
-html body #kalendar>.section-tile{
-  background:var(--native)!important;
-  border:1px solid #2B5484!important;
-}
-html body #kalendar .calendar-content-panel .calendar-platform{
-  color:#fff!important;
-}
-html body #instalace .install-content-panel .qr-card-head,
-html body #instalace .install-content-panel .qr-card>b{color:#fff!important}
-html body #instalace .install-content-panel .qr-card>span,
-html body #instalace .install-content-panel .qr-note{color:#D4E2F8!important}
-
 @media(max-width:760px){
-  #funkce>.features-intro{
-    width:calc(100% - 36px)!important;
+  .commander-master-shell{
+    width:calc(100% - 24px);
+    margin:28px auto 34px;
+    padding:14px;
+    gap:16px;
+    border-radius:22px;
+  }
+  .commander-master-shell .section-tile>.pad{padding:20px!important}
+  .commander-master-shell .section-heading{
     grid-template-columns:1fr!important;
+    gap:10px!important;
+    align-items:start!important;
+  }
+  #commander .screen-grid{grid-template-columns:1fr!important;gap:14px!important}
+  #commander .screen-card{
+    min-height:0!important;
+    grid-template-columns:106px 1fr!important;
+    grid-template-rows:auto auto!important;
+    column-gap:16px!important;
+    padding:14px!important;
+  }
+  #commander .screen-visual{
+    grid-column:1;grid-row:1/3;
+    width:106px!important;height:220px!important;min-height:220px!important;
+  }
+  #commander .screen-visual .image-button,#commander .screen-visual img{max-height:200px!important}
+  #commander .screen-card h3{grid-column:2;grid-row:1;text-align:left!important;margin:8px 0 8px!important}
+  #commander .screen-card p{grid-column:2;grid-row:2;text-align:left!important}
+  #commander .procedures-block{padding:16px!important}
+  #commander .procedures-heading{display:block!important}
+  #commander .procedures-heading h3{margin-bottom:6px!important}
+  #commander .procedure-badges{grid-template-columns:1fr 1fr!important}
+  #commander .proc{justify-content:flex-start!important;min-height:66px!important}
+  #commander .proc:last-child{grid-column:1/-1!important}
+  #funkce>.features-intro{
+    min-height:0!important;
     padding:20px!important;
+    grid-template-columns:1fr!important;
+    grid-template-rows:auto!important;
+    gap:6px!important;
   }
   #funkce>.features-intro .kicker,
   #funkce>.features-intro h2,
-  #funkce>.features-intro p{
-    grid-column:1!important;grid-row:auto!important;
-  }
-  #funkce>.features-intro h2{font-size:27px!important;margin:4px 0 8px!important}
+  #funkce>.features-intro p{grid-column:1!important;grid-row:auto!important}
+  #funkce>.features-intro h2{font-size:27px!important}
 }
 </style>
 </head>
@@ -2791,7 +2809,7 @@ html body #instalace .install-content-panel .qr-note{color:#D4E2F8!important}
 
 <section id="o-nas"><div class="wrap section-tile about-tile"><div class="pad"><div class="about-grid"><div class="about-copy"><div class="kicker">O nás</div><h2>Proč vznikl Lázeňský Commander?</h2><p class="lead">Léčebný průkaz obsahuje všechno. Jen v něm musíte pokaždé znovu hledat.</p><p>Lázeňský Commander vznikl z jednoduché potřeby: podívat se na telefon a hned vědět, co mě čeká, kde to je a kdy mám vyrazit.</p><p>Časy, názvy procedur, patra a místnosti. Během pobytu potřebujete hlavně vědět, co je právě teď, co přijde potom a kdy už máte vyrazit.</p><p>Commander vznikl ze skutečné zkušenosti z lázní. Papírovému rozpisu dává přehlednou podobu v telefonu a pomáhá hlídat čas odchodu.</p></div><div class="story-visual"><div class="story-brand"><img class="product-mark" src="/native-ui/commander-mark.png" alt="Logo Lázeňského Commanderu"><div><b>Lázeňský Commander</b><span>Z rozpisu do přehledného dne.</span></div></div><div class="story-document"><div class="story-document-title"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""><span>Léčebný rozpis</span></div><div class="story-line"><time>09:15</time><span>LTV<br><small>Tělocvična</small></span></div><div class="story-line"><time>10:15</time><span>Ultrazvuk<br><small>Elektroléčba</small></span></div></div><div class="story-arrow" aria-hidden="true">↓</div><div class="story-answer"><img src="/procedure-icons/rehab.png" alt=""><div><span class="eyebrow">Co je teď · co bude dál</span><b>Čas, procedura a místo</b><span>V jednom denním přehledu.</span></div><img class="native-symbol" src="/native-ui/symbol-clock.png" alt=""></div><p class="visual-note">Ukázka údajů z demonstračního rozpisu Commanderu.</p></div></div></div></div></section>
 
-<section id="commander"><div class="wrap section-tile screens-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Lázeňský Commander</div><div class="commander-platform-switch"><a class="is-active" href="#commander">Apple</a><button type="button" data-platform-open>Android</button></div><h2>Užitečné obrazovky.</h2></div><p class="lead">Denní program, celý týden i nastavení předstihu. Skutečné obrazovky aplikace si můžete otevřít v čitelném detailu.</p></div><div class="subsection-panel screens-content-panel"><div class="group-panel-title"><h3>Přehled obrazovek</h3></div><div class="screen-grid"><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-today.png" alt="Dnes"></button></div><h3>Dnes</h3><p>Co vás čeká právě dnes, nejbližší procedura a kdy máte vyrazit.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-week.png" alt="Týden"></button></div><h3>Týden</h3><p>Celý týdenní rozpis po jednotlivých dnech a počet procedur.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-stay.png" alt="Pobyt"></button></div><h3>Pobyt</h3><p>Souhrn pobytu, průběh, počet procedur a přehled terapií.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-info.png" alt="Info"></button></div><h3>Info</h3><p>Důležité údaje o pobytu, lázních a klientovi na jednom místě.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-settings.png" alt="Nastavení"></button></div><h3>Nastavení</h3><p>Předstihy odchodu, kontrola rozpisu a další volby aplikace.</p></article></div><div class="procedures-block"><div class="procedures-heading"><h3>Procedury</h3><p>Stejné barvy a symboly vás provázejí celým Commanderem.</p></div><div class="procedure-group-panel"><div class="procedure-badges"><div class="proc"><img src="/procedure-icons/rehab.png" alt=""><b>Rehabilitace a pohyb</b></div><div class="proc"><img src="/procedure-icons/electro.png" alt=""><b>Elektroléčba</b></div><div class="proc"><img src="/procedure-icons/bath.png" alt=""><b>Vodoléčba</b></div><div class="proc"><img src="/procedure-icons/massage.png" alt=""><b>Masáže</b></div><div class="proc"><img src="/procedure-icons/wrap.png" alt=""><b>Teplo a zábaly</b></div></div></div></div></div></div></div></section>
+<div class="commander-master-shell">\n<section id="commander"><div class="wrap section-tile screens-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Lázeňský Commander</div><div class="commander-platform-switch"><a class="is-active" href="#commander">Apple</a><button type="button" data-platform-open>Android</button></div><h2>Užitečné obrazovky.</h2></div><p class="lead">Denní program, celý týden i nastavení předstihu. Skutečné obrazovky aplikace si můžete otevřít v čitelném detailu.</p></div><div class="subsection-panel screens-content-panel"><div class="group-panel-title"><h3>Přehled obrazovek</h3></div><div class="screen-grid"><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-today.png" alt="Dnes"></button></div><h3>Dnes</h3><p>Co vás čeká právě dnes, nejbližší procedura a kdy máte vyrazit.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-week.png" alt="Týden"></button></div><h3>Týden</h3><p>Celý týdenní rozpis po jednotlivých dnech a počet procedur.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-stay.png" alt="Pobyt"></button></div><h3>Pobyt</h3><p>Souhrn pobytu, průběh, počet procedur a přehled terapií.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-info.png" alt="Info"></button></div><h3>Info</h3><p>Důležité údaje o pobytu, lázních a klientovi na jednom místě.</p></article><article class="screen-card"><div class="screen-visual"><button class="image-button" type="button" data-enlarge aria-label="Zvětšit obrazovku"><img src="/screens/commander-settings.png" alt="Nastavení"></button></div><h3>Nastavení</h3><p>Předstihy odchodu, kontrola rozpisu a další volby aplikace.</p></article></div><div class="procedures-block"><div class="procedures-heading"><h3>Procedury</h3><p>Stejné barvy a symboly vás provázejí celým Commanderem.</p></div><div class="procedure-group-panel"><div class="procedure-badges"><div class="proc"><img src="/procedure-icons/rehab.png" alt=""><b>Rehabilitace a pohyb</b></div><div class="proc"><img src="/procedure-icons/electro.png" alt=""><b>Elektroléčba</b></div><div class="proc"><img src="/procedure-icons/bath.png" alt=""><b>Vodoléčba</b></div><div class="proc"><img src="/procedure-icons/massage.png" alt=""><b>Masáže</b></div><div class="proc"><img src="/procedure-icons/wrap.png" alt=""><b>Teplo a zábaly</b></div></div></div></div></div></div></div></section>
 
 <section class="features-area" id="funkce" aria-labelledby="features-title"><div class="wrap features-intro"><div class="kicker">Jeden produkt. Propojené funkce.</div><h2 id="features-title">Funkce Lázeňského Commanderu</h2><p>Od převodu rozpisu přes včasné upozornění až po program mimo aplikaci.</p></div>
 <section id="jak-funguje"><div class="wrap section-tile native-tile how-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Jak to funguje</div><h2>Z procedurového rozpisu až k upozornění.</h2></div><p class="lead">Jedna cesta. Stejný program v rozpisu, telefonu i včasném upozornění.</p></div><div class="subsection-panel how-content-panel"><div class="group-panel-title"><h3>Cesta od rozpisu k upozornění</h3></div><div class="product-flow"><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""></div></div><h3>Procedurový rozpis</h3><p>Časy, procedury a místa z vašeho rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-convert.png" alt=""></div></div><h3>Digitální převod</h3><p>Údaje se převedou do jednotného rozpisu.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""></div></div><h3>Kontrola a aktivace</h3><p>Před použitím se rozpis zkontroluje.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem flow-commander-emblem"><img class="flow-commander-mark" src="/native-ui/commander-mark.png" alt="Logo Lázeňského Commanderu"></div></div><h3>Commander v telefonu</h3><p>Dnes, Týden a Pobyt na jednom místě.</p></article><article class="flow-step"><div class="flow-visual"><div class="flow-emblem"><img class="native-symbol" src="/native-ui/symbol-bell.png" alt=""></div></div><h3>Čas vyrazit</h3><p>iPhone upozorní v nastaveném čase odchodu.</p></article></div></div></div></div></section>
@@ -2807,7 +2825,7 @@ html body #instalace .install-content-panel .qr-note{color:#D4E2F8!important}
 <section id="pripravujeme"><div class="wrap section-tile future-tile"><div class="pad"><div class="section-heading"><div><div class="kicker">Co chystáme</div><h2>Stejný Commander.<br>Na dalších obrazovkách.</h2></div><p class="lead">Nativní podoba produktu už existuje i mimo hlavní aplikaci. U každé funkce rozlišujeme její současný stav.</p></div><div class="subsection-panel future-content-panel"><div class="group-panel-title"><h3>Připravované funkce</h3></div><div class="future-grid"><article class="future-card"><div class="future-visual"><button class="image-button watch-shell" type="button" data-enlarge aria-label="Zvětšit: Nativní náhled obrazovky aplikace Commander pro Apple Watch"><img src="/native-ui/watch.png" alt="Nativní náhled obrazovky aplikace Commander pro Apple Watch"></button></div><span class="status">Nativní aplikace existuje</span><h3>Apple Watch</h3><p>Procedura, čas odchodu a místo přímo na zápěstí. Samostatné alarmy hodinek zatím nejsou zapnuté.</p><span class="future-native-note">Náhled skutečné komponenty Watch aplikace.</span></article><article class="future-card"><div class="future-visual"><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní vývojový náhled Live Activity Commanderu"><img src="/native-ui/live-activity.png" alt="Nativní vývojový náhled Live Activity Commanderu"></button></div><span class="status">Připravujeme · nyní vypnuté</span><h3>Live Activity</h3><p>Aktuální procedura a časový kontext na zamčené obrazovce. V aktuální verzi je tato funkce vypnutá.</p><span class="future-native-note">Čistý export z nativního rendereru Live Activity.</span></article><article class="future-card"><div class="future-visual"><button class="image-button island-compact" type="button" data-enlarge aria-label="Zvětšit: Náhled kompaktního Dynamic Islandu sestavený z nativních komponent"><img src="/native-ui/dynamic-island-compact.png" alt="Náhled kompaktního Dynamic Islandu sestavený z nativních komponent"></button><button class="image-button island-expanded" type="button" data-enlarge aria-label="Zvětšit: Náhled rozbaleného Dynamic Islandu sestavený z nativních komponent"><img src="/native-ui/dynamic-island.png" alt="Náhled rozbaleného Dynamic Islandu sestavený z nativních komponent"></button></div><span class="status">Připravujeme · nyní vypnuté</span><h3>Dynamic Island</h3><p>Krátký i rozbalený přehled nejbližší procedury. Je součástí implementace Live Activity.</p><span class="future-native-note">Produktový náhled z nativních komponent, nikoliv systémový screenshot.</span></article><article class="future-card"><div class="future-visual"><div class="future-widget-pair"><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní widget přehledu dne"><img src="/native-ui/widget-day.png" alt="Nativní widget přehledu dne"></button><button class="image-button " type="button" data-enlarge aria-label="Zvětšit: Nativní widget nejbližší procedury"><img src="/native-ui/widget-small.png" alt="Nativní widget nejbližší procedury"></button></div><div class="calendar-connection"><img class="native-symbol" src="/native-ui/symbol-calendar.png" alt="Apple Kalendář"><span aria-hidden="true">✓</span></div></div><span class="status ready">Widgety a Apple Kalendář existují</span><h3>Widgety a kalendář pobytu</h3><p>Widgety i volitelná synchronizace s Apple Kalendářem jsou implementované. Export .ics zůstává dostupný v Pokročilé.</p><span class="future-native-note">Skutečné widgety a implementované propojení s Apple Kalendářem.</span></article></div></div></div></div></section>
 
 
-<section id="pro-lazne"><div class="wrap section-tile native-tile pilot-tile"><div class="pad"><div class="pilot-grid"><div><div class="kicker">Pro lázně</div><h2>Pilot nejdřív.<br>Rozšíření až podle výsledku.</h2><p class="lead">Commander lze ověřit na malé skupině klientů, jednom lázeňském domě nebo jednom typu pobytu. Další rozvoj vychází ze skutečného používání a zpětné vazby.</p><div class="pilot-action"><a class="cta" href="#kontakt">Domluvit pilot</a></div></div><div class="pilot-visual"><div class="story-brand"><img class="product-mark" src="/native-ui/commander-mark.png" alt="Logo Lázeňského Commanderu"><div><b>Lázeňský Commander</b><span>Skutečný pobyt. Konkrétní zkušenost.</span></div></div><div class="pilot-stages"><div class="pilot-stage"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""><span><b>Vybraná skupina klientů</b>Jasný rozsah a společné podklady.</span></div><div class="pilot-stage"><img class="native-symbol" src="/native-ui/symbol-bell.png" alt=""><span><b>Program v telefonu</b>Ověření přehledů a upozornění v praxi.</span></div><div class="pilot-stage"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""><span><b>Společné vyhodnocení</b>Zkušenosti klientů a další postup.</span></div></div></div></div></div></div></section>
+</div>\n\n<section id="pro-lazne"><div class="wrap section-tile native-tile pilot-tile"><div class="pad"><div class="pilot-grid"><div><div class="kicker">Pro lázně</div><h2>Pilot nejdřív.<br>Rozšíření až podle výsledku.</h2><p class="lead">Commander lze ověřit na malé skupině klientů, jednom lázeňském domě nebo jednom typu pobytu. Další rozvoj vychází ze skutečného používání a zpětné vazby.</p><div class="pilot-action"><a class="cta" href="#kontakt">Domluvit pilot</a></div></div><div class="pilot-visual"><div class="story-brand"><img class="product-mark" src="/native-ui/commander-mark.png" alt="Logo Lázeňského Commanderu"><div><b>Lázeňský Commander</b><span>Skutečný pobyt. Konkrétní zkušenost.</span></div></div><div class="pilot-stages"><div class="pilot-stage"><img class="native-symbol" src="/native-ui/symbol-document.png" alt=""><span><b>Vybraná skupina klientů</b>Jasný rozsah a společné podklady.</span></div><div class="pilot-stage"><img class="native-symbol" src="/native-ui/symbol-bell.png" alt=""><span><b>Program v telefonu</b>Ověření přehledů a upozornění v praxi.</span></div><div class="pilot-stage"><img class="native-symbol" src="/native-ui/symbol-check.png" alt=""><span><b>Společné vyhodnocení</b>Zkušenosti klientů a další postup.</span></div></div></div></div></div></div></section>
 
 <section id="kontakt"><div class="wrap section-tile company-contact"><div class="pad"><div class="contact-grid"><div class="contact-copy"><div class="company-identity"><div class="company-brand-lockup" aria-label="Bohanes Technologies"><img class="brand-symbol" src="/bohanes-symbol.svg" alt=""><span class="brand-lockup"><strong>BOHANES <em>TECHNOLOGIES</em></strong><small>Technologie pro skutečný pobyt</small></span></div><p class="company-founder"><strong>Petr Bohanes</strong><span>Zakladatel</span></p></div><div class="contact-links"><div class="contact-link"><b>E-mail</b><span>Finální adresa čeká na ověření.</span></div><div class="contact-link"><b>Telefon</b><span>Finální číslo čeká na ověření.</span></div></div><div class="social-placeholders" aria-label="Připravované kontaktní kanály"><div class="social-placeholder" title="WhatsApp – připravujeme"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a8.5 8.5 0 0 0-7.4 12.7L3.5 20.5l4.9-1.2A8.5 8.5 0 1 0 12 3z"/><path d="M8.4 8.1c.2-.4.4-.4.7-.4h.5c.2 0 .4.1.5.4l.8 1.9c.1.3.1.5-.1.7l-.7.8c-.2.2-.1.4 0 .6.7 1.2 1.7 2.1 3 2.7.2.1.4.1.6-.1l.9-1.1c.2-.2.4-.3.7-.2l1.9.9c.3.1.4.3.4.5 0 .4-.2 1.6-1 2.2-.7.6-1.7.8-2.7.5-1.2-.3-2.8-1-4.6-2.6-1.5-1.3-2.5-3-2.8-4.2-.3-1.1 0-2 .4-2.6z"/></svg><span>WhatsApp</span><small>Připravujeme</small></div><div class="social-placeholder" title="YouTube – připravujeme"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="5.5" width="19" height="13" rx="4"/><path d="m10 9 5 3-5 3z"/></svg><span>YouTube</span><small>Připravujeme</small></div><div class="social-placeholder" title="LinkedIn – připravujeme"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="9" width="4" height="11"/><circle cx="5" cy="5.5" r="2"/><path d="M11 20V9h4v1.7c.8-1.2 2-2 3.8-2 2.5 0 3.2 1.7 3.2 4.3v7h-4v-6c0-1.3-.3-2.2-1.5-2.2S15 12.7 15 14v6z"/></svg><span>LinkedIn</span><small>Připravujeme</small></div></div><p class="contact-note">Kontaktní údaje a veřejné profily doplníme před veřejným spuštěním.</p></div><form class="contact-form" id="contactForm" aria-describedby="formStatus"><h3>Napište nám zprávu</h3><div><label for="contactName">Jméno</label><input id="contactName" name="name" autocomplete="name" placeholder="Vaše jméno"></div><div><label for="contactOrganization">Organizace / lázeňské zařízení</label><input id="contactOrganization" name="organization" autocomplete="organization" placeholder="Název organizace nebo lázní"></div><div><label for="contactEmail">E-mail</label><input id="contactEmail" name="email" type="email" autocomplete="email" placeholder="vas@email.cz"></div><div><label for="contactPhone">Telefon</label><input id="contactPhone" name="phone" type="tel" autocomplete="tel" placeholder="+420 …"></div><div><label for="contactMessage">Zpráva</label><textarea id="contactMessage" name="message" placeholder="Co byste s námi chtěli probrat?"></textarea></div><p class="form-state" id="formStatus" role="status">Odesílání připravujeme. Formulář zatím zprávu nikam neodesílá.</p><button class="cta" type="submit" disabled>Odesílání připravujeme</button></form></div></div></div></section>
 </main>
