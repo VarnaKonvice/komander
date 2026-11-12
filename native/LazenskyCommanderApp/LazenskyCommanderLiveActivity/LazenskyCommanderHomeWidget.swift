@@ -112,16 +112,18 @@ private enum CommanderWidgetCountdownText {
 }
 
 private enum CommanderWidgetTokens {
-  static let background = Color(commanderPresentationHex: CommanderBrandAssets.Colors.iPhoneBackground)
-  static let panel = Color(commanderPresentationHex: CommanderBrandAssets.Colors.iPhonePanel)
-  static let panelStroke = Color(commanderPresentationHex: CommanderBrandAssets.Colors.iPhonePanelStroke)
+  // Approved Home Screen widget palette used by the physically verified 29 Sep design.
+  // Keep this intentionally separate from the brighter in-app Pilot 1 palette.
+  static let background = Color(commanderPresentationHex: CommanderBrandAssets.Colors.background)
+  static let panel = Color(commanderPresentationHex: CommanderBrandAssets.Colors.panel)
+  static let panelStroke = Color(commanderPresentationHex: CommanderBrandAssets.Colors.panelStroke)
   static let primaryPurple = Color(commanderPresentationHex: CommanderBrandAssets.Colors.primaryPurple)
   static let textPrimary = Color.white
-  static let textSecondary = Color(commanderPresentationHex: CommanderBrandAssets.Colors.iPhoneTextSecondary)
+  static let textSecondary = Color(commanderPresentationHex: CommanderBrandAssets.Colors.textSecondary)
 
   static var backgroundGradient: LinearGradient {
     LinearGradient(
-      colors: [Color(commanderPresentationHex: CommanderBrandAssets.Colors.iPhonePanelBright), panel, background],
+      colors: [Color(commanderPresentationHex: "#173A78"), panel, background],
       startPoint: .topLeading,
       endPoint: .bottomTrailing
     )
