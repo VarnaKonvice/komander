@@ -4463,7 +4463,8 @@ const loginDialog=document.getElementById('loginDialog');
 const loginForm=document.getElementById('loginForm');
 const internalLauncher=document.getElementById('internalLauncher');
 const loginState=document.getElementById('loginState');
-const localReview=['127.0.0.1','localhost'].includes(location.hostname);
+const localHost=location.hostname.toLowerCase();
+const localReview=['127.0.0.1','localhost','192.168.50.205','petr--mac-studio.local'].includes(localHost);
 function showInternalLauncher(){
   loginForm.hidden=true;
   internalLauncher.hidden=false;
