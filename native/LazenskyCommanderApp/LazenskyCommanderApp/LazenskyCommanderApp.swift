@@ -606,10 +606,15 @@ final class CommanderViewModel: ObservableObject {
     await refreshAccess()
     recordAcceptanceProgress("bootstrap-access-ready", message: accessStatus)
 
-    // First discover a newer remote schedule without publishing it. A client
-    // must explicitly accept a new/updated stay before it can touch alarms,
-    // widgets, notifications or Apple Calendar. Existing accepted schedules
-    // continue to receive their normal cached maintenance while approval waits.
+    // A clean client install has no stay yet. Do not attach the shared
+    // development feed automatically; the client must add or receive a
+    // concrete stay first. Existing stays may still discover newer versions.
+    if latestSchedule == nil && pendingSchedule == nil {
+      recoveryStatus = "Přidej první pobyt"
+      errorMessage = nil
+      return
+    }
+
     recordAcceptanceProgress("bootstrap-before-remote-sync")
     await discoverPendingSchedule()
     if pendingSchedule == nil {
@@ -636,6 +641,7 @@ final class CommanderViewModel: ObservableObject {
        clock().timeIntervalSince(lastAutomaticAttempt) < Self.automaticForegroundRefreshInterval {
       return
     }
+    if latestSchedule == nil && pendingSchedule == nil { return }
     await discoverPendingSchedule()
     if pendingSchedule == nil {
       await synchronizeWithRecovery(
@@ -664,6 +670,20 @@ final class CommanderViewModel: ObservableObject {
       defaultActionIdentifier: UNNotificationDefaultActionIdentifier, category: category,
       payload: payload, dataset: CommanderRuntimeDataset.current) else { return }
     todayRouteRevision += 1
+  }
+
+  func stagePendingSchedule(_ schedule: Schedule) throws {
+    try NativeAlarmContract.validateCanonical(schedule)
+    _ = try CommanderScheduleProjection(schedule: schedule, overrides: leadTimeOverrides)
+    let currentVersion = latestSchedule?.scheduleVersion ?? Int.min
+    guard schedule.scheduleVersion > currentVersion else {
+      throw CommanderScheduleSyncError.importVersionConflict(
+        current: currentVersion, incoming: schedule.scheduleVersion
+      )
+    }
+    pendingSchedule = schedule
+    persistPendingSchedule(schedule)
+    scheduleApprovalError = nil
   }
 
   private func persistPendingSchedule(_ schedule: Schedule?) {
