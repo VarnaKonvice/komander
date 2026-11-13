@@ -438,6 +438,14 @@ struct CommanderFirstStayView: View {
       selectedSource = "Fotografie rozpisu"
       step = .review
     }
+    .alert("Aktivace se nepodařila", isPresented: Binding(
+      get: { error != nil },
+      set: { if !$0 { error = nil } }
+    )) {
+      Button("OK", role: .cancel) { error = nil }
+    } message: {
+      Text(error ?? "Neznámá chyba")
+    }
   }
 
   private var startView: some View {
@@ -517,10 +525,12 @@ struct CommanderFirstStayView: View {
 
   private func activateTestStay() {
     do {
-      let schedule = try JSONDecoder().decode(Schedule.self, from: Data(Self.testScheduleJSON.utf8))
+      let data = Data(Self.testScheduleJSON.utf8)
+      let schedule = try JSONDecoder().decode(Schedule.self, from: data)
+      try NativeAlarmContract.validateCanonical(schedule)
       try model.stagePendingSchedule(schedule)
     } catch {
-      self.error = error.localizedDescription
+      self.error = "Aktivaci se nepodařilo připravit: \(error.localizedDescription)"
     }
   }
 
