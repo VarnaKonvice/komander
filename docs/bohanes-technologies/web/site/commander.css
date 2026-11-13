@@ -252,3 +252,52 @@
   .calendar-platform-head h3 {font-size:20px}
   .calendar-zoom {margin-left:0}
 }
+
+/* Payment preview: illustrative checkout only; no live transaction is initiated here. */
+.payment-preview {margin-top:22px;padding:22px;border:1px solid #4E719D;border-radius:20px;background:var(--product-group);color:#fff}
+.payment-preview-head {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:start}
+.payment-preview-head h3 {font-size:25px;margin:6px 0 8px}
+.payment-preview-head p {font-size:16px;line-height:1.5;margin:0;color:var(--product-text)}
+.payment-preview-summary {display:grid;grid-template-columns:auto auto;gap:5px 18px;align-items:baseline;min-width:230px;padding:14px 16px;border:1px solid #5279A6;border-radius:14px;background:#10264C}
+.payment-preview-summary span {font-size:13px;color:#BFD2F2}
+.payment-preview-summary strong {justify-self:end;font-size:17px;color:#fff}
+.payment-preview-summary .payment-preview-price {font-size:27px;color:var(--cyan)}
+.payment-methods {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:20px}
+.payment-method {display:grid;grid-template-columns:42px 1fr;gap:11px;align-items:center;min-width:0;min-height:74px;padding:13px;text-align:left;border:1px solid #5279A6;border-radius:14px;background:#10264C;color:#fff;cursor:pointer}
+.payment-method:hover,.payment-method:focus-visible {border-color:#8FDCE8;background:#17345F}
+.payment-method.is-selected {border-color:#65E5FF;box-shadow:0 0 0 1px #65E5FF inset;background:#173A68}
+.payment-method.is-recommended::after {content:'Doporučeno';grid-column:1/-1;justify-self:start;margin-top:-2px;padding:3px 7px;border-radius:6px;background:#D6F5FF;color:#112942;font-size:11px;font-weight:800}
+.payment-method-symbol {display:grid;place-items:center;width:42px;height:42px;border:1px solid #5279A6;border-radius:50%;background:#173A68;color:#fff;font-size:24px;font-weight:800}
+.payment-method-symbol svg {width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.payment-method:nth-child(3) .payment-method-symbol svg {fill:currentColor;stroke:none}
+.payment-google-symbol {font-family:Arial,sans-serif;color:#fff}
+.payment-method b {display:block;font-size:16px;line-height:1.25}
+.payment-method small {display:block;margin-top:4px;font-size:12px;line-height:1.35;color:#BFD2F2}
+.payment-card-fallback {display:grid;grid-template-columns:auto auto 1fr;gap:12px;align-items:center;width:100%;margin-top:12px;padding:11px 14px;border:1px solid #456C96;border-radius:11px;background:#0E1D3B;color:#DCE9F8;text-align:left;cursor:pointer}
+.payment-card-fallback:hover,.payment-card-fallback:focus-visible {border-color:#8FDCE8}
+.payment-card-fallback.is-selected {border-color:#65E5FF;background:#173A68}
+.payment-card-fallback span {font-size:12px;color:#9EB7D8;text-transform:uppercase;letter-spacing:.04em}
+.payment-card-fallback b {font-size:15px;color:#fff}
+.payment-card-fallback small {font-size:13px;color:#BFD2F2}
+.payment-preview-detail {display:flex;align-items:center;gap:16px;min-height:112px;margin-top:14px;padding:16px;border:1px solid #456C96;border-radius:14px;background:#0D1834}
+.payment-detail-copy {min-width:0}
+.payment-detail-copy b {display:block;font-size:19px;color:#fff}
+.payment-detail-copy p {margin:5px 0 0;font-size:15px;line-height:1.5;color:#D4E2F8}
+.payment-detail-badge {display:inline-flex;margin-bottom:7px;padding:4px 7px;border-radius:6px;background:#173A68;color:#65E5FF;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.payment-detail-qr {display:grid;grid-template-columns:repeat(3,13px);grid-template-rows:repeat(3,13px);gap:3px;flex:0 0 auto;padding:8px;border-radius:9px;background:#F1F7FA}
+.payment-detail-qr span {background:#0B3B5B}
+.payment-detail-qr span:nth-child(2),.payment-detail-qr span:nth-child(4),.payment-detail-qr span:nth-child(8) {background:#F1F7FA}
+.payment-bank-list {display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.payment-bank-list span {padding:5px 7px;border:1px solid #5279A6;border-radius:7px;background:#10264C;color:#DCE9F8;font-size:12px}
+.product-installation .payment-preview-note {margin:12px 0 0;text-align:center;font-size:13px;color:#9EB7D8}
+@media (max-width:1100px) {
+  .payment-methods {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:760px) {
+  .payment-preview {padding:16px}
+  .payment-preview-head {grid-template-columns:1fr;gap:14px}
+  .payment-preview-summary {min-width:0;width:100%}
+  .payment-methods {grid-template-columns:1fr}
+  .payment-card-fallback {grid-template-columns:1fr;gap:3px}
+  .payment-preview-detail {align-items:flex-start}
+}
