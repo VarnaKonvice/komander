@@ -1,0 +1,10 @@
+{
+  "name": "@bohanes/commander-payments",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/catalog.mjs && node --check src/comgate.mjs && node --check src/payment-flow.mjs"
+  }
+}
