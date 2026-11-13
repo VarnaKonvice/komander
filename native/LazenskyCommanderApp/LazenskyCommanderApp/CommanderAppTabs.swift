@@ -525,10 +525,7 @@ struct CommanderFirstStayView: View {
 
   private func activateTestStay() {
     do {
-      let data = Data(Self.testScheduleJSON.utf8)
-      let schedule = try JSONDecoder().decode(Schedule.self, from: data)
-      try NativeAlarmContract.validateCanonical(schedule)
-      try model.stagePendingSchedule(schedule)
+      try model.stagePendingSchedule(Self.testSchedule)
     } catch {
       self.error = "Aktivaci se nepodařilo připravit: \(error.localizedDescription)"
     }
@@ -599,7 +596,32 @@ struct CommanderFirstStayView: View {
       .commanderCard(accent: CommanderDesignTokens.Colors.amber, surface: .depthInset)
   }
 
-  private static let testScheduleJSON = #"""{"schemaVersion":1,"scheduleVersion":2001,"updatedAt":"2026-11-13T06:30:00Z","stay":{"spa":"Lázně mimo partnerskou síť","dateFrom":"2026-11-13","dateTo":"2026-11-13","room":"Pokoj klienta","doctor":"","mealShift":"I. směna"},"events":[{"stableId":"darkov-2026-11-13-test-viriva-koupel-hkk-0910","date":"2026-11-13","start":"09:10","end":"09:30","title":"Vířivá koupel HKK","location":"LAZ1 · RS C/1 · vodoléčba","kind":"procedure","procedureType":"Vířivá lázeň","leadTimeMinutes":20},{"stableId":"darkov-2026-11-13-test-motomed-0945","date":"2026-11-13","start":"09:45","end":"10:05","title":"Motomed","location":"FYZ48 · RS C/2 · č.7","kind":"procedure","procedureType":"Individuální LTV","leadTimeMinutes":20},{"stableId":"darkov-2026-11-13-test-obed-1100","date":"2026-11-13","start":"11:00","end":"11:15","title":"Oběd","location":"Jídelna · I. směna","kind":"meal","mealType":"Oběd","leadTimeMinutes":10},{"stableId":"darkov-2026-11-13-test-iltv-imoove-1200","date":"2026-11-13","start":"12:00","end":"12:20","title":"ILTV Imoove","location":"FYZ54 · RS C/2 · č.7","kind":"procedure","procedureType":"ILTV Imoove","leadTimeMinutes":20},{"stableId":"darkov-2026-11-13-test-parafango-obklad-1330","date":"2026-11-13","start":"13:30","end":"13:50","title":"Parafango-obklad","location":"LAZ4 · RS C/2 · č.11","kind":"procedure","procedureType":"Zábal","leadTimeMinutes":20},{"stableId":"darkov-2026-11-13-test-vecere-1645","date":"2026-11-13","start":"16:45","end":"17:00","title":"Večeře","location":"Jídelna · I. směna","kind":"meal","mealType":"Večeře","leadTimeMinutes":10}],"settings":{"defaultLeadTimeMinutes":20,"procedureTypeOverrides":{"Individuální LTV":20,"Vířivá lázeň":20,"Čtyřkomorová lázeň":20,"Zábal":20,"Klasická masáž":20,"Vizita":5},"mealOverrides":{"Snídaně":5,"Oběd":10,"Večeře":10}}}"""#
+  private static let testSchedule = Schedule(
+    schemaVersion: 1,
+    scheduleVersion: 2001,
+    updatedAt: "2026-11-13T06:30:00Z",
+    stay: [
+      "spa": "Lázně mimo partnerskou síť",
+      "dateFrom": "2026-11-13",
+      "dateTo": "2026-11-13",
+      "room": "Pokoj klienta",
+      "doctor": "",
+      "mealShift": "I. směna"
+    ],
+    events: [
+      ScheduleEvent(stableId: "b2c-2026-11-13-viriva-0910", date: "2026-11-13", start: "09:10", end: "09:30", title: "Vířivá koupel HKK", location: "LAZ1 · RS C/1 · vodoléčba", kind: .procedure, procedureType: "Vířivá lázeň", mealType: nil, leadTimeMinutes: 20),
+      ScheduleEvent(stableId: "b2c-2026-11-13-motomed-0945", date: "2026-11-13", start: "09:45", end: "10:05", title: "Motomed", location: "FYZ48 · RS C/2 · č.7", kind: .procedure, procedureType: "Individuální LTV", mealType: nil, leadTimeMinutes: 20),
+      ScheduleEvent(stableId: "b2c-2026-11-13-obed-1100", date: "2026-11-13", start: "11:00", end: "11:15", title: "Oběd", location: "Jídelna · I. směna", kind: .meal, procedureType: nil, mealType: "Oběd", leadTimeMinutes: 10),
+      ScheduleEvent(stableId: "b2c-2026-11-13-imoove-1200", date: "2026-11-13", start: "12:00", end: "12:20", title: "ILTV Imoove", location: "FYZ54 · RS C/2 · č.7", kind: .procedure, procedureType: "ILTV Imoove", mealType: nil, leadTimeMinutes: 20),
+      ScheduleEvent(stableId: "b2c-2026-11-13-parafango-1330", date: "2026-11-13", start: "13:30", end: "13:50", title: "Parafango-obklad", location: "LAZ4 · RS C/2 · č.11", kind: .procedure, procedureType: "Zábal", mealType: nil, leadTimeMinutes: 20),
+      ScheduleEvent(stableId: "b2c-2026-11-13-vecere-1645", date: "2026-11-13", start: "16:45", end: "17:00", title: "Večeře", location: "Jídelna · I. směna", kind: .meal, procedureType: nil, mealType: "Večeře", leadTimeMinutes: 10)
+    ],
+    settings: ScheduleSettings(
+      defaultLeadTimeMinutes: 20,
+      procedureTypeOverrides: ["Individuální LTV": 20, "Vířivá lázeň": 20, "Zábal": 20],
+      mealOverrides: ["Oběd": 10, "Večeře": 10]
+    )
+  )
 }
 
 struct CommanderAlarmOfferView: View {
