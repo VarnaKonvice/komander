@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { getPlan } from './catalog.mjs';
+import { resolvePlanForStay } from './stay-pricing.mjs';
 
-export function createPaymentIntent({ planId, email, country = 'CZ' }) {
-  const plan = getPlan(planId);
+export function createPaymentIntent({ startDate, endDate, email, country = 'CZ' }) {
+  const plan = resolvePlanForStay({ startDate, endDate });
   const normalizedEmail = String(email || '').trim().toLowerCase();
   if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) throw new Error('Valid payer email is required');
 
@@ -12,6 +12,9 @@ export function createPaymentIntent({ planId, email, country = 'CZ' }) {
     planId: plan.id,
     productCode: plan.productCode,
     label: plan.label,
+    stayDays: plan.stayDays,
+    startDate,
+    endDate,
     priceMinor: plan.priceMinor,
     currency: plan.currency,
     email: normalizedEmail,

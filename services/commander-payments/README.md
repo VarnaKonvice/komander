@@ -64,3 +64,28 @@ Fio is the settlement bank account configured in the Comgate merchant portal. Fi
 npm test
 npm run check
 ```
+
+## Automatic stay pricing
+
+The client never chooses a price and never submits an authoritative `planId` or amount.
+
+The server receives only the stay dates and computes calendar days inclusively:
+
+- 1–15 days → 129 CZK (`short`)
+- 16–35 days → 299 CZK (`standard`)
+- over 35 days → rejected until a separate long-stay pricing rule is defined
+
+This prevents a client from selecting the cheaper tier for a longer stay.
+
+## Direct bank transfer / Czech QR Platba
+
+A second payment path is prepared for direct CZK transfer to the future Fio account.
+
+The server generates:
+
+- the authoritative amount from the stay dates;
+- a unique 10-digit variable symbol;
+- a standard SPAYD (`SPD*1.0`) payload for QR Platba;
+- state `PENDING` until the incoming Fio transaction is reconciled.
+
+The only bank configuration needed later is the Fio IBAN and recipient name. Fio transaction reconciliation will be added after the business account exists and its API access is enabled.
