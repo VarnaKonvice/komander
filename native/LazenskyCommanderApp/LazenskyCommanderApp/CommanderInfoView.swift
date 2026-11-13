@@ -70,16 +70,6 @@ struct CommanderInfoView: View {
         }
         .buttonStyle(.plain)
 
-        NavigationLink {
-          CommanderTermsView()
-        } label: {
-          helpRow(
-            title: "Podmínky používání",
-            subtitle: "Základní pravidla služby",
-            symbol: "doc.text.fill"
-          )
-        }
-        .buttonStyle(.plain)
       }
     }
   }
@@ -233,7 +223,7 @@ private struct CommanderUserGuideView: View {
   }
 }
 
-private struct CommanderTermsView: View {
+struct CommanderTermsView: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: CommanderDesignTokens.Spacing.section) {

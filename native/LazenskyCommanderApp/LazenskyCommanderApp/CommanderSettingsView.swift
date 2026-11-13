@@ -144,6 +144,24 @@ struct CommanderSettingsView: View {
       }
 
       CommanderSectionCard(
+        title: "Právní a soukromí",
+        symbol: "doc.text.fill",
+        accent: CommanderDesignTokens.Colors.primaryPurple
+      ) {
+        NavigationLink {
+          CommanderTermsView()
+        } label: {
+          CommanderNavigationRow(
+            title: "Podmínky používání",
+            subtitle: "Pravidla služby a souhlas klienta",
+            symbol: "doc.text.fill",
+            accent: CommanderDesignTokens.Colors.primaryPurple
+          )
+        }
+        .buttonStyle(.plain)
+      }
+
+      CommanderSectionCard(
         title: "Pokročilé",
         symbol: "wrench.and.screwdriver.fill",
         accent: CommanderDesignTokens.Colors.textSecondary

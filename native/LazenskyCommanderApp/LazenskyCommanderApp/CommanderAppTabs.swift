@@ -8,6 +8,7 @@ struct CommanderAppTabs: View {
   @StateObject private var renewal = CommanderProvisioningRenewal()
   @State private var selectedTab: Int
   @State private var isScheduleAuditPresented = false
+  @AppStorage("lazensky.commander.terms.acceptedVersion") private var acceptedTermsVersion = 0
   @Environment(\.scenePhase) private var scenePhase
 
   init(model: CommanderViewModel) {
@@ -15,6 +16,8 @@ struct CommanderAppTabs: View {
     _selectedTab = State(initialValue: Self.previewTabIndex())
 
   }
+
+  private static let currentTermsVersion = 1
 
   private var auditStatus: CommanderScheduleAuditVisualStatus {
     commanderScheduleAuditVisualStatus(for: model)
@@ -51,7 +54,11 @@ struct CommanderAppTabs: View {
 
   @ViewBuilder
   private var clientEntryContent: some View {
-    if model.latestSchedule == nil && model.pendingSchedule == nil {
+    if acceptedTermsVersion < Self.currentTermsVersion {
+      CommanderTermsAcceptanceView {
+        acceptedTermsVersion = Self.currentTermsVersion
+      }
+    } else if model.latestSchedule == nil && model.pendingSchedule == nil {
       CommanderFirstStayView(model: model)
     } else if let pending = model.pendingSchedule {
       CommanderScheduleApprovalView(model: model, schedule: pending)
@@ -396,6 +403,79 @@ struct CommanderScheduleApprovalView: View {
 }
 
 
+
+struct CommanderTermsAcceptanceView: View {
+  let accept: () -> Void
+  @State private var hasReviewed = false
+
+  var body: some View {
+    NavigationStack {
+      ZStack {
+        CommanderDepthBackground().ignoresSafeArea()
+        VStack(spacing: 0) {
+          ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+              CommanderPageHeader(title: "Podmínky používání", subtitle: "První spuštění")
+
+              VStack(spacing: 10) {
+                CommanderSymbolBadge(
+                  symbol: "doc.text.fill",
+                  color: CommanderDesignTokens.Colors.primaryPurple,
+                  size: 76
+                )
+                Text("Než začneš Commander používat")
+                  .font(.system(size: 28, weight: .bold))
+                  .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+                  .multilineTextAlignment(.center)
+                Text("Přečti si základní pravidla služby. Bez souhlasu nelze pokračovat k aktivaci pobytu.")
+                  .commanderFont(.subtitle)
+                  .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
+                  .multilineTextAlignment(.center)
+              }
+
+              NavigationLink {
+                CommanderTermsView()
+              } label: {
+                CommanderNavigationRow(
+                  title: "Přečíst podmínky používání",
+                  subtitle: "Služba, rozpis, aktivace, alarmy a soukromí",
+                  symbol: "doc.text.magnifyingglass",
+                  accent: CommanderDesignTokens.Colors.primaryPurple
+                )
+              }
+              .buttonStyle(.plain)
+              .simultaneousGesture(TapGesture().onEnded { hasReviewed = true })
+
+              Toggle(isOn: $hasReviewed) {
+                Text("Přečetl jsem podmínky a souhlasím s jejich zněním")
+                  .font(.system(size: 16, weight: .semibold))
+                  .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+              }
+              .tint(CommanderDashboardPalette.commanderPurpleLight)
+              .padding(16)
+              .commanderCard(accent: CommanderDesignTokens.Colors.primaryPurple, surface: .depthInset)
+            }
+            .padding(.horizontal, CommanderDesignTokens.Spacing.page)
+            .padding(.vertical, 18)
+          }
+
+          Button(action: accept) {
+            Label("Souhlasím a pokračovat", systemImage: "checkmark.circle.fill")
+              .font(.system(size: 18, weight: .bold))
+              .frame(maxWidth: .infinity, minHeight: 56)
+          }
+          .buttonStyle(.borderedProminent)
+          .tint(CommanderDashboardPalette.commanderPurpleLight)
+          .disabled(!hasReviewed)
+          .padding(.horizontal, CommanderDesignTokens.Spacing.page)
+          .padding(.vertical, 12)
+          .background(CommanderDashboardPalette.backgroundGradient)
+        }
+      }
+    }
+    .accessibilityIdentifier("terms-acceptance")
+  }
+}
 
 struct CommanderFirstStayView: View {
   @ObservedObject var model: CommanderViewModel
