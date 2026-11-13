@@ -16,6 +16,23 @@ public struct ScheduleEvent: Codable, Equatable, Sendable {
   public let procedureType: String?
   public let mealType: String?
   public let leadTimeMinutes: Int?
+
+  public init(
+    stableId: String, date: String, start: String, end: String, title: String, location: String,
+    kind: ScheduleKind, procedureType: String? = nil, mealType: String? = nil,
+    leadTimeMinutes: Int? = nil
+  ) {
+    self.stableId = stableId
+    self.date = date
+    self.start = start
+    self.end = end
+    self.title = title
+    self.location = location
+    self.kind = kind
+    self.procedureType = procedureType
+    self.mealType = mealType
+    self.leadTimeMinutes = leadTimeMinutes
+  }
 }
 
 public enum CommanderEventSemantics {
@@ -61,6 +78,16 @@ public struct ScheduleSettings: Codable, Equatable, Sendable {
   public let defaultLeadTimeMinutes: Int
   public let procedureTypeOverrides: [String: Int]
   public let mealOverrides: [String: Int]
+
+  public init(
+    defaultLeadTimeMinutes: Int,
+    procedureTypeOverrides: [String: Int] = [:],
+    mealOverrides: [String: Int] = [:]
+  ) {
+    self.defaultLeadTimeMinutes = defaultLeadTimeMinutes
+    self.procedureTypeOverrides = procedureTypeOverrides
+    self.mealOverrides = mealOverrides
+  }
 }
 
 public struct Schedule: Codable, Equatable, Sendable {
@@ -70,6 +97,18 @@ public struct Schedule: Codable, Equatable, Sendable {
   public let stay: [String: String]
   public let events: [ScheduleEvent]
   public let settings: ScheduleSettings
+
+  public init(
+    schemaVersion: Int, scheduleVersion: Int, updatedAt: String,
+    stay: [String: String], events: [ScheduleEvent], settings: ScheduleSettings
+  ) {
+    self.schemaVersion = schemaVersion
+    self.scheduleVersion = scheduleVersion
+    self.updatedAt = updatedAt
+    self.stay = stay
+    self.events = events
+    self.settings = settings
+  }
 }
 
 
