@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D0E000000000000000000001 /* CommanderDocumentScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E000000000000000000011 /* CommanderDocumentScanner.swift */; };
+		D0D000000000000000000001 /* CommanderDocumentIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0D000000000000000000011 /* CommanderDocumentIntelligence.swift */; };
+		D0D000000000000000000002 /* commander-ocr-lexicon-v1.json in Resources */ = {isa = PBXBuildFile; fileRef = D0D000000000000000000012 /* commander-ocr-lexicon-v1.json */; };
+		D0C000000000000000000001 /* CommanderOnDeviceOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C000000000000000000011 /* CommanderOnDeviceOCR.swift */; };
 		AA1200000000000000000001 /* CommanderScheduleFilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA1200000000000000000002; };
 		AC2000000000000000000001 /* icon-map.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000013 /* icon-map.json */; };
 		AC2000000000000000000002 /* colors.json in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000014 /* colors.json */; };
@@ -380,6 +384,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		D0C000000000000000000011 /* CommanderOnDeviceOCR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderOnDeviceOCR.swift; sourceTree = "<group>"; };
+		D0D000000000000000000011 /* CommanderDocumentIntelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDocumentIntelligence.swift; sourceTree = "<group>"; };
+		D0D000000000000000000012 /* commander-ocr-lexicon-v1.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "commander-ocr-lexicon-v1.json"; sourceTree = "<group>"; };
+		D0E000000000000000000011 /* CommanderDocumentScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDocumentScanner.swift; sourceTree = "<group>"; };
 		AA1200000000000000000002 /* CommanderScheduleFilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderScheduleFilesView.swift; sourceTree = "<group>"; };
 		CB1000000000000000000017 /* CommanderProvisioningRenewal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderProvisioningRenewal.swift; sourceTree = "<group>"; };
 		CB1000000000000000000016 /* CommanderDaySummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommanderDaySummaryView.swift; sourceTree = "<group>"; };
@@ -566,6 +574,10 @@
 				CB1000000000000000000014 /* CommanderInfoView.swift */,
 				CB1000000000000000000015 /* CommanderSettingsView.swift */,
 				AA1200000000000000000002 /* CommanderScheduleFilesView.swift */,
+				D0C000000000000000000011 /* CommanderOnDeviceOCR.swift */,
+				D0D000000000000000000011 /* CommanderDocumentIntelligence.swift */,
+				D0E000000000000000000011 /* CommanderDocumentScanner.swift */,
+				D0D000000000000000000012 /* commander-ocr-lexicon-v1.json */,
 				CB1000000000000000000016 /* CommanderDaySummaryView.swift */,
 				CB1000000000000000000017 /* CommanderProvisioningRenewal.swift */,
 				H80000000000000000000012 /* AppAssets.xcassets */,
@@ -926,6 +938,7 @@
 				C3000000000000000000000F /* pool.png in Resources */,
 				C30000000000000000000010 /* whirlpool.png in Resources */,
 				S90000000000000000000001 /* CommanderSilentAlert.wav in Resources */,
+				D0D000000000000000000002 /* commander-ocr-lexicon-v1.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1070,6 +1083,9 @@
 				CB1000000000000000000004 /* CommanderInfoView.swift in Sources */,
 				CB1000000000000000000005 /* CommanderSettingsView.swift in Sources */,
 				AA1200000000000000000001 /* CommanderScheduleFilesView.swift in Sources */,
+				D0C000000000000000000001 /* CommanderOnDeviceOCR.swift in Sources */,
+				D0D000000000000000000001 /* CommanderDocumentIntelligence.swift in Sources */,
+				D0E000000000000000000001 /* CommanderDocumentScanner.swift in Sources */,
 				CB1000000000000000000006 /* CommanderDaySummaryView.swift in Sources */,
 				CB1000000000000000000007 /* CommanderProvisioningRenewal.swift in Sources */,
 				I90000000000000000000008 /* CommanderDashboardPreviews.swift in Sources */,
