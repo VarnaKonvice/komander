@@ -481,9 +481,16 @@ struct CommanderFirstStayView: View {
   @ObservedObject var model: CommanderViewModel
   @State private var step: Step = .start
   @State private var showsFileImporter = false
+  @State private var showsDocumentScanner = false
   @State private var photoItem: PhotosPickerItem?
   @State private var selectedSource = ""
   @State private var error: String?
+  @State private var isProcessingSource = false
+  @State private var firstAttemptOCR: [CommanderOCRPage] = []
+  @State private var captureGuidance: String?
+  @State private var extraction: CommanderDocumentExtraction?
+  @State private var mergedOCR: CommanderMergedOCRPage?
+  @State private var canonicalSchedule: Schedule?
 
   private enum Step { case start, ownSchedule, review, payment }
 
@@ -504,21 +511,28 @@ struct CommanderFirstStayView: View {
         .padding(.vertical, 18)
       }
     }
+    .sheet(isPresented: $showsDocumentScanner) {
+      CommanderDocumentScanner(
+        onComplete: { images in
+          showsDocumentScanner = false
+          Task { await processImages(images, source: "Vyfocený rozpis") }
+        },
+        onCancel: { showsDocumentScanner = false }
+      )
+    }
     .fileImporter(isPresented: $showsFileImporter, allowedContentTypes: [.pdf, .image]) { result in
       switch result {
       case .success(let url):
-        selectedSource = url.lastPathComponent
-        step = .review
+        Task { await processDocumentURL(url) }
       case .failure(let failure):
         error = failure.localizedDescription
       }
     }
     .onChange(of: photoItem) { item in
-      guard item != nil else { return }
-      selectedSource = "Fotografie rozpisu"
-      step = .review
+      guard let item else { return }
+      Task { await processPhotoItem(item) }
     }
-    .alert("Aktivace se nepodařila", isPresented: Binding(
+    .alert("Rozpis se nepodařilo zpracovat", isPresented: Binding(
       get: { error != nil },
       set: { if !$0 { error = nil } }
     )) {
@@ -541,7 +555,8 @@ struct CommanderFirstStayView: View {
 
   private var sourceView: some View {
     VStack(spacing: 16) {
-      intro(symbol: "doc.text.viewfinder", title: "Přidej svůj rozpis", text: "Vyber fotografii nebo dokument s procedurami. Před aktivací vždy uvidíš připravený pobyt ke kontrole.")
+      intro(symbol: "doc.text.viewfinder", title: "Přidej svůj rozpis", text: "Vyfoť rozpis nebo vyber fotografii či PDF. Commander ho přečte přímo v tomto iPhonu.")
+      Button { showsDocumentScanner = true } label: { actionLabel("Vyfotit rozpis", symbol: "camera.viewfinder") }
       PhotosPicker(selection: $photoItem, matching: .images) {
         Label("Vybrat fotografii", systemImage: "photo.on.rectangle.angled")
           .font(.system(size: 18, weight: .bold))
@@ -550,10 +565,30 @@ struct CommanderFirstStayView: View {
           .background(CommanderDashboardPalette.commanderPurpleLight)
           .clipShape(RoundedRectangle(cornerRadius: 16))
       }
-      Button { showsFileImporter = true } label: { actionLabel("Vybrat dokument", symbol: "doc.fill") }
-      Button("Zpět") { step = .start }
+      Button { showsFileImporter = true } label: { actionLabel("Vybrat PDF nebo obrázek", symbol: "doc.fill") }
+
+      if isProcessingSource {
+        HStack(spacing: 10) {
+          ProgressView().tint(.white)
+          Text("Čtu rozpis přímo v telefonu…")
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity)
+        .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthInset)
+      }
+
+      if let captureGuidance {
+        note(captureGuidance)
+        if !firstAttemptOCR.isEmpty {
+          Button { useFirstAttempt() } label: { actionLabel("Použít první snímek i tak", symbol: "checkmark.circle") }
+        }
+      }
+
+      Button("Zpět") { resetSource(); step = .start }
         .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
-      Text("Dnešní build simuluje převod podkladu do rozpisu. Skutečné automatické čtení fotografie nebo dokumentu bude samostatná vrstva.")
+      Text("Fotografie, PDF ani rozpoznaný text se při tomto zpracování nikam neodesílají.")
         .font(.footnote)
         .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
         .multilineTextAlignment(.center)
@@ -562,20 +597,148 @@ struct CommanderFirstStayView: View {
 
   private var reviewView: some View {
     VStack(spacing: 16) {
-      intro(symbol: "checkmark.circle.fill", title: "Rozpis je připraven ke kontrole", text: "Zkontroluj základní údaje. Pro dnešní test jsou lázně vedené jako nepartnerské.")
-      VStack(alignment: .leading, spacing: 12) {
-        reviewRow("Lázně", "Lázně mimo partnerskou síť")
-        reviewRow("Termín", "pátek 13. 11. 2026")
-        reviewRow("Procedury", "4")
-        reviewRow("Jídla", "2")
-        reviewRow("Podklad", selectedSource.isEmpty ? "Rozpis klienta" : selectedSource)
+      if let extraction {
+        intro(symbol: "checkmark.circle.fill", title: "Rozpis byl přečten v telefonu", text: "Commander použil OCR a lokální znalostní katalog. Rozpis klienta zůstává nadřazený všem návrhům.")
+        VStack(alignment: .leading, spacing: 12) {
+          reviewRow("Lázně", extraction.facility?.name ?? "Z rozpisu nelze určit")
+          reviewRow("Nalezené položky", "\(extraction.rows.count)")
+          reviewRow("Procedury", "\(extraction.rows.filter { $0.procedure != nil }.count)")
+          reviewRow("Jídla", "\(extraction.rows.filter { $0.meal != nil }.count)")
+          reviewRow("Ke kontrole", "\(extraction.reviewCount)")
+          reviewRow("Podklad", selectedSource.isEmpty ? "Rozpis klienta" : selectedSource)
+        }
+        .padding(16)
+        .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthCard)
+
+        if extraction.reviewCount > 0 {
+          note("Commander našel \(extraction.reviewCount) skutečně nejisté položky. Ty musí být vyřešené před platbou; ostatní řádky klient potvrzovat nemusí.")
+          VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(extraction.rows.filter { $0.requiresReview }.prefix(6).enumerated()), id: \.offset) { _, row in
+              Text(row.rawText)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(CommanderDesignTokens.Colors.textPrimary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+          }
+          .padding(14)
+          .commanderCard(accent: CommanderDesignTokens.Colors.amber, surface: .depthInset)
+        } else if canonicalSchedule != nil {
+          note("Rozpis je připravený z klientského podkladu. Pokud podklad neuvádí konec procedury, Commander žádnou délku nevymýšlí a používá stejný čas začátku i konce.")
+          Button { step = .payment } label: { actionLabel("Pokračovat k aktivaci", symbol: "arrow.right.circle.fill") }
+        }
+      } else {
+        note("Rozpis zatím nemá použitelný OCR výsledek.")
       }
-      .padding(16)
-      .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthCard)
-      Button { step = .payment } label: { actionLabel("Pokračovat k aktivaci", symbol: "arrow.right.circle.fill") }
-      Button("Vybrat jiný rozpis") { step = .ownSchedule }
+      Button("Vybrat jiný rozpis") { resetSource(); step = .ownSchedule }
         .foregroundStyle(CommanderDesignTokens.Colors.textSecondary)
     }
+  }
+
+  @MainActor
+  private func processPhotoItem(_ item: PhotosPickerItem) async {
+    isProcessingSource = true
+    defer { isProcessingSource = false; photoItem = nil }
+    do {
+      guard let data = try await item.loadTransferable(type: Data.self),
+            let image = CommanderDocumentImageSource.image(from: data) else {
+        throw CocoaError(.fileReadCorruptFile)
+      }
+      await processImages([image], source: "Fotografie rozpisu", managesProgress: false)
+    } catch {
+      self.error = "Fotografii se nepodařilo přečíst: \(error.localizedDescription)"
+    }
+  }
+
+  @MainActor
+  private func processDocumentURL(_ url: URL) async {
+    isProcessingSource = true
+    defer { isProcessingSource = false }
+    let scoped = url.startAccessingSecurityScopedResource()
+    defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+    do {
+      let images = try CommanderDocumentImageSource.images(from: url)
+      await processImages(images, source: url.lastPathComponent, managesProgress: false)
+    } catch {
+      self.error = "Dokument se nepodařilo přečíst: \(error.localizedDescription)"
+    }
+  }
+
+  @MainActor
+  private func processImages(_ images: [CGImage], source: String, managesProgress: Bool = true) async {
+    guard !images.isEmpty else {
+      error = "V dokumentu nebyla nalezena žádná čitelná stránka."
+      return
+    }
+    if managesProgress { isProcessingSource = true }
+    defer { if managesProgress { isProcessingSource = false } }
+    do {
+      let qualities = images.map(CommanderDocumentImageQuality.assess)
+      var pages: [CommanderOCRPage] = []
+      for image in images { pages.append(try await CommanderOnDeviceOCR.recognize(cgImage: image)) }
+
+      let merged: CommanderMergedOCRPage
+      if !firstAttemptOCR.isEmpty {
+        if firstAttemptOCR.count == pages.count {
+          merged = CommanderOCRReconciler.combine(zip(firstAttemptOCR, pages).map(CommanderOCRReconciler.merge))
+        } else {
+          // Page counts differ, so pairing them would risk mixing different pages. Use the second scan as the safer source.
+          merged = CommanderOCRReconciler.combine(pages.map(CommanderOCRReconciler.fromSingle))
+        }
+        firstAttemptOCR = []
+        captureGuidance = nil
+      } else if qualities.contains(where: { $0.level == .retryRecommended }) {
+        firstAttemptOCR = pages
+        selectedSource = source
+        let issue = qualities.flatMap(\.issues).first ?? "Fotografie je hůře čitelná"
+        captureGuidance = "\(issue). Zkuste rozpis vyfotit ještě jednou: celý papír, bez odlesku a telefon držte přímo nad dokumentem. První snímek Commander zachová a oba výsledky porovná."
+        return
+      } else {
+        merged = CommanderOCRReconciler.combine(pages.map(CommanderOCRReconciler.fromSingle))
+      }
+
+      try finishOCR(merged, source: source)
+    } catch {
+      self.error = "OCR se nepodařilo dokončit: \(error.localizedDescription)"
+    }
+  }
+
+  @MainActor
+  private func useFirstAttempt() {
+    guard !firstAttemptOCR.isEmpty else { return }
+    do {
+      let merged = CommanderOCRReconciler.combine(firstAttemptOCR.map(CommanderOCRReconciler.fromSingle))
+      firstAttemptOCR = []
+      captureGuidance = nil
+      try finishOCR(merged, source: selectedSource.isEmpty ? "Rozpis klienta" : selectedSource)
+    } catch {
+      self.error = "OCR se nepodařilo dokončit: \(error.localizedDescription)"
+    }
+  }
+
+  @MainActor
+  private func finishOCR(_ merged: CommanderMergedOCRPage, source: String) throws {
+    guard !merged.lines.isEmpty else { throw CocoaError(.fileReadCorruptFile) }
+    let lexicon = try CommanderSpaOCRLexicon.loadBundled()
+    let extraction = CommanderDocumentExtractor.extract(merged, lexicon: lexicon)
+    guard !extraction.rows.isEmpty else {
+      throw NSError(domain: "LazenskyCommander.OCR", code: 1, userInfo: [NSLocalizedDescriptionKey: "Na stránce nebyly rozpoznány procedury ani jídla s použitelným časem."])
+    }
+    self.mergedOCR = merged
+    self.extraction = extraction
+    self.canonicalSchedule = extraction.reviewCount == 0 ? try CommanderCanonicalScheduleBuilder.build(from: extraction) : nil
+    self.selectedSource = source
+    self.step = .review
+  }
+
+  @MainActor
+  private func resetSource() {
+    firstAttemptOCR = []
+    captureGuidance = nil
+    extraction = nil
+    mergedOCR = nil
+    canonicalSchedule = nil
+    selectedSource = ""
+    photoItem = nil
   }
 
   private var paymentView: some View {
@@ -594,7 +757,7 @@ struct CommanderFirstStayView: View {
       .frame(maxWidth: .infinity)
       .padding(20)
       .commanderCard(accent: CommanderDesignTokens.Colors.amber, surface: .depthCard)
-      Button { activateTestStay() } label: { actionLabel("Simulovat úspěšnou aktivaci", symbol: "checkmark.seal.fill") }
+      Button { activateParsedStay() } label: { actionLabel("Simulovat úspěšnou aktivaci", symbol: "checkmark.seal.fill") }
       Text("TEST: žádná platba se dnes neprovede. Ostrá App Store platba bude samostatná systémová vrstva.")
         .font(.footnote)
         .foregroundStyle(CommanderDesignTokens.Colors.amber)
@@ -603,9 +766,12 @@ struct CommanderFirstStayView: View {
     }
   }
 
-  private func activateTestStay() {
+  private func activateParsedStay() {
     do {
-      try model.stagePendingSchedule(Self.testSchedule)
+      guard let canonicalSchedule else {
+        throw NSError(domain: "LazenskyCommander.OCR", code: 30, userInfo: [NSLocalizedDescriptionKey: "Chybí připravený rozpis klienta."])
+      }
+      try model.stagePendingSchedule(canonicalSchedule)
     } catch {
       self.error = "Aktivaci se nepodařilo připravit: \(error.localizedDescription)"
     }
