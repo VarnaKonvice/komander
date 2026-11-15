@@ -1,0 +1,41 @@
+BOHANES TECHNOLOGIES / LÁZEŇSKÝ COMMANDER
+SHORT V3: „S ROZPISEM BUDETE V KLIDU“
+Datum: 14. 11. 2026
+Pracovní prototyp, bez veřejného nasazení, bez commitu a pushe.
+Délka: 25,55 s. 9:16, 720×1280, H264/AAC.
+VO: česká Judita - Natural, zcela přirozené tempo. ŽÁDNÉ zpomalování (na rozdíl od V2 s atempo 0.83).
+Mluvený scénář (20,62 s):
+Do lázní jedete odpočívat. Jenže pak dostanete rozpis plný časů. Kdy mám další proceduru?
+A kdy mám vyrazit? S Lázeňským Commanderem rozpis vyfotíte a zkontrolujete.
+A pak už víte, co vás čeká. Telefon vám včas připomene odchod.
+Zbytek dne? Ten patří vám. Lázeňský Commander. S rozpisem budete v klidu.
+
+Scénář obrazu:
+0-4 s schválená hostka v lázních – klid
+4-7,5 s skutečný videozáběr starší ženy s dokumenty – problém
+7,5-11 s videozáběr seniorní ženy s telefonem – jednoduché řešení
+11-14 s skutečná obrazovka Commander Dnes (jediný technický záběr)
+14-17,5 s žena používá telefon – přehled
+17,5-21 s skutečné lázeňské ošetření – odpočinek
+21-23,5 s lázeňské svíčky – atmosféra
+23,5-25,55 s schválená lázeňská hostka a brand – výsledek
+Krátké titulky zůstávají čitelné na malém displeji.
+
+Zdroj fotografické hlavní postavy: schválená ilustrativní vizualizace uložená v
+  ../web-site-sync/docs/bohanes-technologies/web/site/screens/spa-hero-approved.webp
+Logo: schválené ../web-site-sync/docs/bohanes-technologies/web/site/bohanes-symbol.svg
+Skutečné UI: ../web-site-sync/docs/bohanes-technologies/web/site/screens/commander-today.png
+Pohyblivé ilustrační záběry: Pexels, bezplatná Pexels Licence (komerční použití):
+https://www.pexels.com/video/an-elderly-woman-reading-documents-on-a-folder-7413791/
+https://www.pexels.com/video/woman-sitting-on-chair-while-using-her-smartphone-4800120/
+https://www.pexels.com/video/elderly-woman-getting-a-massage-7235080/
+https://www.pexels.com/video/close-up-video-of-a-lighted-candles-6724697/
+Licenční podmínky: https://www.pexels.com/license/
+Důležité: video zobrazuje různé ilustrační osoby, NENÍ to reference skutečné klientky
+ani záznam skutečného používání aplikace. Záběry masáže a lázní mohou být z jiných míst.
+
+Finální zvuk: preferovaná Iveta zatím nedostupná pro tvorbu vlastního textu
+v propojeném Runway (neaktivní tvorba řeči). Nyní přirozená Judita.
+Doporučené další úpravy po schválení příběhu: sjednotit jednu herečku / lázeňské prostředí,
+přidat legálně podložený jemný hudební podkres, vylepšit autentické video skenování rozpisu,
+nahrát finální ženský hlas a finalizovat obchodní/legal claims.

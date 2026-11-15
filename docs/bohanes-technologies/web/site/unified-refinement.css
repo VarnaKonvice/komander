@@ -1,0 +1,921 @@
+/* Targeted fixes after 15 Nov audit.
+   IMPORTANT: no brand/hero pricing/cards overrides; original approved CSS owns them.
+   The company (light) and Commander (native indigo) retain separate design languages. */
+html:has(body.unified-site){scroll-padding-top:0}
+body.unified-site header.unified-header{position:sticky;top:0;z-index:1000}
+body.unified-site main [id]{scroll-margin-top:calc(var(--brand-header-height,88px) + 22px)}
+body.unified-site.b2c-detail-page .commander-experience :is(section[id],.product-pillar){scroll-margin-top:calc(var(--brand-header-height,88px) + 85px)}
+body.unified-site :is(a,button,summary,select):focus-visible{outline:3px solid #087d91;outline-offset:4px}
+body.unified-site .commander-experience :is(a,button,summary,select):focus-visible{outline-color:#65e5ff}
+
+/* One quiet divider, not a raised/3D toolbar beneath the branded company header. */
+body.unified-site .commander-subnav{
+ position:sticky;top:var(--brand-header-height,88px);
+ box-shadow:none!important;border-top:0;border-bottom:1px solid #456184;
+ background:#142642;
+}
+body.unified-site .commander-section-links a{box-shadow:none!important;text-shadow:none}
+body.unified-site .commander-section-links a.active{
+ box-shadow:none!important;background:#20435c;border-bottom:2px solid #65e5ff;border-radius:6px
+}
+
+/* The detail page starts the Commander product world immediately, not in a pale
+   Bohanes Technologies card. The real approved screenshots remain in Obrazovky. */
+body.unified-site.b2c-detail-page .b2c-details-intro.commander-entry{
+ background:linear-gradient(125deg,#193c73 0%,#152c55 43%,#0d1837 100%);
+ color:#f2f7ff;border-bottom:0;padding:clamp(50px,6vw,85px) 0;
+}
+body.unified-site.b2c-detail-page .commander-entry-grid{
+ display:grid;grid-template-columns:minmax(0,1.07fr) minmax(0,.93fr);
+ gap:clamp(30px,5vw,76px);align-items:center;
+}
+body.unified-site.b2c-detail-page .commander-entry-copy{min-width:0;max-width:680px}
+body.unified-site.b2c-detail-page .commander-entry-eyebrow{display:flex;align-items:center;gap:12px;color:#9beeff;font-size:12px;font-weight:800;letter-spacing:.08em}
+body.unified-site.b2c-detail-page .commander-entry-eyebrow img{width:50px;height:50px;object-fit:contain}
+body.unified-site.b2c-detail-page .commander-entry-copy h1{
+ color:#fff;margin:24px 0 20px;
+ font-size:clamp(39px,4.5vw,65px);line-height:1.09;letter-spacing:-.047em
+}
+body.unified-site.b2c-detail-page .commander-entry-copy h1 em{font-style:normal;color:#78e9f1}
+body.unified-site.b2c-detail-page .commander-entry-copy>p{
+ color:#dceaff;font-size:clamp(16px,1.5vw,19px);line-height:1.55;max-width:590px
+}
+body.unified-site.b2c-detail-page .commander-entry-action{
+ display:inline-flex;align-items:center;gap:12px;margin-top:21px;
+ min-height:48px;padding:11px 18px;background:#c7f5ff;color:#102c52;
+ border:1px solid #c7f5ff;border-radius:8px;font-size:16px;font-weight:800;text-decoration:none
+}
+body.unified-site.b2c-detail-page .commander-entry-action:hover{background:#e7fbff}
+body.unified-site.b2c-detail-page .commander-entry-copy>p.commander-entry-hint{font-size:13px;color:#bad1ed;margin:21px 0 0}
+body.unified-site.b2c-detail-page .commander-entry-hint a{color:#a2effa;text-decoration:underline}
+body.unified-site.b2c-detail-page .commander-entry-benefits{
+ display:grid;gap:11px;padding:clamp(18px,2.6vw,29px);
+ border:1px solid #5d76a8;border-radius:16px;
+ background:linear-gradient(135deg,#214580 0%,#142746 70%,#111c39 100%);
+ min-width:0
+}
+body.unified-site.b2c-detail-page .commander-entry-brand{
+ display:flex;align-items:center;gap:16px;padding:0 0 18px;margin-bottom:3px;
+ border-bottom:1px solid #5d7cab;min-width:0
+}
+body.unified-site.b2c-detail-page .commander-entry-brand img{width:62px;height:62px;object-fit:contain;flex:none}
+body.unified-site.b2c-detail-page .commander-entry-brand strong{display:block;color:#fff;font-size:clamp(20px,2vw,28px);line-height:1.2}
+body.unified-site.b2c-detail-page .commander-entry-brand span{display:block;color:#c7d9f3;font-size:14px;margin-top:7px}
+body.unified-site.b2c-detail-page .commander-entry-benefit{
+ display:flex;align-items:center;gap:16px;min-height:57px;
+ padding:10px 15px;background:#122948;color:#fff;border:1px solid #426b94;border-radius:9px;
+ font-weight:760;font-size:clamp(15px,1.5vw,19px)
+}
+body.unified-site.b2c-detail-page .commander-entry-benefit img{width:36px;height:36px;object-fit:contain;flex:none}
+
+/* Restore all pre-approved Commander gradients, tile shape and depth by design:
+   DO NOT override --product-surface, --product-group, --pillar-surface,
+   .section-tile, .tile-group, .product-pillar or .screen-card. */
+
+/* Cross-page enhancements that were genuinely needed. */
+body.unified-site .company-intro-section{padding:52px 0;background:#edf5f7}
+body.unified-site .company-intro-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:25px}
+body.unified-site .company-intro-grid article{padding:29px;border:1px solid #bdd6df;border-radius:12px;background:#fff;min-width:0}
+body.unified-site .company-intro-grid h2{font-size:clamp(23px,2.4vw,29px);line-height:1.2;color:#193d59;margin:11px 0 18px}
+body.unified-site .company-intro-grid p{font-size:16px;line-height:1.6;color:#3f5d72}
+body.unified-site .company-intro-grid .company-contact-note{font-size:13px;margin-top:18px}
+body.unified-site .company-shortcuts{display:flex;gap:22px;margin-top:17px;color:#0b6777;font-weight:760}
+body.unified-site .home-demo-link{margin:26px 0;text-align:center}
+body.unified-site .hero-company-links{margin-top:18px;font-size:13px;font-weight:700}
+body.unified-site .journey-demo-section{padding:44px 0;background:#edf5f7}
+body.unified-site .journey-demo-section .b2c-demo-panel{
+ margin:12px 0 0;padding:24px;align-items:stretch;gap:22px;
+ background:transparent;border:1px solid #c8dde6;border-radius:14px;
+}
+body.unified-site .journey-demo-section .b2c-demo-copy{
+ padding:24px;background:#fff;border:1px solid #c8dde6;border-radius:11px;color:#193d59;
+}
+body.unified-site .journey-demo-section .b2c-demo-copy :is(h3,h4,b){color:#193d59}
+body.unified-site .journey-demo-section .b2c-demo-copy :is(p,small){color:#425f74}
+body.unified-site .journey-demo-section .b2c-demo-copy .kicker{color:#087582}
+body.unified-site .journey-demo-section .b2c-demo-copy .b2c-demo-meta span{
+ background:#edf5f7;border-color:#bfd6df;border-radius:6px;color:#365e71
+}
+body.unified-site .journey-demo-section .b2c-demo-actions{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:14px;padding:20px;border:1px solid #5677a7;border-radius:12px;
+ background:linear-gradient(130deg,#204779,#10244d 60%,#0e1635 100%);
+}
+body.unified-site .journey-demo-section .b2c-demo-actions :is(.b2c-demo-card,.b2c-demo-card-primary){
+ padding:18px;background:linear-gradient(150deg,#193b69,#111e3f);border:1px solid #5176a2;
+ box-shadow:none;border-radius:10px;color:#eaf3ff
+}
+body.unified-site .journey-demo-section .b2c-demo-actions :is(h3,h4,b){color:#fff}
+body.unified-site .journey-demo-section .b2c-demo-actions :is(p,small,.b2c-demo-schedule span){color:#d8e6fa}
+body.unified-site .journey-demo-section .b2c-demo-actions .status{color:#d7c5ff;background:#283b64;border-radius:7px}
+body.unified-site .journey-demo-section .b2c-demo-actions :is(.b2c-demo-schedule>div,.b2c-demo-document){background:#13294e;border-color:#476b98;color:#eef6ff}
+body.unified-site .journey-demo-section .b2c-demo-actions .b2c-demo-document strong{color:#f1f9ff}
+body.unified-site .journey-demo-section .b2c-demo-actions .b2c-demo-schedule b{color:#8beeff}
+
+/* Original QR diagrams say PŘIPRAVUJEME and are not clickable install links. */
+body.unified-site .qr-art{flex:none;width:160px;height:160px;margin:12px auto 18px;border-radius:8px}
+body.unified-site .qr-art::after{content:'PŘIPRAVUJEME';background:#f0f7fa;color:#0b3b5b}
+body.unified-site .b2c-home-device-grid{width:100%;max-width:100%;align-items:stretch}
+body.unified-site .b2c-home-device{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+body.unified-site .b2c-home-device .qr-art{margin:0 auto 10px}
+
+/* The anonymized paper scan has overlay text only; no patient data embedded. */
+body.unified-site .journey-paper-sample .paper-open{
+ display:block;width:100%;padding:9px;background:#fff;border:1px solid #d8e1e4;
+ border-radius:5px;box-shadow:0 20px 42px #12375226,0 4px 11px #164f6121;
+ transform:rotate(-3.1deg);cursor:zoom-in
+}
+.paper-document{display:block;position:relative;container-type:inline-size;text-align:left;color:#202020;line-height:1}
+.paper-document>img{display:block;width:100%;height:auto}
+.paper-field{position:absolute;font-family:Arial,sans-serif;font-size:1.5cqw;font-weight:600;line-height:1.1;white-space:nowrap}
+.paper-name{left:9%;top:10.7%}.paper-stay{left:13%;top:13.4%}.paper-doctor{left:8%;top:15.65%}.paper-room{left:73%;top:15.65%}
+.paper-demo{left:65%;top:10.7%;font-size:1.35cqw;color:#242424}
+#calendarDetail .paper-document{width:min(900px,80vw);margin:0 auto}
+#calendarDetail .paper-document>img{width:100%;height:auto;max-height:none;max-width:100%;border-radius:0;object-fit:contain}
+body.unified-site .lightbox #imageTitle{color:#fff}
+
+/* Responsive features from Work, but scoped: never adjust approved base tiles. */
+body.unified-site.b2c-detail-page .commander-experience .qrs{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+body.unified-site.b2c-detail-page .commander-experience .install-activation{
+ grid-column:1/-1;display:grid;grid-template-columns:1fr 2fr;gap:24px;align-items:center;text-align:left
+}
+body.unified-site.b2c-detail-page .commander-experience .install-activation .qr-card-head{justify-content:flex-start;margin:0}
+body.unified-site.b2c-detail-page .commander-experience .install-activation p{margin:0;font-size:16px;line-height:1.6}
+@media(max-width:999px){
+ body.unified-site.b2c-detail-page .commander-entry-grid{grid-template-columns:minmax(0,1fr) minmax(0,.95fr);gap:22px}
+ body.unified-site .company-intro-grid{gap:18px}
+ body.unified-site .journey-demo-section .b2c-demo-panel{grid-template-columns:1fr}
+ body.unified-site.b2c-detail-page .commander-experience .product-pillar{
+  width:calc(100% - var(--edge-left) - var(--edge-right));
+  padding:16px;box-sizing:border-box;
+ }
+ body.unified-site.b2c-detail-page .commander-experience .product-pillar .wrap{width:100%!important;max-width:none}
+}
+@media(max-width:600px){
+ body.unified-site.b2c-detail-page .commander-entry-grid{grid-template-columns:1fr}
+ body.unified-site.b2c-detail-page .commander-entry-benefits{padding:16px}
+ body.unified-site.b2c-detail-page .commander-entry-copy h1{font-size:clamp(35px,9vw,48px)}
+ body.unified-site .company-intro-grid{grid-template-columns:1fr}
+ body.unified-site .company-intro-grid article{padding:23px}
+ body.unified-site .journey-demo-section .b2c-demo-panel{padding:12px}
+ body.unified-site .journey-demo-section .b2c-demo-copy{padding:20px}
+ body.unified-site .journey-demo-section .b2c-demo-actions{grid-template-columns:1fr;padding:14px}
+ body.unified-site .b2c-home-device-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ body.unified-site .b2c-home-device{padding:18px 8px}
+ body.unified-site .b2c-home-device .qr-art{width:126px;height:126px;padding:8px}
+ body.unified-site .b2c-home-device .qr-art::after{top:50px;font-size:10px}
+ body.unified-site.b2c-detail-page .commander-experience .qrs{grid-template-columns:1fr}
+ body.unified-site.b2c-detail-page .commander-experience .install-activation{grid-template-columns:1fr;gap:14px}
+}
+@media(max-width:380px){
+ body.unified-site .b2c-home-device-grid{grid-template-columns:1fr}
+ body.unified-site .b2c-home-device .qr-art{width:140px;height:140px}
+ body.unified-site .b2c-home-device .qr-art::after{top:58px}
+}
+@media(prefers-reduced-motion:reduce){
+ html{scroll-behavior:auto!important}
+ body.unified-site *{transition:none!important;animation:none!important}
+}
+
+
+/* Product subnavigation BEFORE its overview hero. No visual 3D effect. */
+body.unified-site.b2c-detail-page #main>.commander-subnav{
+ position:sticky;top:var(--brand-header-height,88px);z-index:950;
+ background:#142642;border-bottom:1px solid #47638b;box-shadow:none;
+}
+body.unified-site.b2c-detail-page #main>.commander-subnav>.wrap{
+ width:min(1240px,calc(100% - 56px));margin:0 auto;
+}
+body.unified-site.b2c-detail-page #main>.commander-subnav a.active{box-shadow:none}
+/* Primary-level overview and first-pillar frame share one outer width. */
+body.unified-site.b2c-detail-page .commander-experience .product-pillar{
+ width:min(1240px,calc(100% - 56px));
+ box-sizing:border-box
+}
+body.unified-site.b2c-detail-page .commander-experience .commander-overview>.wrap{
+ width:min(1240px,calc(100% - 56px));max-width:none;
+}
+body.unified-site.b2c-detail-page .commander-about-section{
+ background:linear-gradient(140deg,#182f57,#0c1830);
+ padding:36px 0 45px;
+ color:#edf5ff
+}
+body.unified-site.b2c-detail-page .commander-about-section>.section-tile,
+body.unified-site.b2c-detail-page .commander-about-section .about-tile{
+ background:linear-gradient(135deg,#214879,#132747 65%,#0e1d39);
+ border:1px solid #5277a4;color:#fff
+}
+body.unified-site.b2c-detail-page .commander-about-section .about-tile h2,
+body.unified-site.b2c-detail-page .commander-about-section .about-tile h3{
+ color:#fff
+}
+body.unified-site.b2c-detail-page .commander-about-section .about-copy :is(p,.lead){
+ color:#dce8fa
+}
+body.unified-site.b2c-detail-page .commander-about-section .story-visual{
+ border-color:#5a7ba6
+}
+
+/* Corporate contact block with existing four SVG logos in monochrome. */
+body.unified-site .bt-contact-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(22px,4vw,55px);align-items:start}
+body.unified-site .bt-home-contact{padding:58px 0;background:#f1f7f9;border-top:1px solid #cfdee6}
+body.unified-site .bt-home-contact .bt-contact-grid{padding:0;max-width:1240px}
+body.unified-site .bt-contact-info h2{font-size:clamp(30px,3vw,43px);line-height:1.15;color:#153954;margin:12px 0 20px}
+body.unified-site .bt-contact-info>p{color:#496679;font-size:17px;line-height:1.5}
+body.unified-site .bt-contact-brand{display:flex;align-items:center;gap:13px;margin:27px 0 25px;padding:15px 0;border-bottom:1px solid #c2d5dd}
+body.unified-site .bt-contact-brand img{width:55px;height:55px;object-fit:contain;flex:none}
+body.unified-site .bt-contact-brand strong{display:block;color:#143e57;font-size:16px;letter-spacing:.05em}
+body.unified-site .bt-contact-brand span{display:block;color:#567086;font-size:13px;line-height:1.5}
+body.unified-site .bt-contact-info h3{font-size:19px;color:#19445c;margin:8px 0}
+body.unified-site .bt-social-row{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;width:100%!important;margin:15px 0!important}
+body.unified-site .bt-social-row .social-placeholder{
+ display:grid!important;grid-template-columns:31px 1fr!important;grid-template-rows:auto auto!important;
+ gap:0 12px!important;min-width:0!important;width:auto!important;min-height:72px!important;
+ padding:13px!important;border:1px solid #b7ced9!important;border-radius:9px!important;
+ background:#fff!important;color:#315366!important;
+}
+body.unified-site .bt-social-row .social-placeholder svg{
+ display:block!important;grid-row:1/3!important;width:29px!important;height:29px!important;
+ fill:none!important;stroke:#274c62!important;stroke-width:1.7!important;opacity:.85!important;
+ padding:0!important;border-radius:0!important;background:none!important
+}
+body.unified-site .bt-social-row .social-placeholder svg :is(path,rect,circle){
+ fill:none!important;stroke:#274c62!important;stroke-width:1.7!important
+}
+body.unified-site .bt-social-row .social-placeholder span{grid-column:2;grid-row:1;font-size:14px!important;font-weight:750;color:#234259!important}
+body.unified-site .bt-social-row .social-placeholder small{
+ grid-column:2!important;grid-row:2!important;font-size:11px!important;
+ padding:0!important;color:#738ca0!important;align-self:start!important
+}
+body.unified-site .bt-contact-pending{font-size:12px!important;color:#547287!important;margin:17px 0 0!important}
+body.unified-site .bt-contact-form{
+ display:grid;gap:16px;padding:clamp(20px,2.7vw,33px);
+ background:#fff;border:1px solid #b8d0dc;border-radius:12px;
+ box-shadow:0 10px 28px #17405813;min-width:0
+}
+body.unified-site .bt-contact-form h3{color:#173b56;font-size:26px;line-height:1.15;margin:0 0 3px}
+body.unified-site .bt-contact-form label{display:grid;gap:7px;font-size:14px;color:#2b5368;font-weight:730}
+body.unified-site .bt-contact-form :is(input,textarea){
+ box-sizing:border-box;display:block;width:100%;min-width:0;border:1px solid #b9d0db;
+ background:#f9fcfd;border-radius:7px;color:#193b54;font:inherit;
+ font-size:16px;font-weight:450;padding:12px;min-height:46px
+}
+body.unified-site .bt-contact-form textarea{min-height:120px;resize:vertical}
+body.unified-site .bt-contact-form button{
+ min-height:48px;padding:11px 16px;background:#133f61;border:1px solid #133f61;
+ color:#fff;border-radius:8px;font-size:15px;font-weight:750;cursor:pointer;
+}
+body.unified-site .bt-contact-form button:hover{background:#075e78}
+body.unified-site .bt-contact-form .bt-contact-disclaimer{
+ margin:0;font-size:12px;color:#5f7b8f;line-height:1.45
+}
+body.unified-site .bt-contact-form .bt-contact-feedback{margin:0;min-height:0;font-size:13px;color:#2d526e}
+body.unified-site .bt-contact-form .bt-contact-feedback[data-state=success]{color:#106a70;font-weight:730}
+body.unified-site .bt-contact-form .bt-contact-feedback[data-state=error]{color:#a23434}
+/* Details contact remains the corporate support panel rather than tinted blue app UI. */
+body.unified-site.b2c-detail-page #kontakt .bt-contact-form{background:#f8fcff}
+@media(max-width:999px){
+ body.unified-site.b2c-detail-page .commander-experience .product-pillar{
+  width:calc(100% - var(--edge-left) - var(--edge-right))
+ }
+ body.unified-site.b2c-detail-page .commander-experience .commander-overview>.wrap{
+  width:calc(100% - var(--edge-left) - var(--edge-right))
+ }
+ body.unified-site.b2c-detail-page #main>.commander-subnav>.wrap{
+  width:calc(100% - var(--edge-left) - var(--edge-right))
+ }
+}
+@media(max-width:750px){
+ body.unified-site .bt-contact-grid{grid-template-columns:1fr}
+ body.unified-site .bt-home-contact{padding:40px 0}
+}
+@media(max-width:420px){
+ body.unified-site .bt-social-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ body.unified-site .bt-social-row .social-placeholder{
+  grid-template-columns:26px 1fr!important;gap:0 6px!important;padding:9px!important;min-height:72px!important
+ }
+ body.unified-site .bt-social-row .social-placeholder svg{width:24px!important;height:24px!important}
+ body.unified-site .bt-social-row .social-placeholder span{font-size:12px!important}
+}
+
+/* Accessibility repair found by actual screenshot review: about section moved into
+   product world but older site.css gave white card + pale text. Keep dark product. */
+body.unified-site.b2c-detail-page .commander-experience #o-nas .section-tile.about-tile{
+ background:linear-gradient(135deg,#214879 0%,#173056 50%,#101d3a 100%)!important;
+ border:1px solid #5277a4!important;color:#fff!important;
+}
+body.unified-site.b2c-detail-page .commander-experience #o-nas .about-copy :is(h2,h3){
+ color:#fff!important
+}
+body.unified-site.b2c-detail-page .commander-experience #o-nas .about-copy :is(p,.lead){
+ color:#dce9fc!important
+}
+body.unified-site.b2c-detail-page .commander-experience #o-nas .about-copy .kicker{
+ color:#65e5ff!important
+}
+body.unified-site.b2c-detail-page .commander-experience #o-nas .story-visual{
+ background:linear-gradient(140deg,#1b3d70 0%,#14294e 56%,#0e1d3a 100%)!important;
+ border:1px solid #5277a4!important;color:#fff
+}
+body.unified-site.b2c-detail-page .commander-experience #o-nas .story-brand :is(b,span){
+ color:#f5faff!important
+}
+body.unified-site.b2c-detail-page .commander-experience #o-nas .story-visual>.visual-note{
+ color:#d6e3f7!important
+}
+
+
+/* Verified Apple Calendar print export from the user's actual Procedure calendar.
+   The image contains no Newtech or personal names. Google: no synthetic mock. */
+body.unified-site.b2c-detail-page .commander-experience .calendar-real-screenshot{
+ display:flex;flex-direction:column;gap:10px;align-items:stretch;background:#111d37
+}
+body.unified-site.b2c-detail-page .commander-experience .calendar-real-screenshot img{
+ display:block;width:100%;height:auto;max-width:100%;max-height:none;object-fit:contain;
+ border:1px solid #bcd4e8;border-radius:3px;background:#fff
+}
+body.unified-site.b2c-detail-page .commander-experience .calendar-real-screenshot .calendar-example-label{
+ margin:0;color:#b5e4f5;font-size:13px;font-weight:750
+}
+body.unified-site.b2c-detail-page .commander-experience .calendar-real-caption{
+ font-size:12px;line-height:1.4;color:#c3d4e6
+}
+body.unified-site.b2c-detail-page .commander-experience .calendar-google-pending{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+ min-height:250px;padding:24px;text-align:center;cursor:default;
+ background:linear-gradient(145deg,#193761,#101d3a)!important
+}
+body.unified-site.b2c-detail-page .commander-experience .calendar-google-pending img{width:74px;height:74px;object-fit:contain}
+body.unified-site.b2c-detail-page .commander-experience .calendar-google-pending-title{
+ color:#fff;font-size:20px;font-weight:800
+}
+body.unified-site.b2c-detail-page .commander-experience .calendar-google-pending-text{
+ color:#d5e8f6;font-size:14px;line-height:1.5;max-width:340px
+}
+body.unified-site.b2c-detail-page #calendarDetail .calendar-real-screenshot img{
+ width:100%;max-width:min(100%,900px);margin:0 auto;max-height:none
+}
+
+/* Enlarged REAL Apple Calendar opens the image itself, not a shrunken card. */
+body.unified-site.b2c-detail-page dialog.lightbox.real-calendar-open {
+  width:min(1200px,calc(100vw - 22px));max-width:calc(100vw - 22px);
+  max-height:calc(100dvh - 16px);overflow:auto;
+}
+body.unified-site.b2c-detail-page .lightbox.real-calendar-open #imageDetail {
+  display:block;width:100%;max-width:100%;height:auto;max-height:none;object-fit:contain;
+  border-radius:4px;background:#fff;
+}
+body.unified-site.b2c-detail-page .calendar-google-pending{
+  cursor:default!important;
+}
+
+/* 15. 11. 2026 — Bohanes Technologies home B2B priority.
+   Keeps the approved photographic hero/clouds and the distinct native Commander design. */
+body.unified-site.b2c-home-page .bt-b2b-early {
+  position:relative;
+  padding:clamp(42px,5vw,76px) 0;
+  background:linear-gradient(135deg,#eef8f9 0%,#f9fcfd 46%,#e8f3f8 100%);
+  border-block:1px solid #d4e5ea;
+}
+body.unified-site.b2c-home-page .bt-b2b-eyebrow {
+  font-size:12px;font-weight:850;letter-spacing:.17em;
+  color:#167781;margin-bottom:18px;
+}
+body.unified-site.b2c-home-page .bt-b2b-grid {
+  display:grid;grid-template-columns:minmax(0,.91fr) minmax(0,1.09fr);
+  align-items:stretch;gap:22px;
+}
+body.unified-site.b2c-home-page .bt-b2b-grid>article {
+  border-radius:13px;padding:clamp(23px,3.4vw,42px);
+  display:flex;flex-direction:column;align-items:flex-start;min-width:0;
+  box-shadow:0 11px 27px #163d5511;
+}
+body.unified-site.b2c-home-page .bt-origin-card {
+  border:1px solid #c5dbe3;background:#fff;
+}
+body.unified-site.b2c-home-page .bt-origin-card h2 {
+  color:#193954;font-size:clamp(27px,3vw,42px);
+  line-height:1.15;letter-spacing:-.04em;margin:19px 0 22px;
+}
+body.unified-site.b2c-home-page .bt-origin-card h2 em{
+  font-style:normal;color:#078b8b;
+}
+body.unified-site.b2c-home-page .bt-origin-card p {
+  color:#405f73;font-size:clamp(15px,1.32vw,18px);line-height:1.58;margin:0 0 17px;
+}
+body.unified-site.b2c-home-page .bt-b2b-text-link {
+  margin-top:auto;display:inline-flex;gap:12px;align-items:center;
+  font-size:16px;font-weight:800;color:#086a78;text-decoration:underline;
+  text-underline-offset:5px;padding-top:18px;
+}
+body.unified-site.b2c-home-page .bt-spa-partners-card {
+  border:1px solid #79afb4;
+  background:linear-gradient(135deg,#e1f5f1 0%,#f1faf9 48%,#dceff3 100%);
+}
+body.unified-site.b2c-home-page .bt-b2b-chip {
+  border:1px solid #72b3b0;border-radius:6px;background:#d7f0eb;
+  color:#076970;padding:8px 12px;font-size:13px;letter-spacing:.045em;font-weight:850;
+}
+body.unified-site.b2c-home-page .bt-spa-partners-card h2 {
+  color:#173d5c;font-size:clamp(28px,3.15vw,45px);
+  line-height:1.12;letter-spacing:-.04em;margin:19px 0 15px;
+}
+body.unified-site.b2c-home-page .bt-spa-partners-card h2 em {
+  color:#098684;font-style:normal
+}
+body.unified-site.b2c-home-page .bt-spa-partners-card .bt-b2b-lead {
+  color:#305569;font-size:clamp(16px,1.44vw,19px);
+  line-height:1.52;margin:0 0 24px;
+}
+body.unified-site.b2c-home-page .bt-spa-gains{
+  display:grid;gap:12px;width:100%;margin:0 0 14px;
+}
+body.unified-site.b2c-home-page .bt-spa-gains>div {
+  display:flex;gap:13px;align-items:flex-start;
+  border:1px solid #c1deda;border-radius:9px;
+  background:#ffffffbb;padding:13px 15px;
+}
+body.unified-site.b2c-home-page .bt-gain-icon {
+  display:grid;place-items:center;flex:none;width:28px;height:28px;
+  border-radius:7px;background:#087e83;color:#fff;font-size:19px;font-weight:800;
+}
+body.unified-site.b2c-home-page .bt-spa-gains strong {
+  color:#163f58;font-size:17px;line-height:1.25;display:block
+}
+body.unified-site.b2c-home-page .bt-spa-gains small {
+  display:block;color:#476679;font-size:14px;line-height:1.4;margin-top:3px
+}
+body.unified-site.b2c-home-page .bt-spa-honesty {
+  font-size:13px;color:#486679;margin:3px 0 20px;line-height:1.5;
+}
+body.unified-site.b2c-home-page .bt-b2b-actions {
+  display:flex;align-items:center;flex-wrap:wrap;gap:16px;margin-top:auto;
+}
+body.unified-site.b2c-home-page .bt-b2b-primary {
+  display:inline-flex;align-items:center;justify-content:center;gap:11px;
+  min-height:50px;padding:12px 20px;border:1px solid #103c60;
+  border-radius:8px;background:#113f62;color:#fff;font-weight:800;font-size:15px;
+  box-shadow:0 7px 18px #143b5d1f;text-decoration:none;
+}
+body.unified-site.b2c-home-page .bt-b2b-primary:hover{background:#075b75}
+body.unified-site.b2c-home-page .bt-b2b-secondary {
+  color:#126774;font-weight:780;font-size:14px;text-underline-offset:4px;
+}
+body.unified-site.b2c-home-page .bt-b2b-early :is(#o-nas,#pro-lazne){scroll-margin-top:110px}
+
+/* Guide link in the existing main menu is now visually distinct. */
+body.unified-site header.unified-header .navlinks>a[data-nav-key=guide] {
+  display:inline-flex;align-items:center;justify-content:center;
+  background:#e1f3f1;color:#087179!important;
+  border:1px solid #92d0cd;border-radius:7px;
+  padding:10px 14px;min-height:44px;font-weight:850;
+}
+body.unified-site header.unified-header .navlinks>a[data-nav-key=guide]:hover {
+  background:#c9ebe7;border-color:#087f86
+}
+
+/* Client guide gets an intentional large title and useful action, without
+   modifying any approved hero photo, thought bubbles, or step tile dimensions. */
+body.unified-site.b2c-home-page .b2c-approved-intro .b2c-front-steps{
+  padding-top:48px;padding-bottom:52px;
+}
+body.unified-site.b2c-home-page .b2c-approved-intro .bt-journey-heading {
+  max-width:920px;margin:0 auto 32px;
+  padding:26px 24px 30px;
+  background:#e8f6f6;border:1px solid #b5dadd;
+  border-radius:11px;
+}
+body.unified-site.b2c-home-page .b2c-approved-intro .bt-journey-heading>.b2c-section-kicker{
+  display:block!important;color:#0a7c84;font-size:13px;font-weight:840;letter-spacing:.08em
+}
+body.unified-site.b2c-home-page .b2c-approved-intro .bt-journey-heading h2{
+  font-size:clamp(30px,3.4vw,46px);margin:11px 0 13px;line-height:1.14
+}
+body.unified-site.b2c-home-page .b2c-approved-intro .bt-journey-heading h2 em{
+  color:#0b928e;font-style:normal
+}
+body.unified-site.b2c-home-page .b2c-approved-intro .bt-journey-heading p{
+  display:block;color:#486779;max-width:660px;font-size:16px;
+  line-height:1.5;margin:0 auto 20px;
+}
+body.unified-site.b2c-home-page .bt-journey-main-link{
+  display:inline-flex;align-items:center;justify-content:center;gap:12px;
+  min-height:49px;padding:11px 20px;
+  background:#0d4971;border:1px solid #0d4971;border-radius:8px;
+  color:#fff!important;font-weight:800;text-decoration:none!important
+}
+body.unified-site.b2c-home-page .bt-journey-main-link:hover{background:#076275}
+body.unified-site.b2c-home-page .b2c-approved-intro .bt-journey-heading p.bt-journey-truth{
+  margin:13px auto 0;font-size:12px;color:#587487
+}
+
+/* A visible and accurately labeled company contact block. */
+body.unified-site .bt-contact-direct {
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:17px 0 25px
+}
+body.unified-site .bt-contact-channel{
+ display:flex;gap:11px;align-items:center;
+ border:1px solid #c3d8e1;border-radius:9px;background:#fff;padding:14px;min-width:0
+}
+body.unified-site .bt-channel-icon{
+ display:grid;place-items:center;flex:none;border-radius:7px;
+ width:36px;height:36px;background:#e3f2f4;color:#0a6077;font-size:20px
+}
+body.unified-site .bt-contact-channel strong{
+ display:block;color:#143d59;font-size:15px
+}
+body.unified-site .bt-contact-channel small{
+ display:block;color:#617f91;font-size:12px;line-height:1.4;margin-top:4px
+}
+
+/* Remove the unwanted decorative/raised line below product navigation:
+   neither shadow nor border should produce a fake 3D divider. */
+body.unified-site.b2c-detail-page #main>.commander-subnav{
+ border:0!important;border-bottom:0!important;
+ box-shadow:none!important;filter:none!important;
+ outline:0!important;background-image:none!important;
+}
+body.unified-site.b2c-detail-page #main>.commander-subnav::before,
+body.unified-site.b2c-detail-page #main>.commander-subnav::after{
+ display:none!important;content:none!important;box-shadow:none!important
+}
+body.unified-site.b2c-detail-page #main>.commander-subnav>.wrap{
+ border:0!important;box-shadow:none!important
+}
+body.unified-site.b2c-detail-page .commander-entry{
+ border-top:0!important;box-shadow:none!important
+}
+body.unified-site.b2c-detail-page .commander-entry::before{
+ content:none!important;display:none!important
+}
+@media(max-width:1020px){
+ body.unified-site.b2c-home-page .bt-b2b-grid{grid-template-columns:1fr}
+ body.unified-site.b2c-home-page .bt-b2b-grid>article{padding:29px}
+}
+@media(max-width:650px){
+ body.unified-site.b2c-home-page .bt-b2b-early{padding:33px 0}
+ body.unified-site.b2c-home-page .bt-b2b-grid{gap:15px}
+ body.unified-site.b2c-home-page .bt-b2b-grid>article{padding:22px}
+ body.unified-site.b2c-home-page .bt-origin-card h2,
+ body.unified-site.b2c-home-page .bt-spa-partners-card h2{font-size:clamp(27px,8vw,36px)}
+ body.unified-site.b2c-home-page .bt-spa-gains strong{font-size:16px}
+ body.unified-site.b2c-home-page .bt-b2b-actions{align-items:stretch}
+ body.unified-site.b2c-home-page .bt-b2b-primary{width:100%;text-align:center}
+ body.unified-site .bt-contact-direct{grid-template-columns:1fr}
+ body.unified-site.b2c-home-page .b2c-approved-intro .bt-journey-heading{
+  padding:22px 17px;border-radius:9px
+ }
+ body.unified-site.b2c-home-page .b2c-approved-intro .bt-journey-heading h2{
+  font-size:30px
+ }
+ body.unified-site.b2c-home-page .b2c-approved-intro .bt-journey-heading p{
+  font-size:15px
+ }
+ body.unified-site.b2c-home-page .bt-journey-main-link{width:100%;box-sizing:border-box}
+}
+
+/* Remove cyan raised-looking underline even on active Commander tab. */
+body.unified-site.b2c-detail-page #main>.commander-subnav .commander-section-links a.active{
+ border:0!important;box-shadow:none!important;
+ background:#214761!important;color:#99eff7!important;
+}
+
+/* Keep the two company menu items visible on the full desktop header
+   without colliding with the approved corporate logo. */
+@media (min-width:1400px) and (max-width:1570px) {
+ body.unified-site header.unified-header .navlinks{gap:1px}
+ body.unified-site header.unified-header .navlinks>a{font-size:12.5px;padding:9px 5px}
+ body.unified-site header.unified-header .navlinks>a[data-nav-key=guide]{padding:9px 8px}
+ body.unified-site header.unified-header .wrap.nav{gap:10px}
+}
+
+/* Only verified real Google Calendar event details — this is NOT a UI screenshot.
+   Full anonymised Apple Calendar crop remains an unchanged authentic image. */
+body.unified-site.b2c-detail-page .commander-experience .google-real-procedures{
+ padding:0;overflow:hidden;background:#f7fbfd!important;border:1px solid #c9d9e6;
+ border-radius:10px;cursor:default!important;color:#173d57;
+}
+body.unified-site.b2c-detail-page .google-real-procedures-head{
+ display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:7px;
+ padding:17px 18px;background:#e6f0f8;border-bottom:1px solid #c8d9e6;
+}
+body.unified-site.b2c-detail-page .google-real-procedures-head strong{
+ font-weight:820;font-size:17px;color:#163d60
+}
+body.unified-site.b2c-detail-page .google-real-procedures-head span{
+ font-size:12px;font-weight:760;color:#387288
+}
+body.unified-site.b2c-detail-page .google-real-procedures-list{
+ display:grid;list-style:none;margin:0;padding:7px 18px;
+}
+body.unified-site.b2c-detail-page .google-real-procedures-list li{
+ display:grid;grid-template-columns:60px 1fr;gap:12px;
+ align-items:center;padding:17px 0;border-bottom:1px solid #d8e5ec;
+ font-size:15px;line-height:1.3;color:#23445d
+}
+body.unified-site.b2c-detail-page .google-real-procedures-list li:last-child{
+ border-bottom:0
+}
+body.unified-site.b2c-detail-page .google-real-procedures-list time{
+ font-weight:840;color:#087a86;font-size:16px;letter-spacing:.01em
+}
+body.unified-site.b2c-detail-page .google-real-procedures-caption{
+ margin:0!important;padding:15px 18px!important;border-top:1px solid #d8e5ec;
+ background:#eef5f9;font-size:12px!important;line-height:1.5!important;
+ color:#52748a!important
+}
+body.unified-site.b2c-detail-page .commander-experience .calendar-real-screenshot{
+ cursor:zoom-in
+}
+body.unified-site.b2c-detail-page .commander-experience .calendar-real-screenshot img{
+ border-radius:4px
+}
+
+/* Focus on legibility of actual calendar data on phones; the product view had
+   five nested padding levels leaving only 176 px for the calendar image. */
+@media(max-width:700px){
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-content-panel{
+   padding-inline:4px!important
+ }
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-destinations.tile-group{
+   padding-inline:2px!important
+ }
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-platform{
+   padding-inline:9px!important
+ }
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-preview{
+   padding:7px!important
+ }
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-real-screenshot .calendar-example-label,
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-real-caption{
+   font-size:12px!important
+ }
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .google-real-procedures{
+   padding:0!important
+ }
+}
+
+/* Real screenshot responsive display: two days on desktop, one readable day on phone. */
+body.unified-site.b2c-detail-page .calendar-real-screenshot picture{display:block;width:100%}
+body.unified-site.b2c-detail-page .calendar-real-screenshot picture img{
+ width:100%;height:auto;object-fit:contain;display:block;
+}
+body.unified-site.b2c-detail-page .apple-label-mobile{display:none}
+@media(max-width:700px){
+ body.unified-site.b2c-detail-page .apple-label-desktop{display:none}
+ body.unified-site.b2c-detail-page .apple-label-mobile{display:inline}
+}
+
+/* Single-morning calendar comparison: same real day and procedures for both
+   platforms; original Apple screenshot is a genuine crop, not an imitation. */
+body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-platforms{
+ align-items:stretch;gap:18px
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-platform{
+ display:flex;flex-direction:column;gap:0
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-platform-head{
+ min-height:64px;gap:12px;margin-bottom:14px
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-preview.apple-preview.calendar-real-screenshot,
+body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-preview.google-preview.google-real-procedures{
+ display:flex!important;flex-direction:column;align-items:stretch;
+ margin:0 0 17px!important;padding:0!important;
+ border:1px solid #bed3e0!important;border-radius:10px!important;
+ background:#fff!important;color:#153952!important;
+ min-height:363px;overflow:hidden;box-shadow:none;
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .cal-unified-day{
+ display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+ gap:6px;padding:15px 16px;min-height:59px;
+ background:#e5f0f7;color:#153e5a;
+ border-bottom:1px solid #c9dce5;
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .cal-unified-day strong{
+ font-size:16px;line-height:1.35;font-weight:840;color:#163e5a
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .cal-unified-day span{
+ font-size:12px;line-height:1.35;color:#436b80;font-weight:740
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-real-screenshot>img{
+ width:100%!important;height:auto!important;max-width:100%!important;
+ max-height:none!important;display:block!important;object-fit:contain;
+ margin:0!important;padding:0!important;
+ border:0!important;border-radius:0!important;background:#fff!important;
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .cal-unified-caption{
+ margin:0!important;padding:11px 16px!important;
+ background:#eaf4f8!important;border-top:1px solid #d3e2e9;
+ color:#426981!important;line-height:1.45!important;
+ font-size:12px!important;min-height:52px;
+ display:flex;align-items:center
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-real-screenshot .cal-unified-caption{
+ margin-top:auto!important
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .google-real-procedures-list{
+ flex:1;display:flex;flex-direction:column;
+ justify-content:center;gap:0;padding:0 16px;margin:0;
+ list-style:none;background:#fff!important
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .google-real-procedures-list li{
+ display:grid;grid-template-columns:65px 1fr;align-items:center;gap:16px;
+ min-height:94px;flex:1;max-height:136px;
+ padding:14px 0;border-bottom:1px solid #d5e3e9;
+ color:#184059;font-size:16px;font-weight:700
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .google-real-procedures-list li:last-child{border-bottom:0}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .google-real-procedures-list li time{
+ color:#067e88;font-weight:850;font-size:19px
+}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .google-real-procedures .cal-unified-caption{margin-top:auto!important}
+body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-real-screenshot{
+ cursor:zoom-in
+}
+@media(max-width:700px){
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-preview.apple-preview.calendar-real-screenshot,
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-preview.google-preview.google-real-procedures{min-height:0}
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .cal-unified-day{padding:13px 12px}
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .google-real-procedures-list li{
+   min-height:77px;max-height:none;padding:18px 0;
+   grid-template-columns:62px 1fr;gap:12px;font-size:15px
+ }
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .cal-unified-caption{padding:11px 12px!important}
+}
+
+/* Align bottom edges of both desktop calendar examples. */
+@media(min-width:701px){
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-preview.apple-preview.calendar-real-screenshot,
+ body.unified-site.b2c-detail-page .commander-experience #kalendar .calendar-preview.google-preview.google-real-procedures {
+  min-height:430px!important
+ }
+}
+
+/* Preserve pre-move alternating step colors when Demo is relocated after step 3. */
+body.unified-site.b2c-guide-page .journey-guide-step#pridat,
+body.unified-site.b2c-guide-page .journey-guide-step#prehled {
+  background: #edf7f6;
+}
+body.unified-site.b2c-guide-page .journey-guide-step#zkontrolovat {
+  background: #f8fcfc;
+}
+
+
+/* Price cards — local coffee concept, preserving approved B2C layout and colors.
+   A lightly veiled crop of the established spa hero softens the unused right half.
+   The mobile in the source photograph stays outside the visible upper crop. */
+body.unified-site.b2c-home-page .b2c-price-card.price-card-with-coffee {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 236px;
+  padding: 26px 24px;
+  overflow: hidden;
+  background: #fff;
+}
+body.unified-site.b2c-home-page .price-card-mist-photo {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 62%;
+  object-fit: cover;
+  object-position: 58% 13%;
+  opacity: .32;
+  filter: saturate(.84) blur(.35px);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 20%, #000 38%, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 20%, #000 38%, #000 100%);
+  pointer-events: none;
+}
+body.unified-site.b2c-home-page .price-card-core {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+body.unified-site.b2c-home-page .price-card-name {
+  color: #486578;
+  font-size: 14px;
+  font-weight: 550;
+  line-height: 1.4;
+}
+body.unified-site.b2c-home-page .price-card-core > b {
+  margin: 4px 0 2px;
+  font-size: clamp(36px, 3.1vw, 48px);
+  letter-spacing: -.05em;
+  line-height: 1.05;
+  white-space: nowrap;
+  color: #153e58;
+}
+body.unified-site.b2c-home-page .price-card-core > strong {
+  font-size: 17px;
+  color: #23546b;
+}
+body.unified-site.b2c-home-page .price-card-core > small {
+  font-size: 11px;
+  color: #496578;
+  line-height: 1.45;
+}
+body.unified-site.b2c-home-page .price-card-aside {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-self: end;
+  gap: 7px;
+  min-width: 0;
+  padding: 12px 0 12px 10px;
+  border-left: 1px solid rgba(123, 179, 181, .4);
+}
+body.unified-site.b2c-home-page .price-card-daily {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: 4px;
+  color: #0c6275;
+  line-height: 1.15;
+}
+body.unified-site.b2c-home-page .price-card-daily > b {
+  font-size: 20px;
+  font-weight: 790;
+  white-space: nowrap;
+}
+body.unified-site.b2c-home-page .price-card-daily > span {
+  font-size: 12px;
+  font-weight: 620;
+  white-space: nowrap;
+}
+body.unified-site.b2c-home-page .price-card-reference {
+  font-size: 11px;
+  color: #456675;
+  line-height: 1.3;
+}
+body.unified-site.b2c-home-page .price-card-coffee {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  padding: 7px 9px;
+  border: 1px solid rgba(118, 188, 180, .5);
+  border-radius: 12px;
+  background: rgba(247, 253, 251, .88);
+  color: #1a626c;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+body.unified-site.b2c-home-page .price-coffee-icon {
+  display: block;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+}
+body.unified-site.b2c-home-page header.unified-header .brand-lockup small {
+  display: block;
+  font-size: 9px;
+  line-height: 1.2;
+  font-weight: 570;
+  color: #627b87;
+  letter-spacing: .005em;
+  white-space: nowrap;
+}
+@media (min-width: 601px) and (max-width: 1150px) {
+  body.unified-site.b2c-home-page .b2c-price-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px;
+  }
+  body.unified-site.b2c-home-page .b2c-price-intro {
+    grid-column: 1 / -1;
+    justify-self: center;
+    text-align: center;
+    padding: 0 0 5px;
+  }
+  body.unified-site.b2c-home-page .b2c-price-card.price-card-with-coffee { padding: 22px 20px; }
+  body.unified-site.b2c-home-page .price-card-core > b { font-size: 40px; }
+}
+@media (max-width: 600px) {
+  body.unified-site.b2c-home-page .b2c-price-card.price-card-with-coffee {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+    gap: 8px;
+    min-height: 194px;
+    padding: 18px 19px;
+  }
+  body.unified-site.b2c-home-page .price-card-core > b { font-size: clamp(33px, 9vw, 40px); }
+  body.unified-site.b2c-home-page .price-card-core > small { font-size: 10px; }
+  body.unified-site.b2c-home-page .price-card-aside { padding-left: 10px; gap: 5px; }
+  body.unified-site.b2c-home-page .price-card-daily > b { font-size: 17px; }
+  body.unified-site.b2c-home-page .price-card-daily > span { font-size: 11px; }
+  body.unified-site.b2c-home-page .price-card-reference { font-size: 10px; }
+  body.unified-site.b2c-home-page .price-card-coffee { font-size: 11px; padding: 6px 7px; gap: 3px; }
+  body.unified-site.b2c-home-page .price-coffee-icon { width: 15px; height: 15px; flex-basis: 15px; }
+  body.unified-site.b2c-home-page header.unified-header .brand-lockup small { font-size: 8px; }
+}
