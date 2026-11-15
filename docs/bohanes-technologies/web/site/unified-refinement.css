@@ -759,3 +759,163 @@ body.unified-site.b2c-guide-page .journey-guide-step#prehled {
 body.unified-site.b2c-guide-page .journey-guide-step#zkontrolovat {
   background: #f8fcfc;
 }
+
+
+/* Price cards — local coffee concept, preserving approved B2C layout and colors.
+   A lightly veiled crop of the established spa hero softens the unused right half.
+   The mobile in the source photograph stays outside the visible upper crop. */
+body.unified-site.b2c-home-page .b2c-price-card.price-card-with-coffee {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 236px;
+  padding: 26px 24px;
+  overflow: hidden;
+  background: #fff;
+}
+body.unified-site.b2c-home-page .price-card-mist-photo {
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 62%;
+  object-fit: cover;
+  object-position: 58% 13%;
+  opacity: .32;
+  filter: saturate(.84) blur(.35px);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 20%, #000 38%, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 20%, #000 38%, #000 100%);
+  pointer-events: none;
+}
+body.unified-site.b2c-home-page .price-card-core {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+body.unified-site.b2c-home-page .price-card-name {
+  color: #486578;
+  font-size: 14px;
+  font-weight: 550;
+  line-height: 1.4;
+}
+body.unified-site.b2c-home-page .price-card-core > b {
+  margin: 4px 0 2px;
+  font-size: clamp(36px, 3.1vw, 48px);
+  letter-spacing: -.05em;
+  line-height: 1.05;
+  white-space: nowrap;
+  color: #153e58;
+}
+body.unified-site.b2c-home-page .price-card-core > strong {
+  font-size: 17px;
+  color: #23546b;
+}
+body.unified-site.b2c-home-page .price-card-core > small {
+  font-size: 11px;
+  color: #496578;
+  line-height: 1.45;
+}
+body.unified-site.b2c-home-page .price-card-aside {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-self: end;
+  gap: 7px;
+  min-width: 0;
+  padding: 12px 0 12px 10px;
+  border-left: 1px solid rgba(123, 179, 181, .4);
+}
+body.unified-site.b2c-home-page .price-card-daily {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: 4px;
+  color: #0c6275;
+  line-height: 1.15;
+}
+body.unified-site.b2c-home-page .price-card-daily > b {
+  font-size: 20px;
+  font-weight: 790;
+  white-space: nowrap;
+}
+body.unified-site.b2c-home-page .price-card-daily > span {
+  font-size: 12px;
+  font-weight: 620;
+  white-space: nowrap;
+}
+body.unified-site.b2c-home-page .price-card-reference {
+  font-size: 11px;
+  color: #456675;
+  line-height: 1.3;
+}
+body.unified-site.b2c-home-page .price-card-coffee {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  padding: 7px 9px;
+  border: 1px solid rgba(118, 188, 180, .5);
+  border-radius: 12px;
+  background: rgba(247, 253, 251, .88);
+  color: #1a626c;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+body.unified-site.b2c-home-page .price-coffee-icon {
+  display: block;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+}
+body.unified-site.b2c-home-page header.unified-header .brand-lockup small {
+  display: block;
+  font-size: 9px;
+  line-height: 1.2;
+  font-weight: 570;
+  color: #627b87;
+  letter-spacing: .005em;
+  white-space: nowrap;
+}
+@media (min-width: 601px) and (max-width: 1150px) {
+  body.unified-site.b2c-home-page .b2c-price-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 17px;
+  }
+  body.unified-site.b2c-home-page .b2c-price-intro {
+    grid-column: 1 / -1;
+    justify-self: center;
+    text-align: center;
+    padding: 0 0 5px;
+  }
+  body.unified-site.b2c-home-page .b2c-price-card.price-card-with-coffee { padding: 22px 20px; }
+  body.unified-site.b2c-home-page .price-card-core > b { font-size: 40px; }
+}
+@media (max-width: 600px) {
+  body.unified-site.b2c-home-page .b2c-price-card.price-card-with-coffee {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr);
+    gap: 8px;
+    min-height: 194px;
+    padding: 18px 19px;
+  }
+  body.unified-site.b2c-home-page .price-card-core > b { font-size: clamp(33px, 9vw, 40px); }
+  body.unified-site.b2c-home-page .price-card-core > small { font-size: 10px; }
+  body.unified-site.b2c-home-page .price-card-aside { padding-left: 10px; gap: 5px; }
+  body.unified-site.b2c-home-page .price-card-daily > b { font-size: 17px; }
+  body.unified-site.b2c-home-page .price-card-daily > span { font-size: 11px; }
+  body.unified-site.b2c-home-page .price-card-reference { font-size: 10px; }
+  body.unified-site.b2c-home-page .price-card-coffee { font-size: 11px; padding: 6px 7px; gap: 3px; }
+  body.unified-site.b2c-home-page .price-coffee-icon { width: 15px; height: 15px; flex-basis: 15px; }
+  body.unified-site.b2c-home-page header.unified-header .brand-lockup small { font-size: 8px; }
+}
