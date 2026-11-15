@@ -12,8 +12,8 @@ function setup(saved){
 (async()=>{
  for(const file of ['index.html','crm-data-tools.js','crm-data.js','crm-data.json'])assert.equal(read('app/'+file),read('site/'+file),file+' mirrors');
  const a=setup(),fresh=JSON.parse(a.memory.get('bohanesCRM'));
- assert.equal(fresh.length,36);
- assert.equal(fresh.reduce((n,r)=>n+r.contacts.length,0),163,'runtime contacts including two preserved Darkov legacy cards');
+ assert.equal(fresh.length,41);
+ assert.equal(fresh.reduce((n,r)=>n+r.contacts.length,0),174,'runtime contacts including two preserved Darkov legacy cards');
  assert.equal(fresh.find(r=>r.name==='Karviná – Darkov').historicalLand,'Slezsko');
 assert.equal(fresh.find(r=>r.name==='Jáchymov').phone,'+420 410 000 510','current Axxos customer line');
 assert.ok(fresh.find(r=>r.name==='Teplice nad Bečvou').contacts.some(c=>c.name==='Jitka Veselá'&&c.phone==='+420 581 683 608'));
@@ -29,7 +29,7 @@ assert.ok(fresh.find(r=>r.name==='Vráž').contacts.some(c=>c.name==='Martina Ku
  a.run('exportCRM()');assert.match(a.download(),/^bohanes-crm-zaloha-/);
  const payload={format:'bohanes-crm',schemaVersion:1,records:fresh};
  a.ctx.payload=JSON.parse(JSON.stringify(payload));
- assert.equal(a.run('validateCRMBackup(payload,data).length'),36);
+ assert.equal(a.run('validateCRMBackup(payload,data).length'),41);
  const before=a.memory.get('bohanesCRM');
  a.ctx.bad={size:1,text:async()=>JSON.stringify({format:'bohanes-crm',schemaVersion:1,records:[{id:999,name:'Neexistuje'}]})};
  await a.run('importCRM(bad)');assert.equal(a.memory.get('bohanesCRM'),before,'invalid imports atomic');assert.equal(a.alerts.length,1);
@@ -61,6 +61,7 @@ prior.find(r=>r.name==='Karviná – Darkov').contacts[0].role='Člen statutárn
 const upgrading=JSON.parse(JSON.stringify(fresh));
 for(const r of upgrading){
  const old=prior.find(x=>x.name===r.name);
+ if(!old)continue;
  for(const k of ['company','ico','website','phone','email','facilityAddress','registeredAddress','photo','historicalLand','note']){
   if(old[k]===undefined)delete r[k];else r[k]=old[k];
  }
@@ -76,7 +77,7 @@ assert.equal(migrated[0].company,'Moje upravená firma');assert.ok(migrated[0].n
 assert.ok(migrated.find(r=>r.name==='Teplice nad Bečvou').facilityAddress.includes('č.p. 63'));
 const lenka=migrated.find(r=>r.name==='Karviná – Darkov').contacts.find(c=>c.name==='Lenka Krótká');
 assert.equal(lenka.phone,'');assert.equal(lenka.role,'Obchodní ředitelka — Lázně Darkov, a.s.');
-for(const row of migrated){const ref=canonical.find(x=>x.name===row.name);assert.equal(row.photo,ref.photo);assert.equal(row.photoSource,ref.photoSource)}
+for(const row of migrated){const ref=canonical.find(x=>x.name===row.name);if(!ref)continue;assert.equal(row.photo,ref.photo);assert.equal(row.photoSource,ref.photoSource)}
 // A deployed .4 browser must receive the new .5 public contacts and the corrected Jáchymov line.
 const v4=JSON.parse(JSON.stringify(fresh));
 for(const r of v4){r.verifiedDataVersion='2026-11-05.4'}
@@ -89,8 +90,56 @@ assert.ok(migratedV5.find(r=>r.name==='Teplice nad Bečvou').contacts.some(c=>c.
 const migratedRadka=migratedV5.find(r=>r.name==='Karlova Studánka').contacts.find(c=>c.name==='Ing. Radka Pazderová');assert.match(migratedRadka.role,/obchodně-marketingová/);assert.equal(migratedRadka.email,'pazderova@horskelazne.cz');
 const custom=JSON.parse(JSON.stringify(upgrading));custom[1].photo='https://example.com/my-own-photo.jpg';
 const customResult=JSON.parse(setup(custom).memory.get('bohanesCRM'))[1];assert.equal(customResult.photo,custom[1].photo);assert.equal(customResult.photoAttribution,undefined);
+// A previously installed iPhone has only 36 places. Adding a public location must not erase private data.
+const preCeladna=JSON.parse(JSON.stringify(fresh.filter(x=>x.id<=36)));
+assert.equal(preCeladna.length,36);
+preCeladna[0].businessNote='Moje soukromá obchodní jednání';
+preCeladna[0].status='Pilot';
+preCeladna[0].contacts.push({name:'Soukromý obchodní kontakt',phone:'111222333',role:'Můj klient'});
+const upgradedCeladna=JSON.parse(setup(preCeladna).memory.get('bohanesCRM'));
+assert.equal(upgradedCeladna.length,41);
+assert.equal(upgradedCeladna.filter(x=>x.id===37).length,1);
+assert.equal(upgradedCeladna.find(x=>x.id===37).ico,'25868951');
+assert.equal(upgradedCeladna.find(x=>x.id===38).ico,'00183024');
+assert.equal(upgradedCeladna.find(x=>x.id===39).ico,'00853879');
+assert.ok(upgradedCeladna.find(x=>x.id===38).scheduleEvidenceUrl.includes('pobyty-v-hamzove-lecebne'));
+assert.ok(upgradedCeladna.find(x=>x.id===39).scheduleEvidenceUrl.includes('usek-rehabilitacni-pece'));
+assert.ok([37,38,39,40,41].every(id=>upgradedCeladna.find(x=>x.id===id).facilityType==='rehabilitation'));
+assert.equal(new Set(upgradedCeladna.map(x=>x.id)).size,41);
+
+assert.ok(upgradedCeladna.find(x=>x.id===37).aliases.includes('Beskydské rehabilitační centrum'));
+assert.equal(upgradedCeladna[0].businessNote,'Moje soukromá obchodní jednání');
+assert.equal(upgradedCeladna[0].status,'Pilot');
+assert.ok(upgradedCeladna[0].contacts.some(x=>x.name==='Soukromý obchodní kontakt'));
+assert.equal(JSON.parse(setup(upgradedCeladna).memory.get('bohanesCRM')).length,41,'no duplicate new rehabilitations');
+// Simulate the currently installed PWA with 37 records including private Čeladná annotations.
+const beforeRehab=JSON.parse(JSON.stringify(fresh.filter(x=>x.id<=37)));
+beforeRehab.find(x=>x.id===37).note+='\nSoukromá poznámka k Čeladné';
+beforeRehab.find(x=>x.id===37).status='Jednání';
+const afterRehab=JSON.parse(setup(beforeRehab).memory.get('bohanesCRM'));
+assert.equal(afterRehab.length,41);
+assert.equal(afterRehab.find(x=>x.id===37).status,'Jednání');
+assert.ok(afterRehab.find(x=>x.id===37).note.includes('Soukromá poznámka k Čeladné'));
+assert.equal(new Set(afterRehab.map(x=>x.id)).size,41);
+
+// Existing installed CRM with 39 cards must receive only the two new southern leads.
+const beforeSouth=JSON.parse(JSON.stringify(fresh.filter(x=>x.id<=39)));
+assert.equal(beforeSouth.length,39);
+beforeSouth.find(x=>x.id===37).businessNote='Soukromá poznámka z mého iPhonu';
+beforeSouth.find(x=>x.id===38).status='Jednání';
+const afterSouth=JSON.parse(setup(beforeSouth).memory.get('bohanesCRM'));
+assert.equal(afterSouth.length,41);
+assert.equal(new Set(afterSouth.map(x=>x.id)).size,41);
+assert.equal(afterSouth.find(x=>x.id===37).businessNote,'Soukromá poznámka z mého iPhonu');
+assert.equal(afterSouth.find(x=>x.id===38).status,'Jednání');
+assert.equal(afterSouth.find(x=>x.id===40).ico,'00386766');
+assert.equal(afterSouth.find(x=>x.id===41).ico,'00386766');
+assert.equal(afterSouth.find(x=>x.id===40).facilitySubtype,'pediatric_with_caregiver');
+assert.equal(afterSouth.find(x=>x.id===41).facilitySubtype,'pediatric_with_caregiver');
+assert.equal(afterSouth.filter(x=>x.id===40||x.id===41).length,2);
+assert.equal(JSON.parse(setup(afterSouth).memory.get('bohanesCRM')).length,41);
 new vm.Script('const seed='+inline,'inline application syntax');
 console.log('PASS: all 36 photos/sources, 161 verified contacts, current business contacts, version-5 migration, updated roles, preserved legacy/private edits and custom photos.');
 
- console.log('PASS: 36 records, mirrors, idempotent migration, custom data preservation, photo replacement, export/import, invalid import, undo, duplicates.');
+ console.log('PASS: 41 records including five rehab sites, mirrors, idempotent migration, custom data preservation, photo replacement, export/import, invalid import, undo, duplicates.');
 })().catch(e=>{console.error(e);process.exitCode=1});

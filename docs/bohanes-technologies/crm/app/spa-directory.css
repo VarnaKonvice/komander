@@ -1,0 +1,74 @@
+/* CRM: veřejný výzkumný katalog zařízení; obchodní záznamy a mapa zůstávají nedotčené */
+.spa-dir-invite{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;background:linear-gradient(120deg,#e4f4f4,#f3f9fb);border:1px solid #bedfe2;border-radius:13px;padding:15px 18px;margin-bottom:16px}
+.spa-dir-invite strong{display:block;color:var(--navy);font-size:17px;line-height:1.35}
+.spa-dir-invite span{display:block;color:#4c6b7b;font-size:12px;line-height:1.5;margin-top:3px}
+.spa-dir-open{background:var(--navy);color:white;border:0;border-radius:9px;font-weight:800;min-height:44px;padding:10px 16px;cursor:pointer;white-space:nowrap}
+.spa-dir-open:hover,.spa-dir-primary:hover{background:#14657d}
+.spa-dir-dialog-open{overflow:hidden!important}
+.spa-directory-overlay[hidden]{display:none!important}
+.spa-directory-overlay{position:fixed;z-index:4000;inset:0;background:rgba(10,32,53,.59);display:flex;align-items:center;justify-content:center;padding:16px}
+.spa-directory-sheet{display:flex;flex-direction:column;width:min(1150px,100%);height:min(850px,94dvh);overflow:hidden;background:#f7fafc;border:1px solid #b5d5df;border-radius:16px;box-shadow:0 25px 80px #031c3494}
+.spa-dir-top{flex:0 0 auto;display:flex;justify-content:space-between;gap:18px;align-items:flex-start;padding:20px 24px 13px;background:#fff;border-bottom:1px solid var(--line)}
+.spa-dir-top h2{font-size:27px;color:var(--navy);margin:0 0 5px;letter-spacing:-.03em}
+.spa-dir-top p{font-size:13px;color:#526a7c;line-height:1.5;max-width:760px;margin:0}
+.spa-dir-close{background:#fff;border:1px solid #cbdfe7;border-radius:10px;padding:9px 13px;min-height:42px;cursor:pointer;color:#153b57;font-size:14px;font-weight:750;flex-shrink:0}
+.spa-dir-controls{background:#fff;border-bottom:1px solid var(--line);padding:13px 23px;flex:0 0 auto}
+.spa-dir-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.spa-dir-tabs button{border-radius:9px;border:1px solid #c4d9e4;padding:10px 13px;background:#f3f8fb;color:var(--navy);min-height:42px;cursor:pointer;font-weight:750}
+.spa-dir-tabs button.is-active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.spa-dir-filters{display:grid;grid-template-columns:minmax(160px,1fr) minmax(170px,.48fr);gap:10px}
+.spa-dir-filters input,.spa-dir-filters select{min-height:46px;min-width:0;border:1px solid #bdd6e2;border-radius:9px;padding:9px 13px;color:#153b59;background:#fff;font-size:16px}
+.spa-dir-results{min-height:0;flex:1 1 auto;overflow:auto;padding:18px 22px 30px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;gap:12px;overscroll-behavior:contain}
+.spa-dir-card{min-width:0;background:#fff;border:1px solid #d5e4eb;border-radius:12px;padding:17px 18px;box-shadow:0 5px 13px rgba(13,57,85,.04)}
+.spa-dir-card h3{margin:0 0 6px;font-size:18px;font-weight:850;color:var(--navy)}
+.spa-dir-card-location{font-size:13px;color:#087e83;font-weight:750;margin:0 0 12px}
+.spa-dir-meta{font-size:12px;line-height:1.5;display:grid;grid-template-columns:99px minmax(0,1fr);gap:10px;margin:8px 0}
+.spa-dir-meta-label{color:#607889}.spa-dir-meta-value{color:#284c61;font-weight:700;overflow-wrap:anywhere}
+.spa-dir-status-note,.spa-dir-warning{font-size:11px;line-height:1.4;margin:10px 0;color:#6a7381}
+.spa-dir-warning{color:#8b5729}
+.spa-dir-actions{display:flex;flex-wrap:wrap;gap:13px;align-items:center;margin-top:14px}
+.spa-dir-link,.spa-dir-parent{font-size:12px;font-weight:800;color:#007c80;text-decoration:underline;text-underline-offset:3px;background:transparent;border:0;padding:0;cursor:pointer}
+.spa-dir-parent{color:var(--navy)}
+.spa-dir-link:hover,.spa-dir-parent:hover{color:#139f9a}
+.spa-dir-state{padding:18px;color:#4d7286;font-size:14px;grid-column:1/-1}
+.spa-dir-bottom{flex:0 0 auto;background:#fff;padding:10px 23px;border-top:1px solid var(--line);display:flex;gap:14px;justify-content:space-between;align-items:center}
+.spa-dir-bottom span{font-size:12px;color:#547081;line-height:1.4}
+.spa-dir-more{border:1px solid #bdd5e0;background:#eff7f9;border-radius:8px;min-height:42px;font-size:13px;font-weight:750;padding:8px 13px;color:var(--navy);cursor:pointer;flex-shrink:0}
+.spa-dir-more[hidden]{display:none}
+.spa-dir-note{font-size:11px;line-height:1.45;color:#637e8c;padding:0 22px 12px;background:#fff}
+.spa-directory-overlay :is(button,input,select,a):focus-visible{outline:3px solid #06a99c;outline-offset:3px}
+@media(max-width:720px){
+ .spa-dir-invite{padding:12px;gap:10px;margin-bottom:11px}
+ .spa-dir-invite strong{font-size:14px}.spa-dir-invite span{font-size:11px}
+ .spa-dir-open{width:100%;min-height:44px}
+ .spa-directory-overlay{padding:0;align-items:stretch}
+ .spa-directory-sheet{height:100dvh;width:100%;border:0;border-radius:0}
+ .spa-dir-top{padding:calc(env(safe-area-inset-top) + 17px) 14px 12px}
+ .spa-dir-top h2{font-size:20px}.spa-dir-top p{font-size:11px}
+ .spa-dir-close{padding:8px 11px}
+ .spa-dir-controls{padding:12px 12px 10px}
+ .spa-dir-tabs{gap:5px;margin-bottom:10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+ .spa-dir-tabs button{padding:8px 5px;min-height:43px;font-size:11px;white-space:normal;line-height:1.2}
+ .spa-dir-filters{grid-template-columns:1fr;gap:8px}
+ .spa-dir-results{grid-template-columns:1fr;padding:12px 12px 25px;gap:10px}
+ .spa-dir-card{padding:14px}
+ .spa-dir-card h3{font-size:17px}
+ .spa-dir-bottom{padding:9px 12px calc(env(safe-area-inset-bottom) + 8px);gap:7px}
+ .spa-dir-bottom span{font-size:11px}
+ .spa-dir-note{display:none}
+}
+@media (min-width:721px) and (max-height:520px){
+ .spa-directory-overlay{padding:0}
+ .spa-directory-sheet{height:100dvh;width:100vw;border-radius:0}
+ .spa-dir-top{padding:8px 20px;align-items:center}
+ .spa-dir-top h2{font-size:18px;margin:0}
+ .spa-dir-top p,.spa-dir-note{display:none}
+ .spa-dir-controls{padding:7px 20px}
+ .spa-dir-tabs{margin-bottom:7px}
+ .spa-dir-tabs button,.spa-dir-filters :is(input,select){min-height:36px;padding:6px 11px}
+ .spa-dir-results{padding:9px 20px 12px}
+ .spa-dir-bottom{padding:5px 20px}
+}
+
+.spa-dir-candidate{border-left:4px solid #b88e52}
+@media(max-width:720px){.spa-dir-tabs{grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}.spa-dir-tabs button{white-space:normal;min-width:0}}
