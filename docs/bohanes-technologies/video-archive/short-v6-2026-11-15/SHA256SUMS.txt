@@ -1,0 +1,16 @@
+6e81fb1641388a4f0bc14ab2c7c603f0932ddde660e96f50e3fe3de2517f7700  ./overlays/approved-iphone-dnes.png
+a8b6653eccc3f9f02c3099aa17da08710d4341c6ee6cce8bcb65f4cb225209a7  ./overlays/hook-klid.png
+3058a69fed3070169060351200aac7e26f96d648b1890225d2d0166351f45bb9  ./overlays/hook-rozpis.png
+19d38efa1deccdd0da3e725f5b404e79d9f6a334cb025a57a2041c174b6176f6  ./overlays/render-v6.py
+eb86b9fc4aa6e7df6fe70e6543056f55188e48fa8fd6fb5801240b13424a39b4  ./overlays/requirements-v6.txt
+e8564139065d2ca91a768001f10d426b105293ea7aac521d38ebb5b97aca0d36  ./overlays/scene-iphone-approved-dnes.png
+30c88a10ef140f422b29d2cfb16519d6a0668d59f6ead2d0f93e60a6c90b3197  ./overlays/titulky-cs.ass
+6572677111b81250f053e897d9e739ff27f125087ef054b24da360429f0aefe4  ./README.md
+a8873092ea3106439dd925c2291cb9505e3831f13aa43e9cfea21032f046d482  ./video/Commander-Short-V6-iPhone-titulky-master.mp4
+e466c169cb9e714b9317e6bcd600bc945fdb619b1174f38972b670991c3a65c4  ./video/Commander-Short-V6-poster.jpg
+50b28e1ebb0d2327d24529bfca3e0d13bae6e3a97fc9785cba60e4f134e71e6d  ./video/Commander-Short-V6-web.mp4
+4906103abe3d54054d90a6e2daac6a182937673887469ae3181df743cfea1d62  ./web-snapshot/b2c-front.css
+b3e63b4eebb68ab606640b07ec2ed5325b7428919ae3fc0af8e9acc6401a9645  ./web-snapshot/darkov-rozpis-anonymizovany-strana-3.webp
+2e777f8bdac1f2e7caa9a382c26ee5520a4002f22c13b8fd8f4d24c39aacc1c0  ./web-snapshot/index.html
+40cbf3823d118090823224510952f247a8c9226d0a9bea3cab605eb9f501441e  ./web-snapshot/jedu-do-lazni.html
+aa0cbd9d54f65d799cf768da7095375c454680f107ccc1de24f9bfa6bcb48b19  ./web-snapshot/video-ukazky-index.html

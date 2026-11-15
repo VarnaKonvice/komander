@@ -1,0 +1,21 @@
+[Script Info]
+Title: Lázeňský Commander – V6 – schválený iPhone a titulky
+ScriptType: v4.00+
+PlayResX: 1080
+PlayResY: 1920
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Caption,Arial,64,&H00FFFFFF,&H00FFFFFF,&HBC06132B,&H9C05132C,-1,0,0,0,100,100,0,0,1,5,2,2,85,85,154,1
+Style: OnPhone,Arial,57,&H00FFFFFF,&H00FFFFFF,&HBB06132B,&H9C05132C,-1,0,0,0,100,100,0,0,1,5,2,8,65,65,65,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:04.55,0:00:07.90,Caption,,0,0,0,,{\fad(170,130)}Ne pořád hledat, co vás čeká.\NA kdy máte vyrazit.
+Dialogue: 0,0:00:09.55,0:00:11.75,Caption,,0,0,0,,{\fad(170,130)}Rozpis vyfotíte a zkontrolujete.
+Dialogue: 0,0:00:11.75,0:00:13.22,Caption,,0,0,0,,{\fad(170,130)}A máte ho v telefonu.
+Dialogue: 0,0:00:14.10,0:00:16.12,OnPhone,,0,0,0,,{\fad(170,130)}Víte, co vás čeká.
+Dialogue: 0,0:00:16.12,0:00:17.88,OnPhone,,0,0,0,,{\fad(170,130)}Telefon vám připomene odchod.
+Dialogue: 0,0:00:19.08,0:00:21.25,Caption,,0,0,0,,{\fad(170,130)}A pak už si jen užíváte svůj pobyt.
