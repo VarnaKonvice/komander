@@ -1,0 +1,504 @@
+/* Bohanes Technologies: company pages from approved product content, 15 Nov 2026.
+   These pages use the Bohanes palette; Commander illustrations preserve their own
+   original approved dark blue appearance. */
+body.bt-company-page{
+ background:#f5fafc;color:#153952
+}
+body.bt-company-page .bt-company-main{overflow:clip}
+body.bt-company-page .bt-company-main .wrap{
+ width:min(1240px,calc(100% - 56px));max-width:1240px;
+}
+body.bt-company-page .bt-company-opening{
+ padding:clamp(48px,6vw,93px) 0;
+ background:linear-gradient(116deg,#ecf7fa 0%,#f9fcfe 56%,#dff1f0 100%);
+ border-bottom:1px solid #d3e5eb;
+}
+body.bt-company-page .bt-company-opening-grid{
+ display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.84fr);
+ gap:clamp(28px,5vw,90px);align-items:center
+}
+body.bt-company-page .bt-company-eyebrow{
+ display:block;font-size:12px;font-weight:850;letter-spacing:.14em;
+ line-height:1.5;color:#0c8288;
+}
+body.bt-company-page .bt-company-opening h1{
+ color:#143652;font-size:clamp(43px,5vw,71px);line-height:1.08;
+ letter-spacing:-.05em;margin:19px 0 25px;
+}
+body.bt-company-page .bt-company-opening-lead{
+ color:#244b64;font-size:clamp(19px,1.95vw,25px);
+ line-height:1.48;margin:0 0 19px;
+}
+body.bt-company-page .bt-company-opening p:not(.bt-company-opening-lead){
+ font-size:17px;line-height:1.65;color:#49667d;margin:0 0 20px;
+}
+body.bt-company-page .bt-company-opening-actions,.bt-company-next{
+ display:flex;flex-wrap:wrap;gap:19px;align-items:center;margin-top:29px
+}
+body.bt-company-page .bt-company-action{
+ display:inline-flex;justify-content:center;align-items:center;gap:12px;min-height:49px;
+ padding:12px 20px;border:1px solid #113f62;border-radius:8px;
+ background:#113f62;color:#fff!important;
+ font-size:15px;font-weight:800;text-decoration:none;
+ box-shadow:none
+}
+body.bt-company-page .bt-company-action:hover{background:#09657c}
+body.bt-company-page .bt-company-text-link{
+ font-weight:800;color:#0a7b81;font-size:15px;
+ text-decoration:underline;text-underline-offset:4px
+}
+body.bt-company-page .bt-company-brand-panel{
+ min-height:320px;padding:48px 25px;
+ border:1px solid #b9d5db;border-radius:14px;
+ background:#fff;display:flex;flex-direction:column;
+ align-items:center;justify-content:center;gap:14px;text-align:center;
+ box-shadow:0 15px 35px #1a517015;
+}
+body.bt-company-page .bt-company-brand-panel img{
+ width:min(142px,36vw);height:auto;max-height:145px;object-fit:contain
+}
+body.bt-company-page .bt-company-brand-panel strong{
+ font-size:clamp(21px,2.25vw,30px);letter-spacing:.065em;color:#0a3855;
+}
+body.bt-company-page .bt-company-brand-panel>span{
+ color:#527087;font-size:14px
+}
+body.bt-company-page .bt-company-story{
+ background:#fff;padding:clamp(50px,6vw,85px) 0;
+}
+body.bt-company-page .bt-company-section-intro{
+ margin-bottom:28px
+}
+body.bt-company-page .bt-company-section-intro h2{
+ color:#143652;line-height:1.14;letter-spacing:-.045em;
+ font-size:clamp(34px,3.7vw,52px);margin:13px 0 0
+}
+body.bt-company-page .bt-company-section-intro h2 em,
+body.bt-company-page .bt-partners-pilot h2 em,
+body.bt-company-page .bt-partners-opening h1 em{
+ font-style:normal;color:#05938f
+}
+body.bt-company-page .bt-company-story-grid{
+ display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);
+ align-items:start;gap:clamp(23px,4vw,62px)
+}
+body.bt-company-page .bt-company-story-copy{
+ min-width:0
+}
+body.bt-company-page .bt-company-story-copy .kicker,
+body.bt-company-page .bt-company-story-copy h2{
+ display:none
+}
+body.bt-company-page .bt-company-story-copy p{
+ color:#36546b;font-size:17px;line-height:1.72;margin:0 0 20px
+}
+body.bt-company-page .bt-company-story-copy .lead{
+ font-size:21px;font-weight:750;color:#153c56
+}
+body.bt-company-page .bt-company-story-visual{
+ min-width:0
+}
+body.bt-company-page .bt-company-story-visual .story-visual{
+ background:linear-gradient(135deg,#1c4578,#142c52 63%,#0d1d39);
+ border:1px solid #507ba8;border-radius:13px;
+ padding:clamp(18px,2.8vw,30px)
+}
+body.bt-company-page .bt-company-story-visual .story-document{
+ background:#fff!important;border:1px solid #b5ceda!important;color:#193c58!important
+}
+body.bt-company-page .bt-company-story-visual .story-document-title,
+body.bt-company-page .bt-company-story-visual .story-line{
+ color:#193c58!important
+}
+body.bt-company-page .bt-company-story-visual .story-line small{
+ color:#47647d!important
+}
+body.bt-company-page .bt-company-story-visual .story-brand b{color:#fff}
+body.bt-company-page .bt-company-story-visual .visual-note{
+ color:#d6e4f2
+}
+body.bt-company-page .bt-company-crosslink{
+ padding:53px 0;background:#e9f5f6;border-top:1px solid #cbdfe3
+}
+body.bt-company-page .bt-crosslink-grid{
+ display:flex;justify-content:space-between;align-items:center;gap:35px
+}
+body.bt-company-page .bt-crosslink-grid h2{
+ font-size:clamp(25px,2.7vw,36px);line-height:1.16;color:#153d57;
+ margin:12px 0
+}
+body.bt-company-page .bt-crosslink-grid p{font-size:16px;color:#526e7e}
+body.bt-company-page .bt-crosslink-grid .bt-company-action{flex:none}
+
+body.bt-company-page .bt-partners-opening{
+ padding:clamp(40px,5vw,72px) 0;
+}
+body.bt-company-page .bt-partners-hero-grid{
+ display:grid;grid-template-columns:1fr .91fr;gap:clamp(25px,4vw,60px);
+ align-items:center
+}
+body.bt-company-page .bt-partners-opening h1{
+ font-size:clamp(41px,4.4vw,64px);margin:15px 0 22px
+}
+body.bt-company-page .bt-partner-visual{
+ border-radius:13px;border:1px solid #c8dfe0;overflow:hidden;
+ background:#dcebf0;min-height:310px;align-self:stretch;
+}
+body.bt-company-page .bt-partner-visual img{
+ display:block;width:100%;height:100%;
+ object-fit:cover;object-position:58% 47%
+}
+body.bt-company-page .bt-partners-reasons{
+ padding:clamp(35px,4.5vw,65px) 0;
+ background:#f7fbfc;
+}
+body.bt-company-page .bt-partners-reasons h2,
+body.bt-company-page .bt-partners-pilot h2{
+ font-size:clamp(32px,3.4vw,46px);line-height:1.15;
+ letter-spacing:-.04em;color:#153954;margin:15px 0 28px
+}
+body.bt-company-page .bt-partners-reasons .bt-b2b-grid{
+ display:block
+}
+body.bt-company-page .bt-partners-reasons .bt-spa-partners-card{
+ display:block;width:100%;
+ background:linear-gradient(130deg,#e6f6f3,#f5fbfb);
+ border:1px solid #b7d9d9;padding:clamp(20px,3vw,38px);border-radius:12px;
+}
+body.bt-company-page .bt-partners-reasons .bt-spa-partners-card>h2{
+ display:none
+}
+body.bt-company-page .bt-partners-reasons .bt-b2b-lead{
+ font-size:18px;color:#32556a;line-height:1.6;margin:18px 0 22px;
+ max-width:950px
+}
+body.bt-company-page .bt-partners-reasons .bt-spa-gains{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 20px
+}
+body.bt-company-page .bt-partners-reasons .bt-spa-gains>div{
+ display:flex;align-items:flex-start;gap:11px;
+ border:1px solid #beddd9;border-radius:9px;padding:18px;
+ background:#fff
+}
+body.bt-company-page .bt-partners-reasons .bt-gain-icon{
+ display:grid;place-items:center;width:30px;height:30px;flex:none;
+ background:#0b8285;border-radius:6px;color:#fff;font-size:20px;font-weight:900
+}
+body.bt-company-page .bt-partners-reasons .bt-spa-gains strong{
+ font-size:17px;color:#143d59;line-height:1.27;display:block
+}
+body.bt-company-page .bt-partners-reasons .bt-spa-gains small{
+ font-size:14px;color:#526f83;line-height:1.42;display:block;margin-top:6px
+}
+body.bt-company-page .bt-partners-reasons .bt-spa-honesty{
+ font-size:13px;color:#537587;margin:6px 0 20px;
+}
+body.bt-company-page .bt-partners-reasons .bt-b2b-actions{
+ display:flex;flex-wrap:wrap;gap:20px;align-items:center
+}
+body.bt-company-page .bt-partners-reasons .bt-b2b-primary{
+ border-radius:8px;background:#114361;color:#fff;
+ min-height:48px;padding:12px 20px;font-weight:800;
+ display:inline-flex;align-items:center;gap:10px;text-decoration:none
+}
+body.bt-company-page .bt-partners-reasons .bt-b2b-secondary{
+ font-size:15px;color:#0b7781;text-decoration:underline
+}
+body.bt-company-page .bt-partners-pilot{
+ background:#edf6f9;padding:clamp(42px,5vw,74px) 0;
+}
+body.bt-company-page .bt-pilot-intro{
+ color:#405e72;font-size:18px;line-height:1.6;
+ max-width:890px;margin:0 0 27px
+}
+body.bt-company-page .bt-pilot-panel .pilot-visual{
+ background:linear-gradient(115deg,#183c6a,#102243);
+ padding:clamp(18px,3vw,36px);border:1px solid #5175a4;
+ border-radius:13px;
+}
+body.bt-company-page .bt-pilot-panel .pilot-stages{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px
+}
+body.bt-company-page .bt-pilot-panel .pilot-stage{
+ border:1px solid #5277a3;border-radius:9px;
+ padding:17px;align-items:flex-start;gap:12px
+}
+body.bt-company-page .bt-pilot-panel .pilot-stage img{width:40px;height:40px;flex:0 0 40px}
+body.bt-company-page .bt-pilot-panel .pilot-stage b{font-size:17px}
+body.bt-company-page .bt-pilot-panel .pilot-stage span{font-size:14px;line-height:1.5}
+body.bt-company-page .bt-pilot-panel .story-brand{
+ border-bottom:1px solid #5578a2;padding-bottom:17px;margin-bottom:24px
+}
+
+/* Fit the newly added top-level corporate links gracefully. Do not shrink
+   the company logo. At intermediate widths, use the existing menu toggle. */
+@media (min-width:1400px) and (max-width:1570px){
+ body.unified-site header.unified-header .navlinks{gap:1px}
+ body.unified-site header.unified-header .navlinks>a{
+  font-size:12.5px;padding:9px 5px
+ }
+ body.unified-site header.unified-header .navlinks>a[data-nav-key=guide]{
+  padding:9px 8px
+ }
+ body.unified-site header.unified-header .wrap.nav{gap:10px}
+}
+@media(max-width:1100px){
+ body.bt-company-page .bt-company-opening-grid,
+ body.bt-company-page .bt-company-story-grid,
+ body.bt-company-page .bt-partners-hero-grid{
+  grid-template-columns:1fr
+ }
+ body.bt-company-page .bt-company-brand-panel{min-height:180px;padding:26px}
+ body.bt-company-page .bt-company-brand-panel img{width:90px}
+ body.bt-company-page .bt-partner-visual{min-height:280px;max-height:370px}
+ body.bt-company-page .bt-partners-reasons .bt-spa-gains{
+  grid-template-columns:1fr
+ }
+ body.bt-company-page .bt-pilot-panel .pilot-stages{
+  grid-template-columns:1fr
+ }
+ body.bt-company-page .bt-crosslink-grid{
+  flex-direction:column;align-items:flex-start
+ }
+}
+@media(max-width:650px){
+ body.bt-company-page .bt-company-main .wrap{
+  width:calc(100% - 36px)
+ }
+ body.bt-company-page .bt-company-opening{padding:37px 0}
+ body.bt-company-page .bt-company-opening h1{font-size:39px}
+ body.bt-company-page .bt-company-opening-lead{font-size:18px}
+ body.bt-company-page .bt-company-opening p:not(.bt-company-opening-lead){font-size:15px}
+ body.bt-company-page .bt-company-story{padding:40px 0}
+ body.bt-company-page .bt-company-story-copy p{font-size:15px}
+ body.bt-company-page .bt-company-brand-panel strong{font-size:19px}
+ body.bt-company-page .bt-company-next{align-items:stretch}
+ body.bt-company-page .bt-company-next .bt-company-action{width:100%}
+ body.bt-company-page .bt-partners-reasons .bt-spa-partners-card{padding:17px}
+ body.bt-company-page .bt-partners-reasons .bt-b2b-actions{flex-direction:column;align-items:stretch}
+ body.bt-company-page .bt-partners-reasons .bt-b2b-primary{justify-content:center;text-align:center}
+ body.bt-company-page .bt-company-action{width:100%}
+ body.bt-company-page .bt-partner-visual{min-height:240px}
+ body.bt-company-page .bt-pilot-panel .pilot-visual{padding:17px}
+}
+
+/* 2026-11-15 — O nás / Pro lázně final unified composition.
+   No synthetic assets. Approved Bohanes design and Commander diagram preserved. */
+
+/* O nás is ONE editorial composition: story at left, real original Commander
+   transformation illustration at right; never a giant redundant company-logo box. */
+body.bt-company-page .bt-about-unified{
+  padding:clamp(46px,6vw,96px) 0 clamp(54px,6vw,94px);
+  background:linear-gradient(125deg,#eef8fa 0%,#fff 51%,#e7f4f6 100%);
+}
+body.bt-company-page .bt-about-unified-grid{
+  display:grid;grid-template-columns:minmax(0,.99fr) minmax(0,1.01fr);
+  gap:clamp(26px,4.6vw,70px);align-items:center
+}
+body.bt-company-page .bt-about-unified-copy{min-width:0}
+body.bt-company-page .bt-about-kicker{
+  display:block;margin:20px 0 3px;
+  font-weight:820;font-size:19px;letter-spacing:-.025em;color:#108085
+}
+body.bt-company-page .bt-about-unified-copy h1{
+  margin:11px 0 23px;color:#133953;
+  font-size:clamp(38px,4vw,58px);line-height:1.10;
+  letter-spacing:-.05em
+}
+body.bt-company-page .bt-about-unified-copy h1 em{
+  font-style:normal;color:#068f8b
+}
+body.bt-company-page .bt-about-unified-copy p{
+  color:#36566c;font-size:clamp(16px,1.38vw,18px);
+  line-height:1.64;margin:0 0 17px
+}
+body.bt-company-page .bt-about-unified-copy p.bt-about-lead{
+  color:#163d59;font-weight:750;
+  font-size:clamp(19px,1.85vw,23px);line-height:1.48;margin-bottom:20px
+}
+body.bt-company-page .bt-about-unified-copy p.bt-about-note{
+  font-size:14px;color:#577589;margin-top:9px;
+  padding-left:13px;border-left:3px solid #55bdb9
+}
+body.bt-company-page .bt-about-unified-visual{min-width:0;align-self:center}
+body.bt-company-page .bt-about-visual-label{
+  display:flex;justify-content:space-between;align-items:center;
+  gap:10px;color:#087c87;font-size:11px;font-weight:850;
+  letter-spacing:.10em;padding:0 8px 12px
+}
+body.bt-company-page .bt-about-unified-visual .story-visual{
+  padding:clamp(21px,2.8vw,35px);
+  border:1px solid #4b74aa;border-radius:12px;
+  background:linear-gradient(133deg,#214c84 0%,#153259 55%,#101e3d 100%);
+  box-shadow:0 15px 37px #0c37521c;
+  color:#f5faff
+}
+body.bt-company-page .bt-about-unified-visual .story-brand{
+  padding-bottom:16px;border-bottom:1px solid #5279ac
+}
+body.bt-company-page .bt-about-unified-visual .story-brand b{color:#fff}
+body.bt-company-page .bt-about-unified-visual .story-brand span{color:#d4e6f8}
+body.bt-company-page .bt-about-unified-visual .story-document{
+  border-radius:9px;background:#fff!important;
+  border:1px solid #b7d3e0!important;color:#163e58!important
+}
+body.bt-company-page .bt-about-unified-visual .story-document-title,
+body.bt-company-page .bt-about-unified-visual .story-line{
+  color:#183e59!important
+}
+body.bt-company-page .bt-about-unified-visual .story-line time{color:#0c8b97!important}
+body.bt-company-page .bt-about-unified-visual .story-line small{
+  color:#5e7586!important
+}
+body.bt-company-page .bt-about-unified-visual .story-answer{
+  border-radius:9px;background:#132746;border:1px solid #4389b8
+}
+body.bt-company-page .bt-about-unified-visual .visual-note{color:#ccddee}
+body.bt-company-page .bt-about-unified-visual .story-visual img{object-fit:contain}
+
+/* Pro lázně: one seamless visual unit. Three internal chapters remain legible
+   without the former three different section backgrounds. */
+body.bt-company-page .bt-spa-unified{
+  background:linear-gradient(135deg,#edf8fa,#f9fdfd 55%,#e7f4f5);
+  padding:clamp(30px,4.5vw,63px) 0 clamp(44px,5vw,80px)
+}
+body.bt-company-page .bt-spa-unified-shell{
+  overflow:hidden;border-radius:13px;
+  background:#fff;border:1px solid #c7dfe3;
+  box-shadow:0 12px 45px #153e5812
+}
+body.bt-company-page .bt-spa-unified-hero{
+  display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,.98fr);
+  gap:clamp(22px,3.6vw,52px);align-items:center;
+  padding:clamp(24px,3.7vw,52px);
+  background:linear-gradient(125deg,#f8fefe 0%,#edf8f7 100%)
+}
+body.bt-company-page .bt-spa-intro-copy{min-width:0}
+body.bt-company-page .bt-spa-intro-copy h1{
+  color:#163954;font-size:clamp(36px,3.85vw,57px);
+  line-height:1.11;letter-spacing:-.045em;margin:20px 0 20px
+}
+body.bt-company-page .bt-spa-intro-copy h1 em{
+  color:#04928d;font-style:normal
+}
+body.bt-company-page .bt-spa-intro-copy p{
+  color:#44657a;font-size:clamp(15px,1.3vw,18px);
+  line-height:1.56;margin:0 0 15px
+}
+body.bt-company-page .bt-spa-intro-copy .bt-spa-intro-lead{
+  font-size:clamp(18px,1.7vw,22px);
+  line-height:1.48;color:#24485e
+}
+body.bt-company-page .bt-spa-contact-cta{
+  margin-top:11px
+}
+body.bt-company-page .bt-spa-unified-photo{
+  min-width:0;overflow:hidden;border:1px solid #cfdddd;
+  border-radius:11px;aspect-ratio:1.34;background:#e1f4f2
+}
+body.bt-company-page .bt-spa-unified-photo img{
+  display:block;width:100%;height:100%;object-fit:cover;
+  object-position:54% center
+}
+body.bt-company-page .bt-spa-unified-reasons,
+body.bt-company-page .bt-spa-unified-pilot{
+  padding:clamp(25px,3.4vw,49px) clamp(24px,3.7vw,52px);
+  border-top:1px solid #d8e8ec
+}
+body.bt-company-page .bt-spa-unified-reasons{
+  background:#fff
+}
+body.bt-company-page .bt-spa-section-heading{max-width:870px;margin:0 0 22px}
+body.bt-company-page .bt-spa-section-heading h2{
+  margin:10px 0 10px;color:#173c57;
+  font-size:clamp(28px,3.1vw,41px);letter-spacing:-.042em;
+  line-height:1.17
+}
+body.bt-company-page .bt-spa-section-heading p{
+  color:#4d6a7e;font-size:16px;line-height:1.55;margin:0
+}
+body.bt-company-page .bt-spa-unified .bt-spa-gains{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px
+}
+body.bt-company-page .bt-spa-unified .bt-spa-gains>div{
+  display:flex;align-items:flex-start;gap:12px;padding:18px;
+  background:linear-gradient(140deg,#f3fbfa,#edf5fa);
+  border:1px solid #c6dedf;border-radius:9px
+}
+body.bt-company-page .bt-spa-unified .bt-gain-icon{
+  display:grid;place-items:center;width:31px;height:31px;
+  border-radius:7px;flex:none;background:#097e86;
+  color:#fff;font-size:19px;font-weight:840
+}
+body.bt-company-page .bt-spa-unified .bt-spa-gains strong{
+  display:block;color:#173e57;font-size:16px;line-height:1.35
+}
+body.bt-company-page .bt-spa-unified .bt-spa-gains small{
+  display:block;color:#4e7185;font-size:14px;line-height:1.5;margin-top:7px
+}
+body.bt-company-page .bt-spa-unified-pilot{
+  background:linear-gradient(155deg,#f8fbfd,#edf6f9)
+}
+body.bt-company-page .bt-spa-unified-pilot .bt-pilot-panel .pilot-visual{
+  border-radius:10px;background:linear-gradient(115deg,#1d4678,#112344);
+  border:1px solid #5377a6;padding:clamp(17px,2.6vw,30px)
+}
+body.bt-company-page .bt-spa-unified-pilot .pilot-stages{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px
+}
+body.bt-company-page .bt-spa-unified-pilot .pilot-stage{
+  border:1px solid #5c80aa;border-radius:8px;
+  padding:14px;align-items:flex-start;gap:10px
+}
+body.bt-company-page .bt-spa-unified-pilot .pilot-stage img{
+  width:40px;height:40px;flex:0 0 40px
+}
+body.bt-company-page .bt-spa-unified-pilot .pilot-stage span{
+  font-size:14px;line-height:1.5
+}
+body.bt-company-page .bt-spa-unified-pilot .pilot-stage b{
+  font-size:16px
+}
+body.bt-company-page .bt-spa-unified-pilot .pilot-visual .story-brand{
+  border-bottom:1px solid #5379a4;padding-bottom:13px;margin-bottom:18px
+}
+body.bt-company-page .bt-spa-unified-bottom{
+  display:flex;flex-wrap:wrap;gap:18px;align-items:center;
+  justify-content:space-between;margin-top:20px
+}
+body.bt-company-page .bt-spa-unified-bottom p{
+  color:#526e80;font-size:13px;line-height:1.5;
+  max-width:600px;margin:0
+}
+@media(max-width:1010px){
+ body.bt-company-page .bt-about-unified-grid,
+ body.bt-company-page .bt-spa-unified-hero{
+   grid-template-columns:1fr
+ }
+ body.bt-company-page .bt-about-unified-visual{
+   max-width:700px;width:100%;margin:0 auto
+ }
+ body.bt-company-page .bt-spa-unified .bt-spa-gains,
+ body.bt-company-page .bt-spa-unified-pilot .pilot-stages{
+   grid-template-columns:1fr
+ }
+ body.bt-company-page .bt-spa-unified-photo{
+  aspect-ratio:1.7
+ }
+}
+@media(max-width:650px){
+ body.bt-company-page .bt-about-unified{padding:36px 0 50px}
+ body.bt-company-page .bt-about-kicker{font-size:16px}
+ body.bt-company-page .bt-about-unified-copy h1{font-size:35px}
+ body.bt-company-page .bt-about-unified-copy p{font-size:15px}
+ body.bt-company-page .bt-about-unified-copy p.bt-about-lead{font-size:18px}
+ body.bt-company-page .bt-spa-unified{padding:17px 0 36px}
+ body.bt-company-page .bt-spa-unified-hero,
+ body.bt-company-page .bt-spa-unified-reasons,
+ body.bt-company-page .bt-spa-unified-pilot{padding:21px 18px}
+ body.bt-company-page .bt-spa-intro-copy h1{font-size:32px}
+ body.bt-company-page .bt-spa-intro-copy p{font-size:15px}
+ body.bt-company-page .bt-spa-unified-photo{aspect-ratio:1.4}
+ body.bt-company-page .bt-spa-unified .bt-spa-gains>div{padding:13px}
+ body.bt-company-page .bt-spa-unified-bottom .bt-company-action{width:100%}
+}

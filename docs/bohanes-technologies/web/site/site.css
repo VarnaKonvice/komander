@@ -605,7 +605,7 @@ header .product-nav-cluster a:hover+a:before {opacity:0}
   .footer-brand-lockup .brand-lockup small {font-size:9.5px}
 }
 footer {background:#15384E;color:#EAF3F8;border-top:1px solid #294E64;padding:34px 0 0}
-footer .footer-main-refined {display:grid;grid-template-columns:minmax(360px,1.55fr) minmax(210px,.8fr) minmax(210px,.8fr);gap:64px;align-items:start;min-height:0;padding:4px 0 30px}
+footer .footer-main-refined {display:grid;grid-template-columns:minmax(360px,1.15fr) minmax(480px,1fr);gap:64px;align-items:start;min-height:0;padding:4px 0 30px}
 footer .footer-company-refined {display:grid;align-content:start;justify-content:start!important;gap:18px;min-height:0}
 footer .footer-brand-lockup {align-items:center;gap:14px}
 footer .footer-brand-lockup .brand-symbol {width:82px;height:62px;flex:0 0 82px}
@@ -615,21 +615,34 @@ footer .footer-brand-lockup .brand-lockup small {color:#B9D0DE;font-size:12px}
 footer .footer-brand-message {max-width:510px;margin:0;color:#D8E6EE;font-size:17px;line-height:1.55}
 footer .footer-column {gap:8px;font-size:16px;line-height:1.45}
 footer .footer-column h3 {color:#FFFFFF;font-size:18px;margin:0 0 8px;font-weight:750}
+footer .footer-links-panel{display:grid;grid-template-columns:1fr 1fr;gap:16px 44px;align-content:start;min-width:0}
+
 
 footer .footer-column a {color:#D8E6EE}
 footer .footer-column a:hover {color:#76E1E7;text-decoration:none}
+footer .footer-payments{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;gap:12px 16px;align-items:center;margin-top:8px;padding-top:12px;border-top:1px solid rgba(207,226,238,.22)}
+footer .footer-payments-title{font-size:13px;font-weight:800;letter-spacing:.045em;text-transform:uppercase;color:#AFC6D4;white-space:nowrap}
+footer .footer-payment-marks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+footer .footer-payment-mark{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;min-height:40px;padding:8px 10px;border:1px solid rgba(216,230,238,.28);border-radius:10px;background:rgba(255,255,255,.045);color:#EAF3F8}
+footer .footer-payment-mark b{font-size:21px;line-height:1;font-weight:750}
+footer .footer-payment-mark strong{font-size:12px;line-height:1.15;font-weight:750;white-space:nowrap}
+footer .footer-payment-mark svg{width:20px;height:20px;flex:0 0 20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+footer .footer-payment-mark:nth-child(3) svg{fill:currentColor;stroke:none}
+footer .footer-payment-google b{font-family:Arial,sans-serif;font-weight:800}
+
 footer .footer-copyright {border-top:1px solid rgba(207,226,238,.26);color:#B8CCDA;padding:12px 0 14px;text-align:center;font-size:14px}
 footer .footer-heading {display:none!important}
 @media(max-width:900px) {
-  footer .footer-main-refined {grid-template-columns:1.2fr .9fr .9fr;gap:34px}
+  footer .footer-main-refined {grid-template-columns:1fr 1fr;gap:34px}
   footer .footer-brand-lockup .brand-symbol {width:70px;height:54px;flex-basis:70px}
   footer .footer-brand-lockup .brand-lockup strong {font-size:18px}
   footer .footer-brand-message {font-size:16px}
 }
 @media(max-width:760px) {
   footer {padding-top:28px}
-  footer .footer-main-refined {grid-template-columns:1fr 1fr;gap:28px 20px;padding-bottom:22px}
-  footer .footer-company-refined {grid-column:1/-1;gap:14px}
+  footer .footer-main-refined {grid-template-columns:1fr;gap:24px;padding-bottom:22px}
+  footer .footer-company-refined {grid-column:auto;gap:14px}
+  footer .footer-links-panel{grid-template-columns:1fr 1fr;gap:20px}
   footer .footer-brand-lockup .brand-symbol {width:62px;height:48px;flex-basis:62px}
   footer .footer-brand-lockup .brand-lockup strong {font-size:17px}
   footer .footer-brand-lockup .brand-lockup small {font-size:10px}
@@ -637,6 +650,13 @@ footer .footer-heading {display:none!important}
   footer .footer-brand-message br {display:none}
   footer .footer-column h3 {font-size:16px}
   footer .footer-column {font-size:15px;gap:7px}
+  footer .footer-payments{grid-column:1/-1;grid-template-columns:1fr;gap:8px;margin-top:2px;padding-top:10px}
+  footer .footer-payment-marks{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  footer .footer-payment-mark{flex-direction:column;gap:3px;min-height:50px;padding:6px 3px;text-align:center}
+  footer .footer-payment-mark b{font-size:19px}
+  footer .footer-payment-mark svg{width:18px;height:18px;flex-basis:18px}
+  footer .footer-payment-mark strong{font-size:10.5px;line-height:1.05;white-space:normal}
+
     footer .footer-copyright {padding-bottom:calc(14px + var(--web-mobile-nav) + env(safe-area-inset-bottom))}
 }
 @media(min-width:1100px) {
@@ -730,6 +750,10 @@ footer .footer-brand-message {margin-left:auto;margin-right:auto}
 }
 @media(max-width:760px) {
   .platform-dialog {width:calc(100vw - 32px);max-width:calc(100vw - 32px);margin:auto;overflow:auto}
+  .platform-dialog .product-dialog-nav {display:none}
+  .platform-dialog-grid {grid-template-columns:1fr;padding:18px}
+  .platform-dialog-card {min-height:84px}
+  .platform-dialog-card-alert .platform-dialog-icon.alert {background:#FFF4E7;color:#A85A00;font-size:27px}
   .login-dialog {margin:auto}
   .dialog-head {padding:16px;gap:10px}
   .dialog-head>div {min-width:0}
@@ -741,6 +765,9 @@ footer .footer-brand-message {margin-left:auto;margin-right:auto}
   .platform-dialog-grid {grid-template-columns:1fr}
 }
 @media(max-width:420px) {
+  footer .footer-payment-mark{min-height:48px;padding:5px 2px}
+  footer .footer-payment-mark strong{font-size:9.5px}
+
   .social-placeholders {grid-template-columns:1fr}
 }
 .future-card {background:linear-gradient(155deg,#142D58 0%,#0E1E40 100%)!important;border-color:#376393!important}

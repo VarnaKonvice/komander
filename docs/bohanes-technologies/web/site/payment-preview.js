@@ -29,7 +29,7 @@
     qr: `
       <div class="payment-detail-qr" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
       <div class="payment-detail-copy">
-        <span class="payment-detail-badge">Bez poplatku bráně</span>
+        <span class="payment-detail-badge">Bez opisování</span>
         <b>QR platba · 299 Kč</b>
         <p>QR bude obsahovat účet, přesnou částku i variabilní symbol. Klient nic nepřepisuje.</p>
       </div>`,

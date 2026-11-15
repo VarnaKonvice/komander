@@ -1,0 +1,25 @@
+BOHANES TECHNOLOGIES / LÁZEŇSKÝ COMMANDER
+SHORT V4: LÁZEŇSKÝ PŘÍBĚH
+Datum: 14. 11. 2026
+Pracovní prototyp, nevydán veřejně, bez commitu/pushe.
+Délka: 25,57 s, 9:16 (720 × 1280), H.264/AAC.
+Voiceover: přesně stejný voice-story-natural.mp3 jako ve V3; žádné změny rychlosti a textu.
+
+ZMĚNY OD V3
+- 4–7,5 s: vyřazený záběr ženy na černé kožené sedačce s kancelářskými
+  deskami. Nahrazený klipem starší ženy v bílém županu, která si na lůžku
+  prohlíží desky s dokumenty.
+- 7,5–11 s a 14–17,5 s: logo (schválený commander-mark.png) při používání telefonu.
+- 23,5–25,57 s: oficiální schválený commander-wordmark.png s plným názvem
+  aplikace, doplněný claimem „S rozpisem budete v klidu.“
+- Schválená fotografie webu, produktová obrazovka Commander Dnes, ostatní
+  lázeňské záběry, střih a hlas z V3 zachovány.
+
+VŠECHNY ZÁBĚRY JSOU ILUSTRAČNÍ, nejde o skutečné klienty lázní
+a žena v županu neprohlíží prokazatelně procedurový rozpis.
+Nový klip: Anastasia Shuraeva / Pexels:
+https://www.pexels.com/video/an-elderly-woman-in-a-bath-robe-and-head-towel-reading-in-bed-6234868/
+Licence: https://www.pexels.com/license/
+Ostatní zdroje viz video-marketing/short-v3/SCENAR-A-ZDROJE.txt.
+
+Nepoužít v reklamě tvrzení o placené distribuci do veřejného spuštění.
