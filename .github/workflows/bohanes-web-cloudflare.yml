@@ -1,10 +1,14 @@
 name: Bohanes web - approved Cloudflare release
 
-# Publish only an intentionally approved version, never every work-in-progress commit.
+# The main branch contains only approved releases.
+# Website edits publish automatically to one stable Cloudflare Pages project.
+# Other commits (CRM, iPhone, docs) never trigger a website deployment.
 on:
   push:
-    tags:
-      - "web-release-*"
+    branches:
+      - main
+    paths:
+      - "docs/bohanes-technologies/web/site/**"
   workflow_dispatch:
 
 permissions:
