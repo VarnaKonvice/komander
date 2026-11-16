@@ -52,7 +52,21 @@ jobs:
           HEADERS
           echo "Preview-only package verified"
 
+      - name: Check whether Cloudflare deployment is configured
+        id: cloudflare_access
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [[ -n "$CLOUDFLARE_API_TOKEN" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::GitHub validation passed. Cloudflare automatic preview deploy is not configured; add CLOUDFLARE_API_TOKEN as an Actions repository secret. Existing preview remains online."
+          fi
+
       - name: Deploy only to Bohanes Technologies showcase
+        if: steps.cloudflare_access.outputs.ready == 'true'
         shell: bash
         env:
           CLOUDFLARE_ACCOUNT_ID: "1ee27367a52d5a16d792876e6b38076a"
