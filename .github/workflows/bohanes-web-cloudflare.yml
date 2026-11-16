@@ -1,15 +1,12 @@
 name: Bohanes web - approved Cloudflare release
 
-# The main branch contains only approved releases.
-# Website edits publish automatically to one stable Cloudflare Pages project.
-# Other commits (CRM, iPhone, docs) never trigger a website deployment.
+# Safety gate: ordinary commits to main must NEVER deploy the canonical public site.
+# A separately approved web-release-* tag is required for production deployment.
+# Normal work-in-progress commits to main are deployed only by the preview workflow.
 on:
   push:
-    branches:
-      - main
-    paths:
-      - "docs/bohanes-technologies/web/site/**"
-  workflow_dispatch:
+    tags:
+      - "web-release-*"
 
 permissions:
   contents: read
