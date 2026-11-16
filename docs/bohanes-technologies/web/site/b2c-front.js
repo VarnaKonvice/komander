@@ -144,38 +144,33 @@ document.querySelector('[data-paper-enlarge]')?.addEventListener('click', () => 
 })();
 
 
-/* Safe, honest contact form before verified public support address exists.
-   Do not collect/submit visitor data to a server; merely copy their draft. */
+/* Visitor-initiated mailto contact. No server-side collection or automatic send. */
 (() => {
   document.querySelectorAll('form[data-contact-draft]').forEach(form => {
     const status = form.querySelector('.bt-contact-feedback');
-    form.addEventListener('submit', async event => {
+    form.addEventListener('submit', event => {
       event.preventDefault();
       if (!form.reportValidity()) return;
       const data = new FormData(form);
-      const message = ['Bohanes Technologies – dotaz k Lázeňskému Commanderu',
-        'Jméno: ' + String(data.get('name')||'').trim(),
-        'Firma / lázně: ' + String(data.get('organization')||'').trim(),
-        'Pozice: ' + String(data.get('position')||'').trim(),
-        'E-mail: ' + String(data.get('email')||'').trim(),
-        'Telefon: ' + String(data.get('phone')||'').trim(),
+      const message = [
+        'Jméno: ' + String(data.get('name') || '').trim(),
+        'Firma / lázně: ' + String(data.get('organization') || '').trim(),
+        'Pozice: ' + String(data.get('position') || '').trim(),
+        'E-mail: ' + String(data.get('email') || '').trim(),
+        'Telefon: ' + String(data.get('phone') || '').trim(),
         '',
-        String(data.get('message')||'').trim()].join('\n');
-      try {
-        await navigator.clipboard.writeText(message);
-        status.textContent='Zpráva je zkopírovaná do schránky. Nebyla odeslána.';
-        status.dataset.state='success';
-      } catch (_) {
-        const area=document.createElement('textarea');
-        area.value=message;area.style.position='fixed';area.style.left='-9999px';
-        document.body.appendChild(area);area.select();
-        const copied=document.execCommand('copy');area.remove();
-        status.textContent=copied?'Zpráva je zkopírovaná do schránky. Nebyla odeslána.':'Kopírování se nezdařilo. Text zprávy zůstává ve formuláři.';
-        status.dataset.state=copied?'success':'error';
-      }
+        String(data.get('message') || '').trim()
+      ].join('\n');
+      const mailto = 'mailto:podpora@bohanes-technologies.cz'
+        + '?subject=' + encodeURIComponent('Dotaz z webu Bohanes Technologies')
+        + '&body=' + encodeURIComponent(message);
+      status.textContent = 'Otevírá se e-mailová aplikace. Zpráva nebude odeslána, dokud ji sami nepotvrdíte.';
+      status.dataset.state = 'success';
+      window.location.href = mailto;
     });
   });
 })();
+
 
 /* Spa partner CTA pre-populates the contact form without sending user data. */
 (() => {
