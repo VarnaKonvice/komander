@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6f8fc">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="Lázeňský Commander vám ukáže, co vás čeká, a připomene, kdy máte vyrazit. Jednoduchý přehled vašeho lázeňského pobytu v telefonu.">
+  <title>Lázeňský Commander – váš pobyt, bez hledání</title>
+  <link rel="icon" href="../native-ui/commander-mark.png" type="image/png">
+  <link rel="stylesheet" href="./concept.css?v=2">
+  <script defer src="./concept.js?v=2"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Přeskočit na obsah</a>
+  <header class="site-header" id="nahoru">
+    <div class="container header-inner">
+      <a class="brand" href="#nahoru" aria-label="Lázeňský Commander – Domů">
+        <img src="../native-ui/commander-mark.png" alt="" width="46" height="46">
+        <span class="brand-copy"><strong>Lázeňský Commander</strong><small>od Bohanes Technologies</small></span>
+      </a>
+      <nav class="desktop-nav" aria-label="Hlavní navigace">
+        <a href="#nahoru" aria-current="page">Domů</a>
+        <a href="#jedu-do-lazni">Jedu do lázní</a>
+        <a href="../index.html#o-nas">O nás</a>
+        <a href="#ukazka">Ukázka</a>
+        <a href="#cena">Cena</a>
+      </nav>
+      <div class="header-actions">
+        <a class="header-more" href="../index.html#commander">Zjistit více <span aria-hidden="true">↗</span></a>
+        <button class="menu-toggle" type="button" aria-controls="mobile-nav" aria-expanded="false" aria-label="Otevřít nabídku">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <nav class="mobile-nav" id="mobile-nav" aria-label="Mobilní navigace" hidden>
+      <a href="#nahoru">Domů</a><a href="#jedu-do-lazni">Jedu do lázní</a><a href="../index.html#o-nas">O nás</a><a href="#ukazka">Ukázka aplikace</a><a href="#cena">Cena</a>
+      <a class="mobile-more" href="../index.html#commander">Zjistit více o Commanderu <span aria-hidden="true">↗</span></a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-dot"></span> Jednodušší lázeňský pobyt</div>
+          <h1 id="hero-title">Víte, co vás čeká.<br><em>A kdy máte vyrazit.</em></h1>
+          <p class="hero-lead">Místo hledání v papírech otevřete telefon. Lázeňský Commander vám ukáže dnešní procedury a připomene čas odchodu.</p>
+          <div class="hero-buttons">
+            <a class="btn btn-primary" href="#ukazka"><span class="btn-icon" aria-hidden="true">▶</span> Podívat se na ukázku <span aria-hidden="true">→</span></a>
+            <a class="btn btn-plain" href="#jedu-do-lazni">Jak to funguje <span aria-hidden="true">↘</span></a>
+          </div>
+          <div class="hero-smallprint"><span class="mini-check" aria-hidden="true">✓</span> Pro váš vlastní rozpis. I bez spolupráce lázní.</div>
+        </div>
+
+        <div class="hero-art" aria-label="Skutečný snímek aplikace Lázeňský Commander na iPhonu">
+          <div class="visual-halo visual-halo-one" aria-hidden="true"></div>
+          <div class="visual-halo visual-halo-two" aria-hidden="true"></div>
+          <div class="hero-photo-note"><span class="live-pulse" aria-hidden="true"></span> Skutečná obrazovka Commanderu</div>
+          <div class="hero-device device-shell">
+            <img src="../screens/commander-today.png" alt="Skutečná obrazovka Dnes v Lázeňském Commanderu – přehled procedur a nejbližší události" width="1179" height="2556" decoding="async" fetchpriority="high">
+          </div>
+          <div class="hero-floating-label" aria-hidden="true"><span class="floating-symbol">✓</span><span>Váš den.<br><strong>Přehledně.</strong></span></div>
+        </div>
+      </div>
+      <div class="container hero-proof" aria-label="Tři důvody, proč používat Commander">
+        <div><span class="proof-icon">01</span><span><strong>Vím, co mě čeká</strong><small>Celý den na jednom místě</small></span></div>
+        <div><span class="proof-icon">02</span><span><strong>Vím, kdy vyrazit</strong><small>Upozornění v pravý čas</small></span></div>
+        <div><span class="proof-icon">03</span><span><strong>Nemusím hledat</strong><small>Papírový rozpis mám v telefonu</small></span></div>
+      </div>
+    </section>
+
+    <section class="intro-section section-space" id="jedu-do-lazni" aria-labelledby="intro-title">
+      <div class="container">
+        <div class="section-header center">
+          <span class="section-kicker">Jedu do lázní</span>
+          <h2 id="intro-title">Z papírového rozpisu<br><span class="highlight-text">do klidnějšího dne.</span></h2>
+          <p>Žádné složité nastavování. Stačí vlastní léčebný rozpis a pár jednoduchých kroků.</p>
+        </div>
+        <div class="steps">
+          <article class="step">
+            <div class="step-number">01</div>
+            <div class="step-art"><svg viewBox="0 0 120 120" fill="none" aria-hidden="true"><rect x="30" y="13" width="63" height="87" rx="9" fill="#EDF3FC" stroke="#8DADD0" stroke-width="2.5"/><path d="M43 40h37M43 51h30M43 62h35M43 73h21" stroke="#85A6C6" stroke-width="4" stroke-linecap="round"/><rect x="10" y="54" width="43" height="40" rx="12" fill="#0C416D"/><path d="M24 67h15M31.5 60v15" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/></svg></div>
+            <h3>1. Přidejte rozpis</h3>
+            <p>Vyfotíte papír nebo vyberete PDF. Rozpoznání probíhá přímo ve vašem telefonu.</p>
+          </article>
+          <article class="step">
+            <div class="step-number">02</div>
+            <div class="step-art"><svg viewBox="0 0 120 120" fill="none" aria-hidden="true"><rect x="18" y="22" width="83" height="76" rx="13" fill="#E9F4F4" stroke="#83BAB7" stroke-width="2.5"/><path d="M33 44h48M33 58h40M33 72h45" stroke="#82B1B1" stroke-width="4" stroke-linecap="round"/><circle cx="89" cy="88" r="23" fill="#076F73"/><path d="m78 88 7 7 16-17" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <h3>2. Zkontrolujte</h3>
+            <p>Uvidíte připravený pobyt. Než cokoli zaplatíte, můžete porovnat časy s originálem.</p>
+          </article>
+          <article class="step">
+            <div class="step-number">03</div>
+            <div class="step-art"><svg viewBox="0 0 120 120" fill="none" aria-hidden="true"><rect x="28" y="10" width="65" height="100" rx="17" fill="#EDEAFB" stroke="#AB9CD3" stroke-width="2.5"/><path d="M44 33h32M44 47h24M44 61h30" stroke="#AA9ECD" stroke-width="4" stroke-linecap="round"/><circle cx="81" cy="83" r="24" fill="#6453BB"/><path d="M81 69v15l10 7" stroke="#fff" stroke-width="4" stroke-linecap="round"/><circle cx="81" cy="83" r="16" stroke="#fff" stroke-width="2"/></svg></div>
+            <h3>3. Máte přehled</h3>
+            <p>Po aktivaci víte, co následuje a kdy je čas odejít. Bez zbytečného hledání.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="showcase-section section-space" id="ukazka" aria-labelledby="showcase-title">
+      <div class="container showcase-grid">
+        <div class="showcase-copy">
+          <span class="section-kicker">Podívejte se sami</span>
+          <h2 id="showcase-title">Jeden pohled.<br><span class="highlight-text">A máte jasno.</span></h2>
+          <p>Není to jen převod papíru na obrazovku. Commander vám pomáhá zorientovat se v celém pobytu.</p>
+          <div class="screen-selector" role="group" aria-label="Vyberte skutečnou obrazovku aplikace">
+            <button type="button" class="screen-tab is-active" data-screen="today" aria-pressed="true">Dnes</button>
+            <button type="button" class="screen-tab" data-screen="week" aria-pressed="false">Týden</button>
+            <button type="button" class="screen-tab" data-screen="stay" aria-pressed="false">Pobyt</button>
+          </div>
+          <div class="screen-description" aria-live="polite">
+            <strong id="screen-description-title">Co mě čeká právě dnes?</strong>
+            <p id="screen-description-copy">Nejbližší procedura, čas odchodu a přehled dne. Bez hledání mezi papíry.</p>
+          </div>
+          <a class="text-link" href="../index.html#commander">Prohlédnout všechny funkce <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="showcase-visual">
+          <div class="showcase-disc" aria-hidden="true"></div>
+          <div class="showcase-device device-shell">
+            <img id="active-screen" src="../screens/commander-today.png" width="1179" height="2556" loading="lazy" decoding="async" alt="Skutečný snímek Commanderu, obrazovka Dnes">
+          </div>
+          <div class="showcase-caption"><span class="caption-dot"></span> Skutečný vzhled iPhone aplikace</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="family-section section-space" aria-labelledby="family-title">
+      <div class="container family-card">
+        <div class="family-art" aria-hidden="true"><div class="family-orbit"><img src="../native-ui/commander-mark.png" alt="" width="112" height="112"></div><span class="family-spark one"></span><span class="family-spark two"></span></div>
+        <div class="family-text">
+          <span class="section-kicker">I s pomocí blízkých</span>
+          <h2 id="family-title">Do lázní můžete<br><span class="highlight-text">jet s větším klidem.</span></h2>
+          <p>Pokud si s telefonem nejste jistí, může vám s přípravou Commanderu pomoct rodina nebo doprovod. Pak už stačí otevřít aplikaci.</p>
+          <a class="text-link" href="#cena">Kolik Commander stojí? <span aria-hidden="true">↓</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="pricing-section section-space" id="cena" aria-labelledby="pricing-title">
+      <div class="container">
+        <div class="section-header center">
+          <span class="section-kicker">Jednoduchá cena</span>
+          <h2 id="pricing-title">Zaplatíte jednou.<br><span class="highlight-text">Užíváte celý pobyt.</span></h2>
+          <p>Žádné měsíční předplatné. Cena závisí jen na tom, kolik dní pobytu vám při aktivaci zbývá.</p>
+        </div>
+        <div class="price-grid">
+          <article class="price-card">
+            <div class="price-label">Krátký pobyt</div>
+            <div class="price-duration">Zbývá 1–15 dní</div>
+            <div class="price-row"><strong>129 Kč</strong><span>jednorázově</span></div>
+            <div class="price-rule"></div>
+            <p>Přehled procedur i upozornění na zbývající část pobytu.</p>
+          </article>
+          <article class="price-card featured">
+            <div class="price-ribbon">Pro delší lázeňský pobyt</div>
+            <div class="price-label">Standardní pobyt</div>
+            <div class="price-duration">Zbývá 16–35 dní</div>
+            <div class="price-row"><strong>299 Kč</strong><span>jednorázově</span></div>
+            <div class="price-rule"></div>
+            <p>Stejný Commander pro celý váš delší pobyt. Bez opakovaných plateb.</p>
+          </article>
+        </div>
+        <div class="price-bottom"><span class="mini-check" aria-hidden="true">✓</span> Jedna aktivace pro jeden pobyt. Nejde o předplatné.</div>
+      </div>
+    </section>
+
+    <section class="next-step section-space" id="instalace" aria-labelledby="next-title">
+      <div class="container next-panel">
+        <div class="next-decoration" aria-hidden="true"></div>
+        <div class="next-content">
+          <span class="next-kicker">Připravujeme první veřejnou verzi</span>
+          <h2 id="next-title">Přehledný pobyt<br>začíná tady.</h2>
+          <p>Commander pro iPhone a Android ještě připravujeme k vydání. Než bude možné jej nainstalovat a aktivovat, můžete se podívat na skutečné obrazovky a podrobnosti.</p>
+          <div class="next-actions">
+            <a class="btn btn-light" href="#ukazka">Prohlédnout ukázku <span aria-hidden="true">↑</span></a>
+            <a class="btn btn-outline-light" href="../index.html#commander">Zjistit více <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <img class="next-mark" src="../native-ui/commander-mark.png" alt="" aria-hidden="true">
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-main">
+      <div class="footer-brand">
+        <img src="../native-ui/commander-mark.png" alt="" width="42" height="42">
+        <span><strong>Lázeňský Commander</strong><small>Bohanes Technologies</small></span>
+      </div>
+      <nav class="footer-nav" aria-label="Další informace">
+        <a href="#nahoru">Domů</a><a href="../index.html#o-nas">O nás</a><a href="../index.html#pro-lazne">Pro lázně</a><a href="../index.html#commander">Všechny funkce</a><a href="../index.html#kontakt">Kontakt</a>
+      </nav>
+    </div>
+    <div class="container footer-bottom"><span>© 2026 Bohanes Technologies</span><span>Pracovní vizuální koncept · pouze místní náhled · zatím bez prodeje</span></div>
+  </footer>
+</body>
+</html>
