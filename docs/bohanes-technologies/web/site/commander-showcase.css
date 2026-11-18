@@ -353,3 +353,34 @@ body.unified-site.b2c-detail-page .commander-experience #funkce{scroll-margin-to
 
 body.unified-site.b2c-detail-page .commander-experience .payment-method-details{margin-top:22px;border-top:1px solid #5277a4;padding-top:15px}
 body.unified-site.b2c-detail-page .commander-experience .payment-method-details>summary{color:#dee9ff;font-weight:750;font-size:16px;cursor:pointer;padding:7px 0}
+
+body.unified-site.b2c-detail-page .commander-experience #pripravujeme .future-demo-note {
+  margin: 0 0 24px;
+  color: #dee9ff;
+}
+
+body.unified-site.b2c-detail-page #pripravujeme .future-visual .image-button[data-enlarge] {
+  overflow: visible;
+}
+body.unified-site.b2c-detail-page #pripravujeme .future-visual .image-button[data-enlarge]::after {
+  top: -12px;
+  right: -12px;
+}
+@media (min-width: 761px) and (max-width: 950px) {
+  body.unified-site.b2c-detail-page #pripravujeme .future-card .future-visual {
+    height: auto;
+    min-height: 208px;
+    gap: 14px;
+  }
+  body.unified-site.b2c-detail-page #pripravujeme .future-visual .watch-shell {
+    width: 155px;
+  }
+}
+@media (max-width: 760px) {
+  body.unified-site.b2c-detail-page #pripravujeme .future-card .future-visual {
+    height: auto;
+    min-height: 0;
+    gap: 14px;
+    padding: 22px 16px;
+  }
+}

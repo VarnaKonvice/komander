@@ -31,6 +31,11 @@
     });
   });
 
+  const requestedPlatform = new URLSearchParams(location.search).get('platform');
+  if (requestedPlatform === 'apple' || requestedPlatform === 'android') {
+    selectPlatform('application', requestedPlatform);
+  }
+
   document.querySelectorAll('[data-platform-link],[data-platform-open]').forEach(link => {
     link.addEventListener('click', () => {
       selectPlatform('application', link.dataset.platformLink || 'android');

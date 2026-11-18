@@ -12,19 +12,19 @@
   'use strict';
   const screenMap = {
     today: {
-      image: '/screens/commander-today.png',
+      image: '/screens/commander-today.png?v=20261013-demo',
       alt: 'Skutečná obrazovka Dnes v Lázeňském Commanderu',
       title: 'Ještě čas na kávu?',
       description: '„Volno do večeře“ ukáže prostor na zákusek, procházku nebo chvíli jen pro sebe.'
     },
     week: {
-      image: '/screens/commander-week.png',
+      image: '/screens/commander-week.png?v=20261013-demo',
       alt: 'Skutečná obrazovka Týden v Lázeňském Commanderu',
       title: 'Jak vypadá celý můj týden?',
       description: 'Procedury a přehled volna po jednotlivých dnech.'
     },
     stay: {
-      image: '/screens/commander-stay.png',
+      image: '/screens/commander-stay.png?v=20261013-demo',
       alt: 'Skutečná obrazovka Pobyt v Lázeňském Commanderu',
       title: 'Kde najdu informace o pobytu?',
       description: 'Přehled pobytu a jeho procedur na jednom místě.'

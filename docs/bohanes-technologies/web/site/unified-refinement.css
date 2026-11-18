@@ -1256,3 +1256,37 @@ body.unified-site footer .footer-payment-mark :is(svg,b) {
   body.unified-site footer .footer-social {padding:9px 10px}
   body.unified-site footer .footer-payment-mark {min-height:42px}
 }
+
+body.unified-site.b2c-home-page .b2c-vision-copy {
+  padding: clamp(17px, 2.2vw, 28px) clamp(16px, 3vw, 36px);
+  border: 1px solid #c7dfe3;
+  border-radius: 12px;
+  background: #edf7f8;
+  text-align: center;
+}
+
+body.unified-site.b2c-home-page .b2c-vision-copy h2 {
+  margin: 0 0 6px;
+  color: #173e57;
+  font-size: clamp(22px, 2.35vw, 32px);
+  line-height: 1.18;
+  letter-spacing: -.035em;
+  text-wrap: balance;
+}
+
+body.unified-site.b2c-home-page .b2c-vision-copy h2 span {
+  color: #096f75;
+}
+
+body.unified-site.b2c-home-page .b2c-vision-copy p {
+  max-width: 68ch;
+  margin: 0 auto;
+  color: #36566c;
+  font-size: clamp(15px, 1.3vw, 17px);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+body.unified-site.b2c-home-page .b2c-vision-strip {
+  scroll-margin-top: 100px;
+}
