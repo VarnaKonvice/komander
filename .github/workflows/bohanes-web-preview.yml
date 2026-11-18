@@ -36,8 +36,7 @@ jobs:
             test -s "$src/$required"
           done
           dest="$RUNNER_TEMP/bohanes-web-preview"
-          mkdir -p "$dest"
-          cp -a "$src/." "$dest/"
+          python3 docs/bohanes-technologies/web/prepare-public-release.py "$dest"
           # Explicitly prohibit accidental redirect to the public production website.
           rm -f "$dest/_redirects"
           cat > "$dest/_headers" <<'HEADERS'

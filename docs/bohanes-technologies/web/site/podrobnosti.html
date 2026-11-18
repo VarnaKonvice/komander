@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#F1F5FA"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Bohanes Technologies">
-<meta name="robots" content="noindex,nofollow">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://bohanes-technologies.cz/podrobnosti">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -136,66 +137,18 @@
 <a href="#commander-pilir">Lázeňský Commander — 1. pilíř</a>
 <a href="#procedury">Procedury</a><a href="#jak-funguje">Jak to funguje</a><a href="#alarmy">Alarmy a upozornění</a><a href="#kalendar">Kalendář a widgety</a><a href="#instalace">Instalace a aktivace</a><a href="#pripravujeme">Co chystáme</a>
 </nav><div class="platform-dialog-grid"><a href="#commander" class="platform-dialog-card" data-platform-link="apple"><span class="platform-dialog-icon apple"></span><span><b>Apple / iPhone</b><small>Ukázka aplikace</small></span></a><a href="#commander" class="platform-dialog-card" data-platform-link="android"><span class="menu-platform-symbol android-symbol" aria-hidden="true"><svg viewBox="0 0 36 28"><path d="M8 7 4 1M28 7l4-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M1 26a17 20 0 0 1 34 0Z" fill="currentColor"/><circle cx="10" cy="17" r="1.8" fill="#173A68"/><circle cx="26" cy="17" r="1.8" fill="#173A68"/></svg></span><span><b>Android</b><small>Testovaná verze</small></span></a><a href="#alarmy" class="platform-dialog-card platform-dialog-card-alert"><span class="platform-dialog-icon alert" aria-hidden="true">◔</span><span><b>Alarmy a upozornění</b><small>Provedení podle platformy</small></span></a></div></dialog>
-<dialog class="login-dialog" id="loginDialog" aria-labelledby="loginDialogTitle">
-<div class="dialog-head"><div class="login-brand-title"><img src="/bohanes-symbol.svg" alt=""><div><span class="dialog-kicker">Bohanes Technologies</span><h3 id="loginDialogTitle">Přihlášení</h3></div></div><button type="button" class="dialog-close" data-dialog-close>Zavřít</button></div>
-<form class="login-form" id="loginForm">
-<label>Uživatel nebo e-mail<input id="loginEmail" type="text" autocomplete="username" placeholder="Petr Bohanes" required></label>
-<label>Heslo<input id="loginPassword" type="password" autocomplete="current-password" placeholder="••••" required></label>
-<button type="submit" class="cta login-submit">Přihlásit</button>
-<p class="login-hint">Testovací přístup: <b>Petr Bohanes</b> / <b>1234</b>. Přihlášení si tento telefon zapamatuje.</p>
-<p class="login-state" id="loginState" role="status"></p>
-</form>
-<div class="internal-launcher" id="internalLauncher" hidden>
-<div class="internal-launcher-brand"><img src="/bohanes-symbol.svg" alt=""><div><strong>BOHANES TECHNOLOGIES</strong><small>Interní prostředí</small></div></div><div class="internal-launcher-head"><b>Vyberte, kam chcete vstoupit</b><span>CRM, centrální HQ nebo statistiky Commanderu.</span></div>
-<div class="internal-launcher-grid">
-<a class="internal-app-card crm" href="https://bohanes-technologies-crm.pages.dev/"><span class="internal-app-icon">CRM</span><span><b>Obchodní CRM</b><small>Lázně, kontakty, mapa a obchodní případy</small></span></a>
-<a class="internal-app-card hq" href="https://bohanes-hq.pages.dev/"><span class="internal-app-icon">HQ</span><span><b>Bohanes HQ</b><small>Centrální pracovní a AI prostředí</small></span></a>
-<a class="internal-app-card stats" href="https://bohanes-hq.pages.dev/"><span class="internal-app-icon">STAT</span><span><b>Statistiky</b><small>Návštěvnost, kampaně, instalace a aktivace Commanderu</small></span></a>
-</div>
-<p class="internal-warning">Toto je testovací vstup pro interní prezentaci. Není určen jako finální zabezpečení ostrého systému.</p>
-</div>
-</dialog>
+
 <dialog class="lightbox" id="imageDialog" aria-labelledby="imageTitle"><div class="lightbox-top"><h3 id="imageTitle">Obrazovka Commanderu</h3><button class="lightbox-close" type="button">Zavřít</button></div><img id="imageDetail" alt=""><div id="calendarDetail" class="calendar-detail" hidden></div><p id="originalImageRow"><a class="full-size" id="originalImage" target="_blank" rel="noopener">Otevřít obrázek v původní velikosti</a></p></dialog>
 <script>
 const platformDialog=document.getElementById('platformDialog');
 document.querySelectorAll('[data-product-menu-open]').forEach(button=>button.addEventListener('click',()=>platformDialog.showModal()));
 platformDialog.querySelectorAll('a[href^="#"]').forEach(link=>link.addEventListener('click',()=>platformDialog.close()));
-const loginDialog=document.getElementById('loginDialog');
-const loginForm=document.getElementById('loginForm');
-const internalLauncher=document.getElementById('internalLauncher');
-const loginState=document.getElementById('loginState');
-if(sessionStorage.getItem('bohanesLocalReviewLogin')==='1')localStorage.setItem('bohanesLocalReviewLogin','1');
-const localHost=location.hostname.toLowerCase();
-const shareParams=new URLSearchParams(location.search);
-if(shareParams.has('_vercel_share'))sessionStorage.setItem('bohanesSharedReview','1');
-const sharedReview=sessionStorage.getItem('bohanesSharedReview')==='1';
-const protectedVercelReview=localHost.endsWith('.vercel.app')&&localHost.startsWith('bohanes-technologies-');
-const cloudflareReview=localHost==='bohanes-technologies.pages.dev';
-const localReview=['127.0.0.1','localhost','192.168.50.205','petr--mac-studio.local'].includes(localHost)||sharedReview||protectedVercelReview||cloudflareReview;
-function showInternalLauncher(){
-  loginForm.hidden=true;
-  internalLauncher.hidden=false;
-  localStorage.setItem('bohanesLocalReviewLogin','1');
-}
+// CRM authentication happens only on the protected CRM origin, not in the public website.
 document.querySelectorAll('[data-login-open]').forEach(button=>button.addEventListener('click',()=>{
-  if(cloudflareReview){showInternalLauncher();loginDialog.showModal();return;}
-  if(localReview&&localStorage.getItem('bohanesLocalReviewLogin')==='1')showInternalLauncher();
-  loginDialog.showModal();
+  window.location.assign('https://bohanes-technologies-crm.pages.dev/');
 }));
-loginForm.addEventListener('submit',e=>{
-  e.preventDefault();
-  if(!localReview){loginState.textContent='Jednoduchý testovací vstup na této adrese není povolen.';return}
-  const email=document.getElementById('loginEmail');
-  const password=document.getElementById('loginPassword');
-  const user=email.value.trim();
-  const validUser=user.toLocaleLowerCase('cs-CZ')==='petr bohanes'||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user);
-  if(!validUser){loginState.textContent='Použijte Petr Bohanes nebo platný e-mail.';email.focus();return}
-  if(password.value!=='1234'){loginState.textContent='Použijte heslo 1234.';password.focus();return}
-  loginState.textContent='';
-  showInternalLauncher();
-});
 document.querySelectorAll('[data-dialog-close]').forEach(button=>button.addEventListener('click',()=>button.closest('dialog')?.close()));
-[platformDialog,loginDialog].forEach(d=>d?.addEventListener('click',e=>{if(e.target===d)d.close()}));
+platformDialog?.addEventListener('click',e=>{if(e.target===platformDialog)platformDialog.close()});
 document.querySelectorAll('.product-nav-menu a').forEach(a=>a.addEventListener('click',()=>a.closest('details')?.removeAttribute('open')));
 const productMenu=document.querySelector('.product-nav-menu');
 let productMenuTimer=null;

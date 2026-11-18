@@ -48,6 +48,12 @@ jobs:
           print("Verified approved website structure and assets")
           PY
 
+      - name: Build public-only release without internal CRM or prototypes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 docs/bohanes-technologies/web/prepare-public-release.py "$RUNNER_TEMP/bohanes-web-public"
+
       - name: Deploy approved website to existing Cloudflare Pages production
         shell: bash
         env:
@@ -58,7 +64,7 @@ jobs:
             echo "Missing repository Actions secret CLOUDFLARE_API_TOKEN"
             exit 1
           fi
-          npx --yes wrangler@4.162.0 pages deploy docs/bohanes-technologies/web/site \
+          npx --yes wrangler@4.162.0 pages deploy "$RUNNER_TEMP/bohanes-web-public" \
             --project-name bohanes-technologies \
             --branch main \
             --commit-hash "$(git rev-parse HEAD)" \

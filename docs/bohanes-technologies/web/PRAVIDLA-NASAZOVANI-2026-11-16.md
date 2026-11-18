@@ -11,3 +11,9 @@ Schválený stav (16. 11. 2026): pracovní web s kontakty a sjednoceným zápat�
 - **CRM**: https://bohanes-technologies-crm.pages.dev/ – oddělené a chráněné přihlášením; nedotýká se nasazování firemního webu.
 
 Tato pravidla nesmějí být měněna za účelem automatického nasazování na ostrou doménu bez výslovného schválení uživatele.
+
+## Veřejné spuštění firemního webu – 18. 11. 2026
+
+Uživatel schválil zahájení ostrého provozu firmy před dalšími lázněmi. Od tohoto data je `bohanes-technologies.cz` určena pro skutečnou veřejnou prezentaci (nikoli jen placeholder). Zůstávají pravdivá sdělení, že samotná aplikace Commander není veřejně ke stažení či placené aktivaci. Přístup do CRM vede přímo do samostatného zabezpečeného CRM; veřejný web neobsahuje fiktivní testovací přihlášení.
+
+**Bezpečné zveřejnění:** Python skript `prepare-public-release.py` sestaví pouze veřejné stránky, potřebné fotografie, video V6, mapu webových cest a roboty. Vylučuje interní adresáře `site/hq`, `site/crm` a `site/koncept-8-2` a testovací přístup. Ostrý projekt je stále `bohanes-technologies` a lokální Wrangler umí nasadit schválený release přímo z GitHub `main`. Běžný push do `main` nadále nesmí spustit nasazení ostrého projektu; workflow `bohanes-web-cloudflare.yml` vyžaduje výslovně vydaný tag `web-release-*` a funkční GitHub API token, který k datu 18. 11. 2026 zatím chybí. Pro první spuštění se používá místní autorizované nasazení z přesně uloženého Git commitu; žádná automatická změna ostré domény.
