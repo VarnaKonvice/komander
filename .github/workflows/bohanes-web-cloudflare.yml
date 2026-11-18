@@ -1,12 +1,15 @@
 name: Bohanes web - approved Cloudflare release
 
-# Safety gate: ordinary commits to main must NEVER deploy the canonical public site.
-# A separately approved web-release-* tag is required for production deployment.
-# Normal work-in-progress commits to main are deployed only by the preview workflow.
+# Critical hold: NEVER deploy the canonical public site automatically.
+# 2026-11-18: the real user explicitly revoked premature publication.
+# Only an explicit future user approval and manual dispatch may publish.
 on:
-  push:
-    tags:
-      - "web-release-*"
+  workflow_dispatch:
+    inputs:
+      confirmed_user_approval:
+        description: "Confirm explicit user permission for public product/cost publication: write SCHVALUJI-OSTRY-WEB"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -17,6 +20,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: ${{ inputs.confirmed_user_approval == 'SCHVALUJI-OSTRY-WEB' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out exact approved commit
