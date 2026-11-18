@@ -1,6 +1,6 @@
 
 // Společná veřejná data jsou verzovaná odděleně od místních obchodních úprav.
-const VERIFIED_DATA_VERSION='2026-11-05.5';
+const VERIFIED_DATA_VERSION='2026-11-18.1';
 function crmNameKey(name){return String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\b(prof|paeddr|phdr|judr|mudr|mgr|ing|bc|dr|csc|ph|d|mba|m|b|a|ll|dis)\b/g,'').replace(/[^a-z]/g,'')}
 function applyVerifiedRecords(records,verified){
  const fields=['company','ico','website','phone','email','facilityAddress','registeredAddress','photo','historicalLand'];
@@ -27,6 +27,13 @@ function applyVerifiedRecords(records,verified){
     else if(!old.role.includes(c.role))old.role+='; '+c.role;
    }
    for(const k of ['phone','email'])if(c[k]&&(!old[k]||old[k]===original?.[k]))old[k]=c[k];
+   // Proposals are leads for human verification, NOT real delivery addresses.
+   if(c.suggestedEmail&&(!old.email||(crmEmailIsRole(old.email)&&old.email===original?.email))){
+    old.suggestedEmail=c.suggestedEmail;
+    old.emailHypothesisStatus='NEOVĚŘENÝ ODHAD – NEODESÍLAT';
+    old.emailHypothesisBasis=c.emailHypothesisBasis||'';
+   }
+   if(old.email&&!crmEmailIsRole(old.email)){delete old.suggestedEmail;delete old.emailHypothesisStatus;delete old.emailHypothesisBasis;}
    if(c.note&&!(old.note||'').includes(c.note))old.note=[old.note,c.note].filter(Boolean).join('\n');
   }
   for(const c of x.contacts){
@@ -47,6 +54,10 @@ function applyVerifiedRecords(records,verified){
   x.verifiedDataVersion=VERIFIED_DATA_VERSION;
  }
  return records;
+}
+function crmEmailIsRole(address){
+ const local=String(address||'').split('@')[0].toLowerCase();
+ return /^(info|obchod|obchodni|sales|sekretariat|prijimaci|prijimacikancelar|kontakt|contact|office|general|hotel|rezervace|reservations|booking|recepce|pobyty|asistentka|reditel|doktor|ceo|management|media|marketing|personalni|spravce|uctarna|lazne|pobyt|kancelar)/.test(local);
 }
 function validateCRMBackup(value,knownRecords){
  const rows=Array.isArray(value)?value:(value?.format==='bohanes-crm'&&value?.schemaVersion===1?value.records:null);

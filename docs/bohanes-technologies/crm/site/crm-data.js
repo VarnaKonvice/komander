@@ -12,7 +12,9 @@ window.BOHANES_CRM_VERIFIED=[
       {
         "name": "Karel Kalivoda",
         "role": "Generální ředitel — Léčebné lázně Mariánské Lázně a. s.; člen představenstva — Léčebné lázně Mariánské Lázně a. s.",
-        "note": "Aktuální dle webu Ensana, ověřeno 5. 11. 2026. Zdroj: https://ensanahotels.com/cs/destinace/ceska-republika/marianske-lazne/podcast; Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2025-04-10. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/45359113"
+        "note": "Aktuální dle webu Ensana, ověřeno 5. 11. 2026. Zdroj: https://ensanahotels.com/cs/destinace/ceska-republika/marianske-lazne/podcast; Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2025-04-10. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/45359113\nPřímý pracovní kontakt veřejně uveden v příloze k zakázce města České Budějovice dne 16. 2. 2025; aktuálnost spojení pro listopad 2026 neověřena. Zdroj: https://www.c-budejovice.cz/sites/default/files/obsah/Magistrat/Informace/Archiv-poskytnutych-informaci/2025/prilohy_1.pdf",
+        "phone": "+420 602 849 093",
+        "email": "kkalivoda@cz.ensanahotels.com"
       },
       {
         "name": "Mark Nicholas Hennebry",
@@ -113,6 +115,13 @@ window.BOHANES_CRM_VERIFIED=[
         "name": "Ing. Jiří Milský",
         "role": "předseda představenstva — Imperial Karlovy Vary a. s.",
         "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2025-01-23. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/45359318"
+      },
+      {
+        "name": "MUDr. Kateřina Eretová",
+        "role": "Vedoucí lékařka — Alžbětiny lázně, a.s.",
+        "phone": "+420 720 842 018",
+        "email": "doktor@spa5.cz",
+        "note": "Funkční adresa vedoucího lékaře (není jmenná) a přímý telefon. Oficiální zdroj ověřen 18. 11. 2026: https://spa5.cz/kontakt/"
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -299,12 +308,18 @@ window.BOHANES_CRM_VERIFIED=[
       {
         "name": "PaedDr. Jan Váňa",
         "role": "jednatel — Slatinné lázně Třeboň s.r.o.",
-        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2024-01-11. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/25179896"
+        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2024-01-11. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/25179896",
+        "suggestedEmail": "vana@laznetrebon.cz",
+        "emailHypothesisStatus": "NEOVĚŘENÝ ODHAD – NEODESÍLAT",
+        "emailHypothesisBasis": "Pouze podobnost vzoru s veřejnými jmennými e-maily dalších osob stejné lázeňské organizace: Ing. Soňa Nováková: novakova@laznetrebon.cz; Mgr. Ing. Alena Tománková: tomankova@laznetrebon.cz; Lenka Doktorová: doktorova@laznetrebon.cz. Existence adresy ani doručení nejsou ověřeny."
       },
       {
         "name": "prof. JUDr. Vilém Kahoun Ph.D.",
         "role": "jednatel — Slatinné lázně Třeboň s.r.o.",
-        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2024-01-11. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/25179896"
+        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2024-01-11. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/25179896",
+        "suggestedEmail": "kahoun@laznetrebon.cz",
+        "emailHypothesisStatus": "NEOVĚŘENÝ ODHAD – NEODESÍLAT",
+        "emailHypothesisBasis": "Pouze podobnost vzoru s veřejnými jmennými e-maily dalších osob stejné lázeňské organizace: Ing. Soňa Nováková: novakova@laznetrebon.cz; Mgr. Ing. Alena Tománková: tomankova@laznetrebon.cz; Lenka Doktorová: doktorova@laznetrebon.cz. Existence adresy ani doručení nejsou ověřeny."
       },
       {
         "name": "Lenka Doktorová",
@@ -461,17 +476,26 @@ window.BOHANES_CRM_VERIFIED=[
       {
         "name": "Ing. Michal Gaube MBA",
         "role": "předseda představenstva — Priessnitzovy léčebné lázně a.s.",
-        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-01-11. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/45193452"
+        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-01-11. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/45193452",
+        "suggestedEmail": "gaube@priessnitz.cz",
+        "emailHypothesisStatus": "NEOVĚŘENÝ ODHAD – NEODESÍLAT",
+        "emailHypothesisBasis": "Pouze podobnost vzoru s veřejnými jmennými e-maily dalších osob stejné lázeňské organizace: Ing. Roman Provazník: provaznik@priessnitz.cz; Ing. Kateřina Tomášková: tomaskova@priessnitz.cz; Ing. Roman Illek: illek@priessnitz.cz. Existence adresy ani doručení nejsou ověřeny."
       },
       {
         "name": "Ing. Vladimír Odehnal",
         "role": "místopředseda představenstva — Priessnitzovy léčebné lázně a.s.",
-        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-01-11. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/45193452"
+        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-01-11. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/45193452",
+        "suggestedEmail": "odehnal@priessnitz.cz",
+        "emailHypothesisStatus": "NEOVĚŘENÝ ODHAD – NEODESÍLAT",
+        "emailHypothesisBasis": "Pouze podobnost vzoru s veřejnými jmennými e-maily dalších osob stejné lázeňské organizace: Ing. Roman Provazník: provaznik@priessnitz.cz; Ing. Kateřina Tomášková: tomaskova@priessnitz.cz; Ing. Roman Illek: illek@priessnitz.cz. Existence adresy ani doručení nejsou ověřeny."
       },
       {
         "name": "Monika Gaubová",
         "role": "člen představenstva — Priessnitzovy léčebné lázně a.s.",
-        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-01-11. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/45193452"
+        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-01-11. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/45193452",
+        "suggestedEmail": "gaubova@priessnitz.cz",
+        "emailHypothesisStatus": "NEOVĚŘENÝ ODHAD – NEODESÍLAT",
+        "emailHypothesisBasis": "Pouze podobnost vzoru s veřejnými jmennými e-maily dalších osob stejné lázeňské organizace: Ing. Roman Provazník: provaznik@priessnitz.cz; Ing. Kateřina Tomášková: tomaskova@priessnitz.cz; Ing. Roman Illek: illek@priessnitz.cz. Existence adresy ani doručení nejsou ověřeny."
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -512,7 +536,7 @@ window.BOHANES_CRM_VERIFIED=[
       {
         "name": "Lenka Krótká",
         "role": "Obchodní ředitelka — Lázně Darkov, a.s.",
-        "note": "Aktuální veřejná pracovní role/kontakt, ověřeno 5. 11. 2026. Zdroj: https://www.laznedarkov.cz/tiskove-zpravy. Tisková zpráva 27. 3. 2026. Číslo +420 596 373 301 je pro whistleblowing, nikoli ověřená obchodní linka."
+        "note": "Aktuální veřejná pracovní role/kontakt, ověřeno 5. 11. 2026. Zdroj: https://www.laznedarkov.cz/tiskove-zpravy. Tisková zpráva 27. 3. 2026. Číslo +420 596 373 301 je pro whistleblowing, nikoli ověřená obchodní linka.\nČíslo +420 596 373 301 a e-mail prislusnaosoba@darkov.cz jsou uvedeny pouze pro oznamování protiprávního jednání, nikoli jako obchodní kontakt. Do polí telefon/e-mail se nepřebírají. Zdroj: https://www.laznedarkov.cz/kontakt"
       }
     ],
     "company": "Lázně Darkov, a.s.",
@@ -675,7 +699,10 @@ window.BOHANES_CRM_VERIFIED=[
       {
         "name": "Bc. Kamila Řípová MBA",
         "role": "Jednatel — Lázně 1897, s.r.o.",
-        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-10-13. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/03030997"
+        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-10-13. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/03030997",
+        "suggestedEmail": "kamila.ripova@lazne1897.cz",
+        "emailHypothesisStatus": "NEOVĚŘENÝ ODHAD – NEODESÍLAT",
+        "emailHypothesisBasis": "Pouze podobnost vzoru s veřejnými jmennými e-maily dalších osob stejné lázeňské organizace: Alena Řípová: alena.ripova@lazne1897.cz; Bc. Petr Čermák: petr.cermak@lazne1897.cz; Stanislav Barvíř: stanislav.barvir@lazne1897.cz. Existence adresy ani doručení nejsou ověřeny."
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -781,7 +808,10 @@ window.BOHANES_CRM_VERIFIED=[
       {
         "name": "Filip Takáč",
         "role": "Předseda správní rady — Léčebné lázně Bohdaneč a.s.",
-        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-07-05. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/47452421"
+        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-07-05. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/47452421",
+        "suggestedEmail": "f.takac@llb.cz",
+        "emailHypothesisStatus": "NEOVĚŘENÝ ODHAD – NEODESÍLAT",
+        "emailHypothesisBasis": "Pouze podobnost vzoru s veřejnými jmennými e-maily dalších osob stejné lázeňské organizace: Bc. Jana Šírová: j.sirova@llb.cz; Radka Fizková: r.fizkova@llb.cz. Existence adresy ani doručení nejsou ověřeny."
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -996,6 +1026,13 @@ window.BOHANES_CRM_VERIFIED=[
         "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.horskelazne.cz/o-nas/vedeni-lazni",
         "phone": "+420 771 243 733",
         "email": "pazderova@horskelazne.cz"
+      },
+      {
+        "name": "Ing. Petr Teichmann, Ph.D.",
+        "role": "Finanční manažer — Horské lázně Karlova Studánka",
+        "phone": "+420 771 264 941",
+        "email": "teichmann@horskelazne.cz",
+        "note": "Oficiální stránka vedení ověřená 18. 11. 2026: https://www.horskelazne.cz/o-nas/vedeni-lazni"
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -1106,8 +1143,24 @@ window.BOHANES_CRM_VERIFIED=[
       },
       {
         "name": "Mgr. Helena Kokešová",
-        "role": "Zástupce ředitele — Státní léčebné lázně Janské Lázně, státní podnik",
-        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2025-09-05. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/00024007"
+        "role": "Zástupce ředitele — Státní léčebné lázně Janské Lázně, státní podnik; Ekonomická náměstkyně",
+        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2025-09-05. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/00024007\nPřímý telefon a jmenný e-mail uvedeny na aktuální stránce vedení lázní. Ověřeno 18. 11. 2026: https://www.janskelazne.com/vedeni-lazni/",
+        "phone": "+420 499 860 107",
+        "email": "helena.kokesova@janskelazne.com"
+      },
+      {
+        "name": "MUDr. Lucie Quiquerez",
+        "role": "Náměstkyně pro léčebnou péči — Státní léčebné lázně Janské Lázně",
+        "phone": "+420 606 673 324",
+        "email": "lucie.quiquerez@janskelazne.com",
+        "note": "Oficiální vedení lázní ověřeno 18. 11. 2026: https://www.janskelazne.com/vedeni-lazni/"
+      },
+      {
+        "name": "Mgr. Lucie Halušková",
+        "role": "Personální náměstkyně — Státní léčebné lázně Janské Lázně",
+        "phone": "+420 774 942 290",
+        "email": "lucie.haluskova@janskelazne.com",
+        "note": "Oficiální vedení lázní ověřeno 18. 11. 2026: https://www.janskelazne.com/vedeni-lazni/"
       }
     ],
     "verifiedAt": "2026-11-05",
@@ -1546,12 +1599,18 @@ window.BOHANES_CRM_VERIFIED=[
       {
         "name": "Tomáš Kohoutek",
         "role": "předseda představenstva — Lázně Slatinice a.s.",
-        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-01-19. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/25367757"
+        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-01-19. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/25367757",
+        "suggestedEmail": "kohoutek@lazneslatinice.cz",
+        "emailHypothesisStatus": "NEOVĚŘENÝ ODHAD – NEODESÍLAT",
+        "emailHypothesisBasis": "Pouze podobnost vzoru s veřejnými jmennými e-maily dalších osob stejné lázeňské organizace: Ing. Silvie Vyroubalová: vyroubalova@lazneslatinice.cz; Ing. Martina Medková: medkova@lazneslatinice.cz; Ing. Tomáš Hrazdil: hrazdil@lazneslatinice.cz. Existence adresy ani doručení nejsou ověřeny."
       },
       {
         "name": "Bc. Viktor Vybíral",
         "role": "místopředseda představenstva — Lázně Slatinice a.s.",
-        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-01-19. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/25367757"
+        "note": "Aktuální platný zápis VR přes ARES ověřen 5. 11. 2026; aktualizace zdroje 2026-01-19. Zdroj: https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty-vr/25367757",
+        "suggestedEmail": "vybiral@lazneslatinice.cz",
+        "emailHypothesisStatus": "NEOVĚŘENÝ ODHAD – NEODESÍLAT",
+        "emailHypothesisBasis": "Pouze podobnost vzoru s veřejnými jmennými e-maily dalších osob stejné lázeňské organizace: Ing. Silvie Vyroubalová: vyroubalova@lazneslatinice.cz; Ing. Martina Medková: medkova@lazneslatinice.cz; Ing. Tomáš Hrazdil: hrazdil@lazneslatinice.cz. Existence adresy ani doručení nejsou ověřeny."
       },
       {
         "name": "Ing. Tomáš Hrazdil",
@@ -1805,7 +1864,9 @@ window.BOHANES_CRM_VERIFIED=[
       {
         "name": "Jiří Fadler",
         "role": "Obchodní a marketingový manažer — Hotel Lázně Kostelec",
-        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.hotel-kostelec.cz/lide-z-lazni"
+        "note": "Ověřeno na aktuálním oficiálním webu 5. 11. 2026. Zdroj: https://www.hotel-kostelec.cz/lide-z-lazni\nJmenný e-mail zveřejněn v pracovním inzerátu Hotelu Lázně Kostelec (aktuálnost nedoložena); telefon u Jiřího Fadlera uvádí Golf Club Lázně Kostelec v jiné funkci. Před obchodním použitím ověřit. Zdroje: https://personalka.cz/1092375 ; https://golfkostelec.cz/kontakt",
+        "email": "jiri.fadler@hotel-kostelec.cz",
+        "phone": "+420 777 120 214"
       },
       {
         "name": "Rezervační a obchodní oddělení",
