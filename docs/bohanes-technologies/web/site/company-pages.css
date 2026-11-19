@@ -658,3 +658,97 @@ body.bt-company-page .bt-about-unified-copy .bt-about-vision-slogan {
 body.bt-company-page .bt-about-unified-copy .bt-about-vision-slogan span {
   color: #096f75;
 }
+
+body.bt-company-page .bt-about-philosophy {
+  padding: clamp(32px, 5vw, 72px) 0;
+  border-top: 1px solid #d8e8ec;
+  background: #f5fafc;
+  scroll-margin-top: 100px;
+}
+
+body.bt-company-page .bt-about-philosophy-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .94fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "photo heading" "photo copy";
+  align-items: start;
+  column-gap: clamp(24px, 4vw, 54px);
+  row-gap: 14px;
+  padding: clamp(22px, 3.2vw, 42px);
+  border: 1px solid #c7dfe3;
+  border-radius: 16px;
+  background: linear-gradient(125deg, #f8fefe, #eef8f8);
+}
+
+body.bt-company-page .bt-about-philosophy-heading {
+  grid-area: heading;
+}
+
+body.bt-company-page .bt-about-philosophy-heading h2 {
+  margin: 0 0 12px;
+  color: #163954;
+  font-size: clamp(28px, 3.1vw, 44px);
+  line-height: 1.11;
+  letter-spacing: -.042em;
+  text-wrap: balance;
+}
+
+body.bt-company-page .bt-about-philosophy-heading h2 span {
+  color: #096f75;
+}
+
+body.bt-company-page .bt-about-philosophy-heading p {
+  margin: 0;
+  color: #163954;
+  font-size: clamp(18px, 1.65vw, 23px);
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+body.bt-company-page .bt-about-philosophy-photo {
+  grid-area: photo;
+  display: block;
+  align-self: center;
+  overflow: hidden;
+  border: 1px solid #c7dfe3;
+  border-radius: 12px;
+}
+
+body.bt-company-page .bt-about-philosophy-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+body.bt-company-page .bt-about-philosophy-copy {
+  grid-area: copy;
+  max-width: 53ch;
+  color: #36566c;
+  font-size: clamp(16px, 1.25vw, 18px);
+  line-height: 1.6;
+}
+
+body.bt-company-page .bt-about-philosophy-copy p {
+  margin: 0 0 14px;
+}
+
+body.bt-company-page .bt-about-philosophy-copy .bt-about-philosophy-close {
+  margin: 17px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid #c7dfe3;
+}
+
+body.bt-company-page .bt-about-philosophy-close strong {
+  display: block;
+  color: #173e57;
+}
+
+@media (max-width: 760px) {
+  body.bt-company-page .bt-about-philosophy-panel {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas: "heading" "photo" "copy";
+    row-gap: 18px;
+    padding: 19px;
+  }
+}
