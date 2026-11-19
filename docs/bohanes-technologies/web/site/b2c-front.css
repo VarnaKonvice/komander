@@ -932,3 +932,7 @@ body.unified-site .journey-paper-sample figcaption span{color:#0b7981;font-weigh
 @media(prefers-reduced-motion:reduce){
  body.unified-site .journey-paper-sample>a{transition:none}
 }
+/* Hide the mobile-only internal link whenever the full desktop navigation is shown. */
+@media (min-width:1241px) {
+  body.unified-site header.unified-header .navlinks .mobile-login-link { display: none !important; }
+}
