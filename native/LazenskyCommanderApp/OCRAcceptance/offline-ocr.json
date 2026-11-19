@@ -1,0 +1,463 @@
+{
+  "cases": [
+    {
+      "name": "unknown title, inherited year, meal end",
+      "pages": [
+        [
+          {"text": "Pátek 20.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:30 | Procedura ABC-17 | místnost 205", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "12:00–12:30 Oběd", "x": 0.06, "y": 0.19, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "Sobota 21.11.", "x": 0.06, "y": 0.26, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "08:00 Hydrojet", "x": 0.06, "y": 0.33, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 0,
+      "events": [
+        {
+          "date": "2026-11-20",
+          "start": "10:30",
+          "end": "10:30",
+          "title": "Procedura ABC-17",
+          "location": "místnost 205",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "12:00",
+          "end": "12:30",
+          "title": "Oběd",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "meal"
+        },
+        {
+          "date": "2026-11-21",
+          "start": "08:00",
+          "end": "08:00",
+          "title": "Hydrojet",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        }
+      ]
+    },
+    {
+      "name": "table columns and departure excluded",
+      "pages": [
+        [
+          {"text": "2026-11-20", "x": 0.06, "y": 0.04, "w": 0.16, "h": 0.024, "confidence": 0.99},
+          {"text": "Odchod", "x": 0.05, "y": 0.12, "w": 0.1, "h": 0.024, "confidence": 0.99},
+          {"text": "Začátek", "x": 0.23, "y": 0.12, "w": 0.11, "h": 0.024, "confidence": 0.99},
+          {"text": "Procedura", "x": 0.42, "y": 0.12, "w": 0.15, "h": 0.024, "confidence": 0.99},
+          {"text": "Místnost", "x": 0.79, "y": 0.12, "w": 0.14, "h": 0.024, "confidence": 0.99},
+          {"text": "09:40", "x": 0.05, "y": 0.18, "w": 0.1, "h": 0.024, "confidence": 0.99},
+          {"text": "10:00", "x": 0.23, "y": 0.181, "w": 0.1, "h": 0.024, "confidence": 0.99},
+          {"text": "Pohyb ABC", "x": 0.42, "y": 0.181, "w": 0.2, "h": 0.024, "confidence": 0.99},
+          {"text": "208", "x": 0.79, "y": 0.18, "w": 0.06, "h": 0.024, "confidence": 0.99},
+          {"text": "10:40", "x": 0.05, "y": 0.24, "w": 0.1, "h": 0.024, "confidence": 0.99},
+          {"text": "11:00", "x": 0.23, "y": 0.239, "w": 0.1, "h": 0.024, "confidence": 0.99},
+          {"text": "Hydrojet", "x": 0.42, "y": 0.24, "w": 0.17, "h": 0.024, "confidence": 0.99},
+          {"text": "209", "x": 0.79, "y": 0.238, "w": 0.06, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 0,
+      "events": [
+        {
+          "date": "2026-11-20",
+          "start": "10:00",
+          "end": "10:00",
+          "title": "Pohyb ABC",
+          "location": "208",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "11:00",
+          "end": "11:00",
+          "title": "Hydrojet",
+          "location": "209",
+          "kind": "procedure"
+        }
+      ]
+    },
+    {
+      "name": "two independent side-by-side tables",
+      "pages": [
+        [
+          {"text": "2026-11-20", "x": 0.04, "y": 0.04, "w": 0.15, "h": 0.024, "confidence": 0.99},
+          {"text": "2026-11-21", "x": 0.55, "y": 0.04, "w": 0.15, "h": 0.024, "confidence": 0.99},
+          {"text": "Čas", "x": 0.06, "y": 0.12, "w": 0.06, "h": 0.024, "confidence": 0.99},
+          {"text": "Procedura", "x": 0.19, "y": 0.12, "w": 0.18, "h": 0.024, "confidence": 0.99},
+          {"text": "Čas", "x": 0.57, "y": 0.12, "w": 0.06, "h": 0.024, "confidence": 0.99},
+          {"text": "Procedura", "x": 0.68, "y": 0.12, "w": 0.17, "h": 0.024, "confidence": 0.99},
+          {"text": "09:40", "x": 0.06, "y": 0.18, "w": 0.1, "h": 0.024, "confidence": 0.99},
+          {"text": "Koupel A", "x": 0.19, "y": 0.18, "w": 0.2, "h": 0.024, "confidence": 0.99},
+          {"text": "10:00", "x": 0.57, "y": 0.18, "w": 0.1, "h": 0.024, "confidence": 0.99},
+          {"text": "Procedura B", "x": 0.68, "y": 0.18, "w": 0.2, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 0,
+      "events": [
+        {
+          "date": "2026-11-20",
+          "start": "09:40",
+          "end": "09:40",
+          "title": "Koupel A",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-21",
+          "start": "10:00",
+          "end": "10:00",
+          "title": "Procedura B",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        }
+      ]
+    },
+    {
+      "name": "overlapping captures and new page",
+      "pages": [
+        [
+          {"text": "Pátek 20.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:30 | Procedura ABC-17 | místnost 205", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "12:00–12:30 Oběd", "x": 0.06, "y": 0.19, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "Sobota 21.11.", "x": 0.06, "y": 0.26, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "08:00 Hydrojet", "x": 0.06, "y": 0.33, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ],
+        [
+          {"text": "Pátek 20.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:30 | Procedura ABC-17 | místnost 205", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "12:00–12:30 Oběd", "x": 0.06, "y": 0.19, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "Sobota 21.11.", "x": 0.06, "y": 0.26, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "08:00 Hydrojet", "x": 0.06, "y": 0.33, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ],
+        [
+          {"text": "21.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "08:00 Hydrojet", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "15:00 Masáž nohou", "x": 0.06, "y": 0.19, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 0,
+      "events": [
+        {
+          "date": "2026-11-20",
+          "start": "10:30",
+          "end": "10:30",
+          "title": "Procedura ABC-17",
+          "location": "místnost 205",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "12:00",
+          "end": "12:30",
+          "title": "Oběd",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "meal"
+        },
+        {
+          "date": "2026-11-21",
+          "start": "08:00",
+          "end": "08:00",
+          "title": "Hydrojet",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-21",
+          "start": "15:00",
+          "end": "15:00",
+          "title": "Masáž nohou",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        }
+      ]
+    },
+    {
+      "name": "invalid date prevents inheritance",
+      "pages": [
+        [
+          {"text": "20.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:30 A", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "31.11.2026", "x": 0.06, "y": 0.19, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:31 B", "x": 0.06, "y": 0.26, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 1,
+      "events": null
+    },
+    {
+      "name": "missing year blocks use",
+      "pages": [
+        [
+          {"text": "20.11.", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:30 Procedura ABC-17", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 1,
+      "events": null
+    },
+    {
+      "name": "malformed time blocks use",
+      "pages": [
+        [
+          {"text": "20.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "O9:3O Neznámá procedura", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:76 Masáž", "x": 0.06, "y": 0.19, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 2,
+      "events": null
+    },
+    {
+      "name": "ambiguous times block use",
+      "pages": [
+        [
+          {"text": "20.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "09:00 Masáž 10:00 Hydrojet", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 1,
+      "events": null
+    },
+    {
+      "name": "photo disagreement blocks use",
+      "pages": [
+        [
+          {"text": "20.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:30 Masáž", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ],
+        [
+          {"text": "20.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:32 Masáž", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 2,
+      "events": null
+    },
+    {
+      "name": "end or location disagreement blocks use",
+      "pages": [
+        [
+          {"text": "20.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:30 Masáž | místnost 205", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ],
+        [
+          {"text": "20.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:30 Masáž | místnost 208", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 1,
+      "events": null
+    },
+    {
+      "name": "missing date on independent page blocks use",
+      "pages": [
+        [
+          {"text": "Pátek 20.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:30 | Procedura ABC-17 | místnost 205", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "12:00–12:30 Oběd", "x": 0.06, "y": 0.19, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "Sobota 21.11.", "x": 0.06, "y": 0.26, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "08:00 Hydrojet", "x": 0.06, "y": 0.33, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ],
+        [
+          {"text": "14:00 Masáž", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 1,
+      "events": null
+    },
+    {
+      "name": "rows beyond first 12",
+      "pages": [
+        [
+          {"text": "20.11.2026", "x": 0.06, "y": 0.04, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "07:00 Procedura 1", "x": 0.06, "y": 0.088, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "08:00 Procedura 2", "x": 0.06, "y": 0.136, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "09:00 Procedura 3", "x": 0.06, "y": 0.18400000000000002, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:00 Procedura 4", "x": 0.06, "y": 0.232, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "11:00 Procedura 5", "x": 0.06, "y": 0.27999999999999997, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "12:00 Procedura 6", "x": 0.06, "y": 0.328, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "13:00 Procedura 7", "x": 0.06, "y": 0.376, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "14:00 Procedura 8", "x": 0.06, "y": 0.424, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "15:00 Procedura 9", "x": 0.06, "y": 0.472, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "16:00 Procedura 10", "x": 0.06, "y": 0.52, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "17:00 Procedura 11", "x": 0.06, "y": 0.5680000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "18:00 Procedura 12", "x": 0.06, "y": 0.6160000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "19:00 Procedura 13", "x": 0.06, "y": 0.664, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "20:00 Procedura 14", "x": 0.06, "y": 0.7120000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 0,
+      "events": [
+        {
+          "date": "2026-11-20",
+          "start": "07:00",
+          "end": "07:00",
+          "title": "Procedura 1",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "08:00",
+          "end": "08:00",
+          "title": "Procedura 2",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "09:00",
+          "end": "09:00",
+          "title": "Procedura 3",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "10:00",
+          "end": "10:00",
+          "title": "Procedura 4",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "11:00",
+          "end": "11:00",
+          "title": "Procedura 5",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "12:00",
+          "end": "12:00",
+          "title": "Procedura 6",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "13:00",
+          "end": "13:00",
+          "title": "Procedura 7",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "14:00",
+          "end": "14:00",
+          "title": "Procedura 8",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "15:00",
+          "end": "15:00",
+          "title": "Procedura 9",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "16:00",
+          "end": "16:00",
+          "title": "Procedura 10",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "17:00",
+          "end": "17:00",
+          "title": "Procedura 11",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "18:00",
+          "end": "18:00",
+          "title": "Procedura 12",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "19:00",
+          "end": "19:00",
+          "title": "Procedura 13",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        },
+        {
+          "date": "2026-11-20",
+          "start": "20:00",
+          "end": "20:00",
+          "title": "Procedura 14",
+          "location": "Neuvedeno v rozpisu",
+          "kind": "procedure"
+        }
+      ]
+    },
+    {
+      "name": "labelled end is never used as missing start",
+      "pages": [
+        [
+          {"text": "2026-11-20", "x": 0.06, "y": 0.04, "w": 0.16, "h": 0.024, "confidence": 0.99},
+          {"text": "Začátek", "x": 0.07, "y": 0.12, "w": 0.14, "h": 0.024, "confidence": 0.99},
+          {"text": "Konec", "x": 0.25, "y": 0.12, "w": 0.12, "h": 0.024, "confidence": 0.99},
+          {"text": "Procedura", "x": 0.47, "y": 0.12, "w": 0.14, "h": 0.024, "confidence": 0.99},
+          {"text": "Místnost", "x": 0.76, "y": 0.12, "w": 0.14, "h": 0.024, "confidence": 0.99},
+          {"text": "10:25", "x": 0.25, "y": 0.18, "w": 0.1, "h": 0.024, "confidence": 0.99},
+          {"text": "Masáž", "x": 0.47, "y": 0.18, "w": 0.17, "h": 0.024, "confidence": 0.99},
+          {"text": "205", "x": 0.76, "y": 0.18, "w": 0.06, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 1,
+      "events": null
+    },
+    {
+      "name": "labelled optional end and place",
+      "pages": [
+        [
+          {"text": "2026-11-20", "x": 0.06, "y": 0.04, "w": 0.16, "h": 0.024, "confidence": 0.99},
+          {"text": "Začátek", "x": 0.07, "y": 0.12, "w": 0.14, "h": 0.024, "confidence": 0.99},
+          {"text": "Konec", "x": 0.25, "y": 0.12, "w": 0.12, "h": 0.024, "confidence": 0.99},
+          {"text": "Procedura", "x": 0.47, "y": 0.12, "w": 0.14, "h": 0.024, "confidence": 0.99},
+          {"text": "Místnost", "x": 0.76, "y": 0.12, "w": 0.14, "h": 0.024, "confidence": 0.99},
+          {"text": "10:00", "x": 0.07, "y": 0.18, "w": 0.1, "h": 0.024, "confidence": 0.99},
+          {"text": "10:25", "x": 0.25, "y": 0.18, "w": 0.1, "h": 0.024, "confidence": 0.99},
+          {"text": "Masáž", "x": 0.47, "y": 0.18, "w": 0.17, "h": 0.024, "confidence": 0.99},
+          {"text": "205", "x": 0.76, "y": 0.18, "w": 0.06, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 0,
+      "events": [
+        {
+          "date": "2026-11-20",
+          "start": "10:00",
+          "end": "10:25",
+          "title": "Masáž",
+          "location": "205",
+          "kind": "procedure"
+        }
+      ]
+    },
+    {
+      "name": "slash between times is ambiguous",
+      "pages": [
+        [
+          {"text": "20.11.2026", "x": 0.06, "y": 0.05, "w": 0.86, "h": 0.024, "confidence": 0.99},
+          {"text": "10:30 / 10:35 Procedura ABC-17", "x": 0.06, "y": 0.12000000000000001, "w": 0.86, "h": 0.024, "confidence": 0.99}
+        ]
+      ],
+      "review": 1,
+      "events": null
+    }
+  ]
+}

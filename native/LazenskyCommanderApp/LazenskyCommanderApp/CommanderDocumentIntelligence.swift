@@ -92,7 +92,7 @@ struct CommanderMergedOCRPage: Codable, Equatable, Sendable {
 
 enum CommanderOCRReconciler {
   static func fromSingle(_ page: CommanderOCRPage) -> CommanderMergedOCRPage {
-    let lines = page.lines.map(single)
+    let lines = page.lines.flatMap(cells)
     let confidence = lines.isEmpty ? 0 : lines.reduce(0) { $0 + $1.confidence } / Float(lines.count)
     return .init(text: lines.map(\.text).joined(separator: "\n"), confidence: confidence, lines: lines, criticalConflicts: 0)
   }
@@ -184,8 +184,31 @@ enum CommanderOCRReconciler {
     return .init(text: winner.text, confidence: max(a.confidence, b.confidence), bounds: winner.bounds, state: .conflict, criticalConflict: criticalConflict, alternateText: loser.text)
   }
 
+  private static func cells(_ line: CommanderOCRLine) -> [CommanderMergedOCRLine] {
+    var groups: [[CommanderOCRWord]] = []
+    for word in line.words.filter({ $0.bounds.width > 0 }).sorted(by: { $0.bounds.x < $1.bounds.x }) {
+      if let previous = groups.last?.last, word.bounds.x - previous.bounds.x - previous.bounds.width <= 0.035 {
+        groups[groups.count - 1].append(word)
+      } else {
+        groups.append([word])
+      }
+    }
+    guard groups.count > 1 else { return [single(line)] }
+    return groups.compactMap { group in
+      guard let left = group.first?.bounds.x, let right = group.map({ $0.bounds.x + $0.bounds.width }).max(),
+            let top = group.map(\.bounds.y).min(), let bottom = group.map({ $0.bounds.y + $0.bounds.height }).max() else { return nil }
+      let original = single(line)
+      return .init(text: group.map(\.text).joined(separator: " "), confidence: original.confidence,
+        bounds: .init(x: left, y: top, width: right - left, height: bottom - top),
+        state: original.state, criticalConflict: original.criticalConflict, alternateText: original.alternateText)
+    }
+  }
+
   private static func single(_ line: CommanderOCRLine) -> CommanderMergedOCRLine {
-    .init(text: line.text, confidence: line.confidence * 0.92, bounds: line.bounds, state: .singleSource, criticalConflict: false, alternateText: nil)
+    let primary = criticalTokens(line.text)
+    let alternate = line.alternatives.dropFirst().first { line.confidence - $0.confidence <= 0.025 && criticalTokens($0.text) != primary }
+    return .init(text: line.text, confidence: line.confidence >= 0.5 ? max(0.69, line.confidence) : line.confidence, bounds: line.bounds,
+      state: alternate == nil ? .singleSource : .conflict, criticalConflict: alternate != nil, alternateText: alternate?.text)
   }
 
   private static func criticalTokens(_ text: String) -> Set<String> {
@@ -253,8 +276,8 @@ final class CommanderSpaOCRLexicon: @unchecked Sendable {
     }
   }
 
-  static func loadBundled() throws -> CommanderSpaOCRLexicon {
-    guard let url = Bundle.main.url(forResource: "commander-ocr-lexicon-v1", withExtension: "json") else {
+  static func loadBundled(override: URL? = nil) throws -> CommanderSpaOCRLexicon {
+    guard let url = override ?? Bundle.main.url(forResource: "commander-ocr-lexicon-v1", withExtension: "json") else {
       throw CocoaError(.fileNoSuchFile)
     }
     return CommanderSpaOCRLexicon(data: try JSONDecoder().decode(Root.self, from: Data(contentsOf: url)))
@@ -310,229 +333,279 @@ struct CommanderDocumentCandidateRow: Codable, Equatable, Sendable {
   let rawText: String
   let dateToken: String?
   let timeToken: String?
-  let endTimeToken: String?
+  var endTimeToken: String?
+  let title: String
+  var location: String?
   let meal: String?
-  let procedure: CommanderProcedureMatch?
-  let confidence: Float
-  let requiresReview: Bool
+  var issue: String?
+  var requiresReview: Bool { issue != nil }
 }
 
 struct CommanderDocumentExtraction: Codable, Equatable, Sendable {
   let facility: CommanderFacilityMatch?
-  let rows: [CommanderDocumentCandidateRow]
-  let reviewCount: Int
+  var rows: [CommanderDocumentCandidateRow]
+  var reviewCount: Int { rows.filter(\.requiresReview).count }
   var readyWithoutQuestions: Bool { !rows.isEmpty && reviewCount == 0 }
 }
 
 enum CommanderDocumentExtractor {
+  private static let dates = try! NSRegularExpression(pattern: #"(?<![\p{L}\d:])(?:\d{4}-\d{2}-\d{2}|\d{1,2}\s*[./]\s*\d{1,2}(?:\s*[./]\s*\d{4}|\s*\.)?)(?![\d:/])"#)
+  private static let clock = try! NSRegularExpression(pattern: #"(?<![\p{L}\d:])\d{1,2}\s*:\s*\d{2}(?![\d:])"#)
+  private static let place = try! NSRegularExpression(pattern: #"(?i)(?:^|\s)(?:m[íi]stnost|budova|pavilon|patro|kabina|ordinace|m[íi]sto)\s+\S.*$"#)
+  private static let timeHeads = ["cas", "zacatek", "cas zacatku", "od"]
+  private static let headers = timeHeads + ["datum", "den", "procedura", "nazev", "misto", "mistnost", "budova", "do", "konec", "odchod", "cas odchodu"]
+
   static func extract(_ page: CommanderMergedOCRPage, lexicon: CommanderSpaOCRLexicon) -> CommanderDocumentExtraction {
-    let whole = lexicon.match(fullText: page.text, candidateLines: page.lines.map(\.text))
-    var rows: [CommanderDocumentCandidateRow] = []
-    var currentDate: String?
-    for line in page.lines {
-      if let date = firstMatch(#"\b(?:[0-3]?\d)[./-](?:[01]?\d)(?:[./-](?:\d{2}|\d{4}))?\b"#, in: line.text) { currentDate = date }
-      let times = allMatches(#"\b(?:[01]?\d|2[0-3])[:.]\d{2}\b"#, in: line.text).map { $0.replacingOccurrences(of: ".", with: ":") }
-      let time = times.first
-      let endTime = times.count > 1 ? times[1] : nil
-      let normalized = CommanderOCRReconciler.normalize(line.text)
-      let meal: String? = normalized.contains("snidane") ? "breakfast" : normalized.contains("obed") ? "lunch" : normalized.contains("vecere") ? "dinner" : nil
-      let procedure = lexicon.match(fullText: line.text, candidateLines: [line.text]).procedures.first
-      if time == nil && procedure == nil && meal == nil { continue }
-
-      var confidence = line.confidence
-      if procedure?.safeForNameCorrection == true { confidence = min(1, confidence + 0.04) }
-      let requiresReview = line.criticalConflict ||
-        (time == nil) ||
-        (currentDate == nil) ||
-        (time != nil && line.confidence < 0.68) ||
-        (procedure == nil && meal == nil) ||
-        (procedure != nil && procedure?.safeForNameCorrection == false && line.confidence < 0.76)
-      rows.append(.init(
-        rawText: line.text,
-        dateToken: currentDate,
-        timeToken: time,
-        endTimeToken: endTime,
-        meal: meal,
-        procedure: procedure,
-        confidence: confidence,
-        requiresReview: requiresReview
-      ))
-    }
-    return .init(facility: whole.facility, rows: rows, reviewCount: rows.filter(\.requiresReview).count)
+    extract([page], lexicon: lexicon)
   }
 
-  private static func allMatches(_ pattern: String, in text: String) -> [String] {
-    guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
-    let full = NSRange(text.startIndex..., in: text)
-    return regex.matches(in: text, range: full).compactMap { match in
-      guard let range = Range(match.range, in: text) else { return nil }
-      return String(text[range])
+  static func extract(_ pages: [CommanderMergedOCRPage], lexicon: CommanderSpaOCRLexicon) -> CommanderDocumentExtraction {
+    struct Key: Hashable {
+      let date: String?
+      let time: String?
+      let title: String
+      let unresolved: String?
+    }
+    var keys: [Key] = []
+    var groups: [Key: [CommanderDocumentCandidateRow]] = [:]
+    for row in pages.flatMap(parsePage) {
+      let key = Key(date: row.dateToken, time: row.timeToken, title: nameKey(row.title),
+                    unresolved: row.dateToken == nil || row.timeToken == nil || row.title.isEmpty ? row.rawText : nil)
+      if groups[key] == nil { keys.append(key) }
+      groups[key, default: []].append(row)
+    }
+    var rows = keys.compactMap { key -> CommanderDocumentCandidateRow? in
+      guard let values = groups[key], var best = values.first(where: { !$0.requiresReview }) ?? values.first else { return nil }
+      let ends = Set(values.compactMap(\.endTimeToken))
+      let places = values.compactMap(\.location)
+      let distinctPlaces = Set(places.map { $0.lowercased() })
+      if ends.count == 1 { best.endTimeToken = ends.first }
+      if distinctPlaces.count == 1 { best.location = places.first }
+      if ends.count > 1 || distinctPlaces.count > 1 { best.issue = "Snímky se liší v čase konce nebo místě." }
+      return best
+    }
+    let facility = lexicon.match(fullText: pages.map(\.text).joined(separator: "\n"), candidateLines: []).facility
+    if pages.count > 1 {
+      let valid = rows.filter { !$0.requiresReview }
+      for index in rows.indices where !rows[index].requiresReview {
+        let row = rows[index]
+        if valid.contains(where: { other in
+          guard row.dateToken == other.dateToken, nameKey(row.title) == nameKey(other.title),
+                let first = row.timeToken, let second = other.timeToken, first != second else { return false }
+          return abs(clockMinutes(first) - clockMinutes(second)) <= 4
+        }) {
+          rows[index].issue = "Na snímcích jsou dva podobné časy. Zkontroluj, zda jde o stejnou položku."
+        }
+      }
+    }
+    return .init(facility: facility, rows: rows)
+  }
+
+  private static func center(_ line: CommanderMergedOCRLine) -> Double { line.bounds.y + line.bounds.height / 2 }
+
+  private static func parsePage(_ page: CommanderMergedOCRPage) -> [CommanderDocumentCandidateRow] {
+    let lines = page.lines.filter { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    let starts = lines.filter { timeHeads.contains(nameKey($0.text)) }
+    for first in starts {
+      if let second = starts.first(where: { abs(center(first) - center($0)) < 0.015 && $0.bounds.x - first.bounds.x > 0.30 }) {
+        let gutter = second.bounds.x - 0.07
+        if !lines.contains(where: { $0.bounds.x < gutter && $0.bounds.x + $0.bounds.width > gutter }) {
+          return parseLane(lines.filter { $0.bounds.x < gutter }) + parseLane(lines.filter { $0.bounds.x >= gutter })
+        }
+      }
+    }
+    return parseLane(lines)
+  }
+
+  private static func parseLane(_ input: [CommanderMergedOCRLine]) -> [CommanderDocumentCandidateRow] {
+    let lines = input.sorted { center($0) < center($1) }
+    let heights = lines.map(\.bounds.height).filter { $0 > 0 }.sorted()
+    let tolerance = heights.isEmpty ? 0.006 : min(0.014, max(0.004, heights[heights.count / 2] * 0.58))
+    let weekdays = ["pondeli", "utery", "streda", "ctvrtek", "patek", "sobota", "nedele"]
+    var result: [CommanderDocumentCandidateRow] = []
+    var date: String?
+    var yearContext: String?
+    var columns: [(x: Double, name: String)] = []
+    var index = 0
+    while index < lines.count {
+      let anchor = center(lines[index])
+      var cells = [lines[index]]
+      index += 1
+      while index < lines.count && center(lines[index]) - anchor <= tolerance {
+        cells.append(lines[index])
+        index += 1
+      }
+      cells.sort { $0.bounds.x < $1.bounds.x }
+      let raw = cells.map { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) }.joined(separator: " | ")
+      let normalized = cells.map { nameKey($0.text) }
+      if normalized.count > 1 && normalized.allSatisfy(headers.contains) {
+        columns = zip(cells, normalized).map { ($0.0.bounds.x, $0.1) }
+        continue
+      }
+      let good = cells.allSatisfy { !$0.criticalConflict && $0.confidence >= 0.66 }
+      let firstClock = matches(clock, in: raw).first?.range.lowerBound
+      let dateMatches = matches(dates, in: raw).filter { match in
+        let value = String(raw[match.range])
+        return value.contains("/") || value.hasSuffix(".") || value.filter { $0 == "." }.count >= 2
+          || value.contains("-") || firstClock.map { match.range.lowerBound < $0 } == true
+      }
+      if !dateMatches.isEmpty {
+        date = dateMatches.count == 1 && good ? resolveDate(String(raw[dateMatches[0].range]), context: yearContext) : nil
+        if let date { yearContext = date }
+      }
+      var eventCells: [String] = []
+      var locations: [String] = []
+      var leaveCount = 0
+      let hasStartColumn = columns.contains { timeHeads.contains($0.name) }
+      var foundStart = !hasStartColumn
+      var labelledEnd: String?
+      var badEnd = false
+      for cell in cells {
+        let column = columns.min { abs($0.x - cell.bounds.x) < abs($1.x - cell.bounds.x) }
+        let field = column.flatMap { abs($0.x - cell.bounds.x) <= 0.055 ? $0.name : nil }
+        let text = cell.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if field == "misto" || field == "mistnost" || field == "budova" {
+          locations.append(text)
+        } else if field == "odchod" || field == "cas odchodu" {
+          leaveCount += matches(clock, in: text).count
+        } else if field == "do" || field == "konec" {
+          labelledEnd = matches(clock, in: text).first.flatMap { time(String(text[$0.range])) }
+          badEnd = labelledEnd == nil && !["", "-", "–", "—"].contains(text)
+        } else {
+          if let field, timeHeads.contains(field), !matches(clock, in: text).isEmpty { foundStart = true }
+          eventCells.append(text)
+        }
+      }
+      let missingStart = !foundStart
+      let contents = eventCells.joined(separator: " | ")
+      var withoutDate = dateMatches.count == 1 ? contents.replacingOccurrences(of: String(raw[dateMatches[0].range]), with: " ") : contents
+      if let location = matches(place, in: withoutDate).first {
+        locations.append(withoutDate[location.range].trimmingCharacters(in: .whitespacesAndNewlines))
+        withoutDate = String(withoutDate[..<location.range.lowerBound])
+      }
+      let departurePattern = #"(?i)\b(?:čas\s+)?odchod\s*[:]?\s*\d{1,2}\s*:\s*\d{2}"#
+      if withoutDate.range(of: departurePattern, options: .regularExpression) != nil {
+        leaveCount += 1
+        withoutDate = withoutDate.replacingOccurrences(of: departurePattern, with: " ", options: .regularExpression)
+      }
+      let times = matches(clock, in: withoutDate)
+      let title = clean(clock.stringByReplacingMatches(in: withoutDate, range: NSRange(withoutDate.startIndex..., in: withoutDate), withTemplate: " ").replacingOccurrences(of: "|", with: " "))
+      if times.isEmpty && leaveCount == 0 && !badEnd && labelledEnd == nil &&
+        (title.isEmpty || (!dateMatches.isEmpty && weekdays.contains(nameKey(title)))) { continue }
+      if times.isEmpty && !missingStart && leaveCount == 0 && cells.count < 2 &&
+        withoutDate.range(of: #"(?i)^\s*[| ]*[0-9O]{1,2}\s*[.:]\s*[0-9O]{2}\s+\p{L}"#, options: .regularExpression) == nil { continue }
+      var start = (1...2).contains(times.count) ? time(String(withoutDate[times[0].range])) : nil
+      var end = labelledEnd ?? (times.count == 2 ? time(String(withoutDate[times[1].range])) : nil)
+      let separatedTimes = times.count == 2 && withoutDate[times[0].range.upperBound..<times[1].range.lowerBound].range(of: #"(?i)^\s*(?:[-–—|]|do|až)?\s*$"#, options: .regularExpression) == nil
+      if separatedTimes || missingStart { start = nil; end = nil }
+      let issue: String?
+      if !good { issue = "Některé údaje v řádku nejsou dobře čitelné." }
+      else if date == nil { issue = "Chybí jednoznačné datum včetně roku." }
+      else if start == nil || badEnd || (times.count == 2 && end == nil) || (end.map { $0 < (start ?? "") } ?? false) { issue = "Čas procedury není jednoznačný." }
+      else if title.isEmpty { issue = "Chybí název procedury nebo jídla." }
+      else { issue = nil }
+      result.append(makeRow(raw, date: date, start: start, end: end, title: title,
+                            location: locations.isEmpty ? nil : locations.joined(separator: ", "), issue: issue))
+    }
+    return result
+  }
+
+  static func correct(_ row: CommanderDocumentCandidateRow, date: String, start: String, end: String, title: String, location: String) -> CommanderDocumentCandidateRow? {
+    let endInput = end.trimmingCharacters(in: .whitespacesAndNewlines)
+    let name = title.trimmingCharacters(in: .whitespacesAndNewlines)
+    let finish = endInput.isEmpty ? nil : time(endInput)
+    guard let resolved = resolveDate(date.trimmingCharacters(in: .whitespacesAndNewlines), context: nil),
+          let start = time(start.trimmingCharacters(in: .whitespacesAndNewlines)), !name.isEmpty,
+          endInput.isEmpty || (finish.map { $0 >= start } == true) else { return nil }
+    return makeRow(row.rawText, date: resolved, start: start, end: finish, title: name,
+                   location: location.trimmingCharacters(in: .whitespacesAndNewlines), issue: nil)
+  }
+
+  private static func makeRow(_ raw: String, date: String?, start: String?, end: String?, title: String, location: String?, issue: String?) -> CommanderDocumentCandidateRow {
+    let meals = ["snidane": "Snídaně", "obed": "Oběd", "vecere": "Večeře"]
+    return .init(rawText: raw, dateToken: date, timeToken: start, endTimeToken: end, title: title,
+                 location: location == "" ? nil : location, meal: meals[nameKey(title)], issue: issue)
+  }
+
+  private static func clockMinutes(_ value: String) -> Int {
+    let fields = value.split(separator: ":")
+    return (Int(fields[0]) ?? 0) * 60 + (Int(fields[1]) ?? 0)
+  }
+
+  private static func nameKey(_ text: String) -> String { CommanderOCRReconciler.normalize(text) }
+  private static func clean(_ value: String) -> String {
+    value.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+      .trimmingCharacters(in: CharacterSet(charactersIn: " -–—|:;"))
+  }
+
+  private static func matches(_ regex: NSRegularExpression, in value: String) -> [(range: Range<String.Index>, match: NSTextCheckingResult)] {
+    regex.matches(in: value, range: NSRange(value.startIndex..., in: value)).compactMap { match in
+      Range(match.range, in: value).map { ($0, match) }
     }
   }
 
-  private static func firstMatch(_ pattern: String, in text: String) -> String? {
-    guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
-    let full = NSRange(text.startIndex..., in: text)
-    guard let match = regex.firstMatch(in: text, range: full), let range = Range(match.range, in: text) else { return nil }
-    return String(text[range])
+  private static func time(_ value: String) -> String? {
+    let parts = value.split(separator: ":", omittingEmptySubsequences: false)
+    guard parts.count == 2 else { return nil }
+    let minutes = parts[1].trimmingCharacters(in: .whitespaces)
+    guard minutes.count == 2, let hour = Int(parts[0].trimmingCharacters(in: .whitespaces)),
+          let minute = Int(minutes), (0..<24).contains(hour), (0..<60).contains(minute) else { return nil }
+    return String(format: "%02d:%02d", hour, minute)
+  }
+
+  private static func resolveDate(_ value: String, context: String?) -> String? {
+    let token = value.replacingOccurrences(of: #"\s+"#, with: "", options: .regularExpression)
+      .trimmingCharacters(in: CharacterSet(charactersIn: "."))
+    var parts = token.replacingOccurrences(of: "/", with: ".").split(separator: ".", omittingEmptySubsequences: false)
+    if token.range(of: #"^\d{4}-\d{2}-\d{2}$"#, options: .regularExpression) != nil {
+      parts = Array(token.split(separator: "-").reversed())
+    }
+    guard (2...3).contains(parts.count), let day = Int(parts[0]), let month = Int(parts[1]) else { return nil }
+    let year: Int
+    if parts.count == 3, parts[2].count == 4, let explicit = Int(parts[2]) { year = explicit }
+    else if parts.count == 2, let nearby = context?.split(separator: "-"), let nearbyYear = Int(nearby[0]), let nearbyMonth = Int(nearby[1]) {
+      year = nearbyYear + (nearbyMonth - month > 6 ? 1 : month - nearbyMonth > 6 ? -1 : 0)
+    } else { return nil }
+    let calendar = Calendar(identifier: .gregorian)
+    guard (1900...9999).contains(year), (1...12).contains(month), day > 0,
+          let first = calendar.date(from: DateComponents(year: year, month: month, day: 1)),
+          let days = calendar.range(of: .day, in: .month, for: first), days.contains(day) else { return nil }
+    return String(format: "%04d-%02d-%02d", year, month, day)
   }
 }
 
-
 enum CommanderCanonicalScheduleBuilder {
   static func build(from extraction: CommanderDocumentExtraction, now: Date = Date()) throws -> Schedule {
-    guard extraction.reviewCount == 0, !extraction.rows.isEmpty else {
-      throw NSError(
-        domain: "LazenskyCommander.OCR",
-        code: 20,
-        userInfo: [NSLocalizedDescriptionKey: "Rozpis obsahuje údaje, které je potřeba před aktivací zkontrolovat."]
-      )
+    guard extraction.readyWithoutQuestions else {
+      throw NSError(domain: "LazenskyCommander.OCR", code: 20,
+        userInfo: [NSLocalizedDescriptionKey: "Rozpis obsahuje údaje, které je potřeba před použitím zkontrolovat."])
     }
-
-    let version = max(1, Int(now.timeIntervalSince1970))
-    var events: [ScheduleEvent] = []
-    for (index, row) in extraction.rows.enumerated() {
-      guard let dateToken = row.dateToken,
-            let date = canonicalDate(dateToken, near: now),
-            let start = row.timeToken else {
-        throw NSError(
-          domain: "LazenskyCommander.OCR",
-          code: 21,
-          userInfo: [NSLocalizedDescriptionKey: "U jedné položky chybí datum nebo čas."]
-        )
-      }
-
-      let isMeal = row.meal != nil
-      guard isMeal || row.procedure != nil else {
-        throw NSError(
-          domain: "LazenskyCommander.OCR",
-          code: 22,
-          userInfo: [NSLocalizedDescriptionKey: "Jednu položku nelze bezpečně určit jako proceduru nebo jídlo."]
-        )
-      }
-
-      let end = row.endTimeToken ?? start
+    struct Key: Hashable {
+      let date: String
+      let start: String
+      let end: String
       let title: String
-      let procedureType: String?
-      let mealType: String?
-      if let meal = row.meal {
-        title = mealTitle(meal)
-        procedureType = nil
-        mealType = title
-      } else if let procedure = row.procedure {
-        title = procedure.safeForNameCorrection ? procedure.name : cleanedSourceTitle(row.rawText, fallback: procedure.name)
-        procedureType = procedure.name
-        mealType = nil
-      } else {
-        continue
-      }
-
-      let stableId = "ocr-\(version)-\(index + 1)"
-      events.append(ScheduleEvent(
-        stableId: stableId,
-        date: date,
-        start: start,
-        end: end,
-        title: title,
-        location: "Neuvedeno v rozpisu",
-        kind: isMeal ? .meal : .procedure,
-        procedureType: procedureType,
-        mealType: mealType,
-        leadTimeMinutes: isMeal ? 10 : 20
-      ))
+      let place: String?
     }
-
-    events.sort { ($0.date, $0.start, $0.stableId) < ($1.date, $1.start, $1.stableId) }
-    guard let firstDate = events.first?.date, let lastDate = events.last?.date else {
-      throw NSError(
-        domain: "LazenskyCommander.OCR",
-        code: 23,
-        userInfo: [NSLocalizedDescriptionKey: "Z rozpisu nevznikla žádná použitelná událost."]
-      )
+    let version = max(1, Int(now.timeIntervalSince1970))
+    var seen: Set<Key> = []
+    var events: [ScheduleEvent] = []
+    let sorted = extraction.rows.sorted { ($0.dateToken ?? "", $0.timeToken ?? "", $0.title) < ($1.dateToken ?? "", $1.timeToken ?? "", $1.title) }
+    for row in sorted {
+      guard let date = row.dateToken, let start = row.timeToken else { throw CocoaError(.fileReadCorruptFile) }
+      let end = row.endTimeToken ?? start
+      guard seen.insert(Key(date: date, start: start, end: end, title: row.title, place: row.location)).inserted else { continue }
+      events.append(ScheduleEvent(stableId: "ocr-\(version)-\(events.count + 1)", date: date, start: start, end: end,
+        title: row.title, location: row.location ?? "Neuvedeno v rozpisu",
+        kind: row.meal == nil ? .procedure : .meal, procedureType: nil, mealType: row.meal,
+        leadTimeMinutes: row.meal == nil ? 20 : 10))
     }
-
-    let iso = ISO8601DateFormatter()
-    let schedule = Schedule(
-      schemaVersion: 1,
-      scheduleVersion: version,
-      updatedAt: iso.string(from: now),
-      stay: [
-        "spa": extraction.facility?.name ?? "Lázeňský pobyt",
-        "dateFrom": firstDate,
-        "dateTo": lastDate,
-        "source": "Lokální OCR · klientský rozpis"
-      ],
-      events: events,
-      settings: ScheduleSettings(
-        defaultLeadTimeMinutes: 20,
-        procedureTypeOverrides: [:],
-        mealOverrides: ["Snídaně": 10, "Oběd": 10, "Večeře": 10]
-      )
-    )
+    guard let firstDate = events.first?.date, let lastDate = events.last?.date else { throw CocoaError(.fileReadCorruptFile) }
+    let schedule = Schedule(schemaVersion: 1, scheduleVersion: version, updatedAt: ISO8601DateFormatter().string(from: now),
+      stay: ["spa": extraction.facility?.name ?? "Lázeňský pobyt", "dateFrom": firstDate, "dateTo": lastDate, "source": "Lokální OCR · klientský rozpis"],
+      events: events, settings: ScheduleSettings(defaultLeadTimeMinutes: 20, procedureTypeOverrides: [:],
+        mealOverrides: ["Snídaně": 10, "Oběd": 10, "Večeře": 10]))
     try NativeAlarmContract.validateCanonical(schedule)
     return schedule
-  }
-
-  private static func canonicalDate(_ token: String, near reference: Date) -> String? {
-    let pieces = token
-      .replacingOccurrences(of: "/", with: ".")
-      .replacingOccurrences(of: "-", with: ".")
-      .split(separator: ".")
-      .compactMap { Int($0) }
-    guard pieces.count >= 2 else { return nil }
-    let day = pieces[0]
-    let month = pieces[1]
-    let calendar = Calendar(identifier: .gregorian)
-    let timeZone = TimeZone(identifier: "Europe/Prague")!
-    var prague = calendar
-    prague.timeZone = timeZone
-    let referenceYear = prague.component(.year, from: reference)
-
-    let years: [Int]
-    if pieces.count >= 3 {
-      let raw = pieces[2]
-      years = [raw < 100 ? 2000 + raw : raw]
-    } else {
-      years = [referenceYear - 1, referenceYear, referenceYear + 1]
-    }
-
-    let candidates = years.compactMap { year -> Date? in
-      var c = DateComponents()
-      c.calendar = prague
-      c.timeZone = timeZone
-      c.year = year
-      c.month = month
-      c.day = day
-      c.hour = 12
-      return prague.date(from: c)
-    }
-    guard let chosen = candidates.min(by: { abs($0.timeIntervalSince(reference)) < abs($1.timeIntervalSince(reference)) }) else { return nil }
-    let formatter = DateFormatter()
-    formatter.calendar = prague
-    formatter.timeZone = timeZone
-    formatter.locale = Locale(identifier: "en_US_POSIX")
-    formatter.dateFormat = "yyyy-MM-dd"
-    return formatter.string(from: chosen)
-  }
-
-  private static func mealTitle(_ value: String) -> String {
-    switch value {
-    case "breakfast": return "Snídaně"
-    case "lunch": return "Oběd"
-    case "dinner": return "Večeře"
-    default: return value
-    }
-  }
-
-  private static func cleanedSourceTitle(_ raw: String, fallback: String) -> String {
-    var value = raw
-    value = value.replacingOccurrences(
-      of: #"\b(?:[01]?\d|2[0-3])[:.]\d{2}\b|\b(?:[0-3]?\d)[./-](?:[01]?\d)(?:[./-](?:\d{2}|\d{4}))?\b"#,
-      with: " ",
-      options: .regularExpression
-    )
-    value = value.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
-      .trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "-–—|:;")))
-    return value.count >= 3 ? value : fallback
   }
 }

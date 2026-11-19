@@ -3,6 +3,7 @@ import SwiftUI
 
 struct CommanderStayView: View {
   @ObservedObject var model: CommanderViewModel
+  @State private var showsPaperImport = false
 
   var body: some View {
     TimelineView(.periodic(from: .now, by: 60)) { context in
@@ -12,6 +13,13 @@ struct CommanderStayView: View {
         subtitle: "Souhrn celého pobytu",
         schedule: model.latestSchedule
       ) {
+        Button { showsPaperImport = true } label: {
+          Label("Vyfotit rozpis", systemImage: "camera.viewfinder")
+            .frame(maxWidth: .infinity)
+            .padding(14)
+            .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthCard)
+        }
+        .buttonStyle(.plain)
         if let schedule = model.latestSchedule {
           if let stay = try? CommanderStayPresentation.make(schedule: schedule, now: context.date) {
             CommanderStayOverviewCard(stay: stay)
@@ -27,6 +35,9 @@ struct CommanderStayView: View {
           CommanderStayUnavailableCard(message: "Rozpis ještě není načten")
         }
       }
+    }
+    .sheet(isPresented: $showsPaperImport) {
+      CommanderFirstStayView(model: model, replacingSchedule: true)
     }
   }
 }

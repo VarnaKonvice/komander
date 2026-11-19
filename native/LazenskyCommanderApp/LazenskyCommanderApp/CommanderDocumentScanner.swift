@@ -40,7 +40,11 @@ struct CommanderDocumentScanner: UIViewControllerRepresentable {
 enum CommanderDocumentImageSource {
   static func image(from data: Data) -> CGImage? {
     guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
-    return CGImageSourceCreateImageAtIndex(source, 0, nil)
+    return CGImageSourceCreateThumbnailAtIndex(source, 0, [
+      kCGImageSourceCreateThumbnailFromImageAlways: true,
+      kCGImageSourceCreateThumbnailWithTransform: true,
+      kCGImageSourceThumbnailMaxPixelSize: 4200
+    ] as CFDictionary)
   }
 
   static func images(from url: URL) throws -> [CGImage] {
