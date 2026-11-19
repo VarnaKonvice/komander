@@ -1,6 +1,7 @@
 import CoreGraphics
 import CoreImage
 import Foundation
+import PDFKit
 import ImageIO
 @preconcurrency import Vision
 
@@ -162,5 +163,41 @@ enum CommanderOnDeviceOCR {
 
   private static func normalizedTopLeft(_ rect: CGRect, slope: Double) -> CommanderOCRRect {
     .init(x: rect.minX, y: 1 - rect.maxY - slope * (rect.midX - 0.5), width: rect.width, height: rect.height)
+  }
+}
+
+
+enum CommanderPDFText {
+  static func read(_ page: PDFPage) -> CommanderOCRPage? {
+    guard page.rotation == 0, let source = page.string else { return nil }
+    let box = page.bounds(for: .mediaBox)
+    guard box.width > 0, box.height > 0, source.utf16.count <= 120_000 else { return nil }
+    let text = source as NSString
+    let token = try! NSRegularExpression(pattern: #"\S+"#)
+    var offset = 0
+    var lines: [CommanderOCRLine] = []
+    func rectangle(_ value: CGRect) -> CommanderOCRRect {
+      .init(x: (value.minX - box.minX) / box.width,
+        y: (box.maxY - value.maxY) / box.height, width: value.width / box.width, height: value.height / box.height)
+    }
+    while offset < text.length {
+      let range = text.lineRange(for: NSRange(location: offset, length: 0))
+      offset = NSMaxRange(range)
+      var bounds = CGRect.null
+      let words = token.matches(in: source, range: range).compactMap { match -> CommanderOCRWord? in
+        guard NSMaxRange(match.range) <= page.numberOfCharacters,
+              let selection = page.selection(for: match.range) else { return nil }
+        let rect = selection.bounds(for: page)
+        guard !rect.isEmpty, rect.intersects(box) else { return nil }
+        bounds = bounds.union(rect)
+        return .init(text: text.substring(with: match.range), confidence: 1, bounds: rectangle(rect))
+      }
+      guard !words.isEmpty, !bounds.isNull else { continue }
+      lines.append(.init(text: words.map(\.text).joined(separator: " "), confidence: 1,
+                         bounds: rectangle(bounds), alternatives: [], words: words))
+    }
+    let combined = lines.map(\.text).joined(separator: "\n")
+    guard combined.filter({ $0.isLetter || $0.isNumber }).count >= 8 else { return nil }
+    return .init(text: combined, pixelWidth: Int(box.width), pixelHeight: Int(box.height), averageConfidence: 1, lines: lines)
   }
 }

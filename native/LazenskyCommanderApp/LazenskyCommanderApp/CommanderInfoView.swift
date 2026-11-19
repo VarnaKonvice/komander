@@ -6,7 +6,7 @@ struct CommanderInfoView: View {
 
   private let labels = [
     "spa": "Lázně", "dateFrom": "Pobyt od", "dateTo": "Pobyt do",
-    "room": "Pokoj", "doctor": "Lékař", "diagnosis": "Diagnóza", "mealShift": "Stravovací směna"
+    "notes": "Poznámky", "room": "Pokoj", "doctor": "Lékař", "diagnosis": "Diagnóza", "mealShift": "Stravovací směna"
   ]
 
   var body: some View {
@@ -18,7 +18,8 @@ struct CommanderInfoView: View {
         schedule: model.latestSchedule
       ) {
         if let schedule = model.latestSchedule {
-          let fields = CommanderInfoPresentation.fields(stay: schedule.stay)
+          let clinical = schedule.paperDetails?.fields.filter { ["doctor", "diagnosis", "notes"].contains($0.key) } ?? [:]
+          let fields = CommanderInfoPresentation.fields(stay: schedule.stay.merging(clinical) { _, local in local })
           if fields.isEmpty {
             unavailableCard("Informace o pobytu nejsou uvedeny")
           } else {

@@ -22,19 +22,60 @@ public extension ScheduleSnapshotStoring {
   }
 }
 
+public enum LocalPaperScheduleFile {
+  public static func isRequired(for schedule: Schedule) -> Bool {
+    schedule.paperDetails != nil || schedule.stay["source"] == "Lokální OCR · klientský rozpis"
+  }
+
+  public static func read(from url: URL) -> Schedule? {
+    guard let data = try? Data(contentsOf: url), let schedule = try? JSONDecoder().decode(Schedule.self, from: data),
+          (try? NativeAlarmContract.validateCanonical(schedule)) != nil else { return nil }
+    return schedule
+  }
+
+  public static func write(_ schedule: Schedule, to url: URL) throws {
+    var directory = url.deletingLastPathComponent()
+    try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    var resources = URLResourceValues()
+    resources.isExcludedFromBackup = true
+    try directory.setResourceValues(resources)
+    let data = try JSONEncoder().encode(schedule)
+#if os(iOS)
+    try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+#else
+    try data.write(to: url, options: .atomic)
+#endif
+  }
+
+  public static func remove(at url: URL) throws {
+    do { try FileManager.default.removeItem(at: url) }
+    catch let error as CocoaError where error.code == .fileNoSuchFile || error.code == .fileReadNoSuchFile {}
+  }
+
+  public static func latest(local: URL?, defaults: UserDefaults, key: String) -> Schedule? {
+    let standard = defaults.data(forKey: key).flatMap { try? JSONDecoder().decode(Schedule.self, from: $0) }
+    guard let privateCopy = local.flatMap({ read(from: $0) }) else { return standard }
+    return privateCopy.scheduleVersion >= (standard?.scheduleVersion ?? Int.min) ? privateCopy : standard
+  }
+}
+
 public actor UserDefaultsScheduleSnapshotStore: ScheduleSnapshotStoring {
   private let defaults: UserDefaults
   private let key: String
+  private let paperFile: URL?
 
-  public init(defaults: UserDefaults = .standard, key: String = "lazensky.commander.scheduleSnapshot.v1") {
+  public init(defaults: UserDefaults = .standard, key: String = "lazensky.commander.scheduleSnapshot.v1", paperFile: URL? = nil) {
     self.defaults = defaults
     self.key = key
+    self.paperFile = paperFile
   }
 
   public func load() throws -> Schedule? {
-    guard let data = defaults.data(forKey: key) else { return nil }
+    guard let schedule = LocalPaperScheduleFile.latest(local: paperFile, defaults: defaults, key: key) else {
+      defaults.removeObject(forKey: key)
+      return nil
+    }
     do {
-      let schedule = try JSONDecoder().decode(Schedule.self, from: data)
       try NativeAlarmContract.validateCanonical(schedule)
       return schedule
     } catch {
@@ -52,7 +93,13 @@ public actor UserDefaultsScheduleSnapshotStore: ScheduleSnapshotStoring {
 
   public func save(_ schedule: Schedule) throws {
     try NativeAlarmContract.validateCanonical(schedule)
-    defaults.set(try JSONEncoder().encode(schedule), forKey: key)
+    if LocalPaperScheduleFile.isRequired(for: schedule), let paperFile {
+      try LocalPaperScheduleFile.write(schedule, to: paperFile)
+      defaults.removeObject(forKey: key)
+    } else {
+      defaults.set(try JSONEncoder().encode(schedule), forKey: key)
+      if let paperFile { try? LocalPaperScheduleFile.remove(at: paperFile) }
+    }
   }
 }
 

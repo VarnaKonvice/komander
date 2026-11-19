@@ -188,6 +188,7 @@ final class CommanderViewModel: ObservableObject {
   private static let launchForegroundGraceInterval: TimeInterval = 8
   private static let spaLeadTimePresetKey = "lazensky.commander.leadTimePreset.20-vizita5.v1"
   private let pendingScheduleKey: String
+  private let pendingPaperFile: URL
 
   private let clock: @Sendable () -> Date
 
@@ -223,10 +224,12 @@ final class CommanderViewModel: ObservableObject {
     let savedPreferences = leadTimePreferences.load()
     let scheduleSnapshotKey = "lazensky.commander.scheduleSnapshot.\(namespace).v1"
     let pendingScheduleKey = "lazensky.commander.pendingSchedule.\(namespace).v1"
+    let paperDirectory = URL.applicationSupportDirectory.appendingPathComponent("CommanderPaperPrivate", isDirectory: true)
+    let paperFile = paperDirectory.appendingPathComponent("accepted-\(namespace).json")
+    let pendingPaperFile = paperDirectory.appendingPathComponent("pending-\(namespace).json")
     let initialSchedule: Schedule? = {
       guard !CommanderDesignPreview.enabled,
-            let data = UserDefaults.standard.data(forKey: scheduleSnapshotKey),
-            let schedule = try? JSONDecoder().decode(Schedule.self, from: data)
+            let schedule = LocalPaperScheduleFile.latest(local: paperFile, defaults: .standard, key: scheduleSnapshotKey)
       else { return nil }
       do {
         try NativeAlarmContract.validateCanonical(schedule)
@@ -244,6 +247,7 @@ final class CommanderViewModel: ObservableObject {
     self.calendarIntegration = calendarIntegration
     self.channel = configuration.channel
     self.pendingScheduleKey = pendingScheduleKey
+    self.pendingPaperFile = pendingPaperFile
     self.suppressAutomaticForegroundUntil = clock().addingTimeInterval(Self.launchForegroundGraceInterval)
     self.leadTimeOverrides = CommanderDesignPreview.enabled ? LeadTimeOverrides() : savedPreferences.overrides
     self.leadTimeProjectionRevision = CommanderDesignPreview.enabled ? 0 : savedPreferences.revision
@@ -254,7 +258,7 @@ final class CommanderViewModel: ObservableObject {
     scheduleSync = CommanderScheduleSyncCoordinator(
       scheduleService: scheduleService,
       alarmSyncService: service,
-      scheduleStore: UserDefaultsScheduleSnapshotStore(key: scheduleSnapshotKey),
+      scheduleStore: UserDefaultsScheduleSnapshotStore(key: scheduleSnapshotKey, paperFile: paperFile),
       dataset: CommanderRuntimeDataset.current,
       clock: clock
     )
@@ -262,13 +266,13 @@ final class CommanderViewModel: ObservableObject {
       self.latestSchedule = initialSchedule
     }
     if !CommanderDesignPreview.enabled,
-       let data = UserDefaults.standard.data(forKey: pendingScheduleKey),
-       let pending = try? JSONDecoder().decode(Schedule.self, from: data),
+       let pending = LocalPaperScheduleFile.latest(local: pendingPaperFile, defaults: .standard, key: pendingScheduleKey),
        (try? NativeAlarmContract.validateCanonical(pending)) != nil,
        initialSchedule == nil || pending.scheduleVersion > initialSchedule!.scheduleVersion {
       self.pendingSchedule = pending
     } else {
       UserDefaults.standard.removeObject(forKey: pendingScheduleKey)
+      try? LocalPaperScheduleFile.remove(at: pendingPaperFile)
     }
   }
 
@@ -681,16 +685,22 @@ final class CommanderViewModel: ObservableObject {
         current: currentVersion, incoming: schedule.scheduleVersion
       )
     }
+    try persistPendingSchedule(schedule)
     pendingSchedule = schedule
-    persistPendingSchedule(schedule)
     scheduleApprovalError = nil
   }
 
-  private func persistPendingSchedule(_ schedule: Schedule?) {
-    if let schedule, let data = try? JSONEncoder().encode(schedule) {
-      UserDefaults.standard.set(data, forKey: pendingScheduleKey)
-    } else {
+  private func persistPendingSchedule(_ schedule: Schedule?) throws {
+    if let schedule, LocalPaperScheduleFile.isRequired(for: schedule) {
+      try LocalPaperScheduleFile.write(schedule, to: pendingPaperFile)
       UserDefaults.standard.removeObject(forKey: pendingScheduleKey)
+    } else {
+      if let schedule {
+        UserDefaults.standard.set(try JSONEncoder().encode(schedule), forKey: pendingScheduleKey)
+      } else {
+        UserDefaults.standard.removeObject(forKey: pendingScheduleKey)
+      }
+      try? LocalPaperScheduleFile.remove(at: pendingPaperFile)
     }
   }
 
@@ -701,8 +711,8 @@ final class CommanderViewModel: ObservableObject {
       let currentVersion = latestSchedule?.scheduleVersion ?? Int.min
       guard candidate.scheduleVersion > currentVersion else { return }
       _ = try CommanderScheduleProjection(schedule: candidate, overrides: leadTimeOverrides)
+      try persistPendingSchedule(candidate)
       pendingSchedule = candidate
-      persistPendingSchedule(candidate)
       scheduleApprovalError = nil
     } catch {
       // A discovery failure must never break a previously accepted offline stay.
@@ -720,7 +730,7 @@ final class CommanderViewModel: ObservableObject {
       do {
         try await self.importSchedule(schedule)
         self.pendingSchedule = nil
-        self.persistPendingSchedule(nil)
+        try? self.persistPendingSchedule(nil)
         await self.refreshAccess()
         let alarmNeedsChoice = self.supportsAlarmKit &&
           (self.accessStatus.contains("not been requested") || self.accessStatus.contains("denied"))

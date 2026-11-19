@@ -39,3 +39,18 @@ Na Macu lze sestavit nový podepsaný balíček pro již přidaný iPhone přes
 \`bash OCRAcceptance/export-iphone.sh /absolutni/cesta/Lazensky-Commander-iPhone-OCR.ipa\`.
 Postup ověří podpis a platnost vloženého profilu a vytvoří IPA bez instalace do telefonu.
 Fyzická instalace vyžaduje platný profil pro konkrétní zařízení.
+## Import celého dokumentu
+
+Náhled ukazuje údaje z hlavičky, předepsané procedury a naplánované události. V náhledu lze opravit hlavičku, název, počet a poznámku předepsané procedury i jednotlivou událost.
+
+- **Pobyt** ukazuje termín, ubytování, údaje o pacientovi a předepsané procedury s počty.
+- **Info** ukazuje ošetřujícího lékaře, diagnózu a poznámku, pokud je dokument obsahuje.
+- **Dnes a Týden** a alarmy vycházejí z naplánovaných událostí. Záhlaví, tiskové údaje a souhrn předepsaných počtů události nevytvářejí.
+
+PDF se čte po stránkách. Na iPhonu PDFKit a od Androidu 15 PDF Renderer poskytují text a jeho polohu. Stránky bez použitelné textové vrstvy, otočené stránky bez spolehlivé geometrie na iPhonu a PDF na starším Androidu používají lokální rozpoznání vykreslené stránky.
+
+Osobní a zdravotní údaje z hlavičky a poznámky k předpisům jsou součástí místního rozpisu a do alarmového ani kalendářového exportu se nevkládají. Import nepoužívá vzdálený endpoint. Nativní iPhone ukládá papírový rozpis do aplikační složky vyřazené ze zálohování a Android má systémové zálohování aplikace vypnuté.
+
+Případy v `full-document-ocr.json` na obou platformách pokrývají celý vícestránkový podklad, datum mimo pobyt, konflikt údajů, překryv snímků a 79 anonymizovaných dvojic času a názvu z geometrie pěti stran staršího průkazu z Darkova. Polohy jsou odvozené z rozpoznání původního skenu. Testovací texty a časy jsou náhradní hodnoty. Skutečné jméno, zdravotní údaje ani sken nejsou součástí Gitu.
+
+Příkaz `swift OCRAcceptance/GenerateDocument.swift /tmp/commander-paper-qa` vytvoří dvoustránkové PDF s textovou první stranou a rastrovou druhou stranou. Příkaz `bash OCRAcceptance/run.sh /tmp/commander-paper-qa/whole-document-mixed.pdf` ověří dvě události, hlavičku a předpis.

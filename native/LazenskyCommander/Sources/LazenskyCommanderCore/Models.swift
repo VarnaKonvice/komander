@@ -90,6 +90,28 @@ public struct ScheduleSettings: Codable, Equatable, Sendable {
   }
 }
 
+public struct SchedulePrescription: Codable, Equatable, Sendable {
+  public let title: String
+  public let count: Int?
+  public let note: String?
+
+  public init(title: String, count: Int?, note: String?) {
+    self.title = title
+    self.count = count
+    self.note = note
+  }
+}
+
+public struct PaperScheduleDetails: Codable, Equatable, Sendable {
+  public let fields: [String: String]
+  public let prescriptions: [SchedulePrescription]
+
+  public init(fields: [String: String], prescriptions: [SchedulePrescription]) {
+    self.fields = fields
+    self.prescriptions = prescriptions
+  }
+}
+
 public struct Schedule: Codable, Equatable, Sendable {
   public let schemaVersion: Int
   public let scheduleVersion: Int
@@ -97,10 +119,12 @@ public struct Schedule: Codable, Equatable, Sendable {
   public let stay: [String: String]
   public let events: [ScheduleEvent]
   public let settings: ScheduleSettings
+  public let paperDetails: PaperScheduleDetails?
 
   public init(
     schemaVersion: Int, scheduleVersion: Int, updatedAt: String,
-    stay: [String: String], events: [ScheduleEvent], settings: ScheduleSettings
+    stay: [String: String], events: [ScheduleEvent], settings: ScheduleSettings,
+    paperDetails: PaperScheduleDetails? = nil
   ) {
     self.schemaVersion = schemaVersion
     self.scheduleVersion = scheduleVersion
@@ -108,6 +132,7 @@ public struct Schedule: Codable, Equatable, Sendable {
     self.stay = stay
     self.events = events
     self.settings = settings
+    self.paperDetails = paperDetails
   }
 }
 

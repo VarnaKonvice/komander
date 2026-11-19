@@ -21,6 +21,34 @@ struct CommanderStayView: View {
         }
         .buttonStyle(.plain)
         if let schedule = model.latestSchedule {
+          if let paper = schedule.paperDetails {
+            let accommodation = CommanderPaperDocumentReader.fields.filter {
+              ["patient", "spa", "building", "floor", "room", "mealShift"].contains($0.key) && paper.fields[$0.key] != nil
+            }
+            if !accommodation.isEmpty {
+              VStack(alignment: .leading, spacing: 9) {
+                Text("Pobyt a ubytování").font(.headline)
+                ForEach(accommodation, id: \.key) { field in
+                  LabeledContent(field.label, value: paper.fields[field.key] ?? "")
+                }
+              }
+              .padding(14)
+              .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthInset)
+            }
+            if !paper.prescriptions.isEmpty {
+              VStack(alignment: .leading, spacing: 9) {
+                Text("Předepsané procedury").font(.headline)
+                ForEach(paper.prescriptions.indices, id: \.self) { index in
+                  let item = paper.prescriptions[index]
+                  Text(item.title + (item.count.map { " · \($0)×" } ?? ""))
+                  if let note = item.note { Text(note).font(.footnote) }
+                }
+              }
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .padding(14)
+              .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthInset)
+            }
+          }
           if let stay = try? CommanderStayPresentation.make(schedule: schedule, now: context.date) {
             CommanderStayOverviewCard(stay: stay)
             CommanderProcedureOverviewCard(stay: stay)

@@ -488,7 +488,7 @@ struct CommanderFirstStayView: View {
   @State private var photoItems: [PhotosPickerItem] = []
   @State private var error: String?
   @State private var isProcessingSource = false
-  @State private var scans: [(original: CGImage, page: CommanderOCRPage)] = []
+  @State private var scans: [CommanderOCRPage] = []
   @State private var replacePage: Int?
   @State private var unreadablePages: [Int] = []
   @State private var parsedRows: [CommanderDocumentCandidateRow] = []
@@ -498,6 +498,18 @@ struct CommanderFirstStayView: View {
   @State private var excludedRows: [CommanderDocumentCandidateRow] = []
   @State private var omitRow: EditRow?
   @State private var failedSelections = 0
+  @State private var showHeaderEditor = false
+  @State private var fixedHeader: [String: String] = [:]
+  @State private var reviewedHeaderKeys: Set<String> = []
+  @State private var editPrescription: EditPrescription?
+  @State private var fixedPrescriptions: [(original: SchedulePrescription, fixed: SchedulePrescription)] = []
+
+  private struct EditPrescription: Identifiable {
+    let index: Int
+    let original: SchedulePrescription
+    let current: SchedulePrescription
+    var id: Int { index }
+  }
 
   private enum Step { case start, ownSchedule, review }
   private struct EditRow: Identifiable {
@@ -542,6 +554,24 @@ struct CommanderFirstStayView: View {
         ProgressView("Načítám váš rozpis…")
           .padding(20)
           .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16))
+      }
+    }
+    .sheet(isPresented: $showHeaderEditor) {
+      CommanderPaperHeaderEditor(fields: extraction?.details?.fields ?? [:]) { updated in
+        let previous = extraction?.details?.fields ?? [:]
+        for field in CommanderPaperDocumentReader.fields where previous[field.key] != updated[field.key] ||
+          extraction?.headerIssues[field.key] != nil {
+          reviewedHeaderKeys.insert(field.key)
+          fixedHeader[field.key] = updated[field.key]
+        }
+        refreshReview()
+      }
+    }
+    .sheet(item: $editPrescription) { item in
+      CommanderPrescriptionEditor(item: item.current) { value in
+        fixedPrescriptions.removeAll { $0.original == item.original }
+        fixedPrescriptions.append((item.original, value))
+        refreshReview()
       }
     }
     .sheet(item: $editRow) { edit in
@@ -622,6 +652,39 @@ struct CommanderFirstStayView: View {
       if let extraction {
         intro(symbol: "checkmark.circle.fill", title: "Zkontrolovat rozpis",
               text: "\(itemCount(extraction.rows.count)) · \(extraction.reviewCount) ke kontrole")
+        VStack(alignment: .leading, spacing: 8) {
+          Text("Údaje z hlavičky").font(.headline)
+          ForEach(CommanderPaperDocumentReader.fields, id: \.key) { field in
+            if let value = extraction.details?.fields[field.key] { LabeledContent(field.label, value: value) }
+            if let issue = extraction.headerIssues[field.key] {
+              Text("\(field.label) · \(issue)").foregroundStyle(CommanderDesignTokens.Colors.amber)
+            }
+          }
+          Button("Opravit údaje z hlavičky") { showHeaderEditor = true }
+        }
+        .padding(14)
+        .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthInset)
+        if let prescriptions = extraction.details?.prescriptions, !prescriptions.isEmpty {
+          VStack(alignment: .leading, spacing: 8) {
+            Text("Předepsané procedury").font(.headline)
+            ForEach(prescriptions.indices, id: \.self) { index in
+              let item = prescriptions[index]
+              Button {
+                let original = fixedPrescriptions.first { $0.fixed == item }?.original ?? item
+                editPrescription = .init(index: index, original: original, current: item)
+              } label: {
+                VStack(alignment: .leading) {
+                  Text(item.title + (item.count.map { " · \($0)×" } ?? ""))
+                  if let note = item.note { Text(note).font(.footnote) }
+                }
+              }
+            }
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(14)
+          .commanderCard(accent: CommanderDesignTokens.Colors.locationBlue, surface: .depthInset)
+        }
+        Text("Naplánované události").font(.headline)
         ForEach(unreadablePages, id: \.self) { index in
           VStack(alignment: .leading, spacing: 10) {
             Text("Snímek \(index + 1) se nepodařilo přečíst.")
@@ -723,7 +786,7 @@ struct CommanderFirstStayView: View {
                 CommanderDocumentImageSource.image(from: data)
               }).value else { throw CocoaError(.fileReadCorruptFile) }
         let page = try await CommanderOnDeviceOCR.recognize(cgImage: image)
-        scans.append((image, page))
+        scans.append(page)
       } catch { failed += 1 }
     }
     if failed > 0 { failedSelections += failed; error = "\(failed) fotografií se nepodařilo otevřít. Vyber je znovu." }
@@ -738,9 +801,10 @@ struct CommanderFirstStayView: View {
     isProcessingSource = true
     defer { isProcessingSource = false }
     do {
-      let images = try await Task.detached(priority: .userInitiated) { try CommanderDocumentImageSource.images(from: url) }.value
-      try await addImages(images)
-    } catch { self.error = "Dokument se nepodařilo přečíst: \(error.localizedDescription)" }
+      let pages = try await Task.detached(priority: .userInitiated) { try await CommanderDocumentImageSource.recognize(from: url) }.value
+      scans.append(contentsOf: pages)
+      refreshReview()
+    } catch { self.error = "Dokument se nepodařilo přečíst." }
   }
 
   @MainActor
@@ -756,8 +820,8 @@ struct CommanderFirstStayView: View {
     guard !images.isEmpty else { throw CocoaError(.fileReadCorruptFile) }
     for (offset, image) in images.enumerated() {
       let page = try await CommanderOnDeviceOCR.recognize(cgImage: image)
-      if offset == 0, let index, scans.indices.contains(index) { scans[index] = (image, page) }
-      else { scans.append((image, page)) }
+      if offset == 0, let index, scans.indices.contains(index) { scans[index] = page }
+      else { scans.append(page) }
     }
     refreshReview()
   }
@@ -766,14 +830,25 @@ struct CommanderFirstStayView: View {
     guard !scans.isEmpty else { resetSource(); step = .ownSchedule; return }
     do {
       let lexicon = try CommanderSpaOCRLexicon.loadBundled()
-      let pages = scans.map { CommanderOCRReconciler.fromSingle($0.page) }
-      unreadablePages = pages.indices.filter { CommanderDocumentExtractor.extract(pages[$0], lexicon: lexicon).rows.isEmpty }
+      let pages = scans.map(CommanderOCRReconciler.fromSingle)
+      unreadablePages = scans.indices.filter { !scans[$0].hasText }
       var result = CommanderDocumentExtractor.extract(pages, lexicon: lexicon)
       result.rows.removeAll { excludedRows.contains($0) }
       parsedRows = result.rows
       for index in result.rows.indices {
         if let correction = corrections.first(where: { $0.original == result.rows[index] }) { result.rows[index] = correction.fixed }
       }
+      var fields = result.details?.fields ?? [:]
+      for key in reviewedHeaderKeys { fields[key] = fixedHeader[key] }
+      var prescriptions: [SchedulePrescription] = []
+      for original in result.details?.prescriptions ?? [] {
+        let item = fixedPrescriptions.first(where: { $0.original == original })?.fixed ?? original
+        if !prescriptions.contains(item) { prescriptions.append(item) }
+      }
+      result.details = fields.isEmpty && prescriptions.isEmpty ? nil : .init(fields: fields, prescriptions: prescriptions)
+      result.headerIssues = CommanderDocumentExtractor.validateHeader(result, unresolved: result.headerIssues.filter {
+        !reviewedHeaderKeys.contains($0.key)
+      })
       extraction = result
       step = .review
     } catch { self.error = "Rozpis se nepodařilo připravit: \(error.localizedDescription)" }
@@ -782,6 +857,9 @@ struct CommanderFirstStayView: View {
   private func resetSource() {
     scans = []
     corrections = []
+    fixedHeader = [:]
+    reviewedHeaderKeys = []
+    fixedPrescriptions = []
     excludedRows = []
     failedSelections = 0
     parsedRows = []
@@ -1030,6 +1108,76 @@ private struct CommanderPhotoRowEditor: View {
         title = source.title
         location = source.location ?? ""
       }
+    }
+  }
+}
+
+
+private struct CommanderPaperHeaderEditor: View {
+  @Environment(\.dismiss) private var dismiss
+  @State var fields: [String: String]
+  let save: ([String: String]) -> Void
+  @State private var invalidDate = false
+
+  var body: some View {
+    NavigationStack {
+      Form {
+        ForEach(CommanderPaperDocumentReader.fields, id: \.key) { field in
+          VStack(alignment: .leading) {
+            Text(field.label).font(.caption)
+            TextField(field.key == "dateFrom" || field.key == "dateTo" ? "DD.MM.RRRR" : field.label,
+                      text: Binding(get: { fields[field.key] ?? "" }, set: { fields[field.key] = $0 }))
+          }
+        }
+        if invalidDate { Text("Zadej celé datum včetně roku.").foregroundStyle(.red) }
+        Button("Uložit hlavičku") {
+          var updated = fields.mapValues { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.value.isEmpty }
+          for key in ["dateFrom", "dateTo"] {
+            if let value = updated[key] {
+              guard let date = CommanderDocumentExtractor.headerDate(value) else { invalidDate = true; return }
+              updated[key] = date
+            }
+          }
+          save(updated)
+          dismiss()
+        }
+      }
+      .navigationTitle("Údaje z hlavičky")
+      .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Zrušit") { dismiss() } } }
+    }
+  }
+}
+
+private struct CommanderPrescriptionEditor: View {
+  @Environment(\.dismiss) private var dismiss
+  @State private var title: String
+  @State private var count: String
+  @State private var note: String
+  let save: (SchedulePrescription) -> Void
+
+  init(item: SchedulePrescription, save: @escaping (SchedulePrescription) -> Void) {
+    _title = State(initialValue: item.title)
+    _count = State(initialValue: item.count.map(String.init) ?? "")
+    _note = State(initialValue: item.note ?? "")
+    self.save = save
+  }
+
+  var body: some View {
+    NavigationStack {
+      Form {
+        TextField("Název procedury", text: $title)
+        TextField("Počet", text: $count).keyboardType(.numberPad)
+        TextField("Poznámka", text: $note)
+        Button("Uložit proceduru") {
+          save(.init(title: title.trimmingCharacters(in: .whitespacesAndNewlines), count: Int(count),
+                     note: note.isEmpty ? nil : note))
+          dismiss()
+        }
+        .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                  (!count.isEmpty && !(Int(count).map { $0 > 0 } ?? false)))
+      }
+      .navigationTitle("Předepsaná procedura")
+      .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Zrušit") { dismiss() } } }
     }
   }
 }

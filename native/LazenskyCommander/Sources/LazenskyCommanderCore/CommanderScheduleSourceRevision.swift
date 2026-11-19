@@ -306,7 +306,8 @@ public enum CommanderScheduleRevisionApplier {
       updatedAt: updatedAt,
       stay: stay,
       events: (outsideWindow + replacement).sorted(by: eventSort),
-      settings: schedule.settings
+      settings: schedule.settings,
+      paperDetails: schedule.paperDetails
     )
     try NativeAlarmContract.validateCanonical(result)
     return result
