@@ -560,6 +560,7 @@ enum CommanderDocumentExtractor {
   private static let place = try! NSRegularExpression(pattern: #"(?i)(?:^|\s)(?:m[íi]stnost|budova|pavilon|patro|kabina|ordinace|m[íi]sto)\s+\S.*$"#)
   private static let timeHeads = ["cas", "zacatek", "cas zacatku", "od", "cas od", "zacina", "hodina"]
   private static let startsWithClock = try! NSRegularExpression(pattern: #"(?i)^\s*(?:[|–—•-]\s*)?(?:v\s+)?[0-9O]{1,2}\s*:\s*[0-9O]{2}(?![\d:])"#)
+  private static let timedAdministration = try! NSRegularExpression(pattern: #"(?i)^\s*\d{1,2}\s*:\s*\d{2}\s*(?:[-–—]\s*\d{1,2}\s*:\s*\d{2}\s*)?(?:provoz\s+recepce|provozn[ií]\s+doba|recepce|otev[ií]rac[ií]\s+doba)\b"#)
   private static let dateHeadingPattern = try! NSRegularExpression(pattern: #"(?i)^\s*(?:(?:pond[eě]l[ií]|[uú]ter[yý]|st[rř]eda|[cč]tvrtek|p[aá]tek|sobota|ned[eě]le|datum)\s*[:,]?\s*)?(?:\d{4}-\d{2}-\d{2}|\d{1,2}\s*[./]\s*\d{1,2}(?:\s*[./]\s*\d{4}|\s*\.)?)\s*(?:(?:pond[eě]l[ií]|[uú]ter[yý]|st[rř]eda|[cč]tvrtek|p[aá]tek|sobota|ned[eě]le))?\s*$"#)
   private static let headers = timeHeads + ["datum", "den", "misto", "mistnost", "budova", "do", "konec", "cas do", "odchod", "cas odchodu", "poznamka", "kod", "trvani", "poradi"]
 
@@ -683,7 +684,17 @@ enum CommanderDocumentExtractor {
       if CommanderPaperDocumentReader.furniture(raw) && !nameKey(raw).hasPrefix("poznamka") { continue }
       let startsWithTime = !matches(startsWithClock, in: raw).isEmpty
       if !summary, document.captureHeader(texts, inSchedule: inSchedule, startAtBeginning: startsWithTime,
-                                         canonicalDate: { resolveDate($0, context: nil) }) { seenMetadata = true; continue }
+                                         canonicalDate: { resolveDate($0, context: nil) }) {
+        seenMetadata = true
+        // Use a full date only when its stay field is present in this page's row.
+        // Metadata accumulated from another photograph must not supply the year.
+        let fields = document.details?.fields
+        let localEvidence = matches(dates, in: raw)
+          .compactMap { resolveDate(String(raw[$0.range]), context: nil) }
+          .first { $0 == fields?["dateFrom"] || $0 == fields?["dateTo"] }
+        if let localEvidence { yearContext = localEvidence }
+        continue
+      }
       if summary && !dateHeading {
         func at(_ predicate: (String) -> Bool) -> Int? {
           cells.firstIndex { cell in prescriptionColumns.contains { predicate($0.name) && abs(cell.bounds.x - $0.x) <= 0.055 } }
@@ -701,7 +712,7 @@ enum CommanderDocumentExtractor {
         if let date { yearContext = date }
         continue
       }
-      if CommanderPaperDocumentReader.furniture(raw) { continue }
+      if CommanderPaperDocumentReader.furniture(raw) || !matches(timedAdministration, in: raw).isEmpty { continue }
       if !inSchedule && seenMetadata && columns.isEmpty { continue }
       // A separate time cell anchors the title. Distant marginal notes do not belong to it.
       if columns.isEmpty, cells.count > 1, let first = cells.first,
